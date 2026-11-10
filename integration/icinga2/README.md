@@ -15,9 +15,9 @@ only `127.0.0.1:5665`, uses Icinga's generated private CA, and provides:
 Create `integration/icinga2/.env.local` from `.env.example`, then run:
 
 ```sh
-./script/icinga2_lab.sh start
-./script/icinga2_lab.sh verify
-./script/icinga2_lab.sh stop
+./scripts/icinga2_lab.sh start
+./scripts/icinga2_lab.sh verify
+./scripts/icinga2_lab.sh stop
 ```
 
 `start` also creates accepted `issuelight-live-client.issuelight.invalid` and rejected
