@@ -46,8 +46,9 @@ remote actions.
   mode.
 - `SRC-002` A source MUST reject an empty name, a non-HTTP endpoint, an endpoint
   without a host, embedded user information, a query, or a fragment.
-- `SRC-003` A change to scheme, host, or effective port MUST reset unsafe or
-  pinned trust to system trust before the source is used again.
+- `SRC-003` A change to scheme, host, or effective port MUST reset every
+  source-specific trust exception to system trust before the source is used
+  again.
 - `SRC-004` Persisted source configuration MUST NOT contain a password, private
   key, PKCS#12 import password, or exported client identity.
 
