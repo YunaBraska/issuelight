@@ -16,9 +16,6 @@ jobs:
   test:
     runs-on: macos-15
     timeout-minutes: 20
-    env:
-      DERIVED_DATA_PATH: ${{ runner.temp }}/IssueLightDerivedData
-      RELEASE_OUTPUT_PATH: ${{ runner.temp }}/IssueLightRelease
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -42,7 +39,7 @@ jobs:
             -scheme IssueLight \
             -configuration Debug \
             -destination 'platform=macOS' \
-            -derivedDataPath "$DERIVED_DATA_PATH" \
+            -derivedDataPath "$RUNNER_TEMP/IssueLightDerivedData" \
             CODE_SIGNING_ALLOWED=NO
 
       - name: Build release app
@@ -52,7 +49,7 @@ jobs:
             -scheme IssueLight \
             -configuration Release \
             -destination 'generic/platform=macOS' \
-            -derivedDataPath "$DERIVED_DATA_PATH" \
+            -derivedDataPath "$RUNNER_TEMP/IssueLightDerivedData" \
             ARCHS='arm64 x86_64' \
             ONLY_ACTIVE_ARCH=NO \
             CODE_SIGNING_ALLOWED=NO
@@ -60,18 +57,18 @@ jobs:
       - name: Package unsigned release candidate
         run: |
           scripts/package_release.sh \
-            "$DERIVED_DATA_PATH/Build/Products/Release/IssueLight.app" \
-            "$RELEASE_OUTPUT_PATH" \
+            "$RUNNER_TEMP/IssueLightDerivedData/Build/Products/Release/IssueLight.app" \
+            "$RUNNER_TEMP/IssueLightRelease" \
             0.1.0 \
             "$GITHUB_SHA" \
             --allow-unsigned
           test "$(plutil -extract spdxVersion raw \
-            "$RELEASE_OUTPUT_PATH/IssueLight-0.1.0-UNSIGNED.spdx.json")" = "SPDX-2.3"
+            "$RUNNER_TEMP/IssueLightRelease/IssueLight-0.1.0-UNSIGNED.spdx.json")" = "SPDX-2.3"
           test "$(plutil -extract packages.0.versionInfo raw \
-            "$RELEASE_OUTPUT_PATH/IssueLight-0.1.0-UNSIGNED.spdx.json")" = "0.1.0 (1)"
+            "$RUNNER_TEMP/IssueLightRelease/IssueLight-0.1.0-UNSIGNED.spdx.json")" = "0.1.0 (1)"
           if scripts/package_release.sh \
-            "$DERIVED_DATA_PATH/Build/Products/Release/IssueLight.app" \
-            "$RELEASE_OUTPUT_PATH" \
+            "$RUNNER_TEMP/IssueLightDerivedData/Build/Products/Release/IssueLight.app" \
+            "$RUNNER_TEMP/IssueLightRelease" \
             0.1.0 \
             "$GITHUB_SHA" \
             --allow-unsigned; then
@@ -79,7 +76,7 @@ jobs:
             exit 1
           fi
           if scripts/package_release.sh \
-            "$DERIVED_DATA_PATH/Build/Products/Release/IssueLight.app" \
+            "$RUNNER_TEMP/IssueLightDerivedData/Build/Products/Release/IssueLight.app" \
             "$RUNNER_TEMP/IssueLightSignedNegative" \
             0.1.0 \
             "$GITHUB_SHA"; then
@@ -87,7 +84,7 @@ jobs:
             exit 1
           fi
           if scripts/package_release.sh \
-            "$DERIVED_DATA_PATH/Build/Products/Release/IssueLight.app" \
+            "$RUNNER_TEMP/IssueLightDerivedData/Build/Products/Release/IssueLight.app" \
             "$RUNNER_TEMP/IssueLightVersionNegative" \
             9.9.9 \
             "$GITHUB_SHA" \
