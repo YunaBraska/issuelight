@@ -71,6 +71,42 @@ final class Icinga2SnapshotLoaderTests: XCTestCase {
         XCTAssertEqual(result, .failed(.incompatibleResponse))
     }
 
+    func testLoadMapsFiveThousandServiceProblemsWithinFiveSeconds() async {
+        let issueCount = 5_000
+        let serviceResults = (0..<issueCount).map { index in
+            let suffix = String(format: "%05d", index)
+            return #"{"attrs":{"acknowledgement":0,"display_name":"Service \#(suffix)","downtime_depth":0,"host_name":"host-\#(suffix)","last_check_result":{"output":"CRITICAL"},"name":"service-\#(suffix)","state":2},"name":"host-\#(suffix)!service-\#(suffix)","type":"Service"}"#
+        }
+        let serviceData = Data("{\"results\":[\(serviceResults.joined(separator: ","))]}".utf8)
+        StubURLProtocol.handler = { request in
+            let body = request.url?.path.hasSuffix("/services") == true
+                ? serviceData
+                : Data(#"{"results":[]}"#.utf8)
+            let response = HTTPURLResponse(
+                url: request.url!,
+                statusCode: 200,
+                httpVersion: "HTTP/1.1",
+                headerFields: ["Content-Type": "application/json"]
+            )!
+            return (response, body)
+        }
+        let clock = ContinuousClock()
+        let startedAt = clock.now
+
+        let result = await loader().load(source(), password: "secret")
+
+        let elapsed = startedAt.duration(to: clock.now)
+        guard case .loaded(let snapshot) = result else {
+            return XCTFail("Expected a loaded snapshot, got \(result)")
+        }
+        XCTAssertEqual(snapshot.issues.count, issueCount)
+        XCTAssertEqual(snapshot.actionableIssues.count, issueCount)
+        XCTAssertEqual(snapshot.highestAttentionSeverity, .critical)
+        XCTAssertEqual(snapshot.issues.first?.displayName, "Service 00000")
+        XCTAssertEqual(snapshot.issues.last?.displayName, "Service 04999")
+        XCTAssertLessThan(elapsed, .seconds(5))
+    }
+
     private func loader(now: Date = .now) -> Icinga2SnapshotLoader {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [StubURLProtocol.self]
