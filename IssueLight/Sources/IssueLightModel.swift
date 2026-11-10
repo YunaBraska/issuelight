@@ -255,7 +255,7 @@ final class IssueLightModel: ObservableObject {
             credentialMessage = "Die Konfiguration wird entfernt. Das Client-Zertifikat bleibt im macOS-Schlüsselbund."
         }
         if case .customCertificate = selectedSource.serverTrust {
-            return "\(credentialMessage) Das CA-Zertifikat bleibt im macOS-Schlüsselbund, da andere Quellen es verwenden können."
+            return "\(credentialMessage) Ein von IssueLight importiertes CA-Zertifikat wird nur entfernt, wenn keine andere Quelle es verwendet. Vorhandene fremde Zertifikate bleiben unberührt."
         }
         return credentialMessage
     }
@@ -264,12 +264,13 @@ final class IssueLightModel: ObservableObject {
         let bundleIdentifier = Bundle.main.bundleIdentifier ?? "io.github.yunabraska.issuelight"
         let fileURL = try? SourceStore.defaultFileURL(bundleIdentifier: bundleIdentifier)
         let store = fileURL.map(SourceStore.init(fileURL:))
+        let certificateCatalog = KeychainServerCertificateCatalog(ownershipScope: bundleIdentifier)
         self.init(
             sourceStore: store,
             providerRegistry: .builtIn(),
             passwordVault: KeychainPasswordVault(),
             identityCatalog: KeychainIdentityCatalog(),
-            certificateCatalog: KeychainServerCertificateCatalog(),
+            certificateCatalog: certificateCatalog,
             startsAutomatically: true
         )
         if store == nil {
@@ -338,6 +339,8 @@ final class IssueLightModel: ObservableObject {
             return
         }
 
+        let certificateCleanupSucceeded = await cleanupUnreferencedManagedServerCertificates()
+
         do {
             identities = try await identityCatalog.identities()
             identityLoadError = nil
@@ -353,6 +356,9 @@ final class IssueLightModel: ObservableObject {
             } else if case .working = activity {
                 activity = .idle
             }
+        }
+        if !certificateCleanupSucceeded, case .idle = activity {
+            activity = .failure("Nicht mehr verwendete CA-Zertifikate konnten nicht aus dem Schlüsselbund entfernt werden.")
         }
     }
 
@@ -563,6 +569,9 @@ final class IssueLightModel: ObservableObject {
             sourceID = source.id
             password = ""
             hasStoredBasicPassword = newScope != nil
+            if source.customServerCertificateID == nil {
+                selectedServerCertificate = nil
+            }
 
             var cleanupFailed = false
             if let previousScope, previousScope != newScope {
@@ -571,6 +580,9 @@ final class IssueLightModel: ObservableObject {
                 } catch {
                     cleanupFailed = true
                 }
+            }
+            if !(await cleanupUnreferencedManagedServerCertificates()) {
+                cleanupFailed = true
             }
 
             if source.isEnabled {
@@ -584,7 +596,7 @@ final class IssueLightModel: ObservableObject {
                 }
             }
             activity = cleanupFailed
-                ? .failure("Quelle gespeichert, aber das alte Basic-Passwort konnte nicht entfernt werden.")
+                ? .failure("Quelle gespeichert, aber nicht mehr verwendete Schlüsselbund-Einträge konnten nicht vollständig entfernt werden.")
                 : .success("Quelle gespeichert. Geheimnisse bleiben im macOS-Schlüsselbund.")
         } catch {
             activity = .failure("Die Quelle konnte nicht gespeichert werden: \(error.localizedDescription)")
@@ -622,6 +634,9 @@ final class IssueLightModel: ObservableObject {
                 cleanupFailed = true
             }
         }
+        if !(await cleanupUnreferencedManagedServerCertificates()) {
+            cleanupFailed = true
+        }
 
         if sources.isEmpty {
             refreshLoopTask?.cancel()
@@ -633,11 +648,16 @@ final class IssueLightModel: ObservableObject {
         }
 
         if cleanupFailed {
-            activity = .failure("Die Quelle wurde entfernt, aber das Basic-Passwort konnte nicht aus dem Schlüsselbund gelöscht werden.")
-        } else if case .clientCertificate = source.authentication {
-            activity = .success("Quelle entfernt. Das Client-Zertifikat bleibt im macOS-Schlüsselbund.")
+            activity = .failure("Die Quelle wurde entfernt, aber nicht mehr verwendete Schlüsselbund-Einträge konnten nicht vollständig gelöscht werden.")
         } else {
-            activity = .success("Quelle und gespeichertes Basic-Passwort wurden entfernt.")
+            let message: String
+            switch source.authentication {
+            case .basic:
+                message = "Quelle und gespeichertes Basic-Passwort wurden entfernt."
+            case .clientCertificate:
+                message = "Quelle entfernt. Das Client-Zertifikat bleibt im macOS-Schlüsselbund."
+            }
+            activity = .success(message)
         }
     }
 
@@ -663,15 +683,33 @@ final class IssueLightModel: ObservableObject {
             let descriptor = try await certificateCatalog.importCertificate(at: fileURL)
             selectedServerCertificate = descriptor
             serverTrustChoice = .customCertificate
-            activity = .success(
-                "„\(descriptor.displayName)“ wird nur für diese Quellenkonfiguration als CA verwendet."
+            let cleanupSucceeded = await cleanupUnreferencedManagedServerCertificates(
+                retainingAdditionalIDs: [descriptor.id]
             )
+            activity = cleanupSucceeded
+                ? .success("„\(descriptor.displayName)“ wird nur für diese Quellenkonfiguration als CA verwendet.")
+                : .failure("Das CA-Zertifikat wurde importiert, aber ein zuvor ungenutztes Zertifikat konnte nicht entfernt werden.")
             return true
         } catch KeychainServerCertificateCatalogError.multipleCertificatesNotSupported {
             activity = .failure("Wähle eine Datei mit genau einem CA-Zertifikat.")
             return false
         } catch {
             activity = .failure("Das CA-Zertifikat konnte nicht importiert werden.")
+            return false
+        }
+    }
+
+    func cleanupUnreferencedManagedServerCertificates(
+        retainingAdditionalIDs: Set<String> = []
+    ) async -> Bool {
+        var referencedCertificateIDs = Set(sources.compactMap(\.customServerCertificateID))
+        referencedCertificateIDs.formUnion(retainingAdditionalIDs)
+        do {
+            _ = try await certificateCatalog.deleteUnreferencedManagedCertificates(
+                referencedCertificateIDs: referencedCertificateIDs
+            )
+            return true
+        } catch {
             return false
         }
     }

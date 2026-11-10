@@ -54,6 +54,11 @@ final class MonitoringSourceTests: XCTestCase {
         XCTAssertFalse(source(serverTrust: .disabled).serverTrust.verifiesServerCertificate)
         XCTAssertEqual(source().serverTrust.method, .system)
         XCTAssertEqual(source(serverTrust: .disabled).serverTrust.method, .disabled)
+        XCTAssertNil(source().customServerCertificateID)
+        XCTAssertEqual(
+            source(serverTrust: .customCertificate(certificateID: "private-ca")).customServerCertificateID,
+            "private-ca"
+        )
     }
 
     func testChangingVerificationPreservesSpecificTrustUntilItIsExplicitlyDisabled() {

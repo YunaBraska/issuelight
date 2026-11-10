@@ -87,6 +87,9 @@ remote actions.
   across an origin-changing redirect.
 - `TLS-005` A changed pinned certificate MUST block the connection until the
   user explicitly reviews and replaces the trust decision.
+- `TLS-006` IssueLight MUST delete an imported CA only when IssueLight created
+  the Keychain item and no persisted source references it. Shared and
+  externally managed certificates MUST remain untouched.
 
 ### Connection result
 
@@ -117,5 +120,5 @@ remote actions.
 | AUTH-001 | `KeychainPasswordVault` | Integration test against a temporary real Keychain item with cleanup |
 | AUTH-002, AUTH-004 | Keychain identity catalog and connection test | Real PKCS#12 import, persistent-reference resolution, accepted and rejected live Icinga mTLS, and exact cleanup |
 | AUTH-003 | source setup journey | Missing identity fails explicitly; Keychain access denial and cancellation still need running-app evidence |
-| TLS-001..005 | connection test | Default, source-specific private CA, and unchecked trust implemented; the live matrix accepts the configured CA and rejects an unrelated CA while preserving hostname policy; pinning and rotation remain |
+| TLS-001..006 | connection test and source lifecycle | Default, source-specific private CA, and unchecked trust implemented; the live matrix accepts the configured CA and rejects an unrelated CA while preserving hostname policy; real Keychain tests cover ownership-aware cleanup after the final source reference; pinning and rotation remain |
 | CONN-001..003 | connection test | Real containerized Icinga 2 Basic and mTLS success, distinct 401 and 403 failures, plus unit and running-UI cancellation evidence |

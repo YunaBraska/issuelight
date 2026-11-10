@@ -13,7 +13,7 @@ Snapshot date: 2026-11-10.
 | Icinga 2 endpoint rules | Provider and URL construction tests | Verified |
 | Basic credentials | Real temporary macOS Keychain item lifecycle with cleanup | Verified locally |
 | Client identities | PKCS#12 parsing and persistent-reference tests | Verified locally |
-| Private CA trust | PEM/DER import, Keychain persistent reference, source-specific Apple trust evaluation, hostname checks, accepted lab CA, and rejected unrelated CA | Verified in package and live tests |
+| Private CA trust | PEM/DER import, Keychain persistent reference, source-specific Apple trust evaluation, hostname checks, accepted lab CA, rejected unrelated CA, and ownership-aware cleanup after the final source reference | Verified in package, app-model, and live tests |
 | Connection classification | Tests for success, cancellation, authentication, authorization, TLS, reachability, and incompatible responses | Verified |
 | Monitoring snapshots | Provider-neutral host and service issues, severity, acknowledgement, downtime, and deterministic ordering | Verified in package tests |
 | Snapshot transport | Shared connection and refresh transport, same-origin redirects, Basic auth, mTLS, and explicit failures | Verified in package and live tests |
@@ -24,14 +24,14 @@ Snapshot date: 2026-11-10.
 | Attention UI | Native menu and status window for setup, loading, healthy, problem, failure, and stale states | Empty setup and real six-problem Icinga states inspected locally; remaining states need running-product inspection |
 | Real Icinga 2 integration | Pinned official container lab covers Basic auth, permission denial, private CA, mTLS, real host/service problem payloads, and two persisted app-model sources | Verified locally |
 
-The local package suite currently executes 39 tests. Five live Icinga tests
+The local package suite currently executes 41 tests. Five live Icinga tests
 are skipped unless the integration environment is configured. The app suite
-executes eight deterministic model tests and one live integration test, skipped
+executes eleven deterministic model tests and one live integration test, skipped
 outside the lab. It exercises multiple-source management and refresh isolation
 through persisted source, real Keychain, and real Icinga 2 boundaries. The full
 live matrix passed locally on 2026-11-10.
 
-LLVM source coverage for `IssueLightCore` is currently 74.4% of lines and 69.0%
+LLVM source coverage for `IssueLightCore` is currently 74.3% of lines and 65.6%
 of regions. Swift does not report branch totals in this configuration. Coverage
 is evidence, not a release gate yet, and remains below the project goals.
 

@@ -50,7 +50,10 @@ struct SourceSetupView: View {
                 .navigationTitle(model.isCreatingSource ? "Neue Quelle" : model.name)
         }
         .frame(minWidth: 780, minHeight: 600)
-        .onDisappear { connectionTask?.cancel() }
+        .onDisappear {
+            connectionTask?.cancel()
+            Task { _ = await model.cleanupUnreferencedManagedServerCertificates() }
+        }
         .sheet(isPresented: $isImportingIdentity) {
             if let importURL {
                 IdentityImportView(fileURL: importURL, model: model, isPresented: $isImportingIdentity)
@@ -310,11 +313,14 @@ struct SourceSetupView: View {
     private func performPendingNavigation() {
         guard let pendingNavigation else { return }
         self.pendingNavigation = nil
-        switch pendingNavigation {
-        case .add:
-            model.beginAddingSource()
-        case .select(let sourceID):
-            Task { await model.selectSource(id: sourceID) }
+        Task {
+            _ = await model.cleanupUnreferencedManagedServerCertificates()
+            switch pendingNavigation {
+            case .add:
+                model.beginAddingSource()
+            case .select(let sourceID):
+                await model.selectSource(id: sourceID)
+            }
         }
     }
 }

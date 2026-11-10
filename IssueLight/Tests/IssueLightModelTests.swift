@@ -108,6 +108,89 @@ final class IssueLightModelTests: XCTestCase {
         XCTAssertEqual(metrics.cancellations, 1)
     }
 
+    func testSavingLastPrivateCAReferenceRemovesOnlyIssueLightManagedCertificate() async throws {
+        let catalog = KeychainServerCertificateCatalog(
+            ownershipScope: "io.github.yunabraska.issuelight.model-tests.\(UUID().uuidString)"
+        )
+        let descriptor = try await catalog.importCertificate(at: serverCertificateFixtureURL)
+        addTeardownBlock {
+            try? await catalog.deleteCertificate(id: descriptor.id)
+        }
+        let script = SnapshotScript()
+        let harness = try await makeHarness(
+            sourceCount: 2,
+            script: script,
+            serverTrust: .customCertificate(certificateID: descriptor.id),
+            certificateCatalog: catalog
+        )
+        await harness.model.load()
+
+        harness.model.serverTrustChoice = .system
+        await harness.model.save()
+
+        let retainedCertificate = try await catalog.certificate(id: descriptor.id)
+        let oneReferencePersisted = try await harness.store.load()
+        XCTAssertNotNil(retainedCertificate)
+        XCTAssertNil(harness.model.selectedServerCertificate)
+        XCTAssertEqual(
+            oneReferencePersisted.compactMap(\.customServerCertificateID),
+            [descriptor.id]
+        )
+
+        await harness.model.selectSource(id: harness.sources[1].id)
+        harness.model.serverTrustChoice = .system
+        await harness.model.save()
+
+        let removedCertificate = try await catalog.certificate(id: descriptor.id)
+        let noReferencesPersisted = try await harness.store.load()
+        XCTAssertNil(removedCertificate)
+        XCTAssertEqual(noReferencesPersisted.compactMap(\.customServerCertificateID), [])
+    }
+
+    func testDeletingLastPrivateCASourceRemovesIssueLightManagedCertificate() async throws {
+        let catalog = KeychainServerCertificateCatalog(
+            ownershipScope: "io.github.yunabraska.issuelight.model-tests.\(UUID().uuidString)"
+        )
+        let descriptor = try await catalog.importCertificate(at: serverCertificateFixtureURL)
+        addTeardownBlock {
+            try? await catalog.deleteCertificate(id: descriptor.id)
+        }
+        let harness = try await makeHarness(
+            sourceCount: 1,
+            script: SnapshotScript(),
+            serverTrust: .customCertificate(certificateID: descriptor.id),
+            certificateCatalog: catalog
+        )
+        await harness.model.load()
+
+        await harness.model.deleteSource()
+
+        let removedCertificate = try await catalog.certificate(id: descriptor.id)
+        let persistedSources = try await harness.store.load()
+        XCTAssertNil(removedCertificate)
+        XCTAssertEqual(persistedSources, [])
+    }
+
+    func testLoadingRemovesOrphanedManagedCertificateFromSameAppProfile() async throws {
+        let catalog = KeychainServerCertificateCatalog(
+            ownershipScope: "io.github.yunabraska.issuelight.model-tests.\(UUID().uuidString)"
+        )
+        let descriptor = try await catalog.importCertificate(at: serverCertificateFixtureURL)
+        addTeardownBlock {
+            try? await catalog.deleteCertificate(id: descriptor.id)
+        }
+        let harness = try await makeHarness(
+            sourceCount: 1,
+            script: SnapshotScript(),
+            certificateCatalog: catalog
+        )
+
+        await harness.model.load()
+
+        let removedCertificate = try await catalog.certificate(id: descriptor.id)
+        XCTAssertNil(removedCertificate)
+    }
+
     func testDisablingSourcePersistsChoiceAndExcludesItsSnapshotWithoutDeletingCredential() async throws {
         let script = SnapshotScript()
         let harness = try await makeHarness(sourceCount: 2, script: script)
@@ -214,7 +297,9 @@ final class IssueLightModelTests: XCTestCase {
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("IssueLightLiveModelTests-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        let certificateCatalog = KeychainServerCertificateCatalog()
+        let certificateCatalog = KeychainServerCertificateCatalog(
+            ownershipScope: "io.github.yunabraska.issuelight.live-model-tests.\(UUID().uuidString)"
+        )
         let certificate = try await certificateCatalog.importCertificate(
             at: URL(fileURLWithPath: certificatePath)
         )
@@ -270,7 +355,9 @@ final class IssueLightModelTests: XCTestCase {
     private func makeHarness(
         sourceCount: Int,
         script: SnapshotScript,
-        disabledIndexes: Set<Int> = []
+        disabledIndexes: Set<Int> = [],
+        serverTrust: ServerTrustConfiguration = .system,
+        certificateCatalog: KeychainServerCertificateCatalog? = nil
     ) async throws -> ModelHarness {
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("IssueLightModelTests-\(UUID().uuidString)", isDirectory: true)
@@ -281,7 +368,8 @@ final class IssueLightModelTests: XCTestCase {
                 providerID: TestProvider.id,
                 endpoint: URL(string: "https://monitoring\(index).example.test")!,
                 isEnabled: !disabledIndexes.contains(index),
-                authentication: .basic(username: "operator-\(index)")
+                authentication: .basic(username: "operator-\(index)"),
+                serverTrust: serverTrust
             )
         }
         let store = SourceStore(fileURL: directory.appendingPathComponent("sources.json"))
@@ -298,12 +386,15 @@ final class IssueLightModelTests: XCTestCase {
             try? FileManager.default.removeItem(at: directory)
         }
         let registry = try ProviderRegistry([TestProvider(script: script)])
+        let resolvedCertificateCatalog = certificateCatalog ?? KeychainServerCertificateCatalog(
+            ownershipScope: "io.github.yunabraska.issuelight.model-tests.\(UUID().uuidString)"
+        )
         let model = IssueLightModel(
             sourceStore: store,
             providerRegistry: registry,
             passwordVault: vault,
             identityCatalog: KeychainIdentityCatalog(),
-            certificateCatalog: KeychainServerCertificateCatalog(),
+            certificateCatalog: resolvedCertificateCatalog,
             startsAutomatically: false
         )
         return ModelHarness(
@@ -313,6 +404,16 @@ final class IssueLightModelTests: XCTestCase {
             vault: vault,
             scopes: scopes
         )
+    }
+
+    private var serverCertificateFixtureURL: URL {
+        URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .appendingPathComponent(
+                "Packages/IssueLightCore/Tests/IssueLightCoreTests/Fixtures/issuelight-test-root.crt"
+            )
     }
 
     private func snapshot(
@@ -369,7 +470,7 @@ private struct TestProvider: MonitoringProvider {
         displayName: "Model Test",
         capabilities: ProviderCapabilities(
             authenticationMethods: [.basic],
-            serverTrustMethods: [.system],
+            serverTrustMethods: [.system, .customCertificate],
             supportsAcknowledgement: false,
             supportsDowntime: false
         )

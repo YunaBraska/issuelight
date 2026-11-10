@@ -24,7 +24,22 @@ public enum KeychainServerCertificateCatalogError: Error, Equatable {
 }
 
 public actor KeychainServerCertificateCatalog {
-    public init() {}
+    private static let anyManagedLabelPrefix = "IssueLight CA ["
+    private let managedLabelPrefix: String
+
+    /// Creates a certificate catalog with cleanup ownership isolated to one app profile.
+    ///
+    /// Use a stable bundle or profile identifier. Catalogs with different scopes cannot
+    /// delete each other's imported certificates.
+    ///
+    /// - Parameter ownershipScope: Stable identifier for the source store using this catalog.
+    public init(ownershipScope: String = "io.github.yunabraska.issuelight") {
+        let scopeFingerprint = SHA256.hash(data: Data(ownershipScope.utf8))
+            .prefix(16)
+            .map { String(format: "%02x", $0) }
+            .joined()
+        managedLabelPrefix = "IssueLight CA [\(scopeFingerprint)] — "
+    }
 
     public func importCertificate(at fileURL: URL) throws -> ServerCertificateDescriptor {
         let values = try fileURL.resourceValues(forKeys: [.fileSizeKey])
@@ -40,19 +55,78 @@ public actor KeychainServerCertificateCatalog {
             throw KeychainServerCertificateCatalogError.invalidCertificate
         }
 
+        let ownershipFingerprint = SHA256.hash(data: certificateData)
+            .map { String(format: "%02x", $0) }
+            .joined()
+        let certificateName = SecCertificateCopySubjectSummary(certificate) as String? ?? "Unbenannte CA"
         let addQuery: [String: Any] = [
             kSecClass as String: kSecClassCertificate,
             kSecValueRef as String: certificate,
         ]
         let addStatus = SecItemAdd(addQuery as CFDictionary, nil)
+        let wasAdded: Bool
         switch addStatus {
-        case errSecSuccess, errSecDuplicateItem:
-            break
+        case errSecSuccess:
+            wasAdded = true
+        case errSecDuplicateItem:
+            wasAdded = false
         default:
             throw KeychainServerCertificateCatalogError.unexpectedStatus(addStatus)
         }
 
-        let reference = try persistentReference(for: certificate)
+        let reference: Data
+        do {
+            reference = try persistentReference(for: certificate)
+        } catch {
+            if wasAdded {
+                _ = SecItemDelete(addQuery as CFDictionary)
+            }
+            throw error
+        }
+        let ownershipQuery: [String: Any] = [
+            kSecClass as String: kSecClassCertificate,
+            kSecValuePersistentRef as String: reference,
+        ]
+        let expectedLabel = managedLabelPrefix + certificateName + " — " + ownershipFingerprint
+        if wasAdded {
+            let ownershipAttributes: [String: Any] = [
+                kSecAttrLabel as String: expectedLabel,
+            ]
+            let updateStatus = SecItemUpdate(
+                ownershipQuery as CFDictionary,
+                ownershipAttributes as CFDictionary
+            )
+            guard updateStatus == errSecSuccess else {
+                try? deleteCertificate(id: reference.base64EncodedString())
+                throw KeychainServerCertificateCatalogError.unexpectedStatus(updateStatus)
+            }
+        } else {
+            var existingResult: CFTypeRef?
+            var existingQuery = ownershipQuery
+            existingQuery[kSecReturnAttributes as String] = true
+            existingQuery[kSecMatchLimit as String] = kSecMatchLimitOne
+            let existingStatus = SecItemCopyMatching(existingQuery as CFDictionary, &existingResult)
+            guard existingStatus == errSecSuccess else {
+                throw KeychainServerCertificateCatalogError.unexpectedStatus(existingStatus)
+            }
+            guard let existingAttributes = existingResult as? [String: Any] else {
+                throw KeychainServerCertificateCatalogError.malformedKeychainResult
+            }
+            if let existingLabel = existingAttributes[kSecAttrLabel as String] as? String,
+               existingLabel.hasPrefix(Self.anyManagedLabelPrefix),
+               existingLabel != expectedLabel {
+                let sharedAttributes: [String: Any] = [
+                    kSecAttrLabel as String: "IssueLight Shared CA — \(certificateName) — \(ownershipFingerprint)",
+                ]
+                let updateStatus = SecItemUpdate(
+                    ownershipQuery as CFDictionary,
+                    sharedAttributes as CFDictionary
+                )
+                guard updateStatus == errSecSuccess else {
+                    throw KeychainServerCertificateCatalogError.unexpectedStatus(updateStatus)
+                }
+            }
+        }
         return Self.descriptor(certificate: certificate, reference: reference)
     }
 
@@ -101,6 +175,59 @@ public actor KeychainServerCertificateCatalog {
         guard status == errSecSuccess || status == errSecItemNotFound else {
             throw KeychainServerCertificateCatalogError.unexpectedStatus(status)
         }
+    }
+
+    /// Deletes certificates created and marked by IssueLight when no source references them.
+    ///
+    /// Certificates that existed before import or have lost the IssueLight ownership marker
+    /// remain untouched.
+    ///
+    /// - Parameter referencedCertificateIDs: Persistent Keychain references retained by sources.
+    /// - Returns: Persistent references deleted during this cleanup pass.
+    public func deleteUnreferencedManagedCertificates(
+        referencedCertificateIDs: Set<String>
+    ) throws -> Set<String> {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassCertificate,
+            kSecReturnAttributes as String: true,
+            kSecReturnPersistentRef as String: true,
+            kSecMatchLimit as String: kSecMatchLimitAll,
+        ]
+        var result: CFTypeRef?
+        let status = SecItemCopyMatching(query as CFDictionary, &result)
+        if status == errSecItemNotFound {
+            return []
+        }
+        guard status == errSecSuccess else {
+            throw KeychainServerCertificateCatalogError.unexpectedStatus(status)
+        }
+        guard let items = result as? [[String: Any]] else {
+            throw KeychainServerCertificateCatalogError.malformedKeychainResult
+        }
+        let managedReferences = items.compactMap { item -> Data? in
+            guard let label = item[kSecAttrLabel as String] as? String,
+                  label.hasPrefix(managedLabelPrefix),
+                  let reference = item[kSecValuePersistentRef as String] as? Data else {
+                return nil
+            }
+            return reference
+        }
+        var deletedIDs = Set<String>()
+        for reference in managedReferences {
+            let id = reference.base64EncodedString()
+            guard !referencedCertificateIDs.contains(id) else { continue }
+            let deleteQuery: [String: Any] = [
+                kSecClass as String: kSecClassCertificate,
+                kSecValuePersistentRef as String: reference,
+            ]
+            let deleteStatus = SecItemDelete(deleteQuery as CFDictionary)
+            if deleteStatus == errSecSuccess {
+                deletedIDs.insert(id)
+            } else if deleteStatus != errSecItemNotFound {
+                throw KeychainServerCertificateCatalogError.unexpectedStatus(deleteStatus)
+            }
+        }
+        return deletedIDs
     }
 
     private func persistentReference(for certificate: SecCertificate) throws -> Data {

@@ -17,7 +17,9 @@ final class Icinga2LiveConnectionTests: XCTestCase {
                 subdirectory: "Fixtures"
             )
         )
-        let certificateCatalog = KeychainServerCertificateCatalog()
+        let certificateCatalog = KeychainServerCertificateCatalog(
+            ownershipScope: "io.github.yunabraska.issuelight.live-core-tests.\(UUID().uuidString)"
+        )
         let descriptor = try await certificateCatalog.importCertificate(at: fileURL)
         addTeardownBlock {
             try? await certificateCatalog.deleteCertificate(id: descriptor.id)
@@ -52,7 +54,9 @@ final class Icinga2LiveConnectionTests: XCTestCase {
               let certificatePath = environment["ISSUELIGHT_LIVE_ICINGA_CA_PATH"] else {
             throw XCTSkip("Live Icinga 2 environment is not configured")
         }
-        let certificateCatalog = KeychainServerCertificateCatalog()
+        let certificateCatalog = KeychainServerCertificateCatalog(
+            ownershipScope: "io.github.yunabraska.issuelight.live-core-tests.\(UUID().uuidString)"
+        )
         let descriptor = try await certificateCatalog.importCertificate(
             at: URL(fileURLWithPath: certificatePath)
         )
@@ -154,7 +158,9 @@ final class Icinga2LiveConnectionTests: XCTestCase {
         addTeardownBlock {
             try? Self.deleteImportedIdentity(cleanupReferences)
         }
-        let certificateCatalog = KeychainServerCertificateCatalog()
+        let certificateCatalog = KeychainServerCertificateCatalog(
+            ownershipScope: "io.github.yunabraska.issuelight.live-core-tests.\(UUID().uuidString)"
+        )
         let certificateDescriptor = try await certificateCatalog.importCertificate(
             at: URL(fileURLWithPath: certificatePath)
         )
@@ -210,7 +216,9 @@ final class Icinga2LiveConnectionTests: XCTestCase {
         addTeardownBlock {
             try? Self.deleteImportedIdentity(cleanupReferences)
         }
-        let certificateCatalog = KeychainServerCertificateCatalog()
+        let certificateCatalog = KeychainServerCertificateCatalog(
+            ownershipScope: "io.github.yunabraska.issuelight.live-core-tests.\(UUID().uuidString)"
+        )
         let certificateDescriptor = try await certificateCatalog.importCertificate(
             at: URL(fileURLWithPath: certificatePath)
         )

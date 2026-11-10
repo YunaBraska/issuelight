@@ -22,6 +22,9 @@ is offered before a maintained release exists.
   import passwords.
 - Passwords, client identities, and source-specific CA references are resolved
   through macOS Keychain.
+- Automatic CA cleanup is limited to certificates marked as created by the
+  same app profile and no longer referenced by a source. Shared and externally
+  managed certificates remain untouched.
 - Server certificate verification is enabled by default. Disabling it is a
   source-specific, visible exception.
 - Diagnostics and test fixtures must not contain private hostnames, URLs,

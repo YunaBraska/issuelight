@@ -23,9 +23,15 @@ configured hostname, keeps system anchors available, evaluates the resulting
 trust, and rejects failure as a TLS error. IssueLight never changes macOS trust
 settings.
 
-Changing the source authority resets custom trust to system trust. Removing a
-source leaves the public CA certificate in Keychain because another source may
-reference the same item. Certificate pinning remains a separate future mode.
+Changing the source authority resets custom trust to system trust. A newly
+added certificate receives an IssueLight ownership marker only when IssueLight
+created the Keychain item. The marker is scoped to the app profile. If another
+IssueLight profile imports the same Keychain certificate, the item becomes
+shared and automatic deletion stops for both profiles. After loading, saving,
+or removing sources, IssueLight deletes its exclusively owned certificates only
+when no persisted source still references them. Pre-existing, shared, and
+externally managed certificates remain untouched. Certificate pinning remains
+a separate future mode.
 
 ## Consequences
 
@@ -34,5 +40,6 @@ reference the same item. Certificate pinning remains a separate future mode.
   engine.
 - The provider port receives resolved public trust material and stays free of
   Keychain lookup behavior.
-- Users may remove unused imported CA certificates through Keychain Access
-  until IssueLight has reference-aware certificate cleanup.
+- IssueLight cleans only certificate items it can prove it created. This may
+  retain an old or externally managed public certificate, but cannot delete a
+  user's unrelated Keychain item.

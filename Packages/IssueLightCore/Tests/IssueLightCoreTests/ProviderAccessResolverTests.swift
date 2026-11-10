@@ -11,7 +11,9 @@ final class ProviderAccessResolverTests: XCTestCase {
                 subdirectory: "Fixtures"
             )
         )
-        let certificateCatalog = KeychainServerCertificateCatalog()
+        let certificateCatalog = KeychainServerCertificateCatalog(
+            ownershipScope: "io.github.yunabraska.issuelight.provider-tests.\(UUID().uuidString)"
+        )
         let certificateDescriptor = try await certificateCatalog.importCertificate(at: fileURL)
         let source = MonitoringSource(
             name: "Private CA",
@@ -55,7 +57,9 @@ final class ProviderAccessResolverTests: XCTestCase {
         let resolver = ProviderAccessResolver(
             passwordVault: KeychainPasswordVault(),
             identityCatalog: KeychainIdentityCatalog(),
-            certificateCatalog: KeychainServerCertificateCatalog()
+            certificateCatalog: KeychainServerCertificateCatalog(
+                ownershipScope: "io.github.yunabraska.issuelight.provider-tests.\(UUID().uuidString)"
+            )
         )
 
         let resolution = await resolver.resolve(source: source)
@@ -79,7 +83,9 @@ final class ProviderAccessResolverTests: XCTestCase {
         let resolver = ProviderAccessResolver(
             passwordVault: KeychainPasswordVault(),
             identityCatalog: KeychainIdentityCatalog(),
-            certificateCatalog: KeychainServerCertificateCatalog()
+            certificateCatalog: KeychainServerCertificateCatalog(
+                ownershipScope: "io.github.yunabraska.issuelight.provider-tests.\(UUID().uuidString)"
+            )
         )
 
         let resolution = await resolver.resolve(

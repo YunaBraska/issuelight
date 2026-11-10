@@ -85,6 +85,14 @@ public struct MonitoringSource: Codable, Equatable, Identifiable, Sendable {
         self.serverTrust = serverTrust
     }
 
+    /// The persistent Keychain reference for source-specific CA trust, when configured.
+    public var customServerCertificateID: String? {
+        guard case .customCertificate(let certificateID) = serverTrust else {
+            return nil
+        }
+        return certificateID
+    }
+
     @discardableResult
     public mutating func updateEndpoint(_ newEndpoint: URL) -> Bool {
         let authorityChanged = endpoint.authority != newEndpoint.authority
