@@ -93,6 +93,10 @@ if test "$verification_mode" = "signed"; then
         echo "Release app is missing hardened runtime." >&2
         exit 65
     }
+    printf '%s\n' "$signature_details" | grep -q '^Timestamp=' || {
+        echo "Release app is missing a secure signature timestamp." >&2
+        exit 65
+    }
     test -n "${APPLE_TEAM_ID:-}" || {
         echo "APPLE_TEAM_ID is required for release identity verification." >&2
         exit 65
@@ -102,6 +106,13 @@ if test "$verification_mode" = "signed"; then
         echo "Release app was signed by an unexpected Apple team." >&2
         exit 65
     }
+    release_entitlements=$(codesign -d --entitlements :- "$app_path" 2>/dev/null)
+    if printf '%s\n' "$release_entitlements" \
+        | plutil -extract 'com\.apple\.security\.get-task-allow' raw - 2>/dev/null \
+        | grep -q '^true$'; then
+        echo "Release app must not enable com.apple.security.get-task-allow." >&2
+        exit 65
+    fi
     xcrun stapler validate "$app_path"
     spctl --assess --type execute "$app_path"
 fi

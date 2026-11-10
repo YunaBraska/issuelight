@@ -26,7 +26,7 @@ Snapshot date: 2026-11-10.
 | Attention UI | Native menu and status window for setup, loading, healthy, problem, failure, stale, and all-paused states | Empty setup, deterministic two-problem Icinga status, failure with retained stale data, accessible source error, recovery, and all-paused status inspected locally; status-window layout was inspected at a larger supported size |
 | Real Icinga 2 integration | Isolated pinned official container lab covers Basic auth, permission denial, private CA, mTLS, exact real host/service problem payloads, stable initial checks, and two persisted app-model sources | Verified locally |
 | OSS repository controls | Apache-2.0, provenance notice, contributor/security/privacy policies, private vulnerability reporting, secret scanning with push protection, SHA-pinned Actions, and protected `main` | Verified in the public repository |
-| Release-candidate artifacts | Universal app validation, fail-closed signed mode, ZIP, SPDX 2.3 SBOM, and verified SHA-256 manifest | Unsigned path verified locally and in CI; real signing and notarization remain open |
+| Release-candidate artifacts | Universal Developer ID build, hardened runtime, timestamp, fail-closed notarization, ZIP, SPDX 2.3 SBOM, and verified SHA-256 manifest | Unsigned path verified locally and in CI; real universal Developer ID signing passes locally; Gatekeeper and packaging reject the unnotarized app; an accepted notarization remains open |
 
 The local package suite currently executes 48 tests. Eight live Icinga tests
 are skipped unless the integration environment is configured. The app suite
@@ -46,8 +46,8 @@ is evidence, not a release gate yet, and remains below the project goals.
   healthy UI, large-data behavior, and energy use need running-product
   verification.
 - Core coverage remains below the stated 95% line and 90% branch goals.
-- Update behavior, Developer ID signing, notarization, stapling, and
-  clean-account installation are not implemented or proven.
+- Update behavior, accepted notarization, stapling, and clean-account
+  installation are not proven.
 - No release has completed the real GitHub distribution workflow.
 
 Do not describe IssueLight as production-ready until these blockers are closed
