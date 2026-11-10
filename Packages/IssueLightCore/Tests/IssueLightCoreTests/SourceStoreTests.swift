@@ -22,6 +22,8 @@ final class SourceStoreTests: XCTestCase {
         let rawJSON = try String(contentsOf: fileURL, encoding: .utf8)
         XCTAssertFalse(rawJSON.localizedCaseInsensitiveContains("password"))
         XCTAssertFalse(rawJSON.localizedCaseInsensitiveContains("privateKey"))
+        let attributes = try FileManager.default.attributesOfItem(atPath: fileURL.path)
+        XCTAssertEqual(attributes[.posixPermissions] as? Int, 0o600)
 
         let removed = try await store.remove(id: source.id)
         XCTAssertEqual(removed, [])
