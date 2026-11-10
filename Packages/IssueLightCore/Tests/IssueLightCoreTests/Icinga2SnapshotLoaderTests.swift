@@ -7,7 +7,6 @@ final class Icinga2SnapshotLoaderTests: XCTestCase {
         StubURLProtocol.handler = nil
         StubURLProtocol.onStart = nil
         StubURLProtocol.blocksRequests = false
-        StubURLProtocol.didStopLoading = false
         super.tearDown()
     }
 
