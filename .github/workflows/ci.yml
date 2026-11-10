@@ -27,11 +27,34 @@ jobs:
       - name: Validate scripts
         run: |
           sh -n scripts/build_release.sh
+          sh -n scripts/check_coverage.sh
           sh -n scripts/icinga2_lab.sh
           sh -n scripts/package_release.sh
 
       - name: Test core
         run: swift test --package-path Packages/IssueLightCore --enable-code-coverage
+
+      - name: Enforce core coverage ratchet
+        run: |
+          coverage_path=$(swift test \
+            --package-path Packages/IssueLightCore \
+            --show-codecov-path)
+          coverage_profile="$(dirname "$coverage_path")/default.profdata"
+          test_binary=$(find Packages/IssueLightCore/.build -type f \
+            -path '*/IssueLightCoreTests.xctest/Contents/MacOS/IssueLightCoreTests' \
+            -print -quit)
+          test -n "$test_binary"
+          coverage_json="$RUNNER_TEMP/IssueLightCoreCoverage.json"
+          xcrun llvm-cov export \
+            "$test_binary" \
+            -instr-profile="$coverage_profile" \
+            -ignore-filename-regex='Tests/|\.build/' \
+            -summary-only >"$coverage_json"
+          scripts/check_coverage.sh "$coverage_json" 74 66
+          if scripts/check_coverage.sh "$coverage_json" 100 100 >/dev/null 2>&1; then
+            echo "Coverage ratchet accepted an impossible threshold." >&2
+            exit 1
+          fi
 
       - name: Test app refresh model
         run: |

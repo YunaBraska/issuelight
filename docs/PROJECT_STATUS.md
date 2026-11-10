@@ -35,9 +35,10 @@ outside the lab. It exercises multiple-source management and refresh isolation
 through persisted source, real Keychain, and real Icinga 2 boundaries. The full
 live matrix passed locally on 2026-11-10.
 
-LLVM source coverage for `IssueLightCore` is currently 74.8% of lines and 70.1%
-of regions. Swift does not report branch totals in this configuration. Coverage
-is evidence, not a release gate yet, and remains below the project goals.
+Source-only LLVM coverage for `IssueLightCore` is currently 74.3% of lines and
+66.6% of regions. CI enforces floors of 74% and 66% respectively so the
+verified baseline cannot silently regress. Swift does not report branch totals
+in this configuration. Coverage remains below the project goals.
 
 ## Release blockers
 

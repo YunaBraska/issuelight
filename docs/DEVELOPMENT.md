@@ -31,6 +31,34 @@ configuration.
 See [`../integration/icinga2/README.md`](../integration/icinga2/README.md) for
 the real Icinga compatibility matrix.
 
+## Coverage ratchet
+
+CI exports source-only LLVM coverage after the Core tests and requires at least
+74% line coverage and 66% region coverage. Test sources and Swift build output
+are excluded. These floors prevent regression from the verified baseline; they
+do not replace the project goals of 95% reachable line coverage and 90% branch
+coverage.
+
+Run the same check locally after a coverage-enabled test run:
+
+```sh
+swift test --package-path Packages/IssueLightCore --enable-code-coverage
+coverage_path=$(swift test \
+  --package-path Packages/IssueLightCore \
+  --show-codecov-path)
+coverage_profile="$(dirname "$coverage_path")/default.profdata"
+test_binary=$(find Packages/IssueLightCore/.build -type f \
+  -path '*/IssueLightCoreTests.xctest/Contents/MacOS/IssueLightCoreTests' \
+  -print -quit)
+coverage_json=$(mktemp /tmp/issuelight-coverage.XXXXXX)
+xcrun llvm-cov export "$test_binary" \
+  -instr-profile="$coverage_profile" \
+  -ignore-filename-regex='Tests/|\.build/' \
+  -summary-only >"$coverage_json"
+scripts/check_coverage.sh "$coverage_json" 74 66
+rm -f "$coverage_json"
+```
+
 ## Release-candidate packaging
 
 The packaging entrypoint accepts an already built app. It verifies the bundle
