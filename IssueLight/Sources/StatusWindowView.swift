@@ -19,7 +19,9 @@ struct StatusWindowView: View {
                 Text("IssueLight")
                     .font(.title2.weight(.semibold))
                 if let observedAt = model.latestSuccessfulRefresh {
-                    Text("Zuletzt erfolgreich geprüft: \(observedAt.formatted(date: .abbreviated, time: .shortened))")
+                    let date = observedAt.formatted(date: .abbreviated, time: .omitted)
+                    let time = observedAt.formatted(date: .omitted, time: .shortened)
+                    Text("Zuletzt erfolgreich geprüft: \(date), \(time)")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 } else if model.hasConfiguredSource && !model.hasEnabledSource {
@@ -73,9 +75,15 @@ struct StatusWindowView: View {
                     .padding(12)
                     .background(.orange.opacity(0.12))
                     .accessibilityLabel(
-                        model.hasPartialRefreshFailure
-                            ? "Teilweise veralteter Status. \(model.failedSources.count) Quellen konnten nicht aktualisiert werden."
-                            : "Veralteter Status. Keine aktive Quelle konnte aktualisiert werden."
+                        [
+                            model.hasPartialRefreshFailure
+                                ? "Teilweise veralteter Status. \(model.failedSources.count) Quellen konnten nicht aktualisiert werden."
+                                : "Veralteter Status. Keine aktive Quelle konnte aktualisiert werden.",
+                            model.failedSources
+                                .map { "\($0.source.name): \($0.message)" }
+                                .joined(separator: " "),
+                        ]
+                        .joined(separator: " ")
                     )
                 }
                 if model.actionableIssues.isEmpty && model.coveredIssues.isEmpty {
