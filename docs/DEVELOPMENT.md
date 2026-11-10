@@ -54,10 +54,14 @@ xcodebuild build \
   ARCHS='arm64 x86_64' \
   ONLY_ACTIVE_ARCH=NO \
   CODE_SIGNING_ALLOWED=NO
+issuelight_app="$issuelight_derived_data/Build/Products/Release/IssueLight.app"
+issuelight_version=$(/usr/libexec/PlistBuddy \
+  -c 'Print :CFBundleShortVersionString' \
+  "$issuelight_app/Contents/Info.plist")
 scripts/package_release.sh \
-  "$issuelight_derived_data/Build/Products/Release/IssueLight.app" \
+  "$issuelight_app" \
   "$issuelight_release_output" \
-  0.1.0 \
+  "$issuelight_version" \
   "$issuelight_revision" \
   --allow-unsigned
 ```

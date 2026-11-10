@@ -56,37 +56,42 @@ jobs:
 
       - name: Package unsigned release candidate
         run: |
+          app_path="$RUNNER_TEMP/IssueLightDerivedData/Build/Products/Release/IssueLight.app"
+          release_version=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' \
+            "$app_path/Contents/Info.plist")
+          release_build=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' \
+            "$app_path/Contents/Info.plist")
+          sbom_path="$RUNNER_TEMP/IssueLightRelease/IssueLight-$release_version-UNSIGNED.spdx.json"
           scripts/package_release.sh \
-            "$RUNNER_TEMP/IssueLightDerivedData/Build/Products/Release/IssueLight.app" \
+            "$app_path" \
             "$RUNNER_TEMP/IssueLightRelease" \
-            0.1.0 \
+            "$release_version" \
             "$GITHUB_SHA" \
             --allow-unsigned
-          test "$(plutil -extract spdxVersion raw \
-            "$RUNNER_TEMP/IssueLightRelease/IssueLight-0.1.0-UNSIGNED.spdx.json")" = "SPDX-2.3"
-          test "$(plutil -extract packages.0.versionInfo raw \
-            "$RUNNER_TEMP/IssueLightRelease/IssueLight-0.1.0-UNSIGNED.spdx.json")" = "0.1.0 (1)"
+          test "$(plutil -extract spdxVersion raw "$sbom_path")" = "SPDX-2.3"
+          test "$(plutil -extract packages.0.versionInfo raw "$sbom_path")" = \
+            "$release_version ($release_build)"
           if scripts/package_release.sh \
-            "$RUNNER_TEMP/IssueLightDerivedData/Build/Products/Release/IssueLight.app" \
+            "$app_path" \
             "$RUNNER_TEMP/IssueLightRelease" \
-            0.1.0 \
+            "$release_version" \
             "$GITHUB_SHA" \
             --allow-unsigned; then
             echo "Packaging overwrote existing artifacts." >&2
             exit 1
           fi
           if scripts/package_release.sh \
-            "$RUNNER_TEMP/IssueLightDerivedData/Build/Products/Release/IssueLight.app" \
+            "$app_path" \
             "$RUNNER_TEMP/IssueLightSignedNegative" \
-            0.1.0 \
+            "$release_version" \
             "$GITHUB_SHA"; then
             echo "Unsigned app passed signed release verification." >&2
             exit 1
           fi
           if scripts/package_release.sh \
-            "$RUNNER_TEMP/IssueLightDerivedData/Build/Products/Release/IssueLight.app" \
+            "$app_path" \
             "$RUNNER_TEMP/IssueLightVersionNegative" \
-            9.9.9 \
+            "$release_version.invalid" \
             "$GITHUB_SHA" \
             --allow-unsigned; then
             echo "Packaging accepted a mismatched version." >&2
