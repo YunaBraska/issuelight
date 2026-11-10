@@ -81,9 +81,11 @@ cleanup() {
 trap cleanup EXIT HUP INT TERM
 
 derived_data_path="$release_work_directory/DerivedData"
-xcode_temp_path="$release_work_directory/Temporary"
-mkdir "$xcode_temp_path"
-TMPDIR="$xcode_temp_path/" xcodebuild build \
+release_process_temp="$release_work_directory/Temporary"
+mkdir "$release_process_temp"
+TMPDIR="$release_process_temp/"
+export TMPDIR
+xcodebuild build \
     -project "$repository_root/IssueLight/IssueLight.xcodeproj" \
     -scheme IssueLight \
     -configuration Release \
