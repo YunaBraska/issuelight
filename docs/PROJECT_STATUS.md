@@ -11,7 +11,7 @@ Snapshot date: 2026-11-10.
 | Provider-neutral source records | Swift package tests for validation, encoding, and authority changes | Verified |
 | Provider runtime boundary | Registry dispatches validation, connection testing, and snapshot loading without provider logic in app views | Verified in package and live tests |
 | Icinga 2 endpoint rules | Provider and URL construction tests | Verified |
-| Basic credentials | Real temporary macOS Keychain item lifecycle with cleanup | Verified locally |
+| Basic credentials | Real temporary macOS Keychain item lifecycle with cleanup; an installed Developer-ID-signed app stored and read a scoped password, detected its exact external revocation on manual refresh, retained the prior snapshot as stale, and failed explicitly after relaunch | Verified locally |
 | Client identities | PKCS#12 parsing and persistent-reference tests | Verified locally |
 | Private CA trust | PEM/DER import, Keychain persistent reference, source-specific Apple trust evaluation, hostname checks, accepted lab CA, rejected unrelated CA, and ownership-aware cleanup after the final source reference | Verified in package, app-model, and live tests |
 | Exact server-certificate pinning | PEM/DER leaf selection, normalized SHA-256 persistence, source-specific Apple trust evaluation, authority-change reset, accepted exact lab leaf, rejected mismatched leaf, and rejected hostname mismatch | Verified in package, app-model, and live tests |
@@ -22,8 +22,8 @@ Snapshot date: 2026-11-10.
 | Multiple-source runtime | Independent credentials, refresh tasks, failure state, disable behavior, snapshots, and aggregate issue ordering | Verified in app-model tests through persisted sources and real Keychain scopes |
 | Source persistence permissions | Atomic JSON writes containing no secrets, restricted to the local user with mode `0600` | Verified in package and app-model tests |
 | Privacy boundary | Direct source connections, no telemetry SDK, ephemeral network sessions, in-memory snapshots, documented local storage and deletion behavior | Verified in source and `PRIVACY.md` |
-| Source setup UI | Native sidebar supports add, select, edit, disable, test, remove, private-CA import, exact server-certificate pinning, and explicit insecure trust with unsaved-change protection | Real success, validation failure, insecure warning, private-CA import, accepted exact pin, rejected mismatched pin, unrelated-CA TLS failure, saved-source, two-source keyboard navigation, long accessible labels, unsaved-change protection, and persistent action-feedback states inspected locally |
-| Attention UI | Native menu and status window for setup, loading, healthy, problem, failure, stale, and all-paused states | Empty setup, deterministic two-problem Icinga status, failure with retained stale data, accessible source error, recovery, and all-paused status inspected locally; status-window layout was inspected at a larger supported size |
+| Source setup UI | Native sidebar supports add, select, edit, disable, test, remove, private-CA import, exact server-certificate pinning, and explicit insecure trust with unsaved-change protection | Real success, validation failure, insecure warning, private-CA import, accepted exact pin, rejected mismatched pin, unrelated-CA TLS failure, saved-source, two-source keyboard navigation, long accessible labels, unsaved-change protection, persistent action-feedback states, and the installed dark-mode surface inspected locally |
+| Attention UI | Native menu and status window for setup, loading, healthy, problem, failure, stale, and all-paused states | Empty setup, deterministic two-problem Icinga status, failure with retained stale data, explicit installed-app password-revocation and relaunch failures, accessible source error, recovery, and all-paused status inspected locally; the status window was inspected at a larger supported size and in dark mode |
 | Real Icinga 2 integration | Isolated pinned official container lab covers Basic auth, permission denial, private CA, mTLS, exact real host/service problem payloads, stable initial checks, and two persisted app-model sources | Verified locally |
 | OSS repository controls | Apache-2.0, provenance notice, contributor/security/privacy policies, private vulnerability reporting, secret scanning with push protection, SHA-pinned Actions, and protected `main` | Verified in the public repository |
 | Release-candidate artifacts | Universal Developer ID build, hardened runtime, timestamp, fail-closed notarization, ZIP, SPDX 2.3 SBOM, and verified SHA-256 manifest | Unsigned path verified locally and in CI; real universal Developer ID signing passes locally; Gatekeeper and packaging reject the unnotarized app; an accepted notarization remains open |
@@ -41,9 +41,10 @@ is evidence, not a release gate yet, and remains below the project goals.
 
 ## Release blockers
 
-- Keychain denial and revocation need installed-app evidence.
-- Complete keyboard and accessibility behavior, localization, dark mode,
-  healthy UI, large-data behavior, and energy use need running-product
+- Keychain access denial still needs installed-app evidence. Exact password
+  revocation is verified in an installed Developer-ID-signed app.
+- Complete keyboard and accessibility behavior, localization, healthy UI,
+  large-data behavior, and energy use need running-product
   verification.
 - Core coverage remains below the stated 95% line and 90% branch goals.
 - Update behavior, accepted notarization, stapling, and clean-account

@@ -63,5 +63,5 @@ remote actions remain outside its scope.
 | --- | --- | --- |
 | SNAP-001..005 | `MonitoringSnapshot` | Core tests cover realistic host and service payloads, acknowledgement, downtime, mixed severity, and ordering |
 | REF-001 | Icinga snapshot loader | Shared transport tests and a real Icinga 2 Basic-auth query both pass |
-| REF-002..006 | app refresh model | App-model tests cover initial and manual refresh, replacement cancellation, stale retention, and source removal with persisted source and Keychain boundaries |
-| MENU-001..005 | running menu bar app | Empty setup, loading, deterministic two-problem, failure with stale data, recovery, and all-paused inspection pass; healthy and realistic-volume inspection remain |
+| REF-002..006 | app refresh model | App-model tests cover initial and manual refresh, replacement cancellation, stale retention, and source removal with persisted source and Keychain boundaries; an installed signed app retained its last successful Icinga snapshot after exact password revocation and exposed the missing credential after relaunch |
+| MENU-001..005 | running menu bar app | Empty setup, loading, deterministic two-problem, failure with stale data, exact password-revocation and relaunch failures, recovery, all-paused, and dark-mode inspection pass; healthy and realistic-volume inspection remain |
