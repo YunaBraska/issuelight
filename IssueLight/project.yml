@@ -1,0 +1,45 @@
+name: IssueLight
+
+options:
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+
+packages:
+  IssueLightCore:
+    path: ../Packages/IssueLightCore
+
+targets:
+  IssueLight:
+    type: application
+    platform: macOS
+    sources:
+      - Sources
+    dependencies:
+      - package: IssueLightCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.yunabraska.issuelight
+        PRODUCT_NAME: IssueLight
+        MARKETING_VERSION: 0.1.0
+        CURRENT_PROJECT_VERSION: 1
+        SWIFT_VERSION: 5.0
+        CODE_SIGN_IDENTITY: "-"
+        CODE_SIGN_STYLE: Manual
+        DEVELOPMENT_TEAM: ""
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: IssueLight
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.utilities
+        INFOPLIST_KEY_LSUIElement: YES
+        INFOPLIST_KEY_NSHumanReadableCopyright: Copyright © 2026 IssueLight contributors.
+        ENABLE_HARDENED_RUNTIME: YES
+
+schemes:
+  IssueLight:
+    build:
+      targets:
+        IssueLight: all
+    run:
+      config: Debug
+    archive:
+      config: Release

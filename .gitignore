@@ -1,0 +1,36 @@
+# macOS
+.DS_Store
+
+# Xcode
+DerivedData/
+build/
+build-modern/
+*.xcuserstate
+*.xccheckout
+*.moved-aside
+*.xcscmblueprint
+*.hmap
+
+# User-specific Xcode data
+*.xcuserdatad/
+
+# CocoaPods
+Pods/
+
+# Swift Package Manager
+.build/
+
+# Logs and local artifacts
+*.log
+*.profraw
+*.xcresult
+.codex/
+/tmp/
+dist/
+
+# Local signing configuration
+Local.xcconfig
+
+# Local integration secrets and generated certificates
+**/.env.local
+integration/icinga2/artifacts/

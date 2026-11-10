@@ -1,0 +1,26 @@
+services:
+  icinga2:
+    image: icinga/icinga2:2.16@sha256:2748b8d8166435f3419de68b704d5eac7671e74d97f7dea6ffa1f04738c74902
+    hostname: issuelight-icinga
+    environment:
+      ICINGA_MASTER: "1"
+      ICINGA_CN: localhost
+      ISSUELIGHT_ICINGA_BASIC_PASSWORD: ${ISSUELIGHT_ICINGA_BASIC_PASSWORD:?set in .env.local}
+      ISSUELIGHT_ICINGA_FORBIDDEN_PASSWORD: ${ISSUELIGHT_ICINGA_FORBIDDEN_PASSWORD:?set in .env.local}
+      ISSUELIGHT_ICINGA_PKCS12_PASSWORD: ${ISSUELIGHT_ICINGA_PKCS12_PASSWORD:?set in .env.local}
+    ports:
+      - "127.0.0.1:${ISSUELIGHT_ICINGA_PORT:-5665}:5665"
+    volumes:
+      - icinga-data:/data
+      - ./api-users.conf:/data/etc/icinga2/conf.d/api-users.conf:ro
+      - ./objects.conf:/data/etc/icinga2/conf.d/issuelight-test-objects.conf:ro
+    healthcheck:
+      test: ["CMD", "icinga2", "daemon", "-C"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+    restart: "no"
+
+volumes:
+  icinga-data:

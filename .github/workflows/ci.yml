@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Toolchain
+        run: |
+          xcodebuild -version
+          swift --version
+
+      - name: Validate scripts
+        run: sh -n scripts/icinga2_lab.sh
+
+      - name: Test core
+        run: swift test --package-path Packages/IssueLightCore --enable-code-coverage
+
+      - name: Build release app
+        run: |
+          xcodebuild build \
+            -project IssueLight/IssueLight.xcodeproj \
+            -scheme IssueLight \
+            -configuration Release \
+            -destination 'platform=macOS' \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Reject accidental secrets
+        run: |
+          test -z "$(find . -type f \( -name '.env.local' -o -name '*.p12' -o -name '*.pfx' -o -name '*.key' \) -not -path './.git/*' -print -quit)"
+
+      - name: Check whitespace
+        run: git diff --check
