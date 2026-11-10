@@ -24,14 +24,14 @@ Snapshot date: 2026-11-10.
 | Source persistence permissions | Atomic JSON writes containing no secrets, restricted to the local user with mode `0600` | Verified in package and app-model tests |
 | Privacy boundary | Direct source connections, no telemetry SDK, ephemeral network sessions, in-memory snapshots, documented local storage and deletion behavior | Verified in source and `PRIVACY.md` |
 | Source setup UI | Native sidebar supports add, select, edit, disable, test, remove, private-CA import, exact server-certificate pinning, and explicit insecure trust with unsaved-change protection | Real success, validation failure, insecure warning, private-CA import, accepted exact pin, rejected mismatched pin, unrelated-CA TLS failure, saved-source, two-source keyboard navigation, long accessible labels, unsaved-change protection, persistent action-feedback states, and the installed dark-mode surface inspected locally |
-| Attention UI | Native menu and status window for setup, loading, healthy, problem, failure, stale, and all-paused states | Empty setup, deterministic two-problem Icinga status, failure with retained stale data, explicit installed-app password-revocation and relaunch failures, accessible source error, recovery, and all-paused status inspected locally; the status window was inspected at a larger supported size and in dark mode |
+| Attention UI | Native menu and status window for setup, loading, healthy, problem, failure, stale, and all-paused states | Empty setup, deterministic two-problem Icinga status, failure with retained stale data, explicit installed-app password-revocation and relaunch failures, accessible source error, recovery, and all-paused status inspected locally; German zero, singular, and plural issue counts are regression-tested; the status window was inspected at a larger supported size and in dark mode |
 | Real Icinga 2 integration | Isolated pinned official container lab covers Basic auth, permission denial, private CA, mTLS, exact real host/service problem payloads, stable initial checks, and two persisted app-model sources | Verified locally |
 | OSS repository controls | Apache-2.0, provenance notice, contributor/security/privacy policies, private vulnerability reporting, secret scanning with push protection, SHA-pinned Actions, required CI and Swift CodeQL, and protected `main` | Verified in the public repository; the first 27-rule Swift scan completed with zero results and zero open alerts |
 | Release-candidate artifacts | Universal Developer ID build, hardened runtime, timestamp, fail-closed notarization, ZIP, SPDX 2.3 SBOM, and verified SHA-256 manifest | Unsigned path verified locally and in CI; real universal Developer ID signing passes locally; Gatekeeper and packaging reject the unnotarized app; an accepted notarization remains open |
 
 The local package suite currently executes 59 tests. Eight live Icinga tests
 are skipped unless the integration environment is configured. The app suite
-executes thirteen deterministic model tests and one live integration test, skipped
+executes sixteen deterministic tests and one live integration test, skipped
 outside the lab. It exercises multiple-source management and refresh isolation
 through persisted source, real Keychain, and real Icinga 2 boundaries. The full
 live matrix passed locally on 2026-11-10.

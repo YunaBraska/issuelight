@@ -24,7 +24,7 @@ struct StatusMenuView: View {
 
         if !model.coveredIssues.isEmpty {
             Label(
-                "\(model.coveredIssues.count) quittiert oder in Wartungszeit",
+                IssueCountText.covered(model.coveredIssues.count),
                 systemImage: "checkmark.shield"
             )
         }
@@ -63,7 +63,7 @@ struct StatusMenuView: View {
             Label("Alle Quellen pausiert", systemImage: "pause.circle")
         } else if !model.actionableIssues.isEmpty {
             Label(
-                "\(model.actionableIssues.count) Probleme benötigen Aufmerksamkeit",
+                IssueCountText.attention(model.actionableIssues.count),
                 systemImage: model.menuBarSymbol
             )
             lastSuccessfulRefresh
@@ -88,7 +88,7 @@ struct StatusMenuView: View {
         } else if model.refreshState == .refreshing, !model.hasActiveSnapshot {
             Label("Status wird geladen …", systemImage: "arrow.clockwise")
         } else if model.actionableIssues.isEmpty {
-            Label("Keine Probleme benötigen Aufmerksamkeit", systemImage: "checkmark.circle")
+            Label(IssueCountText.attention(0), systemImage: "checkmark.circle")
             lastSuccessfulRefresh
         }
     }

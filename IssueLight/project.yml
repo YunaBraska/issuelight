@@ -43,6 +43,7 @@ targets:
     sources:
       - Tests
       - Sources/IssueLightModel.swift
+      - Sources/IssueCountText.swift
     dependencies:
       - package: IssueLightCore
     settings:

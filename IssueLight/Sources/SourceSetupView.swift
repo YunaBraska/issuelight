@@ -435,7 +435,7 @@ private struct SourceRow: View {
             return "wird aktualisiert"
         case .current:
             let count = model.snapshots[source.id]?.actionableIssues.count ?? 0
-            return count == 0 ? "keine Probleme" : "\(count) Probleme"
+            return IssueCountText.sourceStatus(count)
         case .failed(let message):
             return "Aktualisierung fehlgeschlagen, \(message)"
         }

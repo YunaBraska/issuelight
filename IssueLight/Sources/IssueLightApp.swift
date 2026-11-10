@@ -39,15 +39,13 @@ struct IssueLightApp: App {
             return "IssueLight, alle Quellen pausiert"
         }
         let count = model.actionableIssues.count
-        let attention = count == 0
-            ? "keine Probleme benötigen Aufmerksamkeit"
-            : "\(count) Probleme benötigen Aufmerksamkeit"
+        let attention = IssueCountText.attention(count)
         if case .failed(let message) = model.refreshState {
             let failure = model.hasPartialRefreshFailure
                 ? "Aktualisierung teilweise fehlgeschlagen"
                 : "Status veraltet"
-            return "IssueLight, \(attention), \(failure): \(message)"
+            return "IssueLight. \(attention). \(failure): \(message)"
         }
-        return "IssueLight, \(attention)"
+        return "IssueLight. \(attention)"
     }
 }
