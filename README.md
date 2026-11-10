@@ -59,6 +59,7 @@ The real Icinga 2 matrix is documented in
 - [`docs/adr/`](docs/adr/): lasting architecture decisions
 - [`CONTRIBUTING.md`](CONTRIBUTING.md): contributor workflow
 - [`SECURITY.md`](SECURITY.md): private vulnerability reporting
+- [`PRIVACY.md`](PRIVACY.md): network and local-data behavior
 
 ## License
 

@@ -20,9 +20,11 @@ Snapshot date: 2026-11-10.
 | Refresh lifecycle | Initial and manual refresh per enabled source, isolated replacement cancellation, stale retention, and source removal | Verified in app-model tests |
 | Multiple-source runtime | Independent credentials, refresh tasks, failure state, disable behavior, snapshots, and aggregate issue ordering | Verified in app-model tests through persisted sources and real Keychain scopes |
 | Source persistence permissions | Atomic JSON writes containing no secrets, restricted to the local user with mode `0600` | Verified in package and app-model tests |
+| Privacy boundary | Direct source connections, no telemetry SDK, ephemeral network sessions, in-memory snapshots, documented local storage and deletion behavior | Verified in source and `PRIVACY.md` |
 | Source setup UI | Native sidebar supports add, select, edit, disable, test, remove, private-CA import, and explicit insecure trust with unsaved-change protection | Real success, validation failure, insecure warning, private-CA import, unrelated-CA TLS failure, saved-source, and persistent action-feedback states inspected locally |
 | Attention UI | Native menu and status window for setup, loading, healthy, problem, failure, and stale states | Empty setup and real six-problem Icinga states inspected locally; remaining states need running-product inspection |
 | Real Icinga 2 integration | Pinned official container lab covers Basic auth, permission denial, private CA, mTLS, real host/service problem payloads, and two persisted app-model sources | Verified locally |
+| OSS repository controls | Apache-2.0, provenance notice, contributor/security/privacy policies, private vulnerability reporting, secret scanning with push protection, SHA-pinned Actions, and protected `main` | Verified in the public repository |
 
 The local package suite currently executes 41 tests. Five live Icinga tests
 are skipped unless the integration environment is configured. The app suite
@@ -44,7 +46,8 @@ is evidence, not a release gate yet, and remains below the project goals.
   use need running-product verification.
 - Core coverage remains below the stated 95% line and 90% branch goals.
 - Packaging, update behavior, Developer ID signing, notarization, stapling,
-  checksums, SBOM, and clean-account installation are not implemented or proven.
+  checksums, a release-artifact SBOM, and clean-account installation are not
+  implemented or proven.
 - No release has completed the real GitHub distribution workflow.
 
 Do not describe IssueLight as production-ready until these blockers are closed
