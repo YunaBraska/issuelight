@@ -61,6 +61,61 @@ final class Icinga2SnapshotLoaderTests: XCTestCase {
         XCTAssertEqual(result, .failed(.authentication))
     }
 
+    func testLoadRejectsMissingPasswordBeforeRequest() async {
+        let result = await loader().load(source(), password: nil)
+
+        XCTAssertEqual(result, .failed(.authentication))
+    }
+
+    func testLoadRejectsMissingClientIdentityBeforeRequest() async {
+        var clientCertificateSource = source()
+        clientCertificateSource.authentication = .clientCertificate(identityID: "identity")
+
+        let result = await loader().load(clientCertificateSource, clientIdentity: nil)
+
+        XCTAssertEqual(result, .failed(.clientCertificateNotAvailable))
+    }
+
+    func testLoadMapsServerFailure() async {
+        StubURLProtocol.handler = { request in
+            Self.response(request: request, statusCode: 503, body: #"{"error":503}"#)
+        }
+
+        let result = await loader().load(source(), password: "secret")
+
+        XCTAssertEqual(result, .failed(.server(statusCode: 503)))
+    }
+
+    func testLoadMapsUnexpectedHTTPFailure() async {
+        StubURLProtocol.handler = { request in
+            Self.response(request: request, statusCode: 429, body: #"{"error":429}"#)
+        }
+
+        let result = await loader().load(source(), password: "secret")
+
+        XCTAssertEqual(result, .failed(.http(statusCode: 429)))
+    }
+
+    func testLoadMapsTLSFailure() async {
+        StubURLProtocol.handler = { _ in
+            throw URLError(.secureConnectionFailed)
+        }
+
+        let result = await loader().load(source(), password: "secret")
+
+        XCTAssertEqual(result, .failed(.tls))
+    }
+
+    func testLoadMapsReachabilityFailure() async {
+        StubURLProtocol.handler = { _ in
+            throw URLError(.timedOut)
+        }
+
+        let result = await loader().load(source(), password: "secret")
+
+        XCTAssertEqual(result, .failed(.unreachable))
+    }
+
     func testLoadRejectsSuccessfulButIncompatiblePayload() async {
         StubURLProtocol.handler = { request in
             Self.response(request: request, statusCode: 200, body: #"{"status":"ok"}"#)

@@ -54,6 +54,64 @@ final class Icinga2ProviderTests: XCTestCase {
         )
     }
 
+    func testIcingaRejectsStatusURLForInvalidSource() {
+        let provider = Icinga2Provider()
+        let invalidSource = source(endpoint: "http://icinga.example.test:5665/custom")
+
+        XCTAssertThrowsError(try provider.statusURL(for: invalidSource)) { error in
+            XCTAssertEqual(
+                error as? Icinga2ProviderError,
+                .invalidSource([.unsupportedScheme("http"), .unsupportedPath("/custom")])
+            )
+        }
+    }
+
+    func testRegisteredProviderTestsBasicConnection() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [StubURLProtocol.self]
+        StubURLProtocol.handler = { request in
+            (
+                HTTPURLResponse(
+                    url: request.url!,
+                    statusCode: 200,
+                    httpVersion: "HTTP/1.1",
+                    headerFields: ["Content-Type": "application/json"]
+                )!,
+                Data(#"{"results":[]}"#.utf8)
+            )
+        }
+        let provider = Icinga2Provider(configuration: configuration)
+
+        let result = await provider.testConnection(
+            to: source(endpoint: "https://icinga.example.test:5665"),
+            access: ProviderAccess(credential: .password("secret"))
+        )
+
+        XCTAssertEqual(result, .connected)
+    }
+
+    func testRegisteredProviderConnectionRejectsPasswordForClientCertificateSource() async {
+        let provider = Icinga2Provider()
+        var clientCertificateSource = source(endpoint: "https://icinga.example.test:5665")
+        clientCertificateSource.authentication = .clientCertificate(identityID: "identity")
+        let access = ProviderAccess(credential: .password("not-an-identity"))
+
+        let connection = await provider.testConnection(to: clientCertificateSource, access: access)
+
+        XCTAssertEqual(connection, .failed(.clientCertificateNotAvailable))
+    }
+
+    func testRegisteredProviderSnapshotRejectsPasswordForClientCertificateSource() async {
+        let provider = Icinga2Provider()
+        var clientCertificateSource = source(endpoint: "https://icinga.example.test:5665")
+        clientCertificateSource.authentication = .clientCertificate(identityID: "identity")
+        let access = ProviderAccess(credential: .password("not-an-identity"))
+
+        let snapshot = await provider.loadSnapshot(from: clientCertificateSource, access: access)
+
+        XCTAssertEqual(snapshot, .failed(.clientCertificateNotAvailable))
+    }
+
     func testRegisteredProviderLoadsProviderNeutralSnapshot() async throws {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [StubURLProtocol.self]

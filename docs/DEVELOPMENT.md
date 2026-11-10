@@ -34,7 +34,7 @@ the real Icinga compatibility matrix.
 ## Coverage ratchet
 
 CI exports source-only LLVM coverage after the Core tests and requires at least
-74.5% line coverage and 67% region coverage. Test sources and Swift build output
+77.5% line coverage and 70% region coverage. Test sources and Swift build output
 are excluded. These floors prevent regression from the verified baseline; they
 do not replace the project goals of 95% reachable line coverage and 90% branch
 coverage.
@@ -55,7 +55,7 @@ xcrun llvm-cov export "$test_binary" \
   -instr-profile="$coverage_profile" \
   -ignore-filename-regex='Tests/|\.build/' \
   -summary-only >"$coverage_json"
-scripts/check_coverage.sh "$coverage_json" 74.5 67
+scripts/check_coverage.sh "$coverage_json" 77.5 70
 rm -f "$coverage_json"
 ```
 

@@ -26,21 +26,20 @@ Snapshot date: 2026-11-10.
 | Source setup UI | Native sidebar supports add, select, edit, disable, test, remove, private-CA import, exact server-certificate pinning, and explicit insecure trust with unsaved-change protection | Real success, validation failure, insecure warning, private-CA import, accepted exact pin, rejected mismatched pin, unrelated-CA TLS failure, saved-source, two-source keyboard navigation, long accessible labels, unsaved-change protection, persistent action-feedback states, and the installed dark-mode surface inspected locally |
 | Attention UI | Native menu and status window for setup, loading, healthy, problem, failure, stale, and all-paused states | Empty setup, deterministic two-problem Icinga status, failure with retained stale data, explicit installed-app password-revocation and relaunch failures, accessible source error, recovery, and all-paused status inspected locally; the status window was inspected at a larger supported size and in dark mode |
 | Real Icinga 2 integration | Isolated pinned official container lab covers Basic auth, permission denial, private CA, mTLS, exact real host/service problem payloads, stable initial checks, and two persisted app-model sources | Verified locally |
-| OSS repository controls | Apache-2.0, provenance notice, contributor/security/privacy policies, private vulnerability reporting, secret scanning with push protection, SHA-pinned Actions, and protected `main` | Verified in the public repository |
+| OSS repository controls | Apache-2.0, provenance notice, contributor/security/privacy policies, private vulnerability reporting, secret scanning with push protection, SHA-pinned Actions, required CI and Swift CodeQL, and protected `main` | Verified in the public repository; the first 27-rule Swift scan completed with zero results and zero open alerts |
 | Release-candidate artifacts | Universal Developer ID build, hardened runtime, timestamp, fail-closed notarization, ZIP, SPDX 2.3 SBOM, and verified SHA-256 manifest | Unsigned path verified locally and in CI; real universal Developer ID signing passes locally; Gatekeeper and packaging reject the unnotarized app; an accepted notarization remains open |
 
-The local package suite currently executes 49 tests. Eight live Icinga tests
+The local package suite currently executes 59 tests. Eight live Icinga tests
 are skipped unless the integration environment is configured. The app suite
 executes thirteen deterministic model tests and one live integration test, skipped
 outside the lab. It exercises multiple-source management and refresh isolation
 through persisted source, real Keychain, and real Icinga 2 boundaries. The full
 live matrix passed locally on 2026-11-10.
 
-Source-only LLVM coverage for `IssueLightCore` is currently 74.6% of lines and
-67.3% of regions on the macOS CI runner. CI enforces floors of 74.5% and 67%
-respectively so the verified baseline cannot silently regress. Swift does not
-report branch totals in this configuration. Coverage remains below the project
-goals.
+Source-only LLVM coverage for `IssueLightCore` is currently 77.9% of lines and
+70.3% of regions locally. CI enforces floors of 77.5% and 70% respectively so
+the verified baseline cannot silently regress. Swift does not report branch
+totals in this configuration. Coverage remains below the project goals.
 
 ## Release blockers
 
