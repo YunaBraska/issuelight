@@ -22,8 +22,8 @@ Snapshot date: 2026-11-10.
 | Multiple-source runtime | Independent credentials, refresh tasks, failure state, disable behavior, snapshots, and aggregate issue ordering | Verified in app-model tests through persisted sources and real Keychain scopes |
 | Source persistence permissions | Atomic JSON writes containing no secrets, restricted to the local user with mode `0600` | Verified in package and app-model tests |
 | Privacy boundary | Direct source connections, no telemetry SDK, ephemeral network sessions, in-memory snapshots, documented local storage and deletion behavior | Verified in source and `PRIVACY.md` |
-| Source setup UI | Native sidebar supports add, select, edit, disable, test, remove, private-CA import, exact server-certificate pinning, and explicit insecure trust with unsaved-change protection | Real success, validation failure, insecure warning, private-CA import, accepted exact pin, rejected mismatched pin, unrelated-CA TLS failure, saved-source, and persistent action-feedback states inspected locally |
-| Attention UI | Native menu and status window for setup, loading, healthy, problem, failure, and stale states | Empty setup, deterministic two-problem Icinga status, failure with retained stale data, accessible source error, and recovery inspected locally; remaining states need running-product inspection |
+| Source setup UI | Native sidebar supports add, select, edit, disable, test, remove, private-CA import, exact server-certificate pinning, and explicit insecure trust with unsaved-change protection | Real success, validation failure, insecure warning, private-CA import, accepted exact pin, rejected mismatched pin, unrelated-CA TLS failure, saved-source, two-source keyboard navigation, long accessible labels, unsaved-change protection, and persistent action-feedback states inspected locally |
+| Attention UI | Native menu and status window for setup, loading, healthy, problem, failure, stale, and all-paused states | Empty setup, deterministic two-problem Icinga status, failure with retained stale data, accessible source error, recovery, and all-paused status inspected locally; status-window layout was inspected at a larger supported size |
 | Real Icinga 2 integration | Isolated pinned official container lab covers Basic auth, permission denial, private CA, mTLS, exact real host/service problem payloads, stable initial checks, and two persisted app-model sources | Verified locally |
 | OSS repository controls | Apache-2.0, provenance notice, contributor/security/privacy policies, private vulnerability reporting, secret scanning with push protection, SHA-pinned Actions, and protected `main` | Verified in the public repository |
 | Release-candidate artifacts | Universal app validation, fail-closed signed mode, ZIP, SPDX 2.3 SBOM, and verified SHA-256 manifest | Unsigned path verified locally and in CI; real signing and notarization remain open |
@@ -42,9 +42,9 @@ is evidence, not a release gate yet, and remains below the project goals.
 ## Release blockers
 
 - Keychain denial and revocation need installed-app evidence.
-- Multiple-source navigation, complete keyboard and accessibility behavior,
-  localization, dark mode, healthy/all-paused UI, large-data behavior, and
-  energy use need running-product verification.
+- Complete keyboard and accessibility behavior, localization, dark mode,
+  healthy UI, large-data behavior, and energy use need running-product
+  verification.
 - Core coverage remains below the stated 95% line and 90% branch goals.
 - Update behavior, Developer ID signing, notarization, stapling, and
   clean-account installation are not implemented or proven.

@@ -9,8 +9,15 @@ struct StatusWindowView: View {
             header
             Divider()
             content
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .frame(minWidth: 620, minHeight: 420)
+        .frame(
+            minWidth: 620,
+            maxWidth: .infinity,
+            minHeight: 420,
+            maxHeight: .infinity,
+            alignment: .top
+        )
     }
 
     private var header: some View {

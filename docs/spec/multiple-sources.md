@@ -57,6 +57,6 @@ outside the built-in registry remain outside its scope.
 
 | Requirement | Public boundary | Current evidence |
 | --- | --- | --- |
-| SRC-001..006 | sources window and persisted source store | App-model tests cover draft, selection, append, disable, removal, isolation, and real Keychain scopes; native UI build passes; running inspection remains open |
+| SRC-001..006 | sources window and persisted source store | App-model tests cover draft, selection, append, disable, removal, isolation, and real Keychain scopes; running inspection covers two persisted sources, keyboard selection, long accessible labels, unsaved-change protection, and disabled-source presentation |
 | MSR-001..004 | app refresh model through provider registry | Concurrent app-model tests cover every enabled source, per-source replacement, partial failure, stale retention, disable, and removal; the live lab refreshes two persisted sources through the built-in Icinga 2 provider |
-| AGG-001..004 | menu bar, menu, and status window | App-model tests cover aggregation and all-disabled behavior; native UI build passes; running normal, disabled, stale, and partial-failure inspection remains open |
+| AGG-001..004 | menu bar, menu, and status window | App-model tests cover aggregation and all-disabled behavior; running all-disabled inspection passes; multi-source normal, stale, and partial-failure combinations remain open |
