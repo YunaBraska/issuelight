@@ -11,7 +11,7 @@ public struct Icinga2Provider: MonitoringProvider {
         displayName: "Icinga 2",
         capabilities: ProviderCapabilities(
             authenticationMethods: [.basic, .clientCertificate],
-            serverTrustMethods: [.system, .disabled],
+            serverTrustMethods: [.system, .customCertificate, .disabled],
             supportsAcknowledgement: false,
             supportsDowntime: false
         )
@@ -66,13 +66,21 @@ public struct Icinga2Provider: MonitoringProvider {
 
     public func testConnection(
         to source: MonitoringSource,
-        credential: ProviderCredential
+        access: ProviderAccess
     ) async -> ConnectionTestResult {
-        switch (source.authentication, credential) {
+        switch (source.authentication, access.credential) {
         case (.basic, .password(let password)):
-            return await connectionTester.test(source, password: password)
+            return await connectionTester.test(
+                source,
+                password: password,
+                trustedServerCertificate: access.trustedServerCertificate
+            )
         case (.clientCertificate, .clientIdentity(let identity)):
-            return await connectionTester.test(source, clientIdentity: identity)
+            return await connectionTester.test(
+                source,
+                clientIdentity: identity,
+                trustedServerCertificate: access.trustedServerCertificate
+            )
         case (.basic, .clientIdentity):
             return .failed(.authentication)
         case (.clientCertificate, .password):
@@ -82,13 +90,21 @@ public struct Icinga2Provider: MonitoringProvider {
 
     public func loadSnapshot(
         from source: MonitoringSource,
-        credential: ProviderCredential
+        access: ProviderAccess
     ) async -> SnapshotLoadResult {
-        switch (source.authentication, credential) {
+        switch (source.authentication, access.credential) {
         case (.basic, .password(let password)):
-            return await snapshotLoader.load(source, password: password)
+            return await snapshotLoader.load(
+                source,
+                password: password,
+                trustedServerCertificate: access.trustedServerCertificate
+            )
         case (.clientCertificate, .clientIdentity(let identity)):
-            return await snapshotLoader.load(source, clientIdentity: identity)
+            return await snapshotLoader.load(
+                source,
+                clientIdentity: identity,
+                trustedServerCertificate: access.trustedServerCertificate
+            )
         case (.basic, .clientIdentity):
             return .failed(.authentication)
         case (.clientCertificate, .password):

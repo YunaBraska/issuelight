@@ -202,7 +202,8 @@ final class IssueLightModelTests: XCTestCase {
         let environment = ProcessInfo.processInfo.environment
         guard let endpointValue = environment["ISSUELIGHT_LIVE_ICINGA_URL"],
               let endpoint = URL(string: endpointValue),
-              let password = environment["ISSUELIGHT_ICINGA_BASIC_PASSWORD"] else {
+              let password = environment["ISSUELIGHT_ICINGA_BASIC_PASSWORD"],
+              let certificatePath = environment["ISSUELIGHT_LIVE_ICINGA_CA_PATH"] else {
             if environment["ISSUELIGHT_REQUIRE_LIVE_ICINGA"] == "1" {
                 XCTFail("The required live Icinga 2 environment is incomplete")
                 return
@@ -213,33 +214,39 @@ final class IssueLightModelTests: XCTestCase {
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("IssueLightLiveModelTests-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let certificateCatalog = KeychainServerCertificateCatalog()
+        let certificate = try await certificateCatalog.importCertificate(
+            at: URL(fileURLWithPath: certificatePath)
+        )
         let sources = ["Live primary", "Live secondary"].map { name in
             MonitoringSource(
                 name: name,
                 providerID: Icinga2Provider.id,
                 endpoint: endpoint,
                 authentication: .basic(username: "issuelight-basic"),
-                serverTrust: .disabled
+                serverTrust: .customCertificate(certificateID: certificate.id)
             )
         }
         let store = SourceStore(fileURL: directory.appendingPathComponent("sources.json"))
-        _ = try await store.save(sources)
         let vault = KeychainPasswordVault()
         let scopes = try sources.map(BasicCredentialScope.init(source:))
-        for scope in scopes {
-            try await vault.store(password, for: scope)
-        }
         addTeardownBlock {
             for scope in scopes {
                 try? await vault.deletePassword(for: scope)
             }
+            try? await certificateCatalog.deleteCertificate(id: certificate.id)
             try? FileManager.default.removeItem(at: directory)
+        }
+        _ = try await store.save(sources)
+        for scope in scopes {
+            try await vault.store(password, for: scope)
         }
         let model = IssueLightModel(
             sourceStore: store,
             providerRegistry: .builtIn(),
             passwordVault: vault,
             identityCatalog: KeychainIdentityCatalog(),
+            certificateCatalog: certificateCatalog,
             startsAutomatically: false
         )
 
@@ -296,6 +303,7 @@ final class IssueLightModelTests: XCTestCase {
             providerRegistry: registry,
             passwordVault: vault,
             identityCatalog: KeychainIdentityCatalog(),
+            certificateCatalog: KeychainServerCertificateCatalog(),
             startsAutomatically: false
         )
         return ModelHarness(
@@ -373,14 +381,14 @@ private struct TestProvider: MonitoringProvider {
 
     func testConnection(
         to source: MonitoringSource,
-        credential: ProviderCredential
+        access: ProviderAccess
     ) async -> ConnectionTestResult {
         .connected
     }
 
     func loadSnapshot(
         from source: MonitoringSource,
-        credential: ProviderCredential
+        access: ProviderAccess
     ) async -> SnapshotLoadResult {
         await script.load(sourceID: source.id)
     }

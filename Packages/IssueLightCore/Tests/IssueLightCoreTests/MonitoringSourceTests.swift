@@ -24,6 +24,11 @@ final class MonitoringSourceTests: XCTestCase {
 
         value = source(endpoint: URL(string: "https:///v1")!)
         XCTAssertTrue(MonitoringSourceValidator.validateSharedFields(value).contains(.missingHost))
+
+        value = source(serverTrust: .customCertificate(certificateID: ""))
+        XCTAssertTrue(
+            MonitoringSourceValidator.validateSharedFields(value).contains(.missingServerCertificate)
+        )
     }
 
     func testEndpointAuthorityChangeRestoresSystemTrust() {

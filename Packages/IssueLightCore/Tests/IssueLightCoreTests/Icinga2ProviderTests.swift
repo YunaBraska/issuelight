@@ -14,7 +14,10 @@ final class Icinga2ProviderTests: XCTestCase {
 
         XCTAssertEqual(registry.descriptors.map(\.displayName), ["Icinga 2"])
         XCTAssertEqual(provider.descriptor.capabilities.authenticationMethods, [.basic, .clientCertificate])
-        XCTAssertEqual(provider.descriptor.capabilities.serverTrustMethods, [.system, .disabled])
+        XCTAssertEqual(
+            provider.descriptor.capabilities.serverTrustMethods,
+            [.system, .customCertificate, .disabled]
+        )
         XCTAssertFalse(provider.descriptor.capabilities.supportsAcknowledgement)
         XCTAssertFalse(provider.descriptor.capabilities.supportsDowntime)
     }
@@ -76,7 +79,7 @@ final class Icinga2ProviderTests: XCTestCase {
 
         let result = await provider.loadSnapshot(
             from: source(endpoint: "https://icinga.example.test:5665"),
-            credential: .password("secret")
+            access: ProviderAccess(credential: .password("secret"))
         )
 
         guard case .loaded(let snapshot) = result else {

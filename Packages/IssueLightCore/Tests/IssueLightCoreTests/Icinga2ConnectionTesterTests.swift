@@ -48,11 +48,16 @@ final class Icinga2ConnectionTesterTests: XCTestCase {
         XCTAssertEqual(result, .failed(.incompatibleResponse))
     }
 
-    func testConnectionDoesNotPretendUnsupportedTrustAndClientIdentityWork() async {
+    func testConnectionRequiresConfiguredTrustMaterialAndClientIdentity() async {
         var customTrust = source()
         customTrust.serverTrust = .customCertificate(certificateID: "ca")
         let trustResult = await tester().test(customTrust, password: "secret")
-        XCTAssertEqual(trustResult, .failed(.unsupportedTrustConfiguration))
+        XCTAssertEqual(trustResult, .failed(.serverCertificateNotAvailable))
+
+        var pinnedTrust = source()
+        pinnedTrust.serverTrust = .pinnedCertificate(sha256: "ABC")
+        let pinnedResult = await tester().test(pinnedTrust, password: "secret")
+        XCTAssertEqual(pinnedResult, .failed(.unsupportedTrustConfiguration))
 
         var clientCertificate = source()
         clientCertificate.authentication = .clientCertificate(identityID: "identity")

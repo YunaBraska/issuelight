@@ -46,6 +46,42 @@ CURL_CONFIG
   return 1
 }
 
+generate_server_identity() {
+  # Icinga's generated leaf lacks the serverAuth EKU required by Apple's SSL policy.
+  compose exec -T icinga2 sh -ceu '
+    cert_dir=/data/var/lib/icinga2/certs
+    ca_dir=/data/var/lib/icinga2/ca
+    openssl req -new -newkey rsa:2048 -nodes \
+      -keyout "$cert_dir/localhost.key.new" \
+      -out "$cert_dir/localhost.csr.new" \
+      -subj /CN=localhost 2>/dev/null
+    openssl x509 -req \
+      -in "$cert_dir/localhost.csr.new" \
+      -CA "$ca_dir/ca.crt" \
+      -CAkey "$ca_dir/ca.key" \
+      -CAcreateserial \
+      -days 365 \
+      -sha256 \
+      -out "$cert_dir/localhost.crt.new" \
+      -extfile /dev/stdin 2>/dev/null <<EOF
+basicConstraints=critical,CA:FALSE
+keyUsage=critical,digitalSignature,keyEncipherment
+extendedKeyUsage=serverAuth
+subjectAltName=DNS:localhost
+EOF
+    mv "$cert_dir/localhost.key.new" "$cert_dir/localhost.key"
+    mv "$cert_dir/localhost.csr.new" "$cert_dir/localhost.csr"
+    mv "$cert_dir/localhost.crt.new" "$cert_dir/localhost.crt"
+    chown icinga:icinga \
+      "$cert_dir/localhost.key" \
+      "$cert_dir/localhost.csr" \
+      "$cert_dir/localhost.crt"
+    chmod 600 "$cert_dir/localhost.key"
+  '
+  compose restart icinga2 >/dev/null
+  wait_for_api
+}
+
 generate_client_identity() {
   # The quoted script expands inside the container, not in this shell.
   # shellcheck disable=SC2016
@@ -86,6 +122,7 @@ generate_client_identity() {
 
 verify_swift_mtls() {
   ISSUELIGHT_LIVE_ICINGA_URL="https://localhost:$ISSUELIGHT_ICINGA_PORT" \
+  ISSUELIGHT_LIVE_ICINGA_CA_PATH="$ISSUELIGHT_ICINGA_ARTIFACTS_DIR/ca.crt" \
   ISSUELIGHT_LIVE_ICINGA_PKCS12_PATH="$ISSUELIGHT_ICINGA_ARTIFACTS_DIR/issuelight-live-client.p12" \
   ISSUELIGHT_LIVE_ICINGA_REJECTED_PKCS12_PATH="$ISSUELIGHT_ICINGA_ARTIFACTS_DIR/issuelight-live-rejected.p12" \
     swift test \
@@ -106,6 +143,7 @@ verify_app_model_multi_source() {
   ISSUELIGHT_LIVE_ICINGA_URL="https://localhost:$ISSUELIGHT_ICINGA_PORT" \
   ISSUELIGHT_REQUIRE_LIVE_ICINGA=1 \
   ISSUELIGHT_ICINGA_BASIC_PASSWORD="$ISSUELIGHT_ICINGA_BASIC_PASSWORD" \
+  ISSUELIGHT_LIVE_ICINGA_CA_PATH="$ISSUELIGHT_ICINGA_ARTIFACTS_DIR/ca.crt" \
     xcrun xctest \
       "$live_model_derived_data/Build/Products/Debug/IssueLightModelTests.xctest"
   rm -rf "$live_model_derived_data"
@@ -188,6 +226,7 @@ case "${1:-}" in
   start)
     compose up -d
     wait_for_api
+    generate_server_identity
     generate_client_identity
     printf 'Icinga 2 lab is ready on https://localhost:%s.\n' "$ISSUELIGHT_ICINGA_PORT"
     ;;

@@ -12,6 +12,7 @@ struct SourceSetupView: View {
     @State private var importURL: URL?
     @State private var isChoosingIdentity = false
     @State private var isImportingIdentity = false
+    @State private var isChoosingServerCertificate = false
     @State private var isConfirmingDeletion = false
     @State private var isConfirmingDiscard = false
     @State private var pendingNavigation: PendingNavigation?
@@ -166,9 +167,44 @@ struct SourceSetupView: View {
                 }
 
                 Section {
-                    Toggle("Serverzertifikat prüfen", isOn: $model.verifiesServerCertificate)
-                        .disabled(!model.canDisableServerCertificateVerification)
-                    if !model.verifiesServerCertificate {
+                    Picker("Serververtrauen", selection: $model.serverTrustChoice) {
+                        ForEach(model.serverTrustChoices) { choice in
+                            Text(choice.rawValue).tag(choice)
+                        }
+                    }
+
+                    if model.serverTrustChoice == .customCertificate {
+                        if let certificate = model.selectedServerCertificate {
+                            LabeledContent("CA", value: certificate.displayName)
+                            Text("SHA-256: \(certificate.sha256Fingerprint)")
+                                .font(.caption.monospaced())
+                                .foregroundStyle(.secondary)
+                                .textSelection(.enabled)
+                        } else {
+                            Label("Importiere genau ein CA-Zertifikat.", systemImage: "exclamationmark.circle")
+                                .foregroundStyle(.orange)
+                        }
+                        Button(
+                            model.selectedServerCertificate == nil
+                                ? "CA-Zertifikat importieren …"
+                                : "CA-Zertifikat ersetzen …"
+                        ) {
+                            isChoosingServerCertificate = true
+                        }
+                        .fileImporter(
+                            isPresented: $isChoosingServerCertificate,
+                            allowedContentTypes: [
+                                UTType(filenameExtension: "cer") ?? .data,
+                                UTType(filenameExtension: "crt") ?? .data,
+                                UTType(filenameExtension: "pem") ?? .data,
+                            ],
+                            allowsMultipleSelection: false
+                        ) { result in
+                            if case .success(let urls) = result, let url = urls.first {
+                                Task { _ = await model.importServerCertificate(at: url) }
+                            }
+                        }
+                    } else if model.serverTrustChoice == .disabled {
                         Label {
                             Text("Unsicher. Identität und Serverdaten können abgefangen oder verändert werden. Diese Ausnahme gilt nur für diese Quelle.")
                         } icon: {
@@ -179,7 +215,7 @@ struct SourceSetupView: View {
                 } header: {
                     Text("TLS")
                 } footer: {
-                    Text("Die Prüfung ist standardmäßig aktiv. Selbstsignierte Homelab-Systeme können sie bewusst deaktivieren.")
+                    Text("macOS-Systemvertrauen ist der Standard. Eine eigene CA gilt nur für diese Quelle. Die vollständige Deaktivierung ist für isolierte Homelabs gedacht.")
                 }
 
                 Section {

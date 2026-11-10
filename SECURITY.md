@@ -20,8 +20,10 @@ is offered before a maintained release exists.
 
 - Source configuration must not contain passwords, private keys, or PKCS#12
   import passwords.
-- Passwords and client identities are resolved through macOS Keychain.
+- Passwords, client identities, and source-specific CA references are resolved
+  through macOS Keychain.
 - Server certificate verification is enabled by default. Disabling it is a
   source-specific, visible exception.
 - Diagnostics and test fixtures must not contain private hostnames, URLs,
-  tokens, certificates, or monitoring payloads from real systems.
+  tokens, private keys, production certificates, or monitoring payloads from
+  real systems. Public certificates generated solely for tests are allowed.

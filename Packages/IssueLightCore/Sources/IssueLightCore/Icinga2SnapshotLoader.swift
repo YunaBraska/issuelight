@@ -18,13 +18,18 @@ public final class Icinga2SnapshotLoader: @unchecked Sendable {
         self.now = now
     }
 
-    public func load(_ source: MonitoringSource, password: String?) async -> SnapshotLoadResult {
+    public func load(
+        _ source: MonitoringSource,
+        password: String?,
+        trustedServerCertificate: SecCertificate? = nil
+    ) async -> SnapshotLoadResult {
         do {
             return await load(
                 source,
                 transport: try Icinga2Transport.basic(
                     source: source,
                     password: password,
+                    trustedServerCertificate: trustedServerCertificate,
                     configuration: configuration
                 )
             )
@@ -35,13 +40,18 @@ public final class Icinga2SnapshotLoader: @unchecked Sendable {
         }
     }
 
-    public func load(_ source: MonitoringSource, clientIdentity: SecIdentity?) async -> SnapshotLoadResult {
+    public func load(
+        _ source: MonitoringSource,
+        clientIdentity: SecIdentity?,
+        trustedServerCertificate: SecCertificate? = nil
+    ) async -> SnapshotLoadResult {
         do {
             return await load(
                 source,
                 transport: try Icinga2Transport.clientIdentity(
                     source: source,
                     identity: clientIdentity,
+                    trustedServerCertificate: trustedServerCertificate,
                     configuration: configuration
                 )
             )

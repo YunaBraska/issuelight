@@ -5,6 +5,7 @@ public enum ConnectionFailure: Error, Equatable, Sendable {
     case invalidConfiguration([SourceValidationIssue])
     case unsupportedTrustConfiguration
     case clientCertificateNotAvailable
+    case serverCertificateNotAvailable
     case cancelled
     case unreachable
     case tls
@@ -27,11 +28,16 @@ public final class Icinga2ConnectionTester: @unchecked Sendable {
         self.configuration = configuration
     }
 
-    public func test(_ source: MonitoringSource, password: String?) async -> ConnectionTestResult {
+    public func test(
+        _ source: MonitoringSource,
+        password: String?,
+        trustedServerCertificate: SecCertificate? = nil
+    ) async -> ConnectionTestResult {
         do {
             let transport = try Icinga2Transport.basic(
                 source: source,
                 password: password,
+                trustedServerCertificate: trustedServerCertificate,
                 configuration: configuration
             )
             return await test(source, transport: transport)
@@ -42,11 +48,16 @@ public final class Icinga2ConnectionTester: @unchecked Sendable {
         }
     }
 
-    public func test(_ source: MonitoringSource, clientIdentity: SecIdentity?) async -> ConnectionTestResult {
+    public func test(
+        _ source: MonitoringSource,
+        clientIdentity: SecIdentity?,
+        trustedServerCertificate: SecCertificate? = nil
+    ) async -> ConnectionTestResult {
         do {
             let transport = try Icinga2Transport.clientIdentity(
                 source: source,
                 identity: clientIdentity,
+                trustedServerCertificate: trustedServerCertificate,
                 configuration: configuration
             )
             return await test(source, transport: transport)

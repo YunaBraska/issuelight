@@ -3,6 +3,99 @@ import XCTest
 @testable import IssueLightCore
 
 final class Icinga2LiveConnectionTests: XCTestCase {
+    func testUnrelatedPrivateCAIsRejectedAsTLSFailure() async throws {
+        let environment = ProcessInfo.processInfo.environment
+        guard let endpointValue = environment["ISSUELIGHT_LIVE_ICINGA_URL"],
+              let endpoint = URL(string: endpointValue),
+              let password = environment["ISSUELIGHT_ICINGA_BASIC_PASSWORD"] else {
+            throw XCTSkip("Live Icinga 2 environment is not configured")
+        }
+        let fileURL = try XCTUnwrap(
+            Bundle.module.url(
+                forResource: "issuelight-test-root",
+                withExtension: "crt",
+                subdirectory: "Fixtures"
+            )
+        )
+        let certificateCatalog = KeychainServerCertificateCatalog()
+        let descriptor = try await certificateCatalog.importCertificate(at: fileURL)
+        addTeardownBlock {
+            try? await certificateCatalog.deleteCertificate(id: descriptor.id)
+        }
+        let resolvedCertificate = try await certificateCatalog.certificate(id: descriptor.id)
+        let certificate = try XCTUnwrap(resolvedCertificate)
+        let source = MonitoringSource(
+            name: "Unrelated private CA",
+            providerID: Icinga2Provider.id,
+            endpoint: endpoint,
+            authentication: .basic(username: "issuelight-basic"),
+            serverTrust: .customCertificate(certificateID: descriptor.id)
+        )
+        let provider = try XCTUnwrap(ProviderRegistry.builtIn().provider(for: source.providerID))
+
+        let result = await provider.testConnection(
+            to: source,
+            access: ProviderAccess(
+                credential: .password(password),
+                trustedServerCertificate: certificate
+            )
+        )
+
+        XCTAssertEqual(result, .failed(.tls))
+    }
+
+    func testImportedPrivateCAKeepsVerificationEnabledForLiveIcingaSnapshot() async throws {
+        let environment = ProcessInfo.processInfo.environment
+        guard let endpointValue = environment["ISSUELIGHT_LIVE_ICINGA_URL"],
+              let endpoint = URL(string: endpointValue),
+              let password = environment["ISSUELIGHT_ICINGA_BASIC_PASSWORD"],
+              let certificatePath = environment["ISSUELIGHT_LIVE_ICINGA_CA_PATH"] else {
+            throw XCTSkip("Live Icinga 2 environment is not configured")
+        }
+        let certificateCatalog = KeychainServerCertificateCatalog()
+        let descriptor = try await certificateCatalog.importCertificate(
+            at: URL(fileURLWithPath: certificatePath)
+        )
+        addTeardownBlock {
+            try? await certificateCatalog.deleteCertificate(id: descriptor.id)
+        }
+        let source = MonitoringSource(
+            name: "Live private CA",
+            providerID: Icinga2Provider.id,
+            endpoint: endpoint,
+            authentication: .basic(username: "issuelight-basic"),
+            serverTrust: .customCertificate(certificateID: descriptor.id)
+        )
+        let passwordVault = KeychainPasswordVault()
+        let passwordScope = try BasicCredentialScope(source: source)
+        addTeardownBlock {
+            try? await passwordVault.deletePassword(for: passwordScope)
+        }
+        try await passwordVault.store(password, for: passwordScope)
+        let resolver = ProviderAccessResolver(
+            passwordVault: passwordVault,
+            identityCatalog: KeychainIdentityCatalog(),
+            certificateCatalog: certificateCatalog
+        )
+        let resolution = await resolver.resolve(source: source)
+        guard case .resolved(let access) = resolution else {
+            return XCTFail("Expected Keychain-backed provider access")
+        }
+        let provider = try XCTUnwrap(ProviderRegistry.builtIn().provider(for: source.providerID))
+
+        let connection = await provider.testConnection(to: source, access: access)
+        guard connection == .connected else {
+            return XCTFail("Expected private-CA connection, got \(connection)")
+        }
+        let result = await provider.loadSnapshot(from: source, access: access)
+
+        guard case .loaded(let snapshot) = result else {
+            return XCTFail("Expected the private-CA snapshot to load, got \(result)")
+        }
+        XCTAssertEqual(snapshot.sourceID, source.id)
+        XCTAssertEqual(snapshot.highestAttentionSeverity, .critical)
+    }
+
     func testLiveBasicAuthenticationLoadsHostAndServiceProblems() async throws {
         let environment = ProcessInfo.processInfo.environment
         guard let endpointValue = environment["ISSUELIGHT_LIVE_ICINGA_URL"],
@@ -19,7 +112,10 @@ final class Icinga2LiveConnectionTests: XCTestCase {
         )
 
         let provider = try XCTUnwrap(ProviderRegistry.builtIn().provider(for: source.providerID))
-        let result = await provider.loadSnapshot(from: source, credential: .password(password))
+        let result = await provider.loadSnapshot(
+            from: source,
+            access: ProviderAccess(credential: .password(password))
+        )
 
         guard case .loaded(let snapshot) = result else {
             return XCTFail("Expected the live Icinga 2 snapshot to load, got \(result)")
@@ -42,7 +138,8 @@ final class Icinga2LiveConnectionTests: XCTestCase {
         guard let endpointValue = environment["ISSUELIGHT_LIVE_ICINGA_URL"],
               let endpoint = URL(string: endpointValue),
               let identityPath = environment["ISSUELIGHT_LIVE_ICINGA_PKCS12_PATH"],
-              let identityPassword = environment["ISSUELIGHT_ICINGA_PKCS12_PASSWORD"] else {
+              let identityPassword = environment["ISSUELIGHT_ICINGA_PKCS12_PASSWORD"],
+              let certificatePath = environment["ISSUELIGHT_LIVE_ICINGA_CA_PATH"] else {
             throw XCTSkip("Live Icinga 2 environment is not configured")
         }
 
@@ -57,16 +154,33 @@ final class Icinga2LiveConnectionTests: XCTestCase {
         addTeardownBlock {
             try? Self.deleteImportedIdentity(cleanupReferences)
         }
+        let certificateCatalog = KeychainServerCertificateCatalog()
+        let certificateDescriptor = try await certificateCatalog.importCertificate(
+            at: URL(fileURLWithPath: certificatePath)
+        )
+        addTeardownBlock {
+            try? await certificateCatalog.deleteCertificate(id: certificateDescriptor.id)
+        }
+        let resolvedServerCertificate = try await certificateCatalog.certificate(
+            id: certificateDescriptor.id
+        )
+        let serverCertificate = try XCTUnwrap(resolvedServerCertificate)
         let source = MonitoringSource(
             name: "Live mTLS",
             providerID: Icinga2Provider.id,
             endpoint: endpoint,
             authentication: .clientCertificate(identityID: descriptor.id),
-            serverTrust: .disabled
+            serverTrust: .customCertificate(certificateID: certificateDescriptor.id)
         )
 
         let provider = try XCTUnwrap(ProviderRegistry.builtIn().provider(for: source.providerID))
-        let result = await provider.testConnection(to: source, credential: .clientIdentity(identity))
+        let result = await provider.testConnection(
+            to: source,
+            access: ProviderAccess(
+                credential: .clientIdentity(identity),
+                trustedServerCertificate: serverCertificate
+            )
+        )
 
         XCTAssertEqual(result, .connected)
         try Self.deleteImportedIdentity(cleanupReferences)
@@ -80,7 +194,8 @@ final class Icinga2LiveConnectionTests: XCTestCase {
         guard let endpointValue = environment["ISSUELIGHT_LIVE_ICINGA_URL"],
               let endpoint = URL(string: endpointValue),
               let identityPath = environment["ISSUELIGHT_LIVE_ICINGA_REJECTED_PKCS12_PATH"],
-              let identityPassword = environment["ISSUELIGHT_ICINGA_PKCS12_PASSWORD"] else {
+              let identityPassword = environment["ISSUELIGHT_ICINGA_PKCS12_PASSWORD"],
+              let certificatePath = environment["ISSUELIGHT_LIVE_ICINGA_CA_PATH"] else {
             throw XCTSkip("Live Icinga 2 environment is not configured")
         }
 
@@ -95,16 +210,33 @@ final class Icinga2LiveConnectionTests: XCTestCase {
         addTeardownBlock {
             try? Self.deleteImportedIdentity(cleanupReferences)
         }
+        let certificateCatalog = KeychainServerCertificateCatalog()
+        let certificateDescriptor = try await certificateCatalog.importCertificate(
+            at: URL(fileURLWithPath: certificatePath)
+        )
+        addTeardownBlock {
+            try? await certificateCatalog.deleteCertificate(id: certificateDescriptor.id)
+        }
+        let resolvedServerCertificate = try await certificateCatalog.certificate(
+            id: certificateDescriptor.id
+        )
+        let serverCertificate = try XCTUnwrap(resolvedServerCertificate)
         let source = MonitoringSource(
             name: "Rejected live mTLS",
             providerID: Icinga2Provider.id,
             endpoint: endpoint,
             authentication: .clientCertificate(identityID: descriptor.id),
-            serverTrust: .disabled
+            serverTrust: .customCertificate(certificateID: certificateDescriptor.id)
         )
 
         let provider = try XCTUnwrap(ProviderRegistry.builtIn().provider(for: source.providerID))
-        let result = await provider.testConnection(to: source, credential: .clientIdentity(identity))
+        let result = await provider.testConnection(
+            to: source,
+            access: ProviderAccess(
+                credential: .clientIdentity(identity),
+                trustedServerCertificate: serverCertificate
+            )
+        )
 
         XCTAssertEqual(result, .failed(.authentication))
         try Self.deleteImportedIdentity(cleanupReferences)

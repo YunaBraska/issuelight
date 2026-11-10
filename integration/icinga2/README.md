@@ -12,6 +12,10 @@ only `127.0.0.1:5665`, uses Icinga's generated private CA, and provides:
 - healthy and failing host/service objects;
 - generated CA and PKCS#12 artifacts outside the repository.
 
+`start` replaces the image's generated API leaf with a certificate signed by
+the same Icinga CA and containing `serverAuth` plus the `localhost` SAN required
+by Apple's SSL policy. It does not weaken the client trust checks.
+
 Create `integration/icinga2/.env.local` from `.env.example`, then run:
 
 ```sh
@@ -29,12 +33,15 @@ PKCS#12 file and CA certificate are written to
 `verify` temporarily imports those dedicated test identities into the default
 macOS Keychain, resolves their persistent references through `IssueLightCore`,
 proves accepted and rejected real mTLS connections, and removes them again. It
-also builds the native app test bundle and refreshes two persisted sources
-through the real built-in Icinga 2 provider. An interrupted process can leave a
-test identity behind. In that case, remove only the two
-`issuelight-live-*.issuelight.invalid` identities and certificates in Keychain
-Access before rerunning. The PKCS#12 files intentionally omit the lab CA so the
-test does not import unrelated trust material into the Keychain.
+also imports the lab CA as a source-specific Keychain reference, proves that an
+unrelated CA is rejected, builds the native app test bundle, and refreshes two
+persisted sources with verification enabled through the real built-in Icinga 2
+provider. An interrupted process can leave a test identity or CA certificate
+behind. In that case, remove only the two
+`issuelight-live-*.issuelight.invalid` identities and certificates, or only the
+`Icinga CA` certificate whose SHA-256 fingerprint matches the generated
+`ca.crt`. The PKCS#12 files intentionally omit the lab CA so identity import
+does not silently alter server trust.
 
 The matrix intentionally treats plain HTTP and no authentication as negative
 tests because the Icinga 2 API requires HTTPS and authentication. It also proves

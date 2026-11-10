@@ -8,18 +8,26 @@ enum Icinga2TransportError: Error {
 final class Icinga2Transport {
     private let source: MonitoringSource
     private let credential: Icinga2RequestCredential
+    private let delegate: Icinga2SessionDelegate
     private let session: URLSession
 
     private init(
         source: MonitoringSource,
         credential: Icinga2RequestCredential,
+        trustedServerCertificate: SecCertificate?,
         configuration: URLSessionConfiguration
     ) {
         self.source = source
         self.credential = credential
+        let delegate = Icinga2SessionDelegate(
+            source: source,
+            credential: credential,
+            trustedServerCertificate: trustedServerCertificate
+        )
+        self.delegate = delegate
         session = URLSession(
             configuration: configuration,
-            delegate: Icinga2SessionDelegate(source: source, credential: credential),
+            delegate: delegate,
             delegateQueue: nil
         )
     }
@@ -27,9 +35,10 @@ final class Icinga2Transport {
     static func basic(
         source: MonitoringSource,
         password: String?,
+        trustedServerCertificate: SecCertificate?,
         configuration: URLSessionConfiguration
     ) throws -> Icinga2Transport {
-        try validate(source)
+        try validate(source, trustedServerCertificate: trustedServerCertificate)
         guard case .basic(let username) = source.authentication,
               let password,
               !password.isEmpty else {
@@ -38,6 +47,7 @@ final class Icinga2Transport {
         return Icinga2Transport(
             source: source,
             credential: .basic(username: username, password: password),
+            trustedServerCertificate: trustedServerCertificate,
             configuration: configuration
         )
     }
@@ -45,9 +55,10 @@ final class Icinga2Transport {
     static func clientIdentity(
         source: MonitoringSource,
         identity: SecIdentity?,
+        trustedServerCertificate: SecCertificate?,
         configuration: URLSessionConfiguration
     ) throws -> Icinga2Transport {
-        try validate(source)
+        try validate(source, trustedServerCertificate: trustedServerCertificate)
         guard case .clientCertificate = source.authentication,
               let identity else {
             throw Icinga2TransportError.failure(.clientCertificateNotAvailable)
@@ -55,6 +66,7 @@ final class Icinga2Transport {
         return Icinga2Transport(
             source: source,
             credential: .clientIdentity(identity),
+            trustedServerCertificate: trustedServerCertificate,
             configuration: configuration
         )
     }
@@ -107,6 +119,9 @@ final class Icinga2Transport {
         } catch let error as Icinga2TransportError {
             throw error
         } catch {
+            if delegate.hasRejectedServerTrust {
+                throw Icinga2TransportError.failure(.tls)
+            }
             throw Icinga2TransportError.failure(Self.failure(for: error))
         }
     }
@@ -115,7 +130,10 @@ final class Icinga2Transport {
         session.finishTasksAndInvalidate()
     }
 
-    private static func validate(_ source: MonitoringSource) throws {
+    private static func validate(
+        _ source: MonitoringSource,
+        trustedServerCertificate: SecCertificate?
+    ) throws {
         let issues = Icinga2Provider().validate(source)
         guard issues.isEmpty else {
             throw Icinga2TransportError.failure(.invalidConfiguration(issues))
@@ -123,7 +141,11 @@ final class Icinga2Transport {
         switch source.serverTrust {
         case .system, .disabled:
             return
-        case .customCertificate, .pinnedCertificate:
+        case .customCertificate:
+            guard trustedServerCertificate != nil else {
+                throw Icinga2TransportError.failure(.serverCertificateNotAvailable)
+            }
+        case .pinnedCertificate:
             throw Icinga2TransportError.failure(.unsupportedTrustConfiguration)
         }
     }
@@ -178,11 +200,25 @@ private final class Icinga2SessionDelegate: NSObject, URLSessionDelegate, URLSes
     private let authority: Icinga2Authority
     private let trust: ServerTrustConfiguration
     private let credential: Icinga2RequestCredential
+    private let trustedServerCertificate: SecCertificate?
+    private let trustStateLock = NSLock()
+    private var rejectedServerTrust = false
 
-    init(source: MonitoringSource, credential: Icinga2RequestCredential) {
+    var hasRejectedServerTrust: Bool {
+        trustStateLock.lock()
+        defer { trustStateLock.unlock() }
+        return rejectedServerTrust
+    }
+
+    init(
+        source: MonitoringSource,
+        credential: Icinga2RequestCredential,
+        trustedServerCertificate: SecCertificate?
+    ) {
         authority = Icinga2Authority(url: source.endpoint)!
         trust = source.serverTrust
         self.credential = credential
+        self.trustedServerCertificate = trustedServerCertificate
     }
 
     func urlSession(
@@ -201,14 +237,37 @@ private final class Icinga2SessionDelegate: NSObject, URLSessionDelegate, URLSes
         }
 
         guard challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust,
-              trust == .disabled,
               authority.matches(challenge.protectionSpace),
               let serverTrust = challenge.protectionSpace.serverTrust else {
             completionHandler(.performDefaultHandling, nil)
             return
         }
 
-        completionHandler(.useCredential, URLCredential(trust: serverTrust))
+        switch trust {
+        case .disabled:
+            completionHandler(.useCredential, URLCredential(trust: serverTrust))
+        case .customCertificate:
+            guard let trustedServerCertificate,
+                  SecTrustSetPolicies(
+                    serverTrust,
+                    SecPolicyCreateSSL(true, authority.host as CFString)
+                  ) == errSecSuccess,
+                  SecTrustSetAnchorCertificates(
+                    serverTrust,
+                    [trustedServerCertificate] as CFArray
+                  ) == errSecSuccess,
+                  SecTrustSetAnchorCertificatesOnly(serverTrust, false) == errSecSuccess,
+                  SecTrustEvaluateWithError(serverTrust, nil) else {
+                trustStateLock.lock()
+                rejectedServerTrust = true
+                trustStateLock.unlock()
+                completionHandler(.cancelAuthenticationChallenge, nil)
+                return
+            }
+            completionHandler(.useCredential, URLCredential(trust: serverTrust))
+        case .system, .pinnedCertificate:
+            completionHandler(.performDefaultHandling, nil)
+        }
     }
 
     func urlSession(

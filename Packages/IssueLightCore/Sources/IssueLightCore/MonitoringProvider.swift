@@ -6,6 +6,19 @@ public enum ProviderCredential: @unchecked Sendable {
     case clientIdentity(SecIdentity)
 }
 
+public struct ProviderAccess: @unchecked Sendable {
+    public let credential: ProviderCredential
+    public let trustedServerCertificate: SecCertificate?
+
+    public init(
+        credential: ProviderCredential,
+        trustedServerCertificate: SecCertificate? = nil
+    ) {
+        self.credential = credential
+        self.trustedServerCertificate = trustedServerCertificate
+    }
+}
+
 public struct ProviderCapabilities: Equatable, Sendable {
     public let authenticationMethods: Set<AuthenticationMethod>
     public let serverTrustMethods: Set<ServerTrustMethod>
@@ -42,11 +55,11 @@ public protocol MonitoringProvider: Sendable {
     func validate(_ source: MonitoringSource) -> [SourceValidationIssue]
     func testConnection(
         to source: MonitoringSource,
-        credential: ProviderCredential
+        access: ProviderAccess
     ) async -> ConnectionTestResult
     func loadSnapshot(
         from source: MonitoringSource,
-        credential: ProviderCredential
+        access: ProviderAccess
     ) async -> SnapshotLoadResult
 }
 

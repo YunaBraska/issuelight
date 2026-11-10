@@ -20,6 +20,25 @@ final class IssueLightModel: ObservableObject {
         }
     }
 
+    enum ServerTrustChoice: String, CaseIterable, Identifiable {
+        case system = "macOS-Systemvertrauen"
+        case customCertificate = "Eigene CA"
+        case disabled = "Prüfung deaktiviert"
+
+        var id: String { rawValue }
+
+        var method: ServerTrustMethod {
+            switch self {
+            case .system:
+                return .system
+            case .customCertificate:
+                return .customCertificate
+            case .disabled:
+                return .disabled
+            }
+        }
+    }
+
     enum Activity: Equatable {
         case idle
         case working(String)
@@ -58,7 +77,8 @@ final class IssueLightModel: ObservableObject {
     @Published var identities: [ClientIdentityDescriptor] = []
     @Published private(set) var identityLoadError: String?
     @Published private(set) var hasStoredBasicPassword = false
-    @Published var verifiesServerCertificate = true
+    @Published var serverTrustChoice = ServerTrustChoice.system
+    @Published private(set) var selectedServerCertificate: ServerCertificateDescriptor?
     @Published private(set) var activity = Activity.idle
     @Published private(set) var isTestingConnection = false
     @Published private(set) var sources: [MonitoringSource] = []
@@ -71,6 +91,8 @@ final class IssueLightModel: ObservableObject {
     private let providerRegistry: ProviderRegistry
     private let passwordVault: KeychainPasswordVault
     private let identityCatalog: KeychainIdentityCatalog
+    private let certificateCatalog: KeychainServerCertificateCatalog
+    private let accessResolver: ProviderAccessResolver
     private var hasStarted = false
     private var refreshLoopTask: Task<Void, Never>?
     private var refreshTasks: [UUID: Task<Void, Never>] = [:]
@@ -110,12 +132,21 @@ final class IssueLightModel: ObservableObject {
         case .clientCertificate:
             authentication = .clientCertificate(identityID: selectedIdentityID)
         }
+        let serverTrust: ServerTrustConfiguration
+        switch serverTrustChoice {
+        case .system:
+            serverTrust = .system
+        case .customCertificate:
+            serverTrust = .customCertificate(certificateID: selectedServerCertificate?.id ?? "")
+        case .disabled:
+            serverTrust = .disabled
+        }
         return name != selectedSource.name
             || endpoint != selectedSource.endpoint.absoluteString
             || isSourceEnabled != selectedSource.isEnabled
             || selectedProviderID != selectedSource.providerID
             || authentication != selectedSource.authentication
-            || verifiesServerCertificate != selectedSource.serverTrust.verifiesServerCertificate
+            || serverTrust != selectedSource.serverTrust
     }
 
     var providers: [ProviderDescriptor] {
@@ -136,10 +167,13 @@ final class IssueLightModel: ObservableObject {
         return AuthenticationChoice.allCases.filter { methods.contains($0.method) }
     }
 
-    var canDisableServerCertificateVerification: Bool {
-        providerRegistry
+    var serverTrustChoices: [ServerTrustChoice] {
+        guard let methods = providerRegistry
             .provider(for: selectedProviderID)?
-            .descriptor.capabilities.serverTrustMethods.contains(.disabled) == true
+            .descriptor.capabilities.serverTrustMethods else {
+            return []
+        }
+        return ServerTrustChoice.allCases.filter { methods.contains($0.method) }
     }
 
     var actionableIssues: [MonitoringIssue] {
@@ -213,12 +247,17 @@ final class IssueLightModel: ObservableObject {
 
     var deletionMessage: String {
         guard let selectedSource else { return "Die Quellenkonfiguration wird von diesem Mac entfernt." }
+        let credentialMessage: String
         switch selectedSource.authentication {
         case .basic:
-            return "Die Konfiguration und das zugehörige Basic-Passwort werden von diesem Mac entfernt."
+            credentialMessage = "Die Konfiguration und das zugehörige Basic-Passwort werden von diesem Mac entfernt."
         case .clientCertificate:
-            return "Die Konfiguration wird entfernt. Das Client-Zertifikat bleibt im macOS-Schlüsselbund."
+            credentialMessage = "Die Konfiguration wird entfernt. Das Client-Zertifikat bleibt im macOS-Schlüsselbund."
         }
+        if case .customCertificate = selectedSource.serverTrust {
+            return "\(credentialMessage) Das CA-Zertifikat bleibt im macOS-Schlüsselbund, da andere Quellen es verwenden können."
+        }
+        return credentialMessage
     }
 
     convenience init() {
@@ -230,6 +269,7 @@ final class IssueLightModel: ObservableObject {
             providerRegistry: .builtIn(),
             passwordVault: KeychainPasswordVault(),
             identityCatalog: KeychainIdentityCatalog(),
+            certificateCatalog: KeychainServerCertificateCatalog(),
             startsAutomatically: true
         )
         if store == nil {
@@ -242,12 +282,19 @@ final class IssueLightModel: ObservableObject {
         providerRegistry: ProviderRegistry,
         passwordVault: KeychainPasswordVault,
         identityCatalog: KeychainIdentityCatalog,
+        certificateCatalog: KeychainServerCertificateCatalog,
         startsAutomatically: Bool
     ) {
         self.sourceStore = sourceStore
         self.providerRegistry = providerRegistry
         self.passwordVault = passwordVault
         self.identityCatalog = identityCatalog
+        self.certificateCatalog = certificateCatalog
+        accessResolver = ProviderAccessResolver(
+            passwordVault: passwordVault,
+            identityCatalog: identityCatalog,
+            certificateCatalog: certificateCatalog
+        )
         selectedProviderID = providerRegistry.descriptors.first?.id ?? ProviderID(rawValue: "")
         if startsAutomatically {
             Task { [weak self] in
@@ -294,14 +341,18 @@ final class IssueLightModel: ObservableObject {
         do {
             identities = try await identityCatalog.identities()
             identityLoadError = nil
-            activity = .idle
+            if case .working = activity {
+                activity = .idle
+            }
         } catch {
             identities = []
             let message = "Client-Zertifikate konnten nicht aus dem Schlüsselbund gelesen werden."
             identityLoadError = message
-            activity = authenticationChoice == .clientCertificate
-                ? .failure(message)
-                : .idle
+            if authenticationChoice == .clientCertificate {
+                activity = .failure(message)
+            } else if case .working = activity {
+                activity = .idle
+            }
         }
     }
 
@@ -309,6 +360,7 @@ final class IssueLightModel: ObservableObject {
         guard let source = sources.first(where: { $0.id == id }) else { return }
         connectionTestID = nil
         isTestingConnection = false
+        activity = .working("Quelle wird geladen …")
         selectedSourceID = source.id
         apply(source)
         password = ""
@@ -321,11 +373,30 @@ final class IssueLightModel: ObservableObject {
             }
             guard selectedSourceID == source.id else { return }
             hasStoredBasicPassword = hasPassword
-            activity = .idle
         } catch {
             guard selectedSourceID == source.id else { return }
             hasStoredBasicPassword = false
             activity = .failure("Das gespeicherte Passwort konnte nicht aus dem Schlüsselbund gelesen werden.")
+        }
+
+        do {
+            let descriptor: ServerCertificateDescriptor?
+            if case .customCertificate(let certificateID) = source.serverTrust {
+                descriptor = try await certificateCatalog.descriptor(id: certificateID)
+            } else {
+                descriptor = nil
+            }
+            guard selectedSourceID == source.id else { return }
+            selectedServerCertificate = descriptor
+            if case .customCertificate = source.serverTrust, descriptor == nil {
+                activity = .failure("Das CA-Zertifikat ist nicht mehr im Schlüsselbund verfügbar.")
+            } else if case .working = activity {
+                activity = .idle
+            }
+        } catch {
+            guard selectedSourceID == source.id else { return }
+            selectedServerCertificate = nil
+            activity = .failure("Das CA-Zertifikat konnte nicht aus dem Schlüsselbund gelesen werden.")
         }
     }
 
@@ -343,7 +414,8 @@ final class IssueLightModel: ObservableObject {
         password = ""
         selectedIdentityID = ""
         hasStoredBasicPassword = false
-        verifiesServerCertificate = true
+        serverTrustChoice = .system
+        selectedServerCertificate = nil
         activity = .idle
     }
 
@@ -357,40 +429,35 @@ final class IssueLightModel: ObservableObject {
         isTestingConnection = true
         activity = .working("Verbindung wird geprüft …")
 
-        let result: ConnectionTestResult
-        switch source.authentication {
-        case .basic:
-            do {
-                guard let resolvedPassword = try await basicPassword(for: source) else {
-                    guard connectionTestID == source.id else { return }
-                    isTestingConnection = false
-                    activity = .failure("Gib ein Passwort ein.")
-                    return
-                }
-                result = await provider.testConnection(to: source, credential: .password(resolvedPassword))
-            } catch {
-                guard connectionTestID == source.id else { return }
+        var allowsStoredPassword = true
+        if case .basic = source.authentication {
+            let requestedScope = try? BasicCredentialScope(source: source)
+            let selectedScope = try? basicCredentialScope(for: selectedSource)
+            allowsStoredPassword = requestedScope != nil && requestedScope == selectedScope
+            if password.isEmpty && !allowsStoredPassword {
+                connectionTestID = nil
                 isTestingConnection = false
-                activity = .failure("Das Passwort konnte nicht aus dem Schlüsselbund gelesen werden.")
-                return
-            }
-        case .clientCertificate(let identityID):
-            do {
-                let identity = try await identityCatalog.identity(id: identityID)
-                guard let identity else {
-                    guard connectionTestID == source.id else { return }
-                    isTestingConnection = false
-                    activity = .failure("Das Client-Zertifikat ist nicht mehr im Schlüsselbund verfügbar.")
-                    return
-                }
-                result = await provider.testConnection(to: source, credential: .clientIdentity(identity))
-            } catch {
-                guard connectionTestID == source.id else { return }
-                isTestingConnection = false
-                activity = .failure("Das Client-Zertifikat konnte nicht aus dem Schlüsselbund gelesen werden.")
+                activity = .failure("Gib ein Passwort ein.")
                 return
             }
         }
+        let accessResolution = await accessResolver.resolve(
+            source: source,
+            passwordOverride: password,
+            allowsStoredPassword: allowsStoredPassword
+        )
+        guard connectionTestID == source.id else { return }
+        let access: ProviderAccess
+        switch accessResolution {
+        case .resolved(let resolvedAccess):
+            access = resolvedAccess
+        case .failed(let failure):
+            connectionTestID = nil
+            isTestingConnection = false
+            activity = .failure(accessMessage(for: failure))
+            return
+        }
+        let result = await provider.testConnection(to: source, access: access)
 
         guard connectionTestID == source.id else { return }
         connectionTestID = nil
@@ -590,6 +657,25 @@ final class IssueLightModel: ObservableObject {
         }
     }
 
+    func importServerCertificate(at fileURL: URL) async -> Bool {
+        activity = .working("CA-Zertifikat wird importiert …")
+        do {
+            let descriptor = try await certificateCatalog.importCertificate(at: fileURL)
+            selectedServerCertificate = descriptor
+            serverTrustChoice = .customCertificate
+            activity = .success(
+                "„\(descriptor.displayName)“ wird nur für diese Quellenkonfiguration als CA verwendet."
+            )
+            return true
+        } catch KeychainServerCertificateCatalogError.multipleCertificatesNotSupported {
+            activity = .failure("Wähle eine Datei mit genau einem CA-Zertifikat.")
+            return false
+        } catch {
+            activity = .failure("Das CA-Zertifikat konnte nicht importiert werden.")
+            return false
+        }
+    }
+
     func sourceName(for sourceID: UUID) -> String {
         sources.first(where: { $0.id == sourceID })?.name ?? "Unbekannte Quelle"
     }
@@ -630,6 +716,16 @@ final class IssueLightModel: ObservableObject {
             authentication = .clientCertificate(identityID: selectedIdentityID)
         }
 
+        var serverTrust: ServerTrustConfiguration
+        switch serverTrustChoice {
+        case .system:
+            serverTrust = .system
+        case .customCertificate:
+            serverTrust = .customCertificate(certificateID: selectedServerCertificate?.id ?? "")
+        case .disabled:
+            serverTrust = .disabled
+        }
+
         var source: MonitoringSource
         if var existingSource = selectedSource {
             existingSource.name = name
@@ -637,9 +733,11 @@ final class IssueLightModel: ObservableObject {
             existingSource.isEnabled = isSourceEnabled
             existingSource.authentication = authentication
             if existingSource.updateEndpoint(url) {
-                verifiesServerCertificate = true
+                serverTrustChoice = .system
+                selectedServerCertificate = nil
+                serverTrust = .system
             }
-            existingSource.setServerCertificateVerification(enabled: verifiesServerCertificate)
+            existingSource.serverTrust = serverTrust
             source = existingSource
         } else {
             source = MonitoringSource(
@@ -649,7 +747,7 @@ final class IssueLightModel: ObservableObject {
                 endpoint: url,
                 isEnabled: isSourceEnabled,
                 authentication: authentication,
-                serverTrust: verifiesServerCertificate ? .system : .disabled
+                serverTrust: serverTrust
             )
         }
         guard let provider = providerRegistry.provider(for: selectedProviderID) else {
@@ -667,17 +765,6 @@ final class IssueLightModel: ObservableObject {
     private func basicCredentialScope(for source: MonitoringSource?) throws -> BasicCredentialScope? {
         guard let source, case .basic = source.authentication else { return nil }
         return try BasicCredentialScope(source: source)
-    }
-
-    private func basicPassword(for source: MonitoringSource) async throws -> String? {
-        if !password.isEmpty {
-            return password
-        }
-        let requestedScope = try BasicCredentialScope(source: source)
-        guard requestedScope == (try basicCredentialScope(for: selectedSource)) else {
-            return nil
-        }
-        return try await passwordVault.password(for: requestedScope)
     }
 
     private func startRefreshLoop() {
@@ -701,37 +788,17 @@ final class IssueLightModel: ObservableObject {
             refreshStates[source.id] = .failed("Der konfigurierte Monitoring-Typ ist nicht verfügbar.")
             return
         }
-        let result: SnapshotLoadResult
-        switch source.authentication {
-        case .basic:
-            do {
-                let password = try await passwordVault.password(for: BasicCredentialScope(source: source))
-                guard let password else {
-                    guard !Task.isCancelled else { return }
-                    refreshStates[source.id] = .failed("Das Passwort ist nicht mehr im Schlüsselbund verfügbar.")
-                    return
-                }
-                result = await provider.loadSnapshot(from: source, credential: .password(password))
-            } catch {
-                guard !Task.isCancelled else { return }
-                refreshStates[source.id] = .failed("Das Passwort konnte nicht aus dem Schlüsselbund gelesen werden.")
-                return
-            }
-        case .clientCertificate(let identityID):
-            do {
-                let identity = try await identityCatalog.identity(id: identityID)
-                guard let identity else {
-                    guard !Task.isCancelled else { return }
-                    refreshStates[source.id] = .failed("Das Client-Zertifikat ist nicht mehr im Schlüsselbund verfügbar.")
-                    return
-                }
-                result = await provider.loadSnapshot(from: source, credential: .clientIdentity(identity))
-            } catch {
-                guard !Task.isCancelled else { return }
-                refreshStates[source.id] = .failed("Das Client-Zertifikat konnte nicht aus dem Schlüsselbund gelesen werden.")
-                return
-            }
+        let accessResolution = await accessResolver.resolve(source: source)
+        guard !Task.isCancelled else { return }
+        let access: ProviderAccess
+        switch accessResolution {
+        case .resolved(let resolvedAccess):
+            access = resolvedAccess
+        case .failed(let failure):
+            refreshStates[source.id] = .failed(accessMessage(for: failure))
+            return
         }
+        let result = await provider.loadSnapshot(from: source, access: access)
 
         guard !Task.isCancelled else { return }
         switch result {
@@ -753,7 +820,7 @@ final class IssueLightModel: ObservableObject {
         selectedProviderID = source.providerID
         username = ""
         selectedIdentityID = ""
-        verifiesServerCertificate = source.serverTrust.verifiesServerCertificate
+        selectedServerCertificate = nil
         switch source.authentication {
         case .basic(let storedUsername):
             authenticationChoice = .basic
@@ -761,6 +828,16 @@ final class IssueLightModel: ObservableObject {
         case .clientCertificate(let identityID):
             authenticationChoice = .clientCertificate
             selectedIdentityID = identityID
+        }
+        switch source.serverTrust {
+        case .system:
+            serverTrustChoice = .system
+        case .customCertificate:
+            serverTrustChoice = .customCertificate
+        case .pinnedCertificate:
+            serverTrustChoice = .system
+        case .disabled:
+            serverTrustChoice = .disabled
         }
     }
 
@@ -770,6 +847,7 @@ final class IssueLightModel: ObservableObject {
         if issues.contains(.emptyUsername) { return "Gib einen Benutzernamen ein." }
         if issues.contains(.invalidUsername) { return "Der Benutzername darf keinen Doppelpunkt enthalten." }
         if issues.contains(.missingClientIdentity) { return "Wähle ein Client-Zertifikat aus dem Schlüsselbund." }
+        if issues.contains(.missingServerCertificate) { return "Importiere ein CA-Zertifikat." }
         if issues.contains(where: {
             if case .unsupportedAuthentication = $0 { return true }
             return false
@@ -796,8 +874,27 @@ final class IssueLightModel: ObservableObject {
         if !choices.contains(authenticationChoice), let first = choices.first {
             authenticationChoice = first
         }
-        if !canDisableServerCertificateVerification {
-            verifiesServerCertificate = true
+        let trustChoices = serverTrustChoices
+        if !trustChoices.contains(serverTrustChoice), let first = trustChoices.first {
+            serverTrustChoice = first
+            selectedServerCertificate = nil
+        }
+    }
+
+    private func accessMessage(for failure: ProviderAccessFailure) -> String {
+        switch failure {
+        case .passwordNotAvailable:
+            return "Das Passwort ist nicht mehr im Schlüsselbund verfügbar."
+        case .passwordAccessFailed:
+            return "Das Passwort konnte nicht aus dem Schlüsselbund gelesen werden."
+        case .clientIdentityNotAvailable:
+            return "Das Client-Zertifikat ist nicht mehr im Schlüsselbund verfügbar."
+        case .clientIdentityAccessFailed:
+            return "Das Client-Zertifikat konnte nicht aus dem Schlüsselbund gelesen werden."
+        case .serverCertificateNotAvailable:
+            return "Das CA-Zertifikat ist nicht mehr im Schlüsselbund verfügbar."
+        case .serverCertificateAccessFailed:
+            return "Das CA-Zertifikat konnte nicht aus dem Schlüsselbund gelesen werden."
         }
     }
 
@@ -815,6 +912,8 @@ final class IssueLightModel: ObservableObject {
             return .failure("Der Server ist nicht erreichbar.")
         case .failed(.clientCertificateNotAvailable):
             return .failure("Das ausgewählte Client-Zertifikat ist nicht mehr im Schlüsselbund verfügbar.")
+        case .failed(.serverCertificateNotAvailable):
+            return .failure("Das ausgewählte CA-Zertifikat ist nicht mehr im Schlüsselbund verfügbar.")
         case .failed(.incompatibleResponse):
             return .failure("Der Server antwortet, liefert aber keine kompatible Monitoring-Antwort.")
         case .failed(.server(let code)), .failed(.http(let code)):
@@ -840,6 +939,8 @@ final class IssueLightModel: ObservableObject {
             return "Der Server ist nicht erreichbar."
         case .clientCertificateNotAvailable:
             return "Das Client-Zertifikat ist nicht mehr verfügbar."
+        case .serverCertificateNotAvailable:
+            return "Das CA-Zertifikat ist nicht mehr verfügbar."
         case .incompatibleResponse:
             return "Der Server lieferte keine kompatiblen Monitoring-Daten."
         case .server(let statusCode), .http(let statusCode):
