@@ -48,7 +48,7 @@ coverage_path=$(swift test \
   --show-codecov-path)
 coverage_profile="$(dirname "$coverage_path")/default.profdata"
 test_binary=$(find Packages/IssueLightCore/.build -type f \
-  -path '*/IssueLightCoreTests.xctest/Contents/MacOS/IssueLightCoreTests' \
+  -path '*/IssueLightCore*Tests.xctest/Contents/MacOS/IssueLightCore*Tests' \
   -print -quit)
 coverage_json=$(mktemp /tmp/issuelight-coverage.XXXXXX)
 xcrun llvm-cov export "$test_binary" \
