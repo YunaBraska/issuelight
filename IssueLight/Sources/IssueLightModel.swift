@@ -23,6 +23,7 @@ final class IssueLightModel: ObservableObject {
     enum ServerTrustChoice: String, CaseIterable, Identifiable {
         case system = "macOS-Systemvertrauen"
         case customCertificate = "Eigene CA"
+        case pinnedCertificate = "Serverzertifikat festlegen"
         case disabled = "Prüfung deaktiviert"
 
         var id: String { rawValue }
@@ -33,6 +34,8 @@ final class IssueLightModel: ObservableObject {
                 return .system
             case .customCertificate:
                 return .customCertificate
+            case .pinnedCertificate:
+                return .pinnedCertificate
             case .disabled:
                 return .disabled
             }
@@ -79,6 +82,7 @@ final class IssueLightModel: ObservableObject {
     @Published private(set) var hasStoredBasicPassword = false
     @Published var serverTrustChoice = ServerTrustChoice.system
     @Published private(set) var selectedServerCertificate: ServerCertificateDescriptor?
+    @Published private(set) var pinnedServerCertificateSHA256 = ""
     @Published private(set) var activity = Activity.idle
     @Published private(set) var isTestingConnection = false
     @Published private(set) var sources: [MonitoringSource] = []
@@ -122,6 +126,7 @@ final class IssueLightModel: ObservableObject {
                 || !endpoint.isEmpty
                 || !username.isEmpty
                 || !selectedIdentityID.isEmpty
+                || !pinnedServerCertificateSHA256.isEmpty
                 || !isSourceEnabled
         }
 
@@ -138,6 +143,8 @@ final class IssueLightModel: ObservableObject {
             serverTrust = .system
         case .customCertificate:
             serverTrust = .customCertificate(certificateID: selectedServerCertificate?.id ?? "")
+        case .pinnedCertificate:
+            serverTrust = .pinnedCertificate(sha256: pinnedServerCertificateSHA256)
         case .disabled:
             serverTrust = .disabled
         }
@@ -422,6 +429,7 @@ final class IssueLightModel: ObservableObject {
         hasStoredBasicPassword = false
         serverTrustChoice = .system
         selectedServerCertificate = nil
+        pinnedServerCertificateSHA256 = ""
         activity = .idle
     }
 
@@ -699,6 +707,24 @@ final class IssueLightModel: ObservableObject {
         }
     }
 
+    func pinServerCertificate(at fileURL: URL) -> Bool {
+        activity = .working("Serverzertifikat wird geprüft …")
+        do {
+            pinnedServerCertificateSHA256 = try ServerCertificateFingerprint.sha256(at: fileURL)
+            serverTrustChoice = .pinnedCertificate
+            activity = .success(
+                "Der SHA-256-Fingerprint wurde übernommen. Prüfe die Verbindung, bevor du die Quelle speicherst."
+            )
+            return true
+        } catch ServerCertificateFingerprintError.multipleCertificatesNotSupported {
+            activity = .failure("Wähle eine Datei mit genau einem Serverzertifikat.")
+            return false
+        } catch {
+            activity = .failure("Das Serverzertifikat konnte nicht gelesen werden.")
+            return false
+        }
+    }
+
     func cleanupUnreferencedManagedServerCertificates(
         retainingAdditionalIDs: Set<String> = []
     ) async -> Bool {
@@ -760,6 +786,8 @@ final class IssueLightModel: ObservableObject {
             serverTrust = .system
         case .customCertificate:
             serverTrust = .customCertificate(certificateID: selectedServerCertificate?.id ?? "")
+        case .pinnedCertificate:
+            serverTrust = .pinnedCertificate(sha256: pinnedServerCertificateSHA256)
         case .disabled:
             serverTrust = .disabled
         }
@@ -773,6 +801,7 @@ final class IssueLightModel: ObservableObject {
             if existingSource.updateEndpoint(url) {
                 serverTrustChoice = .system
                 selectedServerCertificate = nil
+                pinnedServerCertificateSHA256 = ""
                 serverTrust = .system
             }
             existingSource.serverTrust = serverTrust
@@ -859,6 +888,7 @@ final class IssueLightModel: ObservableObject {
         username = ""
         selectedIdentityID = ""
         selectedServerCertificate = nil
+        pinnedServerCertificateSHA256 = ""
         switch source.authentication {
         case .basic(let storedUsername):
             authenticationChoice = .basic
@@ -872,8 +902,9 @@ final class IssueLightModel: ObservableObject {
             serverTrustChoice = .system
         case .customCertificate:
             serverTrustChoice = .customCertificate
-        case .pinnedCertificate:
-            serverTrustChoice = .system
+        case .pinnedCertificate(let sha256):
+            serverTrustChoice = .pinnedCertificate
+            pinnedServerCertificateSHA256 = sha256
         case .disabled:
             serverTrustChoice = .disabled
         }
@@ -886,6 +917,7 @@ final class IssueLightModel: ObservableObject {
         if issues.contains(.invalidUsername) { return "Der Benutzername darf keinen Doppelpunkt enthalten." }
         if issues.contains(.missingClientIdentity) { return "Wähle ein Client-Zertifikat aus dem Schlüsselbund." }
         if issues.contains(.missingServerCertificate) { return "Importiere ein CA-Zertifikat." }
+        if issues.contains(.invalidPinnedCertificate) { return "Wähle ein gültiges Serverzertifikat für den SHA-256-Pin aus." }
         if issues.contains(where: {
             if case .unsupportedAuthentication = $0 { return true }
             return false
@@ -916,6 +948,7 @@ final class IssueLightModel: ObservableObject {
         if !trustChoices.contains(serverTrustChoice), let first = trustChoices.first {
             serverTrustChoice = first
             selectedServerCertificate = nil
+            pinnedServerCertificateSHA256 = ""
         }
     }
 

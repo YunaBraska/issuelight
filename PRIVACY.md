@@ -21,7 +21,8 @@ default.
 - Public source configuration is stored in
   `~/Library/Application Support/io.github.yunabraska.issuelight/sources.json`
   with permissions restricted to the local user. Names and URLs in this file
-  can reveal infrastructure details.
+  can reveal infrastructure details. Exact certificate pinning stores the
+  selected server leaf's public SHA-256 fingerprint in this file.
 - Passwords and client identities remain in macOS Keychain. Source
   configuration stores references, not secret values or private keys.
 - Imported private CA certificates are public certificates stored in Keychain.

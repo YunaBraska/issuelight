@@ -164,6 +164,7 @@ generate_client_identity() {
   mkdir -p "$ISSUELIGHT_ICINGA_ARTIFACTS_DIR"
   container_id=$(compose ps -q icinga2)
   docker cp "$container_id:/data/var/lib/icinga2/certs/ca.crt" "$ISSUELIGHT_ICINGA_ARTIFACTS_DIR/ca.crt" >/dev/null
+  docker cp "$container_id:/data/var/lib/icinga2/certs/localhost.crt" "$ISSUELIGHT_ICINGA_ARTIFACTS_DIR/server.crt" >/dev/null
   docker cp "$container_id:/data/var/lib/icinga2/certs/issuelight-live-client/issuelight-live-client.p12" "$ISSUELIGHT_ICINGA_ARTIFACTS_DIR/issuelight-live-client.p12" >/dev/null
   docker cp "$container_id:/data/var/lib/icinga2/certs/issuelight-live-rejected/issuelight-live-rejected.p12" "$ISSUELIGHT_ICINGA_ARTIFACTS_DIR/issuelight-live-rejected.p12" >/dev/null
   chmod 600 "$ISSUELIGHT_ICINGA_ARTIFACTS_DIR/issuelight-live-client.p12"
@@ -173,6 +174,7 @@ generate_client_identity() {
 verify_swift_mtls() {
   ISSUELIGHT_LIVE_ICINGA_URL="https://localhost:$ISSUELIGHT_ICINGA_PORT" \
   ISSUELIGHT_LIVE_ICINGA_CA_PATH="$ISSUELIGHT_ICINGA_ARTIFACTS_DIR/ca.crt" \
+  ISSUELIGHT_LIVE_ICINGA_SERVER_CERT_PATH="$ISSUELIGHT_ICINGA_ARTIFACTS_DIR/server.crt" \
   ISSUELIGHT_LIVE_ICINGA_PKCS12_PATH="$ISSUELIGHT_ICINGA_ARTIFACTS_DIR/issuelight-live-client.p12" \
   ISSUELIGHT_LIVE_ICINGA_REJECTED_PKCS12_PATH="$ISSUELIGHT_ICINGA_ARTIFACTS_DIR/issuelight-live-rejected.p12" \
     swift test \

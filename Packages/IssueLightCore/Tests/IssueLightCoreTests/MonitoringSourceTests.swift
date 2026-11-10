@@ -29,6 +29,11 @@ final class MonitoringSourceTests: XCTestCase {
         XCTAssertTrue(
             MonitoringSourceValidator.validateSharedFields(value).contains(.missingServerCertificate)
         )
+
+        value = source(serverTrust: .pinnedCertificate(sha256: "not a fingerprint"))
+        XCTAssertTrue(
+            MonitoringSourceValidator.validateSharedFields(value).contains(.invalidPinnedCertificate)
+        )
     }
 
     func testEndpointAuthorityChangeRestoresSystemTrust() {

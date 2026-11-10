@@ -16,7 +16,7 @@ final class Icinga2ProviderTests: XCTestCase {
         XCTAssertEqual(provider.descriptor.capabilities.authenticationMethods, [.basic, .clientCertificate])
         XCTAssertEqual(
             provider.descriptor.capabilities.serverTrustMethods,
-            [.system, .customCertificate, .disabled]
+            [.system, .customCertificate, .pinnedCertificate, .disabled]
         )
         XCTAssertFalse(provider.descriptor.capabilities.supportsAcknowledgement)
         XCTAssertFalse(provider.descriptor.capabilities.supportsDowntime)

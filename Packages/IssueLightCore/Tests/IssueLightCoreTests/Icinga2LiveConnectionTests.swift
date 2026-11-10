@@ -3,6 +3,96 @@ import XCTest
 @testable import IssueLightCore
 
 final class Icinga2LiveConnectionTests: XCTestCase {
+    func testPinnedLiveServerCertificateAcceptsExactLeaf() async throws {
+        let environment = ProcessInfo.processInfo.environment
+        guard let endpointValue = environment["ISSUELIGHT_LIVE_ICINGA_URL"],
+              let endpoint = URL(string: endpointValue),
+              let password = environment["ISSUELIGHT_ICINGA_BASIC_PASSWORD"],
+              let certificatePath = environment["ISSUELIGHT_LIVE_ICINGA_SERVER_CERT_PATH"] else {
+            throw XCTSkip("Live Icinga 2 environment is not configured")
+        }
+        let fingerprint = try ServerCertificateFingerprint.sha256(
+            at: URL(fileURLWithPath: certificatePath)
+        )
+        let source = MonitoringSource(
+            name: "Pinned live server",
+            providerID: Icinga2Provider.id,
+            endpoint: endpoint,
+            authentication: .basic(username: "issuelight-basic"),
+            serverTrust: .pinnedCertificate(sha256: fingerprint)
+        )
+        let provider = try XCTUnwrap(ProviderRegistry.builtIn().provider(for: source.providerID))
+
+        let result = await provider.testConnection(
+            to: source,
+            access: ProviderAccess(credential: .password(password))
+        )
+
+        XCTAssertEqual(result, .connected)
+    }
+
+    func testPinnedLiveServerCertificateRejectsDifferentCertificate() async throws {
+        let environment = ProcessInfo.processInfo.environment
+        guard let endpointValue = environment["ISSUELIGHT_LIVE_ICINGA_URL"],
+              let endpoint = URL(string: endpointValue),
+              let password = environment["ISSUELIGHT_ICINGA_BASIC_PASSWORD"] else {
+            throw XCTSkip("Live Icinga 2 environment is not configured")
+        }
+        let unrelatedCertificate = try XCTUnwrap(
+            Bundle.module.url(
+                forResource: "issuelight-test-root",
+                withExtension: "crt",
+                subdirectory: "Fixtures"
+            )
+        )
+        let fingerprint = try ServerCertificateFingerprint.sha256(at: unrelatedCertificate)
+        let source = MonitoringSource(
+            name: "Mismatched pinned server",
+            providerID: Icinga2Provider.id,
+            endpoint: endpoint,
+            authentication: .basic(username: "issuelight-basic"),
+            serverTrust: .pinnedCertificate(sha256: fingerprint)
+        )
+        let provider = try XCTUnwrap(ProviderRegistry.builtIn().provider(for: source.providerID))
+
+        let result = await provider.testConnection(
+            to: source,
+            access: ProviderAccess(credential: .password(password))
+        )
+
+        XCTAssertEqual(result, .failed(.tls))
+    }
+
+    func testPinnedLiveServerCertificateRetainsHostnameVerification() async throws {
+        let environment = ProcessInfo.processInfo.environment
+        guard let endpointValue = environment["ISSUELIGHT_LIVE_ICINGA_URL"],
+              var endpointComponents = URLComponents(string: endpointValue),
+              let password = environment["ISSUELIGHT_ICINGA_BASIC_PASSWORD"],
+              let certificatePath = environment["ISSUELIGHT_LIVE_ICINGA_SERVER_CERT_PATH"] else {
+            throw XCTSkip("Live Icinga 2 environment is not configured")
+        }
+        endpointComponents.host = "127.0.0.1"
+        let endpoint = try XCTUnwrap(endpointComponents.url)
+        let fingerprint = try ServerCertificateFingerprint.sha256(
+            at: URL(fileURLWithPath: certificatePath)
+        )
+        let source = MonitoringSource(
+            name: "Pinned server with mismatched host",
+            providerID: Icinga2Provider.id,
+            endpoint: endpoint,
+            authentication: .basic(username: "issuelight-basic"),
+            serverTrust: .pinnedCertificate(sha256: fingerprint)
+        )
+        let provider = try XCTUnwrap(ProviderRegistry.builtIn().provider(for: source.providerID))
+
+        let result = await provider.testConnection(
+            to: source,
+            access: ProviderAccess(credential: .password(password))
+        )
+
+        XCTAssertEqual(result, .failed(.tls))
+    }
+
     func testUnrelatedPrivateCAIsRejectedAsTLSFailure() async throws {
         let environment = ProcessInfo.processInfo.environment
         guard let endpointValue = environment["ISSUELIGHT_LIVE_ICINGA_URL"],

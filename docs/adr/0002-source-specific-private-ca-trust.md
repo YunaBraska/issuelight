@@ -30,8 +30,8 @@ IssueLight profile imports the same Keychain certificate, the item becomes
 shared and automatic deletion stops for both profiles. After loading, saving,
 or removing sources, IssueLight deletes its exclusively owned certificates only
 when no persisted source still references them. Pre-existing, shared, and
-externally managed certificates remain untouched. Certificate pinning remains
-a separate future mode.
+externally managed certificates remain untouched. Exact leaf-certificate
+pinning is a separate trust mode owned by ADR 0004.
 
 ## Consequences
 

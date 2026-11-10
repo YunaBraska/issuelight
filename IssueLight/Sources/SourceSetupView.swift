@@ -9,10 +9,17 @@ struct SourceSetupView: View {
     }
 
     @ObservedObject var model: IssueLightModel
+    private let certificateContentTypes: [UTType] = [
+        UTType(filenameExtension: "cer") ?? .data,
+        UTType(filenameExtension: "crt") ?? .data,
+        UTType(filenameExtension: "der") ?? .data,
+        UTType(filenameExtension: "pem") ?? .data,
+    ]
     @State private var importURL: URL?
     @State private var isChoosingIdentity = false
     @State private var isImportingIdentity = false
     @State private var isChoosingServerCertificate = false
+    @State private var isChoosingPinnedServerCertificate = false
     @State private var isConfirmingDeletion = false
     @State private var isConfirmingDiscard = false
     @State private var pendingNavigation: PendingNavigation?
@@ -196,15 +203,40 @@ struct SourceSetupView: View {
                         }
                         .fileImporter(
                             isPresented: $isChoosingServerCertificate,
-                            allowedContentTypes: [
-                                UTType(filenameExtension: "cer") ?? .data,
-                                UTType(filenameExtension: "crt") ?? .data,
-                                UTType(filenameExtension: "pem") ?? .data,
-                            ],
+                            allowedContentTypes: certificateContentTypes,
                             allowsMultipleSelection: false
                         ) { result in
                             if case .success(let urls) = result, let url = urls.first {
                                 Task { _ = await model.importServerCertificate(at: url) }
+                            }
+                        }
+                    } else if model.serverTrustChoice == .pinnedCertificate {
+                        if model.pinnedServerCertificateSHA256.isEmpty {
+                            Label("Wähle genau ein Serverzertifikat aus.", systemImage: "exclamationmark.circle")
+                                .foregroundStyle(.orange)
+                        } else {
+                            Text("SHA-256: \(model.pinnedServerCertificateSHA256)")
+                                .font(.caption.monospaced())
+                                .foregroundStyle(.secondary)
+                                .textSelection(.enabled)
+                            Text("Bei einer Zertifikatserneuerung bleibt die Verbindung blockiert, bis du das neue Zertifikat hier geprüft und ausgewählt hast.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        Button(
+                            model.pinnedServerCertificateSHA256.isEmpty
+                                ? "Serverzertifikat auswählen …"
+                                : "Serverzertifikat ersetzen …"
+                        ) {
+                            isChoosingPinnedServerCertificate = true
+                        }
+                        .fileImporter(
+                            isPresented: $isChoosingPinnedServerCertificate,
+                            allowedContentTypes: certificateContentTypes,
+                            allowsMultipleSelection: false
+                        ) { result in
+                            if case .success(let urls) = result, let url = urls.first {
+                                _ = model.pinServerCertificate(at: url)
                             }
                         }
                     } else if model.serverTrustChoice == .disabled {
@@ -218,7 +250,7 @@ struct SourceSetupView: View {
                 } header: {
                     Text("TLS")
                 } footer: {
-                    Text("macOS-Systemvertrauen ist der Standard. Eine eigene CA gilt nur für diese Quelle. Die vollständige Deaktivierung ist für isolierte Homelabs gedacht.")
+                    Text("macOS-Systemvertrauen ist der Standard. Eigene CAs und exakte Serverzertifikate gelten nur für diese Quelle. Die vollständige Deaktivierung ist für isolierte Homelabs gedacht.")
                 }
 
             }

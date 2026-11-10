@@ -11,7 +11,7 @@ public struct Icinga2Provider: MonitoringProvider {
         displayName: "Icinga 2",
         capabilities: ProviderCapabilities(
             authenticationMethods: [.basic, .clientCertificate],
-            serverTrustMethods: [.system, .customCertificate, .disabled],
+            serverTrustMethods: [.system, .customCertificate, .pinnedCertificate, .disabled],
             supportsAcknowledgement: false,
             supportsDowntime: false
         )

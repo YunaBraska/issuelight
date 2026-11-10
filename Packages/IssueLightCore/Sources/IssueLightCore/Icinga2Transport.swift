@@ -146,7 +146,7 @@ final class Icinga2Transport {
                 throw Icinga2TransportError.failure(.serverCertificateNotAvailable)
             }
         case .pinnedCertificate:
-            throw Icinga2TransportError.failure(.unsupportedTrustConfiguration)
+            return
         }
     }
 
@@ -265,7 +265,26 @@ private final class Icinga2SessionDelegate: NSObject, URLSessionDelegate, URLSes
                 return
             }
             completionHandler(.useCredential, URLCredential(trust: serverTrust))
-        case .system, .pinnedCertificate:
+        case .pinnedCertificate(let expectedSHA256):
+            guard let chain = SecTrustCopyCertificateChain(serverTrust) as? [SecCertificate],
+                  let leaf = chain.first,
+                  let expected = ServerCertificateFingerprint.normalizedSHA256(expectedSHA256),
+                  ServerCertificateFingerprint.sha256(of: leaf) == expected,
+                  SecTrustSetPolicies(
+                    serverTrust,
+                    SecPolicyCreateSSL(true, authority.host as CFString)
+                  ) == errSecSuccess,
+                  SecTrustSetAnchorCertificates(serverTrust, [leaf] as CFArray) == errSecSuccess,
+                  SecTrustSetAnchorCertificatesOnly(serverTrust, true) == errSecSuccess,
+                  SecTrustEvaluateWithError(serverTrust, nil) else {
+                trustStateLock.lock()
+                rejectedServerTrust = true
+                trustStateLock.unlock()
+                completionHandler(.cancelAuthenticationChallenge, nil)
+                return
+            }
+            completionHandler(.useCredential, URLCredential(trust: serverTrust))
+        case .system:
             completionHandler(.performDefaultHandling, nil)
         }
     }

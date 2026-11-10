@@ -57,7 +57,7 @@ final class Icinga2ConnectionTesterTests: XCTestCase {
         var pinnedTrust = source()
         pinnedTrust.serverTrust = .pinnedCertificate(sha256: "ABC")
         let pinnedResult = await tester().test(pinnedTrust, password: "secret")
-        XCTAssertEqual(pinnedResult, .failed(.unsupportedTrustConfiguration))
+        XCTAssertEqual(pinnedResult, .failed(.invalidConfiguration([.invalidPinnedCertificate])))
 
         var clientCertificate = source()
         clientCertificate.authentication = .clientCertificate(identityID: "identity")

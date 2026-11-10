@@ -262,6 +262,36 @@ final class IssueLightModelTests: XCTestCase {
         XCTAssertFalse(harness.model.hasUnsavedChanges)
     }
 
+    func testSelectingPinnedSourceLoadsReviewedFingerprint() async throws {
+        let script = SnapshotScript()
+        let fingerprint = String(repeating: "AA:", count: 31) + "AA"
+        let harness = try await makeHarness(
+            sourceCount: 1,
+            script: script,
+            serverTrust: .pinnedCertificate(sha256: fingerprint)
+        )
+
+        await harness.model.load()
+
+        XCTAssertEqual(harness.model.serverTrustChoice, .pinnedCertificate)
+        XCTAssertEqual(harness.model.pinnedServerCertificateSHA256, fingerprint)
+        XCTAssertFalse(harness.model.hasUnsavedChanges)
+    }
+
+    func testSelectingServerCertificateCreatesPinAndMarksFormUnsaved() async throws {
+        let harness = try await makeHarness(sourceCount: 1, script: SnapshotScript())
+        await harness.model.load()
+
+        XCTAssertTrue(harness.model.pinServerCertificate(at: serverCertificateFixtureURL))
+
+        XCTAssertEqual(harness.model.serverTrustChoice, .pinnedCertificate)
+        XCTAssertEqual(
+            harness.model.pinnedServerCertificateSHA256,
+            try ServerCertificateFingerprint.sha256(at: serverCertificateFixtureURL)
+        )
+        XCTAssertTrue(harness.model.hasUnsavedChanges)
+    }
+
     func testAllDisabledSourcesRemainPausedAndPerformNoRefreshWork() async throws {
         let script = SnapshotScript()
         let harness = try await makeHarness(
@@ -471,7 +501,7 @@ private struct TestProvider: MonitoringProvider {
         displayName: "Model Test",
         capabilities: ProviderCapabilities(
             authenticationMethods: [.basic],
-            serverTrustMethods: [.system, .customCertificate],
+            serverTrustMethods: [.system, .customCertificate, .pinnedCertificate],
             supportsAcknowledgement: false,
             supportsDowntime: false
         )

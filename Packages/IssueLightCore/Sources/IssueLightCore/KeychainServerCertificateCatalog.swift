@@ -42,18 +42,17 @@ public actor KeychainServerCertificateCatalog {
     }
 
     public func importCertificate(at fileURL: URL) throws -> ServerCertificateDescriptor {
-        let values = try fileURL.resourceValues(forKeys: [.fileSizeKey])
-        if let fileSize = values.fileSize, fileSize > 1_048_576 {
+        let certificate: SecCertificate
+        do {
+            certificate = try ServerCertificateFingerprint.certificate(at: fileURL)
+        } catch ServerCertificateFingerprintError.certificateFileTooLarge {
             throw KeychainServerCertificateCatalogError.certificateFileTooLarge
-        }
-        let fileData = try Data(contentsOf: fileURL)
-        guard fileData.count <= 1_048_576 else {
-            throw KeychainServerCertificateCatalogError.certificateFileTooLarge
-        }
-        let certificateData = try Self.certificateData(from: fileData)
-        guard let certificate = SecCertificateCreateWithData(nil, certificateData as CFData) else {
+        } catch ServerCertificateFingerprintError.multipleCertificatesNotSupported {
+            throw KeychainServerCertificateCatalogError.multipleCertificatesNotSupported
+        } catch {
             throw KeychainServerCertificateCatalogError.invalidCertificate
         }
+        let certificateData = SecCertificateCopyData(certificate) as Data
 
         let ownershipFingerprint = SHA256.hash(data: certificateData)
             .map { String(format: "%02x", $0) }
@@ -249,34 +248,14 @@ public actor KeychainServerCertificateCatalog {
         return reference
     }
 
-    private static func certificateData(from fileData: Data) throws -> Data {
-        guard let text = String(data: fileData, encoding: .utf8),
-              let begin = text.range(of: "-----BEGIN CERTIFICATE-----"),
-              let end = text.range(of: "-----END CERTIFICATE-----", range: begin.upperBound..<text.endIndex) else {
-            return fileData
-        }
-        if text.range(of: "-----BEGIN CERTIFICATE-----", range: end.upperBound..<text.endIndex) != nil {
-            throw KeychainServerCertificateCatalogError.multipleCertificatesNotSupported
-        }
-        let encoded = String(text[begin.upperBound..<end.lowerBound])
-        guard let decoded = Data(base64Encoded: encoded, options: .ignoreUnknownCharacters) else {
-            throw KeychainServerCertificateCatalogError.invalidCertificate
-        }
-        return decoded
-    }
-
     private static func descriptor(
         certificate: SecCertificate,
         reference: Data
     ) -> ServerCertificateDescriptor {
-        let certificateData = SecCertificateCopyData(certificate) as Data
-        let fingerprint = SHA256.hash(data: certificateData)
-            .map { String(format: "%02X", $0) }
-            .joined(separator: ":")
         return ServerCertificateDescriptor(
             id: reference.base64EncodedString(),
             displayName: SecCertificateCopySubjectSummary(certificate) as String? ?? "Unbenannte CA",
-            sha256Fingerprint: fingerprint
+            sha256Fingerprint: ServerCertificateFingerprint.sha256(of: certificate)
         )
     }
 }

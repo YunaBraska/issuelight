@@ -33,8 +33,9 @@ Create `integration/icinga2/.env.local` from `.env.example`, then run:
 `start` also creates accepted `issuelight-live-client.issuelight.invalid` and rejected
 `issuelight-live-rejected.issuelight.invalid` identities signed by the lab CA. The
 PKCS#12 file and CA certificate are written to
-`ISSUELIGHT_ICINGA_ARTIFACTS_DIR`. The PKCS#12 password remains only in the ignored
-`.env.local` file.
+`ISSUELIGHT_ICINGA_ARTIFACTS_DIR`. The generated server leaf is exported there
+as `server.crt` for exact-certificate pinning tests. The PKCS#12 password
+remains only in the ignored `.env.local` file.
 
 `verify` temporarily imports those dedicated test identities into the default
 macOS Keychain, resolves their persistent references through `IssueLightCore`,

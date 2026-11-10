@@ -14,6 +14,7 @@ Snapshot date: 2026-11-10.
 | Basic credentials | Real temporary macOS Keychain item lifecycle with cleanup | Verified locally |
 | Client identities | PKCS#12 parsing and persistent-reference tests | Verified locally |
 | Private CA trust | PEM/DER import, Keychain persistent reference, source-specific Apple trust evaluation, hostname checks, accepted lab CA, rejected unrelated CA, and ownership-aware cleanup after the final source reference | Verified in package, app-model, and live tests |
+| Exact server-certificate pinning | PEM/DER leaf selection, normalized SHA-256 persistence, source-specific Apple trust evaluation, authority-change reset, accepted exact lab leaf, rejected mismatched leaf, and rejected hostname mismatch | Verified in package, app-model, and live tests |
 | Connection classification | Tests for success, cancellation, authentication, authorization, TLS, reachability, and incompatible responses | Verified |
 | Monitoring snapshots | Provider-neutral host and service issues, severity, acknowledgement, downtime, and deterministic ordering | Verified in package tests |
 | Snapshot transport | Shared connection and refresh transport, same-origin redirects, Basic auth, mTLS, and explicit failures | Verified in package and live tests |
@@ -21,26 +22,25 @@ Snapshot date: 2026-11-10.
 | Multiple-source runtime | Independent credentials, refresh tasks, failure state, disable behavior, snapshots, and aggregate issue ordering | Verified in app-model tests through persisted sources and real Keychain scopes |
 | Source persistence permissions | Atomic JSON writes containing no secrets, restricted to the local user with mode `0600` | Verified in package and app-model tests |
 | Privacy boundary | Direct source connections, no telemetry SDK, ephemeral network sessions, in-memory snapshots, documented local storage and deletion behavior | Verified in source and `PRIVACY.md` |
-| Source setup UI | Native sidebar supports add, select, edit, disable, test, remove, private-CA import, and explicit insecure trust with unsaved-change protection | Real success, validation failure, insecure warning, private-CA import, unrelated-CA TLS failure, saved-source, and persistent action-feedback states inspected locally |
+| Source setup UI | Native sidebar supports add, select, edit, disable, test, remove, private-CA import, exact server-certificate pinning, and explicit insecure trust with unsaved-change protection | Real success, validation failure, insecure warning, private-CA import, accepted exact pin, rejected mismatched pin, unrelated-CA TLS failure, saved-source, and persistent action-feedback states inspected locally |
 | Attention UI | Native menu and status window for setup, loading, healthy, problem, failure, and stale states | Empty setup, deterministic two-problem Icinga status, failure with retained stale data, accessible source error, and recovery inspected locally; remaining states need running-product inspection |
 | Real Icinga 2 integration | Isolated pinned official container lab covers Basic auth, permission denial, private CA, mTLS, exact real host/service problem payloads, stable initial checks, and two persisted app-model sources | Verified locally |
 | OSS repository controls | Apache-2.0, provenance notice, contributor/security/privacy policies, private vulnerability reporting, secret scanning with push protection, SHA-pinned Actions, and protected `main` | Verified in the public repository |
 | Release-candidate artifacts | Universal app validation, fail-closed signed mode, ZIP, SPDX 2.3 SBOM, and verified SHA-256 manifest | Unsigned path verified locally and in CI; real signing and notarization remain open |
 
-The local package suite currently executes 41 tests. Five live Icinga tests
+The local package suite currently executes 48 tests. Eight live Icinga tests
 are skipped unless the integration environment is configured. The app suite
-executes eleven deterministic model tests and one live integration test, skipped
+executes thirteen deterministic model tests and one live integration test, skipped
 outside the lab. It exercises multiple-source management and refresh isolation
 through persisted source, real Keychain, and real Icinga 2 boundaries. The full
 live matrix passed locally on 2026-11-10.
 
-LLVM source coverage for `IssueLightCore` is currently 74.3% of lines and 65.6%
+LLVM source coverage for `IssueLightCore` is currently 74.8% of lines and 70.1%
 of regions. Swift does not report branch totals in this configuration. Coverage
 is evidence, not a release gate yet, and remains below the project goals.
 
 ## Release blockers
 
-- Certificate pinning and reviewed rotation are specified but not implemented.
 - Keychain denial and revocation need installed-app evidence.
 - Multiple-source navigation, complete keyboard and accessibility behavior,
   localization, dark mode, healthy/all-paused UI, large-data behavior, and

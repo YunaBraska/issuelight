@@ -27,6 +27,8 @@ is offered before a maintained release exists.
   managed certificates remain untouched.
 - Server certificate verification is enabled by default. Disabling it is a
   source-specific, visible exception.
+- Exact server-certificate pinning stores only a public leaf fingerprint,
+  applies trust to that source, and retains hostname and validity checks.
 - Diagnostics and test fixtures must not contain private hostnames, URLs,
   tokens, private keys, production certificates, or monitoring payloads from
   real systems. Public certificates generated solely for tests are allowed.

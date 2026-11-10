@@ -10,8 +10,9 @@ provider boundary so future providers do not leak into shared UI or storage.
 
 IssueLight is under active development. Source setup, macOS Keychain-backed
 credentials, strict-by-default TLS, source-specific private CAs, optional
-per-source certificate bypass, and a real containerized Icinga 2 compatibility
-lab are implemented. The first attention-first host and service view now
+exact server-certificate pinning, optional per-source certificate bypass, and a
+real containerized Icinga 2 compatibility lab are implemented. The first
+attention-first host and service view now
 aggregates independently refreshed, enabled sources. Notifications, Developer
 ID signing, notarization, and end-user distribution are not yet release-ready.
 

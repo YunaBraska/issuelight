@@ -125,6 +125,7 @@ public enum SourceValidationIssue: Error, Equatable, Hashable, Sendable {
     case invalidUsername
     case missingClientIdentity
     case missingServerCertificate
+    case invalidPinnedCertificate
     case unsupportedAuthentication(AuthenticationMethod)
     case unsupportedPath(String)
 }
@@ -175,6 +176,10 @@ public enum MonitoringSourceValidator {
         if case .customCertificate(let certificateID) = source.serverTrust,
            certificateID.isEmpty {
             issues.append(.missingServerCertificate)
+        }
+        if case .pinnedCertificate(let sha256) = source.serverTrust,
+           ServerCertificateFingerprint.normalizedSHA256(sha256) == nil {
+            issues.append(.invalidPinnedCertificate)
         }
 
         return issues
