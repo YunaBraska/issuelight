@@ -15,6 +15,9 @@ ordinary unit work does not start Docker or modify Keychain identities.
 
 ```sh
 swift test --package-path Packages/IssueLightCore
+xcodebuild test -project IssueLight/IssueLight.xcodeproj \
+  -scheme IssueLight -configuration Debug -destination 'platform=macOS' \
+  CODE_SIGNING_ALLOWED=NO
 xcodebuild build -project IssueLight/IssueLight.xcodeproj \
   -scheme IssueLight -configuration Debug -destination 'platform=macOS' \
   CODE_SIGNING_ALLOWED=NO

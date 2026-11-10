@@ -30,6 +30,15 @@ jobs:
       - name: Test core
         run: swift test --package-path Packages/IssueLightCore --enable-code-coverage
 
+      - name: Test app refresh model
+        run: |
+          xcodebuild test \
+            -project IssueLight/IssueLight.xcodeproj \
+            -scheme IssueLight \
+            -configuration Debug \
+            -destination 'platform=macOS' \
+            CODE_SIGNING_ALLOWED=NO
+
       - name: Build release app
         run: |
           xcodebuild build \

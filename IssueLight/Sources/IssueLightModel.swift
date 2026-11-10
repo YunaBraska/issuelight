@@ -59,9 +59,9 @@ final class IssueLightModel: ObservableObject {
     private var sourceID = UUID()
     private var loadedSource: MonitoringSource?
     private let sourceStore: SourceStore?
-    private let providerRegistry = ProviderRegistry.builtIn()
-    private let passwordVault = KeychainPasswordVault()
-    private let identityCatalog = KeychainIdentityCatalog()
+    private let providerRegistry: ProviderRegistry
+    private let passwordVault: KeychainPasswordVault
+    private let identityCatalog: KeychainIdentityCatalog
     private var hasStarted = false
     private var refreshLoopTask: Task<Void, Never>?
     private var refreshTask: Task<Void, Never>?
@@ -123,17 +123,38 @@ final class IssueLightModel: ObservableObject {
         }
     }
 
-    init() {
-        selectedProviderID = providerRegistry.descriptors.first?.id ?? ProviderID(rawValue: "")
+    convenience init() {
         let bundleIdentifier = Bundle.main.bundleIdentifier ?? "io.github.yunabraska.issuelight"
-        if let fileURL = try? SourceStore.defaultFileURL(bundleIdentifier: bundleIdentifier) {
-            sourceStore = SourceStore(fileURL: fileURL)
-        } else {
-            sourceStore = nil
+        let fileURL = try? SourceStore.defaultFileURL(bundleIdentifier: bundleIdentifier)
+        let store = fileURL.map(SourceStore.init(fileURL:))
+        self.init(
+            sourceStore: store,
+            providerRegistry: .builtIn(),
+            passwordVault: KeychainPasswordVault(),
+            identityCatalog: KeychainIdentityCatalog(),
+            startsAutomatically: true
+        )
+        if store == nil {
             activity = .failure("Der Speicherort für die Quellen konnte nicht geöffnet werden.")
         }
-        Task { [weak self] in
-            await self?.start()
+    }
+
+    init(
+        sourceStore: SourceStore?,
+        providerRegistry: ProviderRegistry,
+        passwordVault: KeychainPasswordVault,
+        identityCatalog: KeychainIdentityCatalog,
+        startsAutomatically: Bool
+    ) {
+        self.sourceStore = sourceStore
+        self.providerRegistry = providerRegistry
+        self.passwordVault = passwordVault
+        self.identityCatalog = identityCatalog
+        selectedProviderID = providerRegistry.descriptors.first?.id ?? ProviderID(rawValue: "")
+        if startsAutomatically {
+            Task { [weak self] in
+                await self?.start()
+            }
         }
     }
 
@@ -148,7 +169,9 @@ final class IssueLightModel: ObservableObject {
         await load()
         if hasConfiguredSource {
             startRefreshLoop()
-            refresh()
+            if let initialRefresh = refresh() {
+                await initialRefresh.value
+            }
         }
     }
 
@@ -231,12 +254,13 @@ final class IssueLightModel: ObservableObject {
         activity = message(for: result)
     }
 
-    func refresh() {
+    @discardableResult
+    func refresh() -> Task<Void, Never>? {
         guard let source = loadedSource, source.isEnabled else {
             refreshTask?.cancel()
             snapshot = nil
             refreshState = .notConfigured
-            return
+            return nil
         }
 
         refreshTask?.cancel()
@@ -244,6 +268,7 @@ final class IssueLightModel: ObservableObject {
         refreshTask = Task { [weak self] in
             await self?.performRefresh(source: source)
         }
+        return refreshTask
     }
 
     func save() async {

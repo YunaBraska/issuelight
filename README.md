@@ -25,6 +25,12 @@ packaging, signing, and notarization are not yet release-ready.
 
 ```sh
 swift test --package-path Packages/IssueLightCore
+xcodebuild test \
+  -project IssueLight/IssueLight.xcodeproj \
+  -scheme IssueLight \
+  -configuration Debug \
+  -destination 'platform=macOS' \
+  CODE_SIGNING_ALLOWED=NO
 xcodebuild build \
   -project IssueLight/IssueLight.xcodeproj \
   -scheme IssueLight \

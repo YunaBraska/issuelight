@@ -16,13 +16,16 @@ Snapshot date: 2026-11-10.
 | Connection classification | Tests for success, cancellation, authentication, authorization, TLS, reachability, and incompatible responses | Verified |
 | Monitoring snapshots | Provider-neutral host and service issues, severity, acknowledgement, downtime, and deterministic ordering | Verified in package tests |
 | Snapshot transport | Shared connection and refresh transport, same-origin redirects, Basic auth, mTLS, and explicit failures | Verified in package and live tests |
+| Refresh lifecycle | Initial and manual refresh, replacement cancellation, stale retention, and source removal | Verified in app-model tests |
+| Source persistence permissions | Atomic JSON writes containing no secrets, restricted to the local user with mode `0600` | Verified in package and app-model tests |
 | Source setup UI | Native SwiftUI app builds for macOS 14+ | Build verified |
 | Attention UI | Native menu and status window for setup, loading, healthy, problem, failure, and stale states | Empty setup state inspected locally; remaining states need running-product inspection |
 | Real Icinga 2 integration | Pinned official container lab covers Basic auth, permission denial, private CA, mTLS, and real host/service problem payloads | Verified locally |
 
 The local package suite currently executes 31 tests. Three live Icinga tests
-are skipped unless the integration environment is configured. The full live
-matrix passed locally on 2026-11-10.
+are skipped unless the integration environment is configured. Three additional
+app-model tests exercise the refresh lifecycle through persisted source and
+real Keychain boundaries. The full live matrix passed locally on 2026-11-10.
 
 LLVM source coverage for `IssueLightCore` is currently 73.1% of lines and 64.5%
 of regions. Swift does not report branch totals in this configuration. Coverage
@@ -30,7 +33,6 @@ is evidence, not a release gate yet, and remains below the project goals.
 
 ## Release blockers
 
-- Refresh cancellation, replacement, stale retention, and source-removal behavior need automated app-level tests.
 - Multiple sources are not manageable through the UI.
 - Custom CA trust and certificate pinning are specified but not implemented.
 - Keychain denial and revocation need installed-app evidence.

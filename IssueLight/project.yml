@@ -34,6 +34,21 @@ targets:
         INFOPLIST_KEY_NSHumanReadableCopyright: Copyright © 2026 IssueLight contributors.
         ENABLE_HARDENED_RUNTIME: YES
 
+  IssueLightModelTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - Tests
+      - Sources/IssueLightModel.swift
+    dependencies:
+      - package: IssueLightCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.yunabraska.issuelight.model-tests
+        SWIFT_VERSION: 5.0
+        GENERATE_INFOPLIST_FILE: YES
+        ENABLE_APP_SANDBOX: NO
+
 schemes:
   IssueLight:
     build:
@@ -41,5 +56,10 @@ schemes:
         IssueLight: all
     run:
       config: Debug
+    test:
+      config: Debug
+      gatherCoverageData: true
+      targets:
+        - IssueLightModelTests
     archive:
       config: Release
