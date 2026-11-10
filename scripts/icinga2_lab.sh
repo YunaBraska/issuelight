@@ -93,6 +93,25 @@ verify_swift_mtls() {
       --filter Icinga2LiveConnectionTests
 }
 
+verify_app_model_multi_source() {
+  live_model_derived_data=$(mktemp -d "${TMPDIR:-/tmp}/issuelight-live-model.XXXXXX")
+  trap 'rm -rf "$live_model_derived_data"' EXIT HUP INT TERM
+  xcodebuild build-for-testing \
+    -project "$ROOT_DIR/IssueLight/IssueLight.xcodeproj" \
+    -scheme IssueLight \
+    -configuration Debug \
+    -destination 'platform=macOS' \
+    -derivedDataPath "$live_model_derived_data" \
+    CODE_SIGNING_ALLOWED=NO
+  ISSUELIGHT_LIVE_ICINGA_URL="https://localhost:$ISSUELIGHT_ICINGA_PORT" \
+  ISSUELIGHT_REQUIRE_LIVE_ICINGA=1 \
+  ISSUELIGHT_ICINGA_BASIC_PASSWORD="$ISSUELIGHT_ICINGA_BASIC_PASSWORD" \
+    xcrun xctest \
+      "$live_model_derived_data/Build/Products/Debug/IssueLightModelTests.xctest"
+  rm -rf "$live_model_derived_data"
+  trap - EXIT HUP INT TERM
+}
+
 request_status() {
   account=$1
   password=$2
@@ -160,6 +179,7 @@ CURL_CONFIG
   expect_status 200 "$mtls" "client certificate"
 
   verify_swift_mtls
+  verify_app_model_multi_source
 
   printf 'Icinga 2 integration matrix passed.\n'
 }

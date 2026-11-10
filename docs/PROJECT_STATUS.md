@@ -16,28 +16,31 @@ Snapshot date: 2026-11-10.
 | Connection classification | Tests for success, cancellation, authentication, authorization, TLS, reachability, and incompatible responses | Verified |
 | Monitoring snapshots | Provider-neutral host and service issues, severity, acknowledgement, downtime, and deterministic ordering | Verified in package tests |
 | Snapshot transport | Shared connection and refresh transport, same-origin redirects, Basic auth, mTLS, and explicit failures | Verified in package and live tests |
-| Refresh lifecycle | Initial and manual refresh, replacement cancellation, stale retention, and source removal | Verified in app-model tests |
+| Refresh lifecycle | Initial and manual refresh per enabled source, isolated replacement cancellation, stale retention, and source removal | Verified in app-model tests |
+| Multiple-source runtime | Independent credentials, refresh tasks, failure state, disable behavior, snapshots, and aggregate issue ordering | Verified in app-model tests through persisted sources and real Keychain scopes |
 | Source persistence permissions | Atomic JSON writes containing no secrets, restricted to the local user with mode `0600` | Verified in package and app-model tests |
-| Source setup UI | Native SwiftUI app builds for macOS 14+ | Build verified |
+| Source setup UI | Native sidebar supports add, select, edit, disable, test, and remove flows with unsaved-change protection | Build verified; running inspection blocked while the Mac was locked |
 | Attention UI | Native menu and status window for setup, loading, healthy, problem, failure, and stale states | Empty setup state inspected locally; remaining states need running-product inspection |
-| Real Icinga 2 integration | Pinned official container lab covers Basic auth, permission denial, private CA, mTLS, and real host/service problem payloads | Verified locally |
+| Real Icinga 2 integration | Pinned official container lab covers Basic auth, permission denial, private CA, mTLS, real host/service problem payloads, and two persisted app-model sources | Verified locally |
 
 The local package suite currently executes 31 tests. Three live Icinga tests
-are skipped unless the integration environment is configured. Three additional
-app-model tests exercise the refresh lifecycle through persisted source and
-real Keychain boundaries. The full live matrix passed locally on 2026-11-10.
+are skipped unless the integration environment is configured. The app suite
+executes eight deterministic model tests and one live integration test, skipped
+outside the lab. It exercises multiple-source management and refresh isolation
+through persisted source, real Keychain, and real Icinga 2 boundaries. The full
+live matrix passed locally on 2026-11-10.
 
-LLVM source coverage for `IssueLightCore` is currently 73.1% of lines and 64.5%
+LLVM source coverage for `IssueLightCore` is currently 73.2% of lines and 64.6%
 of regions. Swift does not report branch totals in this configuration. Coverage
 is evidence, not a release gate yet, and remains below the project goals.
 
 ## Release blockers
 
-- Multiple sources are not manageable through the UI.
 - Custom CA trust and certificate pinning are specified but not implemented.
 - Keychain denial and revocation need installed-app evidence.
-- Accessibility, localization, dark mode, failure/stale UI, large-data
-  behavior, and energy use need running-product verification.
+- Multiple-source navigation, accessibility, localization, dark mode,
+  failure/stale UI, large-data behavior, and energy use need running-product
+  verification.
 - Core coverage remains below the stated 95% line and 90% branch goals.
 - Packaging, update behavior, Developer ID signing, notarization, stapling,
   checksums, SBOM, and clean-account installation are not implemented or proven.

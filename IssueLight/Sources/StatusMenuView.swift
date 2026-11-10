@@ -39,6 +39,7 @@ struct StatusMenuView: View {
                 model.refresh()
             }
             .keyboardShortcut("r")
+            .disabled(!model.hasEnabledSource)
         }
 
         Button("Quellen …") {
@@ -58,29 +59,43 @@ struct StatusMenuView: View {
     private var summary: some View {
         if !model.hasConfiguredSource {
             Label("Keine Quelle konfiguriert", systemImage: "exclamationmark.triangle")
-        } else if case .failed(let message) = model.refreshState {
-            Label("Aktualisierung fehlgeschlagen", systemImage: "wifi.exclamationmark")
-                .help(message)
-            if let observedAt = model.snapshot?.observedAt {
-                Text("Letzter erfolgreicher Stand: \(observedAt.formatted(date: .omitted, time: .shortened))")
-            }
-        } else if model.refreshState == .refreshing, model.snapshot == nil {
-            Label("Status wird geladen …", systemImage: "arrow.clockwise")
-        } else if model.actionableIssues.isEmpty {
-            Label("Keine Probleme benötigen Aufmerksamkeit", systemImage: "checkmark.circle")
-            lastSuccessfulRefresh
-        } else {
+        } else if !model.hasEnabledSource {
+            Label("Alle Quellen pausiert", systemImage: "pause.circle")
+        } else if !model.actionableIssues.isEmpty {
             Label(
                 "\(model.actionableIssues.count) Probleme benötigen Aufmerksamkeit",
                 systemImage: model.menuBarSymbol
             )
+            lastSuccessfulRefresh
+            if case .failed(let message) = model.refreshState {
+                Label(
+                    model.hasPartialRefreshFailure
+                        ? "Aktualisierung teilweise fehlgeschlagen"
+                        : "Status ist veraltet",
+                    systemImage: "wifi.exclamationmark"
+                )
+                .help(message)
+            }
+        } else if case .failed(let message) = model.refreshState {
+            Label(
+                model.hasPartialRefreshFailure
+                    ? "Aktualisierung teilweise fehlgeschlagen"
+                    : "Aktualisierung fehlgeschlagen",
+                systemImage: "wifi.exclamationmark"
+            )
+            .help(message)
+            lastSuccessfulRefresh
+        } else if model.refreshState == .refreshing, !model.hasActiveSnapshot {
+            Label("Status wird geladen …", systemImage: "arrow.clockwise")
+        } else if model.actionableIssues.isEmpty {
+            Label("Keine Probleme benötigen Aufmerksamkeit", systemImage: "checkmark.circle")
             lastSuccessfulRefresh
         }
     }
 
     @ViewBuilder
     private var lastSuccessfulRefresh: some View {
-        if let observedAt = model.snapshot?.observedAt {
+        if let observedAt = model.latestSuccessfulRefresh {
             Text("Zuletzt geprüft: \(observedAt.formatted(date: .omitted, time: .shortened))")
         }
     }
@@ -91,11 +106,12 @@ struct StatusMenuView: View {
     }
 
     private func issueTitle(_ issue: MonitoringIssue) -> String {
+        let source = model.sources.count > 1 ? "\(model.sourceName(for: issue.sourceID)): " : ""
         switch issue.kind {
         case .host:
-            return issue.displayName
+            return "\(source)\(issue.displayName)"
         case .service:
-            return "\(issue.hostName) · \(issue.displayName)"
+            return "\(source)\(issue.hostName) · \(issue.displayName)"
         }
     }
 

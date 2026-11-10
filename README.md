@@ -11,8 +11,9 @@ provider boundary so future providers do not leak into shared UI or storage.
 IssueLight is under active development. Source setup, macOS Keychain-backed
 credentials, strict-by-default TLS, optional per-source certificate bypass, and
 a real containerized Icinga 2 compatibility lab are implemented. The first
-attention-first host and service view is in development. Notifications,
-packaging, signing, and notarization are not yet release-ready.
+attention-first host and service view now aggregates independently refreshed,
+enabled sources. Notifications, packaging, signing, and notarization are not
+yet release-ready.
 
 ## Requirements
 
@@ -54,6 +55,7 @@ The real Icinga 2 matrix is documented in
 - [`docs/roadmap.md`](docs/roadmap.md): vertical delivery order
 - [`docs/spec/source-connection.md`](docs/spec/source-connection.md): accepted source and security behavior
 - [`docs/spec/attention-snapshot.md`](docs/spec/attention-snapshot.md): attention and refresh behavior
+- [`docs/spec/multiple-sources.md`](docs/spec/multiple-sources.md): multiple-source management and aggregation
 - [`docs/adr/`](docs/adr/): lasting architecture decisions
 - [`CONTRIBUTING.md`](CONTRIBUTING.md): contributor workflow
 - [`SECURITY.md`](SECURITY.md): private vulnerability reporting

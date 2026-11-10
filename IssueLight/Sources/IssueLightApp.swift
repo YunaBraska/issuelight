@@ -8,7 +8,7 @@ struct IssueLightApp: App {
         Window("Quellen", id: "sources") {
             SourceSetupView(model: model)
         }
-        .defaultSize(width: 620, height: 620)
+        .defaultSize(width: 920, height: 680)
         .windowResizability(.contentMinSize)
 
         Window("IssueLight", id: "status") {
@@ -35,12 +35,19 @@ struct IssueLightApp: App {
         if !model.hasConfiguredSource {
             return "IssueLight, keine Quelle konfiguriert"
         }
-        if case .failed(let message) = model.refreshState {
-            return "IssueLight, Aktualisierung fehlgeschlagen: \(message)"
+        if !model.hasEnabledSource {
+            return "IssueLight, alle Quellen pausiert"
         }
         let count = model.actionableIssues.count
-        return count == 0
-            ? "IssueLight, keine Probleme benötigen Aufmerksamkeit"
-            : "IssueLight, \(count) Probleme benötigen Aufmerksamkeit"
+        let attention = count == 0
+            ? "keine Probleme benötigen Aufmerksamkeit"
+            : "\(count) Probleme benötigen Aufmerksamkeit"
+        if case .failed(let message) = model.refreshState {
+            let failure = model.hasPartialRefreshFailure
+                ? "Aktualisierung teilweise fehlgeschlagen"
+                : "Status veraltet"
+            return "IssueLight, \(attention), \(failure): \(message)"
+        }
+        return "IssueLight, \(attention)"
     }
 }

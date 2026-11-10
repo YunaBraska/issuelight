@@ -29,13 +29,22 @@ final class IssueLightModel: ObservableObject {
 
     enum RefreshState: Equatable {
         case notConfigured
+        case disabled
         case refreshing
         case current
         case failed(String)
     }
 
+    struct SourceFailure: Identifiable {
+        let source: MonitoringSource
+        let message: String
+
+        var id: UUID { source.id }
+    }
+
     @Published var name = ""
     @Published var endpoint = ""
+    @Published var isSourceEnabled = true
     @Published var selectedProviderID: ProviderID {
         didSet {
             guard selectedProviderID != oldValue else { return }
@@ -51,23 +60,62 @@ final class IssueLightModel: ObservableObject {
     @Published private(set) var hasStoredBasicPassword = false
     @Published var verifiesServerCertificate = true
     @Published private(set) var activity = Activity.idle
-    @Published private(set) var hasConfiguredSource = false
     @Published private(set) var isTestingConnection = false
-    @Published private(set) var snapshot: MonitoringSnapshot?
-    @Published private(set) var refreshState = RefreshState.notConfigured
+    @Published private(set) var sources: [MonitoringSource] = []
+    @Published private(set) var selectedSourceID: UUID?
+    @Published private(set) var snapshots: [UUID: MonitoringSnapshot] = [:]
+    @Published private(set) var refreshStates: [UUID: RefreshState] = [:]
 
     private var sourceID = UUID()
-    private var loadedSource: MonitoringSource?
     private let sourceStore: SourceStore?
     private let providerRegistry: ProviderRegistry
     private let passwordVault: KeychainPasswordVault
     private let identityCatalog: KeychainIdentityCatalog
     private var hasStarted = false
     private var refreshLoopTask: Task<Void, Never>?
-    private var refreshTask: Task<Void, Never>?
+    private var refreshTasks: [UUID: Task<Void, Never>] = [:]
+    private var connectionTestID: UUID?
 
-    var actionableIssues: [MonitoringIssue] {
-        snapshot?.actionableIssues ?? []
+    var hasConfiguredSource: Bool {
+        !sources.isEmpty
+    }
+
+    var hasEnabledSource: Bool {
+        sources.contains(where: \.isEnabled)
+    }
+
+    var selectedSource: MonitoringSource? {
+        guard let selectedSourceID else { return nil }
+        return sources.first(where: { $0.id == selectedSourceID })
+    }
+
+    var isCreatingSource: Bool {
+        selectedSourceID == nil
+    }
+
+    var hasUnsavedChanges: Bool {
+        if !password.isEmpty { return true }
+        guard let selectedSource else {
+            return !name.isEmpty
+                || !endpoint.isEmpty
+                || !username.isEmpty
+                || !selectedIdentityID.isEmpty
+                || !isSourceEnabled
+        }
+
+        let authentication: AuthenticationConfiguration
+        switch authenticationChoice {
+        case .basic:
+            authentication = .basic(username: username)
+        case .clientCertificate:
+            authentication = .clientCertificate(identityID: selectedIdentityID)
+        }
+        return name != selectedSource.name
+            || endpoint != selectedSource.endpoint.absoluteString
+            || isSourceEnabled != selectedSource.isEnabled
+            || selectedProviderID != selectedSource.providerID
+            || authentication != selectedSource.authentication
+            || verifiesServerCertificate != selectedSource.serverTrust.verifiesServerCertificate
     }
 
     var providers: [ProviderDescriptor] {
@@ -94,14 +142,63 @@ final class IssueLightModel: ObservableObject {
             .descriptor.capabilities.serverTrustMethods.contains(.disabled) == true
     }
 
+    var actionableIssues: [MonitoringIssue] {
+        activeSnapshots.flatMap(\.actionableIssues).sorted(by: issueOrder)
+    }
+
     var coveredIssues: [MonitoringIssue] {
-        snapshot?.issues.filter { !$0.requiresAttention } ?? []
+        activeSnapshots
+            .flatMap(\.issues)
+            .filter { !$0.requiresAttention }
+            .sorted(by: issueOrder)
+    }
+
+    var latestSuccessfulRefresh: Date? {
+        activeSnapshots.map(\.observedAt).max()
+    }
+
+    var hasActiveSnapshot: Bool {
+        !activeSnapshots.isEmpty
+    }
+
+    var failedSources: [SourceFailure] {
+        sources.compactMap { source in
+            guard source.isEnabled, case .failed(let message) = refreshStates[source.id] else {
+                return nil
+            }
+            return SourceFailure(source: source, message: message)
+        }
+    }
+
+    var hasPartialRefreshFailure: Bool {
+        let enabledCount = sources.filter(\.isEnabled).count
+        return !failedSources.isEmpty && failedSources.count < enabledCount
+    }
+
+    var refreshState: RefreshState {
+        if sources.isEmpty { return .notConfigured }
+        let enabledSources = sources.filter(\.isEnabled)
+        if enabledSources.isEmpty { return .disabled }
+        let failures = failedSources
+        if let failure = failures.first {
+            if failures.count == 1 {
+                return .failed("\(failure.source.name): \(failure.message)")
+            }
+            return .failed("\(failures.count) Quellen konnten nicht aktualisiert werden.")
+        }
+        if enabledSources.contains(where: { refreshStates[$0.id] == .refreshing }) {
+            return .refreshing
+        }
+        if enabledSources.allSatisfy({ refreshStates[$0.id] == .current }) {
+            return .current
+        }
+        return .refreshing
     }
 
     var menuBarSymbol: String {
         if !hasConfiguredSource { return "exclamationmark.triangle" }
-        if case .failed = refreshState { return "wifi.exclamationmark" }
-        switch snapshot?.highestAttentionSeverity {
+        if !hasEnabledSource { return "pause.circle" }
+        switch actionableIssues.map(\.severity).max() {
         case .critical:
             return "exclamationmark.octagon.fill"
         case .unknown:
@@ -109,13 +206,14 @@ final class IssueLightModel: ObservableObject {
         case .warning:
             return "exclamationmark.triangle.fill"
         case nil:
+            if case .failed = refreshState { return "wifi.exclamationmark" }
             return refreshState == .refreshing ? "arrow.clockwise" : "checkmark.circle"
         }
     }
 
     var deletionMessage: String {
-        guard let loadedSource else { return "Die Quellenkonfiguration wird von diesem Mac entfernt." }
-        switch loadedSource.authentication {
+        guard let selectedSource else { return "Die Quellenkonfiguration wird von diesem Mac entfernt." }
+        switch selectedSource.authentication {
         case .basic:
             return "Die Konfiguration und das zugehörige Basic-Passwort werden von diesem Mac entfernt."
         case .clientCertificate:
@@ -159,7 +257,7 @@ final class IssueLightModel: ObservableObject {
     }
 
     deinit {
-        refreshTask?.cancel()
+        refreshTasks.values.forEach { $0.cancel() }
         refreshLoopTask?.cancel()
     }
 
@@ -167,7 +265,7 @@ final class IssueLightModel: ObservableObject {
         guard !hasStarted else { return }
         hasStarted = true
         await load()
-        if hasConfiguredSource {
+        if hasEnabledSource {
             startRefreshLoop()
             if let initialRefresh = refresh() {
                 await initialRefresh.value
@@ -179,24 +277,17 @@ final class IssueLightModel: ObservableObject {
         guard let sourceStore else { return }
         activity = .working("Gespeicherte Quellen werden geladen …")
         do {
-            let sources = try await sourceStore.load()
-            hasConfiguredSource = !sources.isEmpty
-            if let source = sources.first {
-                loadedSource = source
-                apply(source)
-                if case .basic = source.authentication {
-                    let scope = try BasicCredentialScope(source: source)
-                    hasStoredBasicPassword = try await passwordVault.password(for: scope) != nil
-                } else {
-                    hasStoredBasicPassword = false
-                }
+            sources = try await sourceStore.load()
+            for source in sources where !source.isEnabled {
+                refreshStates[source.id] = .disabled
+            }
+            if let firstSource = sources.first {
+                await selectSource(id: firstSource.id)
             } else {
-                loadedSource = nil
-                sourceID = UUID()
-                refreshState = .notConfigured
+                beginAddingSource()
             }
         } catch {
-            activity = .failure("Die gespeicherte Quelle konnte nicht geladen werden: \(error.localizedDescription)")
+            activity = .failure("Die gespeicherten Quellen konnten nicht geladen werden: \(error.localizedDescription)")
             return
         }
 
@@ -214,14 +305,56 @@ final class IssueLightModel: ObservableObject {
         }
     }
 
+    func selectSource(id: UUID) async {
+        guard let source = sources.first(where: { $0.id == id }) else { return }
+        connectionTestID = nil
+        isTestingConnection = false
+        selectedSourceID = source.id
+        apply(source)
+        password = ""
+        do {
+            let hasPassword: Bool
+            if case .basic = source.authentication {
+                hasPassword = try await passwordVault.password(for: BasicCredentialScope(source: source)) != nil
+            } else {
+                hasPassword = false
+            }
+            guard selectedSourceID == source.id else { return }
+            hasStoredBasicPassword = hasPassword
+            activity = .idle
+        } catch {
+            guard selectedSourceID == source.id else { return }
+            hasStoredBasicPassword = false
+            activity = .failure("Das gespeicherte Passwort konnte nicht aus dem Schlüsselbund gelesen werden.")
+        }
+    }
+
+    func beginAddingSource() {
+        connectionTestID = nil
+        isTestingConnection = false
+        selectedSourceID = nil
+        sourceID = UUID()
+        name = ""
+        endpoint = ""
+        isSourceEnabled = true
+        selectedProviderID = providerRegistry.descriptors.first?.id ?? ProviderID(rawValue: "")
+        authenticationChoice = authenticationChoices.first ?? .basic
+        username = ""
+        password = ""
+        selectedIdentityID = ""
+        hasStoredBasicPassword = false
+        verifiesServerCertificate = true
+        activity = .idle
+    }
+
     func testConnection() async {
         guard let source = sourceFromForm() else { return }
         guard let provider = providerRegistry.provider(for: source.providerID) else {
             activity = .failure("Der konfigurierte Monitoring-Typ ist nicht verfügbar.")
             return
         }
+        connectionTestID = source.id
         isTestingConnection = true
-        defer { isTestingConnection = false }
         activity = .working("Verbindung wird geprüft …")
 
         let result: ConnectionTestResult
@@ -229,11 +362,15 @@ final class IssueLightModel: ObservableObject {
         case .basic:
             do {
                 guard let resolvedPassword = try await basicPassword(for: source) else {
+                    guard connectionTestID == source.id else { return }
+                    isTestingConnection = false
                     activity = .failure("Gib ein Passwort ein.")
                     return
                 }
                 result = await provider.testConnection(to: source, credential: .password(resolvedPassword))
             } catch {
+                guard connectionTestID == source.id else { return }
+                isTestingConnection = false
                 activity = .failure("Das Passwort konnte nicht aus dem Schlüsselbund gelesen werden.")
                 return
             }
@@ -241,42 +378,67 @@ final class IssueLightModel: ObservableObject {
             do {
                 let identity = try await identityCatalog.identity(id: identityID)
                 guard let identity else {
+                    guard connectionTestID == source.id else { return }
+                    isTestingConnection = false
                     activity = .failure("Das Client-Zertifikat ist nicht mehr im Schlüsselbund verfügbar.")
                     return
                 }
                 result = await provider.testConnection(to: source, credential: .clientIdentity(identity))
             } catch {
+                guard connectionTestID == source.id else { return }
+                isTestingConnection = false
                 activity = .failure("Das Client-Zertifikat konnte nicht aus dem Schlüsselbund gelesen werden.")
                 return
             }
         }
 
+        guard connectionTestID == source.id else { return }
+        connectionTestID = nil
+        isTestingConnection = false
         activity = message(for: result)
     }
 
     @discardableResult
     func refresh() -> Task<Void, Never>? {
-        guard let source = loadedSource, source.isEnabled else {
-            refreshTask?.cancel()
-            snapshot = nil
-            refreshState = .notConfigured
+        let tasks = sources.filter(\.isEnabled).map { refresh(sourceID: $0.id) }.compactMap { $0 }
+        guard !tasks.isEmpty else { return nil }
+        return Task {
+            for task in tasks {
+                await task.value
+            }
+        }
+    }
+
+    @discardableResult
+    func refresh(sourceID: UUID) -> Task<Void, Never>? {
+        guard let source = sources.first(where: { $0.id == sourceID }), source.isEnabled else {
+            refreshTasks[sourceID]?.cancel()
+            refreshTasks[sourceID] = nil
+            if sources.contains(where: { $0.id == sourceID }) {
+                refreshStates[sourceID] = .disabled
+            } else {
+                refreshStates[sourceID] = nil
+            }
             return nil
         }
 
-        refreshTask?.cancel()
-        refreshState = .refreshing
-        refreshTask = Task { [weak self] in
-            await self?.performRefresh(source: source)
+        refreshTasks[sourceID]?.cancel()
+        refreshStates[sourceID] = .refreshing
+        let task = Task { [weak self] in
+            guard let self else { return }
+            await self.performRefresh(source: source)
         }
-        return refreshTask
+        refreshTasks[sourceID] = task
+        return task
     }
 
     func save() async {
         guard let source = sourceFromForm(), let sourceStore else { return }
         activity = .working("Quelle wird gespeichert …")
+        let previousSource = selectedSource
 
         do {
-            let previousScope = try basicCredentialScope(for: loadedSource)
+            let previousScope = try basicCredentialScope(for: previousSource)
             let newScope = try basicCredentialScope(for: source)
             let previousPassword: String?
             if let previousScope, previousScope == newScope {
@@ -303,8 +465,10 @@ final class IssueLightModel: ObservableObject {
             case .clientCertificate:
                 break
             }
+
+            let persistedSources: [MonitoringSource]
             do {
-                _ = try await sourceStore.upsert(source)
+                persistedSources = try await sourceStore.upsert(source)
             } catch {
                 if storedNewPassword, let newScope {
                     if newScope == previousScope, let previousPassword {
@@ -315,59 +479,98 @@ final class IssueLightModel: ObservableObject {
                 }
                 throw error
             }
-            if let previousScope, previousScope != newScope {
-                try await passwordVault.deletePassword(for: previousScope)
+
+            let connectionChanged = previousSource.map {
+                $0.providerID != source.providerID
+                    || $0.endpoint != source.endpoint
+                    || $0.authentication != source.authentication
+                    || $0.serverTrust != source.serverTrust
+            } ?? true
+            refreshTasks[source.id]?.cancel()
+            refreshTasks[source.id] = nil
+            if connectionChanged {
+                snapshots[source.id] = nil
             }
-            loadedSource = source
-            hasConfiguredSource = true
-            hasStoredBasicPassword = newScope != nil
+            sources = persistedSources
+            selectedSourceID = source.id
+            sourceID = source.id
             password = ""
-            activity = .success("Quelle gespeichert. Geheimnisse bleiben im macOS-Schlüsselbund.")
-            startRefreshLoop()
-            refresh()
+            hasStoredBasicPassword = newScope != nil
+
+            var cleanupFailed = false
+            if let previousScope, previousScope != newScope {
+                do {
+                    try await passwordVault.deletePassword(for: previousScope)
+                } catch {
+                    cleanupFailed = true
+                }
+            }
+
+            if source.isEnabled {
+                startRefreshLoop()
+                refresh(sourceID: source.id)
+            } else {
+                refreshStates[source.id] = .disabled
+                if !hasEnabledSource {
+                    refreshLoopTask?.cancel()
+                    refreshLoopTask = nil
+                }
+            }
+            activity = cleanupFailed
+                ? .failure("Quelle gespeichert, aber das alte Basic-Passwort konnte nicht entfernt werden.")
+                : .success("Quelle gespeichert. Geheimnisse bleiben im macOS-Schlüsselbund.")
         } catch {
             activity = .failure("Die Quelle konnte nicht gespeichert werden: \(error.localizedDescription)")
         }
     }
 
     func deleteSource() async {
-        guard let source = loadedSource, let sourceStore else { return }
+        guard let source = selectedSource, let sourceStore else { return }
         activity = .working("Quelle wird entfernt …")
+        let removedIndex = sources.firstIndex(where: { $0.id == source.id }) ?? 0
 
+        let persistedSources: [MonitoringSource]
         do {
-            _ = try await sourceStore.remove(id: source.id)
+            persistedSources = try await sourceStore.remove(id: source.id)
         } catch {
             activity = .failure("Die Quelle konnte nicht entfernt werden: \(error.localizedDescription)")
             return
         }
 
-        refreshTask?.cancel()
-        refreshLoopTask?.cancel()
-        loadedSource = nil
-        sourceID = UUID()
-        name = ""
-        endpoint = ""
-        authenticationChoice = .basic
-        username = ""
-        password = ""
-        hasStoredBasicPassword = false
-        selectedIdentityID = ""
-        verifiesServerCertificate = true
-        hasConfiguredSource = false
-        snapshot = nil
-        refreshState = .notConfigured
-
-        guard case .basic = source.authentication else {
-            activity = .success("Quelle entfernt. Das Client-Zertifikat bleibt im macOS-Schlüsselbund.")
-            return
+        refreshTasks[source.id]?.cancel()
+        refreshTasks[source.id] = nil
+        snapshots[source.id] = nil
+        refreshStates[source.id] = nil
+        sources = persistedSources
+        if !hasEnabledSource {
+            refreshLoopTask?.cancel()
+            refreshLoopTask = nil
         }
-        do {
-            try await passwordVault.deletePassword(for: BasicCredentialScope(source: source))
+
+        var cleanupFailed = false
+        if case .basic = source.authentication {
+            do {
+                try await passwordVault.deletePassword(for: BasicCredentialScope(source: source))
+            } catch {
+                cleanupFailed = true
+            }
+        }
+
+        if sources.isEmpty {
+            refreshLoopTask?.cancel()
+            refreshLoopTask = nil
+            beginAddingSource()
+        } else {
+            let nextIndex = min(removedIndex, sources.count - 1)
+            await selectSource(id: sources[nextIndex].id)
+        }
+
+        if cleanupFailed {
+            activity = .failure("Die Quelle wurde entfernt, aber das Basic-Passwort konnte nicht aus dem Schlüsselbund gelöscht werden.")
+        } else if case .clientCertificate = source.authentication {
+            activity = .success("Quelle entfernt. Das Client-Zertifikat bleibt im macOS-Schlüsselbund.")
+        } else {
             activity = .success("Quelle und gespeichertes Basic-Passwort wurden entfernt.")
-        } catch {
-            activity = .failure(
-                "Die Quelle wurde entfernt, aber das Basic-Passwort konnte nicht aus dem Schlüsselbund gelöscht werden."
-            )
         }
     }
 
@@ -387,6 +590,32 @@ final class IssueLightModel: ObservableObject {
         }
     }
 
+    func sourceName(for sourceID: UUID) -> String {
+        sources.first(where: { $0.id == sourceID })?.name ?? "Unbekannte Quelle"
+    }
+
+    func providerName(for source: MonitoringSource) -> String {
+        providerRegistry.provider(for: source.providerID)?.descriptor.displayName ?? source.providerID.rawValue
+    }
+
+    func sourceRefreshState(for sourceID: UUID) -> RefreshState {
+        guard let source = sources.first(where: { $0.id == sourceID }) else { return .notConfigured }
+        if !source.isEnabled { return .disabled }
+        return refreshStates[sourceID] ?? .refreshing
+    }
+
+    private var activeSnapshots: [MonitoringSnapshot] {
+        sources.filter(\.isEnabled).compactMap { snapshots[$0.id] }
+    }
+
+    private func issueOrder(_ lhs: MonitoringIssue, _ rhs: MonitoringIssue) -> Bool {
+        if lhs.severity != rhs.severity { return lhs.severity > rhs.severity }
+        let lhsSource = sources.firstIndex(where: { $0.id == lhs.sourceID }) ?? .max
+        let rhsSource = sources.firstIndex(where: { $0.id == rhs.sourceID }) ?? .max
+        if lhsSource != rhsSource { return lhsSource < rhsSource }
+        return lhs.id.localizedCaseInsensitiveCompare(rhs.id) == .orderedAscending
+    }
+
     private func sourceFromForm() -> MonitoringSource? {
         guard let url = URL(string: endpoint.trimmingCharacters(in: .whitespacesAndNewlines)) else {
             activity = .failure("Die Serveradresse ist keine gültige URL.")
@@ -402,9 +631,10 @@ final class IssueLightModel: ObservableObject {
         }
 
         var source: MonitoringSource
-        if var existingSource = loadedSource {
+        if var existingSource = selectedSource {
             existingSource.name = name
             existingSource.providerID = selectedProviderID
+            existingSource.isEnabled = isSourceEnabled
             existingSource.authentication = authentication
             if existingSource.updateEndpoint(url) {
                 verifiesServerCertificate = true
@@ -417,6 +647,7 @@ final class IssueLightModel: ObservableObject {
                 name: name,
                 providerID: selectedProviderID,
                 endpoint: url,
+                isEnabled: isSourceEnabled,
                 authentication: authentication,
                 serverTrust: verifiesServerCertificate ? .system : .disabled
             )
@@ -443,14 +674,14 @@ final class IssueLightModel: ObservableObject {
             return password
         }
         let requestedScope = try BasicCredentialScope(source: source)
-        guard requestedScope == (try basicCredentialScope(for: loadedSource)) else {
+        guard requestedScope == (try basicCredentialScope(for: selectedSource)) else {
             return nil
         }
         return try await passwordVault.password(for: requestedScope)
     }
 
     private func startRefreshLoop() {
-        refreshLoopTask?.cancel()
+        guard refreshLoopTask == nil else { return }
         refreshLoopTask = Task { [weak self] in
             while !Task.isCancelled {
                 do {
@@ -465,8 +696,9 @@ final class IssueLightModel: ObservableObject {
     }
 
     private func performRefresh(source: MonitoringSource) async {
+        guard !Task.isCancelled else { return }
         guard let provider = providerRegistry.provider(for: source.providerID) else {
-            refreshState = .failed("Der konfigurierte Monitoring-Typ ist nicht verfügbar.")
+            refreshStates[source.id] = .failed("Der konfigurierte Monitoring-Typ ist nicht verfügbar.")
             return
         }
         let result: SnapshotLoadResult
@@ -475,26 +707,28 @@ final class IssueLightModel: ObservableObject {
             do {
                 let password = try await passwordVault.password(for: BasicCredentialScope(source: source))
                 guard let password else {
-                    refreshState = .failed("Das Passwort ist nicht mehr im Schlüsselbund verfügbar.")
+                    guard !Task.isCancelled else { return }
+                    refreshStates[source.id] = .failed("Das Passwort ist nicht mehr im Schlüsselbund verfügbar.")
                     return
                 }
                 result = await provider.loadSnapshot(from: source, credential: .password(password))
             } catch {
                 guard !Task.isCancelled else { return }
-                refreshState = .failed("Das Passwort konnte nicht aus dem Schlüsselbund gelesen werden.")
+                refreshStates[source.id] = .failed("Das Passwort konnte nicht aus dem Schlüsselbund gelesen werden.")
                 return
             }
         case .clientCertificate(let identityID):
             do {
                 let identity = try await identityCatalog.identity(id: identityID)
                 guard let identity else {
-                    refreshState = .failed("Das Client-Zertifikat ist nicht mehr im Schlüsselbund verfügbar.")
+                    guard !Task.isCancelled else { return }
+                    refreshStates[source.id] = .failed("Das Client-Zertifikat ist nicht mehr im Schlüsselbund verfügbar.")
                     return
                 }
                 result = await provider.loadSnapshot(from: source, credential: .clientIdentity(identity))
             } catch {
                 guard !Task.isCancelled else { return }
-                refreshState = .failed("Das Client-Zertifikat konnte nicht aus dem Schlüsselbund gelesen werden.")
+                refreshStates[source.id] = .failed("Das Client-Zertifikat konnte nicht aus dem Schlüsselbund gelesen werden.")
                 return
             }
         }
@@ -502,12 +736,12 @@ final class IssueLightModel: ObservableObject {
         guard !Task.isCancelled else { return }
         switch result {
         case .loaded(let loadedSnapshot):
-            snapshot = loadedSnapshot
-            refreshState = .current
+            snapshots[source.id] = loadedSnapshot
+            refreshStates[source.id] = .current
         case .failed(.cancelled):
             return
         case .failed(let failure):
-            refreshState = .failed(refreshMessage(for: failure))
+            refreshStates[source.id] = .failed(refreshMessage(for: failure))
         }
     }
 
@@ -515,7 +749,10 @@ final class IssueLightModel: ObservableObject {
         sourceID = source.id
         name = source.name
         endpoint = source.endpoint.absoluteString
+        isSourceEnabled = source.isEnabled
         selectedProviderID = source.providerID
+        username = ""
+        selectedIdentityID = ""
         verifiesServerCertificate = source.serverTrust.verifiesServerCertificate
         switch source.authentication {
         case .basic(let storedUsername):

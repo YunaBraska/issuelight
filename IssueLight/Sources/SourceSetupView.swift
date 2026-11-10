@@ -1,18 +1,102 @@
 import SwiftUI
 import UniformTypeIdentifiers
+import IssueLightCore
 
 struct SourceSetupView: View {
+    private enum PendingNavigation {
+        case add
+        case select(UUID)
+    }
+
     @ObservedObject var model: IssueLightModel
     @State private var importURL: URL?
     @State private var isChoosingIdentity = false
     @State private var isImportingIdentity = false
     @State private var isConfirmingDeletion = false
+    @State private var isConfirmingDiscard = false
+    @State private var pendingNavigation: PendingNavigation?
     @State private var connectionTask: Task<Void, Never>?
 
     var body: some View {
+        NavigationSplitView {
+            List(selection: sourceSelection) {
+                ForEach(model.sources) { source in
+                    SourceRow(source: source, model: model)
+                        .tag(source.id)
+                }
+            }
+            .navigationTitle("Quellen")
+            .overlay {
+                if model.sources.isEmpty {
+                    ContentUnavailableView(
+                        "Noch keine Quellen",
+                        systemImage: "server.rack",
+                        description: Text("Füge deine erste Monitoring-Quelle hinzu.")
+                    )
+                }
+            }
+            .toolbar {
+                Button {
+                    requestAdd()
+                } label: {
+                    Label("Quelle hinzufügen", systemImage: "plus")
+                }
+                .help("Neue Quelle")
+            }
+            .navigationSplitViewColumnWidth(min: 220, ideal: 250, max: 320)
+        } detail: {
+            editor
+                .navigationTitle(model.isCreatingSource ? "Neue Quelle" : model.name)
+        }
+        .frame(minWidth: 780, minHeight: 600)
+        .onDisappear { connectionTask?.cancel() }
+        .sheet(isPresented: $isImportingIdentity) {
+            if let importURL {
+                IdentityImportView(fileURL: importURL, model: model, isPresented: $isImportingIdentity)
+            }
+        }
+        .confirmationDialog(
+            "Quelle wirklich entfernen?",
+            isPresented: $isConfirmingDeletion,
+            titleVisibility: .visible
+        ) {
+            Button("Quelle entfernen", role: .destructive) {
+                Task { await model.deleteSource() }
+            }
+        } message: {
+            Text(model.deletionMessage)
+        }
+        .confirmationDialog(
+            "Ungespeicherte Änderungen verwerfen?",
+            isPresented: $isConfirmingDiscard,
+            titleVisibility: .visible
+        ) {
+            Button("Änderungen verwerfen", role: .destructive) {
+                performPendingNavigation()
+            }
+            Button("Weiter bearbeiten", role: .cancel) {
+                pendingNavigation = nil
+            }
+        } message: {
+            Text("Die Änderungen an der aktuellen Quelle wurden noch nicht gespeichert.")
+        }
+    }
+
+    private var sourceSelection: Binding<UUID?> {
+        Binding(
+            get: { model.selectedSourceID },
+            set: { sourceID in
+                guard let sourceID, sourceID != model.selectedSourceID else { return }
+                requestSelection(sourceID)
+            }
+        )
+    }
+
+    private var editor: some View {
         VStack(spacing: 0) {
             Form {
                 Section {
+                    Toggle("Quelle aktiv", isOn: $model.isSourceEnabled)
                     if model.providers.count == 1 {
                         LabeledContent("Typ", value: model.providerDisplayName)
                     } else {
@@ -26,7 +110,7 @@ struct SourceSetupView: View {
                     TextField("Server", text: $model.endpoint, prompt: Text("https://icinga.example:5665"))
                         .textContentType(.URL)
                 } header: {
-                    Text("Quelle")
+                    Text(model.isCreatingSource ? "Neue Quelle" : "Quelle")
                 } footer: {
                     Text("IssueLight prüft Hosts und Services über die reale API dieser Quelle.")
                 }
@@ -49,8 +133,8 @@ struct SourceSetupView: View {
                                 ? "Leer lassen, um das vorhandene Passwort bei unveränderten Zugangsdaten beizubehalten."
                                 : "Das Passwort wird ausschließlich im macOS-Schlüsselbund gespeichert."
                         )
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                     } else {
                         if let identityLoadError = model.identityLoadError {
                             Label(identityLoadError, systemImage: "exclamationmark.circle")
@@ -67,7 +151,10 @@ struct SourceSetupView: View {
                         }
                         .fileImporter(
                             isPresented: $isChoosingIdentity,
-                            allowedContentTypes: [UTType(filenameExtension: "p12") ?? .data, UTType(filenameExtension: "pfx") ?? .data],
+                            allowedContentTypes: [
+                                UTType(filenameExtension: "p12") ?? .data,
+                                UTType(filenameExtension: "pfx") ?? .data,
+                            ],
                             allowsMultipleSelection: false
                         ) { result in
                             if case .success(let urls) = result, let url = urls.first {
@@ -100,10 +187,11 @@ struct SourceSetupView: View {
                 }
             }
             .formStyle(.grouped)
+            .disabled(isWorking)
 
             Divider()
             HStack {
-                if model.hasConfiguredSource {
+                if !model.isCreatingSource {
                     Button("Quelle entfernen", role: .destructive) {
                         isConfirmingDeletion = true
                     }
@@ -125,28 +213,10 @@ struct SourceSetupView: View {
                     Task { await model.save() }
                 }
                 .keyboardShortcut(.defaultAction)
-                .disabled(isWorking)
+                .disabled(isWorking || !model.hasUnsavedChanges)
             }
             .padding(16)
             .background(.bar)
-        }
-        .frame(minWidth: 560, minHeight: 560)
-        .onDisappear { connectionTask?.cancel() }
-        .sheet(isPresented: $isImportingIdentity) {
-            if let importURL {
-                IdentityImportView(fileURL: importURL, model: model, isPresented: $isImportingIdentity)
-            }
-        }
-        .confirmationDialog(
-            "Quelle wirklich entfernen?",
-            isPresented: $isConfirmingDeletion,
-            titleVisibility: .visible
-        ) {
-            Button("Quelle entfernen", role: .destructive) {
-                Task { await model.deleteSource() }
-            }
-        } message: {
-            Text(model.deletionMessage)
         }
     }
 
@@ -174,6 +244,122 @@ struct SourceSetupView: View {
     private var isWorking: Bool {
         if case .working = model.activity { return true }
         return false
+    }
+
+    private func requestAdd() {
+        connectionTask?.cancel()
+        if model.hasUnsavedChanges {
+            pendingNavigation = .add
+            isConfirmingDiscard = true
+        } else {
+            model.beginAddingSource()
+        }
+    }
+
+    private func requestSelection(_ sourceID: UUID) {
+        connectionTask?.cancel()
+        if model.hasUnsavedChanges {
+            pendingNavigation = .select(sourceID)
+            isConfirmingDiscard = true
+        } else {
+            Task { await model.selectSource(id: sourceID) }
+        }
+    }
+
+    private func performPendingNavigation() {
+        guard let pendingNavigation else { return }
+        self.pendingNavigation = nil
+        switch pendingNavigation {
+        case .add:
+            model.beginAddingSource()
+        case .select(let sourceID):
+            Task { await model.selectSource(id: sourceID) }
+        }
+    }
+}
+
+private struct SourceRow: View {
+    let source: MonitoringSource
+    @ObservedObject var model: IssueLightModel
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: statusSymbol)
+                .foregroundStyle(statusColor)
+                .frame(width: 18)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(source.name)
+                    .lineLimit(1)
+                Text(source.isEnabled ? model.providerName(for: source) : "Pausiert")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+        }
+        .padding(.vertical, 2)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(source.name), \(statusLabel)")
+    }
+
+    private var statusSymbol: String {
+        switch model.sourceRefreshState(for: source.id) {
+        case .notConfigured:
+            return "circle"
+        case .disabled:
+            return "pause.circle"
+        case .refreshing:
+            return "arrow.clockwise"
+        case .current:
+            switch model.snapshots[source.id]?.highestAttentionSeverity {
+            case .critical:
+                return "exclamationmark.octagon.fill"
+            case .unknown:
+                return "questionmark.diamond.fill"
+            case .warning:
+                return "exclamationmark.triangle.fill"
+            case nil:
+                return "checkmark.circle"
+            }
+        case .failed:
+            return "wifi.exclamationmark"
+        }
+    }
+
+    private var statusColor: Color {
+        switch model.sourceRefreshState(for: source.id) {
+        case .notConfigured, .disabled, .refreshing:
+            return .secondary
+        case .current:
+            switch model.snapshots[source.id]?.highestAttentionSeverity {
+            case .critical:
+                return .red
+            case .unknown:
+                return .purple
+            case .warning:
+                return .orange
+            case nil:
+                return .green
+            }
+        case .failed:
+            return .red
+        }
+    }
+
+    private var statusLabel: String {
+        switch model.sourceRefreshState(for: source.id) {
+        case .notConfigured:
+            return "nicht konfiguriert"
+        case .disabled:
+            return "pausiert"
+        case .refreshing:
+            return "wird aktualisiert"
+        case .current:
+            let count = model.snapshots[source.id]?.actionableIssues.count ?? 0
+            return count == 0 ? "keine Probleme" : "\(count) Probleme"
+        case .failed(let message):
+            return "Aktualisierung fehlgeschlagen, \(message)"
+        }
     }
 }
 

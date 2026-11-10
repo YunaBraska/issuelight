@@ -16,10 +16,14 @@ struct StatusWindowView: View {
     private var header: some View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 2) {
-                Text(model.name.isEmpty ? "IssueLight" : model.name)
+                Text("IssueLight")
                     .font(.title2.weight(.semibold))
-                if let observedAt = model.snapshot?.observedAt {
+                if let observedAt = model.latestSuccessfulRefresh {
                     Text("Zuletzt erfolgreich geprüft: \(observedAt.formatted(date: .abbreviated, time: .shortened))")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else if model.hasConfiguredSource && !model.hasEnabledSource {
+                    Text("Alle Quellen sind pausiert")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 } else {
@@ -38,7 +42,7 @@ struct StatusWindowView: View {
                 model.refresh()
             }
             .keyboardShortcut("r")
-            .disabled(!model.hasConfiguredSource)
+            .disabled(!model.hasEnabledSource)
         }
         .padding(16)
     }
@@ -51,34 +55,58 @@ struct StatusWindowView: View {
                 systemImage: "server.rack",
                 description: Text("Füge zuerst eine Monitoring-Quelle hinzu.")
             )
-        } else if let snapshot = model.snapshot {
+        } else if !model.hasEnabledSource {
+            ContentUnavailableView(
+                "Keine Quelle aktiv",
+                systemImage: "pause.circle",
+                description: Text("Aktiviere mindestens eine Quelle, um den Status zu überwachen.")
+            )
+        } else if model.hasActiveSnapshot {
             VStack(spacing: 0) {
-                if case .failed(let message) = model.refreshState {
-                    Label(message, systemImage: "wifi.exclamationmark")
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(12)
-                        .background(.orange.opacity(0.12))
-                        .accessibilityLabel("Veralteter Status. \(message)")
+                if !model.failedSources.isEmpty {
+                    VStack(alignment: .leading, spacing: 4) {
+                        ForEach(model.failedSources) { failure in
+                            Label("\(failure.source.name): \(failure.message)", systemImage: "wifi.exclamationmark")
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(12)
+                    .background(.orange.opacity(0.12))
+                    .accessibilityLabel(
+                        model.hasPartialRefreshFailure
+                            ? "Teilweise veralteter Status. \(model.failedSources.count) Quellen konnten nicht aktualisiert werden."
+                            : "Veralteter Status. Keine aktive Quelle konnte aktualisiert werden."
+                    )
                 }
-                if snapshot.issues.isEmpty {
+                if model.actionableIssues.isEmpty && model.coveredIssues.isEmpty {
                     ContentUnavailableView(
-                        "Alles ruhig",
+                        model.failedSources.isEmpty ? "Alles ruhig" : "Keine aktuellen Probleme",
                         systemImage: "checkmark.circle",
-                        description: Text("Keine Hosts oder Services benötigen Aufmerksamkeit.")
+                        description: Text(
+                            model.failedSources.isEmpty
+                                ? "Keine Hosts oder Services benötigen Aufmerksamkeit."
+                                : "Die erreichbaren Quellen melden keine Probleme. Mindestens ein Stand ist veraltet."
+                        )
                     )
                 } else {
                     List {
                         if !model.actionableIssues.isEmpty {
                             Section("Benötigt Aufmerksamkeit") {
                                 ForEach(model.actionableIssues) { issue in
-                                    MonitoringIssueRow(issue: issue)
+                                    MonitoringIssueRow(
+                                        issue: issue,
+                                        sourceName: model.sources.count > 1 ? model.sourceName(for: issue.sourceID) : nil
+                                    )
                                 }
                             }
                         }
                         if !model.coveredIssues.isEmpty {
                             Section("Quittiert oder in Wartungszeit") {
                                 ForEach(model.coveredIssues) { issue in
-                                    MonitoringIssueRow(issue: issue)
+                                    MonitoringIssueRow(
+                                        issue: issue,
+                                        sourceName: model.sources.count > 1 ? model.sourceName(for: issue.sourceID) : nil
+                                    )
                                 }
                             }
                         }
@@ -103,6 +131,7 @@ struct StatusWindowView: View {
 
 private struct MonitoringIssueRow: View {
     let issue: MonitoringIssue
+    let sourceName: String?
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
@@ -117,6 +146,11 @@ private struct MonitoringIssueRow: View {
                     .font(.callout)
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
+                if let sourceName {
+                    Label(sourceName, systemImage: "server.rack")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
                 if issue.isAcknowledged || issue.isInDowntime {
                     Text(coverageText)
                         .font(.caption)
@@ -191,6 +225,7 @@ private struct MonitoringIssueRow: View {
     private var accessibilityLabel: String {
         let context = issue.kind == .host ? "Host" : "Service"
         let coverage = coverageText.isEmpty ? "" : ", \(coverageText)"
-        return "\(context) \(title), \(severityText)\(coverage), \(issue.summary)"
+        let source = sourceName.map { ", Quelle \($0)" } ?? ""
+        return "\(context) \(title), \(severityText)\(coverage)\(source), \(issue.summary)"
     }
 }

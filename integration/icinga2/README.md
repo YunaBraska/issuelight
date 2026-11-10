@@ -28,9 +28,11 @@ PKCS#12 file and CA certificate are written to
 
 `verify` temporarily imports those dedicated test identities into the default
 macOS Keychain, resolves their persistent references through `IssueLightCore`,
-proves accepted and rejected real mTLS connections, and removes them again. An
-interrupted process can leave a test identity behind. In that case, remove only
-the two `issuelight-live-*.issuelight.invalid` identities and certificates in Keychain
+proves accepted and rejected real mTLS connections, and removes them again. It
+also builds the native app test bundle and refreshes two persisted sources
+through the real built-in Icinga 2 provider. An interrupted process can leave a
+test identity behind. In that case, remove only the two
+`issuelight-live-*.issuelight.invalid` identities and certificates in Keychain
 Access before rerunning. The PKCS#12 files intentionally omit the lab CA so the
 test does not import unrelated trust material into the Keychain.
 
