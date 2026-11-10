@@ -16,6 +16,9 @@ jobs:
   test:
     runs-on: macos-15
     timeout-minutes: 20
+    env:
+      DERIVED_DATA_PATH: ${{ runner.temp }}/IssueLightDerivedData
+      RELEASE_OUTPUT_PATH: ${{ runner.temp }}/IssueLightRelease
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -25,7 +28,9 @@ jobs:
           swift --version
 
       - name: Validate scripts
-        run: sh -n scripts/icinga2_lab.sh
+        run: |
+          sh -n scripts/icinga2_lab.sh
+          sh -n scripts/package_release.sh
 
       - name: Test core
         run: swift test --package-path Packages/IssueLightCore --enable-code-coverage
@@ -37,6 +42,7 @@ jobs:
             -scheme IssueLight \
             -configuration Debug \
             -destination 'platform=macOS' \
+            -derivedDataPath "$DERIVED_DATA_PATH" \
             CODE_SIGNING_ALLOWED=NO
 
       - name: Build release app
@@ -45,8 +51,50 @@ jobs:
             -project IssueLight/IssueLight.xcodeproj \
             -scheme IssueLight \
             -configuration Release \
-            -destination 'platform=macOS' \
+            -destination 'generic/platform=macOS' \
+            -derivedDataPath "$DERIVED_DATA_PATH" \
+            ARCHS='arm64 x86_64' \
+            ONLY_ACTIVE_ARCH=NO \
             CODE_SIGNING_ALLOWED=NO
+
+      - name: Package unsigned release candidate
+        run: |
+          scripts/package_release.sh \
+            "$DERIVED_DATA_PATH/Build/Products/Release/IssueLight.app" \
+            "$RELEASE_OUTPUT_PATH" \
+            0.1.0 \
+            "$GITHUB_SHA" \
+            --allow-unsigned
+          test "$(plutil -extract spdxVersion raw \
+            "$RELEASE_OUTPUT_PATH/IssueLight-0.1.0-UNSIGNED.spdx.json")" = "SPDX-2.3"
+          test "$(plutil -extract packages.0.versionInfo raw \
+            "$RELEASE_OUTPUT_PATH/IssueLight-0.1.0-UNSIGNED.spdx.json")" = "0.1.0 (1)"
+          if scripts/package_release.sh \
+            "$DERIVED_DATA_PATH/Build/Products/Release/IssueLight.app" \
+            "$RELEASE_OUTPUT_PATH" \
+            0.1.0 \
+            "$GITHUB_SHA" \
+            --allow-unsigned; then
+            echo "Packaging overwrote existing artifacts." >&2
+            exit 1
+          fi
+          if scripts/package_release.sh \
+            "$DERIVED_DATA_PATH/Build/Products/Release/IssueLight.app" \
+            "$RUNNER_TEMP/IssueLightSignedNegative" \
+            0.1.0 \
+            "$GITHUB_SHA"; then
+            echo "Unsigned app passed signed release verification." >&2
+            exit 1
+          fi
+          if scripts/package_release.sh \
+            "$DERIVED_DATA_PATH/Build/Products/Release/IssueLight.app" \
+            "$RUNNER_TEMP/IssueLightVersionNegative" \
+            9.9.9 \
+            "$GITHUB_SHA" \
+            --allow-unsigned; then
+            echo "Packaging accepted a mismatched version." >&2
+            exit 1
+          fi
 
       - name: Reject accidental secrets
         run: |

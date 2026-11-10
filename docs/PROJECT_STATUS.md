@@ -25,6 +25,7 @@ Snapshot date: 2026-11-10.
 | Attention UI | Native menu and status window for setup, loading, healthy, problem, failure, and stale states | Empty setup and real six-problem Icinga states inspected locally; remaining states need running-product inspection |
 | Real Icinga 2 integration | Pinned official container lab covers Basic auth, permission denial, private CA, mTLS, real host/service problem payloads, and two persisted app-model sources | Verified locally |
 | OSS repository controls | Apache-2.0, provenance notice, contributor/security/privacy policies, private vulnerability reporting, secret scanning with push protection, SHA-pinned Actions, and protected `main` | Verified in the public repository |
+| Release-candidate artifacts | Universal app validation, fail-closed signed mode, ZIP, SPDX 2.3 SBOM, and verified SHA-256 manifest | Unsigned path verified locally and added to CI; real signing and notarization remain open |
 
 The local package suite currently executes 41 tests. Five live Icinga tests
 are skipped unless the integration environment is configured. The app suite
@@ -45,9 +46,8 @@ is evidence, not a release gate yet, and remains below the project goals.
   localization, dark mode, failure/stale UI, large-data behavior, and energy
   use need running-product verification.
 - Core coverage remains below the stated 95% line and 90% branch goals.
-- Packaging, update behavior, Developer ID signing, notarization, stapling,
-  checksums, a release-artifact SBOM, and clean-account installation are not
-  implemented or proven.
+- Update behavior, Developer ID signing, notarization, stapling, and
+  clean-account installation are not implemented or proven.
 - No release has completed the real GitHub distribution workflow.
 
 Do not describe IssueLight as production-ready until these blockers are closed
