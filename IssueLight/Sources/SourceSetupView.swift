@@ -2,7 +2,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 struct SourceSetupView: View {
-    @ObservedObject var model: SourceSetupModel
+    @ObservedObject var model: IssueLightModel
     @State private var importURL: URL?
     @State private var isChoosingIdentity = false
     @State private var isImportingIdentity = false
@@ -13,19 +13,27 @@ struct SourceSetupView: View {
         VStack(spacing: 0) {
             Form {
                 Section {
-                    LabeledContent("Typ", value: "Icinga 2")
+                    if model.providers.count == 1 {
+                        LabeledContent("Typ", value: model.providerDisplayName)
+                    } else {
+                        Picker("Typ", selection: $model.selectedProviderID) {
+                            ForEach(model.providers, id: \.id) { provider in
+                                Text(provider.displayName).tag(provider.id)
+                            }
+                        }
+                    }
                     TextField("Name", text: $model.name, prompt: Text("Produktion"))
                     TextField("Server", text: $model.endpoint, prompt: Text("https://icinga.example:5665"))
                         .textContentType(.URL)
                 } header: {
                     Text("Quelle")
                 } footer: {
-                    Text("IssueLight prüft Hosts und Services über die echte Icinga-2-API.")
+                    Text("IssueLight prüft Hosts und Services über die reale API dieser Quelle.")
                 }
 
                 Section("Authentifizierung") {
                     Picker("Methode", selection: $model.authenticationChoice) {
-                        ForEach(SourceSetupModel.AuthenticationChoice.allCases) { choice in
+                        ForEach(model.authenticationChoices) { choice in
                             Text(choice.rawValue).tag(choice)
                         }
                     }
@@ -36,7 +44,11 @@ struct SourceSetupView: View {
                             .textContentType(.username)
                         SecureField("Passwort", text: $model.password)
                             .textContentType(.password)
-                        Text("Das Passwort wird ausschließlich im macOS-Schlüsselbund gespeichert.")
+                        Text(
+                            model.hasStoredBasicPassword
+                                ? "Leer lassen, um das vorhandene Passwort bei unveränderten Zugangsdaten beizubehalten."
+                                : "Das Passwort wird ausschließlich im macOS-Schlüsselbund gespeichert."
+                        )
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     } else {
@@ -68,6 +80,7 @@ struct SourceSetupView: View {
 
                 Section {
                     Toggle("Serverzertifikat prüfen", isOn: $model.verifiesServerCertificate)
+                        .disabled(!model.canDisableServerCertificateVerification)
                     if !model.verifiesServerCertificate {
                         Label {
                             Text("Unsicher. Identität und Serverdaten können abgefangen oder verändert werden. Diese Ausnahme gilt nur für diese Quelle.")
@@ -118,7 +131,6 @@ struct SourceSetupView: View {
             .background(.bar)
         }
         .frame(minWidth: 560, minHeight: 560)
-        .task { await model.load() }
         .onDisappear { connectionTask?.cancel() }
         .sheet(isPresented: $isImportingIdentity) {
             if let importURL {
@@ -167,7 +179,7 @@ struct SourceSetupView: View {
 
 private struct IdentityImportView: View {
     let fileURL: URL
-    @ObservedObject var model: SourceSetupModel
+    @ObservedObject var model: IssueLightModel
     @Binding var isPresented: Bool
     @State private var password = ""
 

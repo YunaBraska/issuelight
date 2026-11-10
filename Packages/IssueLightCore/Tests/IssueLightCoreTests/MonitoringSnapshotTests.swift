@@ -1,0 +1,92 @@
+import Foundation
+import XCTest
+@testable import IssueLightCore
+
+final class MonitoringSnapshotTests: XCTestCase {
+    func testDecoderMapsIcingaHostAndServiceProblemsToProviderNeutralIssues() throws {
+        let sourceID = UUID(uuidString: "11111111-1111-1111-1111-111111111111")!
+        let observedAt = Date(timeIntervalSince1970: 1_800_000_000)
+        let hostData = Data(
+            #"{"results":[{"attrs":{"acknowledgement":0,"display_name":"Database 1","downtime_depth":0,"last_check_result":{"output":"Host unreachable\nsecond line"},"name":"db-1","state":1},"name":"db-1","type":"Host"}]}"#.utf8
+        )
+        let serviceData = Data(
+            #"{"results":[{"attrs":{"acknowledgement":1,"display_name":"Disk /","downtime_depth":0,"host_name":"db-1","last_check_result":{"output":"DISK WARNING - 82% used"},"name":"disk-root","state":1},"name":"db-1!disk-root","type":"Service"},{"attrs":{"acknowledgement":0,"display_name":"Replication","downtime_depth":2,"host_name":"db-1","last_check_result":{"output":"UNKNOWN - no sample"},"name":"replication","state":3},"name":"db-1!replication","type":"Service"}]}"#.utf8
+        )
+
+        let snapshot = try Icinga2SnapshotDecoder().decode(
+            sourceID: sourceID,
+            observedAt: observedAt,
+            hostData: hostData,
+            serviceData: serviceData
+        )
+
+        XCTAssertEqual(snapshot.sourceID, sourceID)
+        XCTAssertEqual(snapshot.observedAt, observedAt)
+        XCTAssertEqual(snapshot.issues.count, 3)
+        XCTAssertEqual(
+            snapshot.issues[0],
+            MonitoringIssue(
+                sourceID: sourceID,
+                nativeID: "db-1",
+                kind: .host,
+                hostName: "db-1",
+                serviceName: nil,
+                displayName: "Database 1",
+                severity: .critical,
+                summary: "Host unreachable",
+                isAcknowledged: false,
+                isInDowntime: false
+            )
+        )
+        XCTAssertTrue(snapshot.issues[0].requiresAttention)
+        XCTAssertFalse(snapshot.issues[1].requiresAttention)
+        XCTAssertFalse(snapshot.issues[2].requiresAttention)
+        XCTAssertEqual(snapshot.highestAttentionSeverity, .critical)
+    }
+
+    func testDecoderIgnoresHealthyResultsAndSortsActionableProblemsFirst() throws {
+        let sourceID = UUID()
+        let hostData = Data(
+            #"{"results":[{"attrs":{"acknowledgement":0,"display_name":"Healthy","downtime_depth":0,"last_check_result":{"output":"UP"},"name":"healthy","state":0},"name":"healthy","type":"Host"}]}"#.utf8
+        )
+        let serviceData = Data(
+            #"{"results":[{"attrs":{"acknowledgement":0,"display_name":"CPU","downtime_depth":0,"host_name":"app-1","last_check_result":{"output":"WARNING"},"name":"cpu","state":1},"name":"app-1!cpu","type":"Service"},{"attrs":{"acknowledgement":1,"display_name":"TLS","downtime_depth":0,"host_name":"edge-1","last_check_result":{"output":"CRITICAL"},"name":"tls","state":2},"name":"edge-1!tls","type":"Service"}]}"#.utf8
+        )
+
+        let snapshot = try Icinga2SnapshotDecoder().decode(
+            sourceID: sourceID,
+            observedAt: .distantPast,
+            hostData: hostData,
+            serviceData: serviceData
+        )
+
+        XCTAssertEqual(snapshot.issues.map(\.displayName), ["CPU", "TLS"])
+        XCTAssertEqual(snapshot.actionableIssues.map(\.displayName), ["CPU"])
+        XCTAssertEqual(snapshot.highestAttentionSeverity, .warning)
+    }
+
+    func testDecoderRejectsMalformedOrIncompleteProviderPayloads() {
+        let validEmpty = Data(#"{"results":[]}"#.utf8)
+        let missingResults = Data(#"{"status":"ok"}"#.utf8)
+        let incompleteIssue = Data(
+            #"{"results":[{"attrs":{"name":"host-1","state":1},"name":"host-1","type":"Host"}]}"#.utf8
+        )
+
+        XCTAssertThrowsError(
+            try Icinga2SnapshotDecoder().decode(
+                sourceID: UUID(),
+                observedAt: .now,
+                hostData: missingResults,
+                serviceData: validEmpty
+            )
+        )
+        XCTAssertThrowsError(
+            try Icinga2SnapshotDecoder().decode(
+                sourceID: UUID(),
+                observedAt: .now,
+                hostData: incompleteIssue,
+                serviceData: validEmpty
+            )
+        )
+    }
+}

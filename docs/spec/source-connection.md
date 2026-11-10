@@ -109,7 +109,7 @@ remote actions.
 | Requirement | Public boundary | Evidence |
 | --- | --- | --- |
 | SRC-001..004 | `MonitoringSource` | Package tests for validation, encoding, and authority changes |
-| PRV-001..004 | provider registry and Icinga 2 adapter | Package tests for discovery, capability reporting, and endpoint rules |
+| PRV-001..004 | provider registry and Icinga 2 adapter | Package tests cover discovery, capabilities, endpoint rules, and provider-neutral snapshot dispatch; the live matrix crosses the same registry boundary |
 | AUTH-001 | `KeychainPasswordVault` | Integration test against a temporary real Keychain item with cleanup |
 | AUTH-002, AUTH-004 | Keychain identity catalog and connection test | Real PKCS#12 import, persistent-reference resolution, accepted and rejected live Icinga mTLS, and exact cleanup |
 | AUTH-003 | source setup journey | Missing identity fails explicitly; Keychain access denial and cancellation still need running-app evidence |

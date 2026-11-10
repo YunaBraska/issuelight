@@ -3,6 +3,9 @@ import Foundation
 public struct Icinga2Provider: MonitoringProvider {
     public static let id = ProviderID(rawValue: "icinga2")
 
+    private let connectionTester: Icinga2ConnectionTester
+    private let snapshotLoader: Icinga2SnapshotLoader
+
     public let descriptor = ProviderDescriptor(
         id: Icinga2Provider.id,
         displayName: "Icinga 2",
@@ -14,7 +17,15 @@ public struct Icinga2Provider: MonitoringProvider {
         )
     )
 
-    public init() {}
+    public init() {
+        connectionTester = Icinga2ConnectionTester()
+        snapshotLoader = Icinga2SnapshotLoader()
+    }
+
+    init(configuration: URLSessionConfiguration, now: @escaping @Sendable () -> Date = { Date() }) {
+        connectionTester = Icinga2ConnectionTester(configuration: configuration)
+        snapshotLoader = Icinga2SnapshotLoader(configuration: configuration, now: now)
+    }
 
     public func validate(_ source: MonitoringSource) -> [SourceValidationIssue] {
         var issues = MonitoringSourceValidator.validateSharedFields(source)
@@ -51,6 +62,38 @@ public struct Icinga2Provider: MonitoringProvider {
         components.query = nil
         components.fragment = nil
         return components.url!
+    }
+
+    public func testConnection(
+        to source: MonitoringSource,
+        credential: ProviderCredential
+    ) async -> ConnectionTestResult {
+        switch (source.authentication, credential) {
+        case (.basic, .password(let password)):
+            return await connectionTester.test(source, password: password)
+        case (.clientCertificate, .clientIdentity(let identity)):
+            return await connectionTester.test(source, clientIdentity: identity)
+        case (.basic, .clientIdentity):
+            return .failed(.authentication)
+        case (.clientCertificate, .password):
+            return .failed(.clientCertificateNotAvailable)
+        }
+    }
+
+    public func loadSnapshot(
+        from source: MonitoringSource,
+        credential: ProviderCredential
+    ) async -> SnapshotLoadResult {
+        switch (source.authentication, credential) {
+        case (.basic, .password(let password)):
+            return await snapshotLoader.load(source, password: password)
+        case (.clientCertificate, .clientIdentity(let identity)):
+            return await snapshotLoader.load(source, clientIdentity: identity)
+        case (.basic, .clientIdentity):
+            return .failed(.authentication)
+        case (.clientCertificate, .password):
+            return .failed(.clientCertificateNotAvailable)
+        }
     }
 }
 

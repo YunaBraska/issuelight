@@ -1,4 +1,10 @@
 import Foundation
+import Security
+
+public enum ProviderCredential: @unchecked Sendable {
+    case password(String)
+    case clientIdentity(SecIdentity)
+}
 
 public struct ProviderCapabilities: Equatable, Sendable {
     public let authenticationMethods: Set<AuthenticationMethod>
@@ -34,6 +40,14 @@ public struct ProviderDescriptor: Equatable, Sendable {
 public protocol MonitoringProvider: Sendable {
     var descriptor: ProviderDescriptor { get }
     func validate(_ source: MonitoringSource) -> [SourceValidationIssue]
+    func testConnection(
+        to source: MonitoringSource,
+        credential: ProviderCredential
+    ) async -> ConnectionTestResult
+    func loadSnapshot(
+        from source: MonitoringSource,
+        credential: ProviderCredential
+    ) async -> SnapshotLoadResult
 }
 
 public enum ProviderRegistryError: Error, Equatable {

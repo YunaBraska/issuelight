@@ -102,7 +102,7 @@ final class Icinga2ConnectionTesterTests: XCTestCase {
     }
 }
 
-private final class StubURLProtocol: URLProtocol {
+final class StubURLProtocol: URLProtocol {
     static var handler: ((URLRequest) throws -> (HTTPURLResponse, Data))?
     static var onStart: (() -> Void)?
     static var blocksRequests = false

@@ -3,6 +3,40 @@ import XCTest
 @testable import IssueLightCore
 
 final class Icinga2LiveConnectionTests: XCTestCase {
+    func testLiveBasicAuthenticationLoadsHostAndServiceProblems() async throws {
+        let environment = ProcessInfo.processInfo.environment
+        guard let endpointValue = environment["ISSUELIGHT_LIVE_ICINGA_URL"],
+              let endpoint = URL(string: endpointValue),
+              let password = environment["ISSUELIGHT_ICINGA_BASIC_PASSWORD"] else {
+            throw XCTSkip("Live Icinga 2 environment is not configured")
+        }
+        let source = MonitoringSource(
+            name: "Live Basic",
+            providerID: Icinga2Provider.id,
+            endpoint: endpoint,
+            authentication: .basic(username: "issuelight-basic"),
+            serverTrust: .disabled
+        )
+
+        let provider = try XCTUnwrap(ProviderRegistry.builtIn().provider(for: source.providerID))
+        let result = await provider.loadSnapshot(from: source, credential: .password(password))
+
+        guard case .loaded(let snapshot) = result else {
+            return XCTFail("Expected the live Icinga 2 snapshot to load, got \(result)")
+        }
+        XCTAssertEqual(snapshot.sourceID, source.id)
+        XCTAssertTrue(snapshot.issues.contains {
+            $0.kind == .host && $0.hostName == "down-host" && $0.severity == .critical
+        })
+        XCTAssertTrue(snapshot.issues.contains {
+            $0.kind == .service
+                && $0.hostName == "down-host"
+                && $0.serviceName == "cascaded-service"
+                && $0.severity == .critical
+        })
+        XCTAssertEqual(snapshot.highestAttentionSeverity, .critical)
+    }
+
     func testImportedKeychainIdentityConnectsToLiveIcingaAPI() async throws {
         let environment = ProcessInfo.processInfo.environment
         guard let endpointValue = environment["ISSUELIGHT_LIVE_ICINGA_URL"],
@@ -17,7 +51,8 @@ final class Icinga2LiveConnectionTests: XCTestCase {
             at: URL(fileURLWithPath: identityPath),
             password: identityPassword
         )
-        let identity = try await catalog.identity(id: descriptor.id)
+        let resolvedIdentity = try await catalog.identity(id: descriptor.id)
+        let identity = try XCTUnwrap(resolvedIdentity)
         let cleanupReferences = try Self.cleanupReferences(identity: identity, id: descriptor.id)
         addTeardownBlock {
             try? Self.deleteImportedIdentity(cleanupReferences)
@@ -30,7 +65,8 @@ final class Icinga2LiveConnectionTests: XCTestCase {
             serverTrust: .disabled
         )
 
-        let result = await Icinga2ConnectionTester().test(source, clientIdentity: identity)
+        let provider = try XCTUnwrap(ProviderRegistry.builtIn().provider(for: source.providerID))
+        let result = await provider.testConnection(to: source, credential: .clientIdentity(identity))
 
         XCTAssertEqual(result, .connected)
         try Self.deleteImportedIdentity(cleanupReferences)
@@ -53,7 +89,8 @@ final class Icinga2LiveConnectionTests: XCTestCase {
             at: URL(fileURLWithPath: identityPath),
             password: identityPassword
         )
-        let identity = try await catalog.identity(id: descriptor.id)
+        let resolvedIdentity = try await catalog.identity(id: descriptor.id)
+        let identity = try XCTUnwrap(resolvedIdentity)
         let cleanupReferences = try Self.cleanupReferences(identity: identity, id: descriptor.id)
         addTeardownBlock {
             try? Self.deleteImportedIdentity(cleanupReferences)
@@ -66,7 +103,8 @@ final class Icinga2LiveConnectionTests: XCTestCase {
             serverTrust: .disabled
         )
 
-        let result = await Icinga2ConnectionTester().test(source, clientIdentity: identity)
+        let provider = try XCTUnwrap(ProviderRegistry.builtIn().provider(for: source.providerID))
+        let result = await provider.testConnection(to: source, credential: .clientIdentity(identity))
 
         XCTAssertEqual(result, .failed(.authentication))
         try Self.deleteImportedIdentity(cleanupReferences)

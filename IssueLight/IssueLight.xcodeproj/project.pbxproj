@@ -9,15 +9,17 @@
 /* Begin PBXBuildFile section */
 		299F5C73ADF7DFEAD8535627 /* StatusMenuView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F87BB7B94CFA8CE21D0518A /* StatusMenuView.swift */; };
 		2B9BDDA6F24BEB8C916226FB /* IssueLightApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F4B6283E19456DD6950A2C1 /* IssueLightApp.swift */; };
-		4B1C1E638404076DB34C8359 /* SourceSetupModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E519DBAEDB4ED2BC6B9B220 /* SourceSetupModel.swift */; };
+		3F4967764AD2F5DB24DD3B20 /* StatusWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E5924EEBB9B7E034A29E654 /* StatusWindowView.swift */; };
+		815D4ECC8D5B172C7C0C273F /* IssueLightModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 708ED225862B8236A5E0FD62 /* IssueLightModel.swift */; };
 		BE818FDFC35E44A88CF2CAC2 /* IssueLightCore in Frameworks */ = {isa = PBXBuildFile; productRef = 35CE6B46D3B1D9C684699F14 /* IssueLightCore */; };
 		F7F3298CCA4165A36EA96EFB /* SourceSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91EE3ED68B171A6AE0F289E8 /* SourceSetupView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		1E519DBAEDB4ED2BC6B9B220 /* SourceSetupModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SourceSetupModel.swift; sourceTree = "<group>"; };
+		4E5924EEBB9B7E034A29E654 /* StatusWindowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusWindowView.swift; sourceTree = "<group>"; };
 		5F4B6283E19456DD6950A2C1 /* IssueLightApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IssueLightApp.swift; sourceTree = "<group>"; };
 		6F87BB7B94CFA8CE21D0518A /* StatusMenuView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusMenuView.swift; sourceTree = "<group>"; };
+		708ED225862B8236A5E0FD62 /* IssueLightModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IssueLightModel.swift; sourceTree = "<group>"; };
 		91EE3ED68B171A6AE0F289E8 /* SourceSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SourceSetupView.swift; sourceTree = "<group>"; };
 		A9314850837CB46A15DED06A /* IssueLight.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = IssueLight.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		FFCAE8E8019BB6AAC0EEAAC2 /* IssueLightCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = IssueLightCore; path = ../Packages/IssueLightCore; sourceTree = SOURCE_ROOT; };
@@ -64,9 +66,10 @@
 			isa = PBXGroup;
 			children = (
 				5F4B6283E19456DD6950A2C1 /* IssueLightApp.swift */,
-				1E519DBAEDB4ED2BC6B9B220 /* SourceSetupModel.swift */,
+				708ED225862B8236A5E0FD62 /* IssueLightModel.swift */,
 				91EE3ED68B171A6AE0F289E8 /* SourceSetupView.swift */,
 				6F87BB7B94CFA8CE21D0518A /* StatusMenuView.swift */,
+				4E5924EEBB9B7E034A29E654 /* StatusWindowView.swift */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -136,9 +139,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				2B9BDDA6F24BEB8C916226FB /* IssueLightApp.swift in Sources */,
-				4B1C1E638404076DB34C8359 /* SourceSetupModel.swift in Sources */,
+				815D4ECC8D5B172C7C0C273F /* IssueLightModel.swift in Sources */,
 				F7F3298CCA4165A36EA96EFB /* SourceSetupView.swift in Sources */,
 				299F5C73ADF7DFEAD8535627 /* StatusMenuView.swift in Sources */,
+				3F4967764AD2F5DB24DD3B20 /* StatusWindowView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
