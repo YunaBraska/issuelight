@@ -341,6 +341,7 @@ final class IssueLightModelTests: XCTestCase {
         XCTAssertEqual(Set(model.snapshots.keys), Set(sources.map(\.id)))
         for source in sources {
             let snapshot = try XCTUnwrap(model.snapshots[source.id])
+            XCTAssertEqual(snapshot.issues.count, 2)
             XCTAssertTrue(snapshot.issues.contains {
                 $0.kind == .host && $0.hostName == "down-host" && $0.severity == .critical
             })

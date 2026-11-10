@@ -46,8 +46,58 @@ CURL_CONFIG
   return 1
 }
 
+reschedule_fixture_checks() {
+  for request_body in \
+    '{"type":"Host","filter":"match(\"*-host\", host.name)","force":true}' \
+    '{"type":"Service","filter":"match(\"*\", service.name)","force":true}'
+  do
+    response_code=$(
+      curl --silent --show-error --insecure --output /dev/null --write-out '%{http_code}' \
+        --request POST \
+        --header 'Accept: application/json' \
+        --header 'Content-Type: application/json' \
+        --data "$request_body" \
+        --config - "https://localhost:$ISSUELIGHT_ICINGA_PORT/v1/actions/reschedule-check" <<CURL_CONFIG
+user = "issuelight-basic:$ISSUELIGHT_ICINGA_BASIC_PASSWORD"
+CURL_CONFIG
+    )
+    expect_status 200 "$response_code" "fixture check reschedule"
+  done
+}
+
+wait_for_fixture() {
+  attempt=0
+  while [ "$attempt" -lt 20 ]; do
+    hosts=$(
+      curl --silent --show-error --insecure --config - \
+        "https://localhost:$ISSUELIGHT_ICINGA_PORT/v1/objects/hosts?attrs=name&attrs=state" <<CURL_CONFIG
+user = "issuelight-basic:$ISSUELIGHT_ICINGA_BASIC_PASSWORD"
+CURL_CONFIG
+    )
+    services=$(
+      curl --silent --show-error --insecure --config - \
+        "https://localhost:$ISSUELIGHT_ICINGA_PORT/v1/objects/services?attrs=name&attrs=host_name&attrs=state" <<CURL_CONFIG
+user = "issuelight-basic:$ISSUELIGHT_ICINGA_BASIC_PASSWORD"
+CURL_CONFIG
+    )
+    if printf '%s' "$hosts" | grep -F '"name":"healthy-host","state":0' >/dev/null \
+      && printf '%s' "$hosts" | grep -F '"name":"down-host","state":1' >/dev/null \
+      && printf '%s' "$services" | grep -F '"host_name":"healthy-host","name":"healthy-service","state":0' >/dev/null \
+      && printf '%s' "$services" | grep -F '"host_name":"down-host","name":"cascaded-service","state":2' >/dev/null
+    then
+      return 0
+    fi
+    attempt=$((attempt + 1))
+    sleep 1
+  done
+
+  printf 'Icinga 2 fixture checks did not reach their expected states.\n' >&2
+  return 1
+}
+
 generate_server_identity() {
   # Icinga's generated leaf lacks the serverAuth EKU required by Apple's SSL policy.
+  # shellcheck disable=SC2016
   compose exec -T icinga2 sh -ceu '
     cert_dir=/data/var/lib/icinga2/certs
     ca_dir=/data/var/lib/icinga2/ca
@@ -228,6 +278,8 @@ case "${1:-}" in
     wait_for_api
     generate_server_identity
     generate_client_identity
+    reschedule_fixture_checks
+    wait_for_fixture
     printf 'Icinga 2 lab is ready on https://localhost:%s.\n' "$ISSUELIGHT_ICINGA_PORT"
     ;;
   verify)

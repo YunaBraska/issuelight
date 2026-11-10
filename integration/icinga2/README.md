@@ -12,6 +12,12 @@ only `127.0.0.1:5665`, uses Icinga's generated private CA, and provides:
 - healthy and failing host/service objects;
 - generated CA and PKCS#12 artifacts outside the repository.
 
+The Compose project name is fixed to `issuelight-icinga2` so old monitoring
+labs cannot leak objects or volumes into this fixture. The image's sample host
+and service definitions are masked. `start` forces the four IssueLight checks
+and waits for their expected results, leaving exactly the intended failing host
+and service in the problem snapshot.
+
 `start` replaces the image's generated API leaf with a certificate signed by
 the same Icinga CA and containing `serverAuth` plus the `localhost` SAN required
 by Apple's SSL policy. It does not weaken the client trust checks.

@@ -125,6 +125,7 @@ final class Icinga2LiveConnectionTests: XCTestCase {
             return XCTFail("Expected the live Icinga 2 snapshot to load, got \(result)")
         }
         XCTAssertEqual(snapshot.sourceID, source.id)
+        XCTAssertEqual(snapshot.issues.count, 2)
         XCTAssertTrue(snapshot.issues.contains {
             $0.kind == .host && $0.hostName == "down-host" && $0.severity == .critical
         })
