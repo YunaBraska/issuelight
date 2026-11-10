@@ -20,8 +20,8 @@ Snapshot date: 2026-11-10.
 | Refresh lifecycle | Initial and manual refresh per enabled source, isolated replacement cancellation, stale retention, and source removal | Verified in app-model tests |
 | Multiple-source runtime | Independent credentials, refresh tasks, failure state, disable behavior, snapshots, and aggregate issue ordering | Verified in app-model tests through persisted sources and real Keychain scopes |
 | Source persistence permissions | Atomic JSON writes containing no secrets, restricted to the local user with mode `0600` | Verified in package and app-model tests |
-| Source setup UI | Native sidebar supports add, select, edit, disable, test, remove, private-CA import, and explicit insecure trust with unsaved-change protection | Build verified; running inspection blocked while the Mac was locked |
-| Attention UI | Native menu and status window for setup, loading, healthy, problem, failure, and stale states | Empty setup state inspected locally; remaining states need running-product inspection |
+| Source setup UI | Native sidebar supports add, select, edit, disable, test, remove, private-CA import, and explicit insecure trust with unsaved-change protection | Real success, validation failure, insecure warning, private-CA import, unrelated-CA TLS failure, saved-source, and persistent action-feedback states inspected locally |
+| Attention UI | Native menu and status window for setup, loading, healthy, problem, failure, and stale states | Empty setup and real six-problem Icinga states inspected locally; remaining states need running-product inspection |
 | Real Icinga 2 integration | Pinned official container lab covers Basic auth, permission denial, private CA, mTLS, real host/service problem payloads, and two persisted app-model sources | Verified locally |
 
 The local package suite currently executes 39 tests. Five live Icinga tests
@@ -39,9 +39,9 @@ is evidence, not a release gate yet, and remains below the project goals.
 
 - Certificate pinning and reviewed rotation are specified but not implemented.
 - Keychain denial and revocation need installed-app evidence.
-- Multiple-source navigation, accessibility, localization, dark mode,
-  failure/stale UI, large-data behavior, and energy use need running-product
-  verification.
+- Multiple-source navigation, complete keyboard and accessibility behavior,
+  localization, dark mode, failure/stale UI, large-data behavior, and energy
+  use need running-product verification.
 - Core coverage remains below the stated 95% line and 90% branch goals.
 - Packaging, update behavior, Developer ID signing, notarization, stapling,
   checksums, SBOM, and clean-account installation are not implemented or proven.

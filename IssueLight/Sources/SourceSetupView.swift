@@ -218,41 +218,46 @@ struct SourceSetupView: View {
                     Text("macOS-Systemvertrauen ist der Standard. Eine eigene CA gilt nur für diese Quelle. Die vollständige Deaktivierung ist für isolierte Homelabs gedacht.")
                 }
 
-                Section {
-                    activityView
-                }
             }
             .formStyle(.grouped)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .layoutPriority(0)
             .disabled(isWorking)
 
             Divider()
-            HStack {
-                if !model.isCreatingSource {
-                    Button("Quelle entfernen", role: .destructive) {
-                        isConfirmingDeletion = true
-                    }
-                    .disabled(isWorking)
-                }
-                Spacer()
-                if model.isTestingConnection {
-                    Button("Abbrechen", role: .cancel) {
-                        connectionTask?.cancel()
-                    }
-                } else {
-                    Button("Verbindung testen") {
-                        connectionTask = Task { await model.testConnection() }
-                    }
-                    .disabled(isWorking)
-                }
+            VStack(alignment: .leading, spacing: 12) {
+                activityView
+                    .frame(maxWidth: .infinity, alignment: .leading)
 
-                Button("Speichern") {
-                    Task { await model.save() }
+                HStack {
+                    if !model.isCreatingSource {
+                        Button("Quelle entfernen", role: .destructive) {
+                            isConfirmingDeletion = true
+                        }
+                        .disabled(isWorking)
+                    }
+                    Spacer()
+                    if model.isTestingConnection {
+                        Button("Abbrechen", role: .cancel) {
+                            connectionTask?.cancel()
+                        }
+                    } else {
+                        Button("Verbindung testen") {
+                            connectionTask = Task { await model.testConnection() }
+                        }
+                        .disabled(isWorking)
+                    }
+
+                    Button("Speichern") {
+                        Task { await model.save() }
+                    }
+                    .keyboardShortcut(.defaultAction)
+                    .disabled(isWorking || !model.hasUnsavedChanges)
                 }
-                .keyboardShortcut(.defaultAction)
-                .disabled(isWorking || !model.hasUnsavedChanges)
             }
             .padding(16)
             .background(.bar)
+            .layoutPriority(1)
         }
     }
 
