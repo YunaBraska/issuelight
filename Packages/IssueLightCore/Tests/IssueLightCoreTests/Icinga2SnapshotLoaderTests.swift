@@ -4,15 +4,15 @@ import XCTest
 
 final class Icinga2SnapshotLoaderTests: XCTestCase {
     override func tearDown() {
-        StubURLProtocol.handler = nil
-        StubURLProtocol.onStart = nil
-        StubURLProtocol.blocksRequests = false
+        SnapshotStubURLProtocol.handler = nil
+        SnapshotStubURLProtocol.onStart = nil
+        SnapshotStubURLProtocol.blocksRequests = false
         super.tearDown()
     }
 
     func testLoadUsesProblemFiltersAndReturnsProviderNeutralSnapshot() async throws {
         let recorder = RequestRecorder()
-        StubURLProtocol.handler = { request in
+        SnapshotStubURLProtocol.handler = { request in
             recorder.append(request)
             let path = try XCTUnwrap(request.url?.path)
             if path.hasSuffix("/hosts") {
@@ -52,7 +52,7 @@ final class Icinga2SnapshotLoaderTests: XCTestCase {
     }
 
     func testLoadKeepsAuthenticationFailureDistinctFromHealthySnapshot() async {
-        StubURLProtocol.handler = { request in
+        SnapshotStubURLProtocol.handler = { request in
             Self.response(request: request, statusCode: 401, body: #"{"error":401}"#)
         }
 
@@ -77,7 +77,7 @@ final class Icinga2SnapshotLoaderTests: XCTestCase {
     }
 
     func testLoadMapsServerFailure() async {
-        StubURLProtocol.handler = { request in
+        SnapshotStubURLProtocol.handler = { request in
             Self.response(request: request, statusCode: 503, body: #"{"error":503}"#)
         }
 
@@ -87,7 +87,7 @@ final class Icinga2SnapshotLoaderTests: XCTestCase {
     }
 
     func testLoadMapsUnexpectedHTTPFailure() async {
-        StubURLProtocol.handler = { request in
+        SnapshotStubURLProtocol.handler = { request in
             Self.response(request: request, statusCode: 429, body: #"{"error":429}"#)
         }
 
@@ -97,7 +97,7 @@ final class Icinga2SnapshotLoaderTests: XCTestCase {
     }
 
     func testLoadMapsTLSFailure() async {
-        StubURLProtocol.handler = { _ in
+        SnapshotStubURLProtocol.handler = { _ in
             throw URLError(.secureConnectionFailed)
         }
 
@@ -107,7 +107,7 @@ final class Icinga2SnapshotLoaderTests: XCTestCase {
     }
 
     func testLoadMapsReachabilityFailure() async {
-        StubURLProtocol.handler = { _ in
+        SnapshotStubURLProtocol.handler = { _ in
             throw URLError(.timedOut)
         }
 
@@ -117,7 +117,7 @@ final class Icinga2SnapshotLoaderTests: XCTestCase {
     }
 
     func testLoadMapsUnexpectedTransportErrorToReachabilityFailure() async {
-        StubURLProtocol.handler = { _ in
+        SnapshotStubURLProtocol.handler = { _ in
             throw NSError(domain: "IssueLightTests", code: 1)
         }
 
@@ -127,7 +127,7 @@ final class Icinga2SnapshotLoaderTests: XCTestCase {
     }
 
     func testLoadRejectsNonHTTPResponse() async {
-        StubURLProtocol.handler = { request in
+        SnapshotStubURLProtocol.handler = { request in
             (
                 URLResponse(
                     url: request.url!,
@@ -196,7 +196,7 @@ final class Icinga2SnapshotLoaderTests: XCTestCase {
     }
 
     func testLoadRejectsSuccessfulButIncompatiblePayload() async {
-        StubURLProtocol.handler = { request in
+        SnapshotStubURLProtocol.handler = { request in
             Self.response(request: request, statusCode: 200, body: #"{"status":"ok"}"#)
         }
 
@@ -212,7 +212,7 @@ final class Icinga2SnapshotLoaderTests: XCTestCase {
             return #"{"attrs":{"acknowledgement":0,"display_name":"Service \#(suffix)","downtime_depth":0,"host_name":"host-\#(suffix)","last_check_result":{"output":"CRITICAL"},"name":"service-\#(suffix)","state":2},"name":"host-\#(suffix)!service-\#(suffix)","type":"Service"}"#
         }
         let serviceData = Data("{\"results\":[\(serviceResults.joined(separator: ","))]}".utf8)
-        StubURLProtocol.handler = { request in
+        SnapshotStubURLProtocol.handler = { request in
             let body = request.url?.path.hasSuffix("/services") == true
                 ? serviceData
                 : Data(#"{"results":[]}"#.utf8)
@@ -243,7 +243,7 @@ final class Icinga2SnapshotLoaderTests: XCTestCase {
 
     private func loader(now: Date = .now) -> Icinga2SnapshotLoader {
         let configuration = URLSessionConfiguration.ephemeral
-        configuration.protocolClasses = [StubURLProtocol.self]
+        configuration.protocolClasses = [SnapshotStubURLProtocol.self]
         return Icinga2SnapshotLoader(configuration: configuration, now: { now })
     }
 
@@ -260,7 +260,7 @@ final class Icinga2SnapshotLoaderTests: XCTestCase {
         hostBody: String = #"{"results":[]}"#,
         serviceBody: String = #"{"results":[]}"#
     ) async -> SnapshotLoadResult {
-        StubURLProtocol.handler = { request in
+        SnapshotStubURLProtocol.handler = { request in
             Self.response(
                 request: request,
                 statusCode: 200,

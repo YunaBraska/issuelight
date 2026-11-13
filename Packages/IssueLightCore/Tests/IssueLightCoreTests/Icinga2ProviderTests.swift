@@ -4,7 +4,7 @@ import XCTest
 
 final class Icinga2ProviderTests: XCTestCase {
     override func tearDown() {
-        StubURLProtocol.handler = nil
+        ProviderStubURLProtocol.handler = nil
         super.tearDown()
     }
 
@@ -68,8 +68,8 @@ final class Icinga2ProviderTests: XCTestCase {
 
     func testRegisteredProviderTestsBasicConnection() async throws {
         let configuration = URLSessionConfiguration.ephemeral
-        configuration.protocolClasses = [StubURLProtocol.self]
-        StubURLProtocol.handler = { request in
+        configuration.protocolClasses = [ProviderStubURLProtocol.self]
+        ProviderStubURLProtocol.handler = { request in
             (
                 HTTPURLResponse(
                     url: request.url!,
@@ -114,8 +114,8 @@ final class Icinga2ProviderTests: XCTestCase {
 
     func testRegisteredProviderLoadsProviderNeutralSnapshot() async throws {
         let configuration = URLSessionConfiguration.ephemeral
-        configuration.protocolClasses = [StubURLProtocol.self]
-        StubURLProtocol.handler = { request in
+        configuration.protocolClasses = [ProviderStubURLProtocol.self]
+        ProviderStubURLProtocol.handler = { request in
             let body = request.url?.path.hasSuffix("/hosts") == true
                 ? #"{"results":[{"attrs":{"acknowledgement":0,"display_name":"Edge","downtime_depth":0,"name":"edge-1","state":1},"name":"edge-1","type":"Host"}]}"#
                 : #"{"results":[]}"#
