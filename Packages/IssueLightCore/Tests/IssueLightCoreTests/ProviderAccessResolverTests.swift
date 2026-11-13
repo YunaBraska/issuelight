@@ -3,6 +3,141 @@ import XCTest
 @testable import IssueLightCore
 
 final class ProviderAccessResolverTests: XCTestCase {
+    func testResolverUsesPasswordOverrideWhenStoredPasswordAccessIsDisabled() async {
+        let source = MonitoringSource(
+            name: "Edited credentials",
+            providerID: Icinga2Provider.id,
+            endpoint: URL(string: "https://edited-credentials.example.test:5665")!,
+            authentication: .basic(username: "operator")
+        )
+        let resolver = ProviderAccessResolver(
+            passwordVault: KeychainPasswordVault(),
+            identityCatalog: KeychainIdentityCatalog(),
+            certificateCatalog: KeychainServerCertificateCatalog(
+                ownershipScope: "io.github.yunabraska.issuelight.provider-tests.\(UUID().uuidString)"
+            )
+        )
+
+        let resolution = await resolver.resolve(
+            source: source,
+            passwordOverride: "replacement-password",
+            allowsStoredPassword: false
+        )
+
+        guard case .resolved(let access) = resolution,
+              case .password(let password) = access.credential else {
+            return XCTFail("Expected password override to resolve provider access")
+        }
+        XCTAssertEqual(password, "replacement-password")
+        XCTAssertNil(access.trustedServerCertificate)
+    }
+
+    func testResolverDoesNotReadStoredPasswordWhenAccessIsDisabled() async throws {
+        let source = MonitoringSource(
+            name: "Stored credential disabled",
+            providerID: Icinga2Provider.id,
+            endpoint: URL(string: "https://stored-credential-disabled.example.test:5665")!,
+            authentication: .basic(username: "operator")
+        )
+        let passwordVault = KeychainPasswordVault()
+        let passwordScope = try BasicCredentialScope(source: source)
+        addTeardownBlock {
+            try? await passwordVault.deletePassword(for: passwordScope)
+        }
+        try await passwordVault.store("stored-password", for: passwordScope)
+        let resolver = ProviderAccessResolver(
+            passwordVault: passwordVault,
+            identityCatalog: KeychainIdentityCatalog(),
+            certificateCatalog: KeychainServerCertificateCatalog(
+                ownershipScope: "io.github.yunabraska.issuelight.provider-tests.\(UUID().uuidString)"
+            )
+        )
+
+        let resolution = await resolver.resolve(
+            source: source,
+            allowsStoredPassword: false
+        )
+
+        guard case .failed(let failure) = resolution else {
+            return XCTFail("Expected unavailable password failure")
+        }
+        XCTAssertEqual(failure, .passwordNotAvailable)
+    }
+
+    func testResolverReportsMissingClientIdentity() async {
+        let missingReference = Data("missing-client-identity".utf8).base64EncodedString()
+        let source = MonitoringSource(
+            name: "Missing identity",
+            providerID: Icinga2Provider.id,
+            endpoint: URL(string: "https://missing-identity.example.test:5665")!,
+            authentication: .clientCertificate(identityID: missingReference)
+        )
+        let resolver = ProviderAccessResolver(
+            passwordVault: KeychainPasswordVault(),
+            identityCatalog: KeychainIdentityCatalog(),
+            certificateCatalog: KeychainServerCertificateCatalog(
+                ownershipScope: "io.github.yunabraska.issuelight.provider-tests.\(UUID().uuidString)"
+            )
+        )
+
+        let resolution = await resolver.resolve(source: source)
+
+        guard case .failed(let failure) = resolution else {
+            return XCTFail("Expected missing client identity failure")
+        }
+        XCTAssertEqual(failure, .clientIdentityNotAvailable)
+    }
+
+    func testResolverReportsInvalidClientIdentityReferenceAsAccessFailure() async {
+        let source = MonitoringSource(
+            name: "Invalid identity",
+            providerID: Icinga2Provider.id,
+            endpoint: URL(string: "https://invalid-identity.example.test:5665")!,
+            authentication: .clientCertificate(identityID: "not base64")
+        )
+        let resolver = ProviderAccessResolver(
+            passwordVault: KeychainPasswordVault(),
+            identityCatalog: KeychainIdentityCatalog(),
+            certificateCatalog: KeychainServerCertificateCatalog(
+                ownershipScope: "io.github.yunabraska.issuelight.provider-tests.\(UUID().uuidString)"
+            )
+        )
+
+        let resolution = await resolver.resolve(source: source)
+
+        guard case .failed(let failure) = resolution else {
+            return XCTFail("Expected client identity access failure")
+        }
+        XCTAssertEqual(failure, .clientIdentityAccessFailed)
+    }
+
+    func testResolverReportsInvalidServerCertificateReferenceAsAccessFailure() async {
+        let source = MonitoringSource(
+            name: "Invalid CA reference",
+            providerID: Icinga2Provider.id,
+            endpoint: URL(string: "https://invalid-ca-reference.example.test:5665")!,
+            authentication: .basic(username: "operator"),
+            serverTrust: .customCertificate(certificateID: "not base64")
+        )
+        let resolver = ProviderAccessResolver(
+            passwordVault: KeychainPasswordVault(),
+            identityCatalog: KeychainIdentityCatalog(),
+            certificateCatalog: KeychainServerCertificateCatalog(
+                ownershipScope: "io.github.yunabraska.issuelight.provider-tests.\(UUID().uuidString)"
+            )
+        )
+
+        let resolution = await resolver.resolve(
+            source: source,
+            passwordOverride: "must-not-hide-invalid-ca"
+        )
+
+        guard case .failed(let failure) = resolution else {
+            return XCTFail("Expected server certificate access failure")
+        }
+        XCTAssertEqual(failure, .serverCertificateAccessFailed)
+    }
+
     func testResolverCombinesStoredPasswordAndCustomServerCertificate() async throws {
         let fileURL = try XCTUnwrap(
             Bundle.module.url(
