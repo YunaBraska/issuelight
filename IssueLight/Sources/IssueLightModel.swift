@@ -268,7 +268,7 @@ final class IssueLightModel: ObservableObject {
     }
 
     convenience init() {
-        let bundleIdentifier = Bundle.main.bundleIdentifier ?? "io.github.yunabraska.issuelight"
+        let bundleIdentifier = Bundle.main.bundleIdentifier ?? "berlin.yuna.issuelight"
         let fileURL = try? SourceStore.defaultFileURL(bundleIdentifier: bundleIdentifier)
         let store = fileURL.map(SourceStore.init(fileURL:))
         let certificateCatalog = KeychainServerCertificateCatalog(ownershipScope: bundleIdentifier)

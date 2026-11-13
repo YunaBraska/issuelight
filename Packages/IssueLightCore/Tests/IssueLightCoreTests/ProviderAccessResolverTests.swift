@@ -14,7 +14,7 @@ final class ProviderAccessResolverTests: XCTestCase {
             passwordVault: KeychainPasswordVault(),
             identityCatalog: KeychainIdentityCatalog(),
             certificateCatalog: KeychainServerCertificateCatalog(
-                ownershipScope: "io.github.yunabraska.issuelight.provider-tests.\(UUID().uuidString)"
+                ownershipScope: "berlin.yuna.issuelight.provider-tests.\(UUID().uuidString)"
             )
         )
 
@@ -49,7 +49,7 @@ final class ProviderAccessResolverTests: XCTestCase {
             passwordVault: passwordVault,
             identityCatalog: KeychainIdentityCatalog(),
             certificateCatalog: KeychainServerCertificateCatalog(
-                ownershipScope: "io.github.yunabraska.issuelight.provider-tests.\(UUID().uuidString)"
+                ownershipScope: "berlin.yuna.issuelight.provider-tests.\(UUID().uuidString)"
             )
         )
 
@@ -76,7 +76,7 @@ final class ProviderAccessResolverTests: XCTestCase {
             passwordVault: KeychainPasswordVault(),
             identityCatalog: KeychainIdentityCatalog(),
             certificateCatalog: KeychainServerCertificateCatalog(
-                ownershipScope: "io.github.yunabraska.issuelight.provider-tests.\(UUID().uuidString)"
+                ownershipScope: "berlin.yuna.issuelight.provider-tests.\(UUID().uuidString)"
             )
         )
 
@@ -99,7 +99,7 @@ final class ProviderAccessResolverTests: XCTestCase {
             passwordVault: KeychainPasswordVault(),
             identityCatalog: KeychainIdentityCatalog(),
             certificateCatalog: KeychainServerCertificateCatalog(
-                ownershipScope: "io.github.yunabraska.issuelight.provider-tests.\(UUID().uuidString)"
+                ownershipScope: "berlin.yuna.issuelight.provider-tests.\(UUID().uuidString)"
             )
         )
 
@@ -123,7 +123,7 @@ final class ProviderAccessResolverTests: XCTestCase {
             passwordVault: KeychainPasswordVault(),
             identityCatalog: KeychainIdentityCatalog(),
             certificateCatalog: KeychainServerCertificateCatalog(
-                ownershipScope: "io.github.yunabraska.issuelight.provider-tests.\(UUID().uuidString)"
+                ownershipScope: "berlin.yuna.issuelight.provider-tests.\(UUID().uuidString)"
             )
         )
 
@@ -147,7 +147,7 @@ final class ProviderAccessResolverTests: XCTestCase {
             )
         )
         let certificateCatalog = KeychainServerCertificateCatalog(
-            ownershipScope: "io.github.yunabraska.issuelight.provider-tests.\(UUID().uuidString)"
+            ownershipScope: "berlin.yuna.issuelight.provider-tests.\(UUID().uuidString)"
         )
         let certificateDescriptor = try await certificateCatalog.importCertificate(at: fileURL)
         let source = MonitoringSource(
@@ -193,7 +193,7 @@ final class ProviderAccessResolverTests: XCTestCase {
             passwordVault: KeychainPasswordVault(),
             identityCatalog: KeychainIdentityCatalog(),
             certificateCatalog: KeychainServerCertificateCatalog(
-                ownershipScope: "io.github.yunabraska.issuelight.provider-tests.\(UUID().uuidString)"
+                ownershipScope: "berlin.yuna.issuelight.provider-tests.\(UUID().uuidString)"
             )
         )
 
@@ -219,7 +219,7 @@ final class ProviderAccessResolverTests: XCTestCase {
             passwordVault: KeychainPasswordVault(),
             identityCatalog: KeychainIdentityCatalog(),
             certificateCatalog: KeychainServerCertificateCatalog(
-                ownershipScope: "io.github.yunabraska.issuelight.provider-tests.\(UUID().uuidString)"
+                ownershipScope: "berlin.yuna.issuelight.provider-tests.\(UUID().uuidString)"
             )
         )
 

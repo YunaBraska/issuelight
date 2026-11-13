@@ -52,7 +52,7 @@ test -f "$executable" || { echo "App executable is missing." >&2; exit 66; }
 bundle_identifier=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$info_plist")
 bundle_version=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$info_plist")
 bundle_build=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$info_plist")
-test "$bundle_identifier" = "io.github.yunabraska.issuelight" || {
+test "$bundle_identifier" = "berlin.yuna.issuelight" || {
     echo "Unexpected bundle identifier: $bundle_identifier" >&2
     exit 65
 }

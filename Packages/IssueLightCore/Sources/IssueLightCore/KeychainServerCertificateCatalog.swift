@@ -33,7 +33,7 @@ public actor KeychainServerCertificateCatalog {
     /// delete each other's imported certificates.
     ///
     /// - Parameter ownershipScope: Stable identifier for the source store using this catalog.
-    public init(ownershipScope: String = "io.github.yunabraska.issuelight") {
+    public init(ownershipScope: String = "berlin.yuna.issuelight") {
         let scopeFingerprint = SHA256.hash(data: Data(ownershipScope.utf8))
             .prefix(16)
             .map { String(format: "%02x", $0) }

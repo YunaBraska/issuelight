@@ -1,5 +1,13 @@
 # IssueLight
 
+[![CI](https://github.com/YunaBraska/issuelight/actions/workflows/ci.yml/badge.svg)](https://github.com/YunaBraska/issuelight/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/YunaBraska/issuelight/actions/workflows/codeql.yml/badge.svg)](https://github.com/YunaBraska/issuelight/actions/workflows/codeql.yml)
+[![Product Pages](https://github.com/YunaBraska/issuelight/actions/workflows/product-pages.yml/badge.svg)](https://github.com/YunaBraska/issuelight/actions/workflows/product-pages.yml)
+
+[Product page](https://yunabraska.github.io/issuelight/) ·
+[Documentation](https://yunabraska.github.io/issuelight/documentation.html) ·
+[Source](https://github.com/YunaBraska/issuelight)
+
 IssueLight is a native macOS menu bar client for infrastructure monitoring. It
 stays quiet when systems are healthy and brings actionable problems forward
 when attention is required.
@@ -63,6 +71,7 @@ The real Icinga 2 matrix is documented in
 - [`docs/spec/release-lifecycle.md`](docs/spec/release-lifecycle.md): supported installation and update behavior
 - [`docs/adr/`](docs/adr/): lasting architecture decisions
 - [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md): local build and release-candidate verification
+- [`docs/site/`](docs/site/): GitHub Pages product site and reproducible app screenshots
 - [`CONTRIBUTING.md`](CONTRIBUTING.md): contributor workflow
 - [`SECURITY.md`](SECURITY.md): private vulnerability reporting
 - [`PRIVACY.md`](PRIVACY.md): network and local-data behavior

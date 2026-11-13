@@ -110,7 +110,7 @@ final class IssueLightModelTests: XCTestCase {
 
     func testSavingLastPrivateCAReferenceRemovesOnlyIssueLightManagedCertificate() async throws {
         let catalog = KeychainServerCertificateCatalog(
-            ownershipScope: "io.github.yunabraska.issuelight.model-tests.\(UUID().uuidString)"
+            ownershipScope: "berlin.yuna.issuelight.model-tests.\(UUID().uuidString)"
         )
         let descriptor = try await catalog.importCertificate(at: serverCertificateFixtureURL)
         addTeardownBlock {
@@ -149,7 +149,7 @@ final class IssueLightModelTests: XCTestCase {
 
     func testDeletingLastPrivateCASourceRemovesIssueLightManagedCertificate() async throws {
         let catalog = KeychainServerCertificateCatalog(
-            ownershipScope: "io.github.yunabraska.issuelight.model-tests.\(UUID().uuidString)"
+            ownershipScope: "berlin.yuna.issuelight.model-tests.\(UUID().uuidString)"
         )
         let descriptor = try await catalog.importCertificate(at: serverCertificateFixtureURL)
         addTeardownBlock {
@@ -173,7 +173,7 @@ final class IssueLightModelTests: XCTestCase {
 
     func testLoadingRemovesOrphanedManagedCertificateFromSameAppProfile() async throws {
         let catalog = KeychainServerCertificateCatalog(
-            ownershipScope: "io.github.yunabraska.issuelight.model-tests.\(UUID().uuidString)"
+            ownershipScope: "berlin.yuna.issuelight.model-tests.\(UUID().uuidString)"
         )
         let descriptor = try await catalog.importCertificate(at: serverCertificateFixtureURL)
         addTeardownBlock {
@@ -328,7 +328,7 @@ final class IssueLightModelTests: XCTestCase {
             .appendingPathComponent("IssueLightLiveModelTests-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         let certificateCatalog = KeychainServerCertificateCatalog(
-            ownershipScope: "io.github.yunabraska.issuelight.live-model-tests.\(UUID().uuidString)"
+            ownershipScope: "berlin.yuna.issuelight.live-model-tests.\(UUID().uuidString)"
         )
         let certificate = try await certificateCatalog.importCertificate(
             at: URL(fileURLWithPath: certificatePath)
@@ -418,7 +418,7 @@ final class IssueLightModelTests: XCTestCase {
         }
         let registry = try ProviderRegistry([TestProvider(script: script)])
         let resolvedCertificateCatalog = certificateCatalog ?? KeychainServerCertificateCatalog(
-            ownershipScope: "io.github.yunabraska.issuelight.model-tests.\(UUID().uuidString)"
+            ownershipScope: "berlin.yuna.issuelight.model-tests.\(UUID().uuidString)"
         )
         let model = IssueLightModel(
             sourceStore: store,

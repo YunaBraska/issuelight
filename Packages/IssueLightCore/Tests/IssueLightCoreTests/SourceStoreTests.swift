@@ -3,7 +3,7 @@ import XCTest
 
 final class SourceStoreTests: XCTestCase {
     func testDefaultFileURLUsesBundleSpecificApplicationSupportLocation() throws {
-        let bundleIdentifier = "io.github.yunabraska.issuelight.store-tests.\(UUID().uuidString)"
+        let bundleIdentifier = "berlin.yuna.issuelight.store-tests.\(UUID().uuidString)"
 
         let fileURL = try SourceStore.defaultFileURL(bundleIdentifier: bundleIdentifier)
 

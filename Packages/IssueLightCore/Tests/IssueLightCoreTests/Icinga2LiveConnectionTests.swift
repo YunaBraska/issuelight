@@ -108,7 +108,7 @@ final class Icinga2LiveConnectionTests: XCTestCase {
             )
         )
         let certificateCatalog = KeychainServerCertificateCatalog(
-            ownershipScope: "io.github.yunabraska.issuelight.live-core-tests.\(UUID().uuidString)"
+            ownershipScope: "berlin.yuna.issuelight.live-core-tests.\(UUID().uuidString)"
         )
         let descriptor = try await certificateCatalog.importCertificate(at: fileURL)
         addTeardownBlock {
@@ -145,7 +145,7 @@ final class Icinga2LiveConnectionTests: XCTestCase {
             throw XCTSkip("Live Icinga 2 environment is not configured")
         }
         let certificateCatalog = KeychainServerCertificateCatalog(
-            ownershipScope: "io.github.yunabraska.issuelight.live-core-tests.\(UUID().uuidString)"
+            ownershipScope: "berlin.yuna.issuelight.live-core-tests.\(UUID().uuidString)"
         )
         let descriptor = try await certificateCatalog.importCertificate(
             at: URL(fileURLWithPath: certificatePath)
@@ -250,7 +250,7 @@ final class Icinga2LiveConnectionTests: XCTestCase {
             try? Self.deleteImportedIdentity(cleanupReferences)
         }
         let certificateCatalog = KeychainServerCertificateCatalog(
-            ownershipScope: "io.github.yunabraska.issuelight.live-core-tests.\(UUID().uuidString)"
+            ownershipScope: "berlin.yuna.issuelight.live-core-tests.\(UUID().uuidString)"
         )
         let certificateDescriptor = try await certificateCatalog.importCertificate(
             at: URL(fileURLWithPath: certificatePath)
@@ -308,7 +308,7 @@ final class Icinga2LiveConnectionTests: XCTestCase {
             try? Self.deleteImportedIdentity(cleanupReferences)
         }
         let certificateCatalog = KeychainServerCertificateCatalog(
-            ownershipScope: "io.github.yunabraska.issuelight.live-core-tests.\(UUID().uuidString)"
+            ownershipScope: "berlin.yuna.issuelight.live-core-tests.\(UUID().uuidString)"
         )
         let certificateDescriptor = try await certificateCatalog.importCertificate(
             at: URL(fileURLWithPath: certificatePath)

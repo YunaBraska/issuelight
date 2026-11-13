@@ -45,7 +45,7 @@ let document: [String: Any] = [
             "filesAnalyzed": false,
             "licenseConcluded": "Apache-2.0",
             "licenseDeclared": "Apache-2.0",
-            "copyrightText": "Copyright 2026 IssueLight contributors",
+            "copyrightText": "Copyright 2026 Yuna Morgenstern and IssueLight contributors",
             "externalRefs": [
                 [
                     "referenceCategory": "PACKAGE-MANAGER",

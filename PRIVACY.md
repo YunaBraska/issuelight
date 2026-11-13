@@ -19,7 +19,7 @@ default.
 ## Data stored on the Mac
 
 - Public source configuration is stored in
-  `~/Library/Application Support/io.github.yunabraska.issuelight/sources.json`
+  `~/Library/Application Support/berlin.yuna.issuelight/sources.json`
   with permissions restricted to the local user. Names and URLs in this file
   can reveal infrastructure details. Exact certificate pinning stores the
   selected server leaf's public SHA-256 fingerprint in this file.

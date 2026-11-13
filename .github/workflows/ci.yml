@@ -28,6 +28,7 @@ jobs:
         run: |
           sh -n scripts/build_release.sh
           sh -n scripts/check_coverage.sh
+          sh -n scripts/generate_site_screenshots.sh
           sh -n scripts/icinga2_lab.sh
           sh -n scripts/package_release.sh
 

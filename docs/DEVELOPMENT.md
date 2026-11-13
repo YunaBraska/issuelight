@@ -24,12 +24,26 @@ xcodebuild build -project IssueLight/IssueLight.xcodeproj \
 ```
 
 Use a stable Apple Development identity and the fixed bundle identifier
-`io.github.yunabraska.issuelight` for permission-sensitive installed-app tests.
+`berlin.yuna.issuelight` for permission-sensitive installed-app tests.
 Keep team identifiers and certificate fingerprints outside Git in ignored local
 configuration.
 
 See [`../integration/icinga2/README.md`](../integration/icinga2/README.md) for
 the real Icinga compatibility matrix.
+
+## Product-site screenshots
+
+The landing-page screenshots are rendered from the production SwiftUI views
+with deterministic monitoring data. They do not start Icinga, read Keychain,
+or write application state.
+
+```sh
+scripts/generate_site_screenshots.sh
+```
+
+The script builds the screenshot test in an isolated temporary Derived Data
+directory and updates `docs/site/assets/screenshots/`. Inspect both images
+before committing them.
 
 ## Coverage ratchet
 

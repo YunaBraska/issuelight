@@ -12,7 +12,7 @@ final class KeychainServerCertificateCatalogTests: XCTestCase {
             )
         )
         let catalog = KeychainServerCertificateCatalog(
-            ownershipScope: "io.github.yunabraska.issuelight.catalog-tests.\(UUID().uuidString)"
+            ownershipScope: "berlin.yuna.issuelight.catalog-tests.\(UUID().uuidString)"
         )
         let descriptor = try await catalog.importCertificate(at: fileURL)
         addTeardownBlock {
@@ -51,7 +51,7 @@ final class KeychainServerCertificateCatalogTests: XCTestCase {
             )
         )
         let catalog = KeychainServerCertificateCatalog(
-            ownershipScope: "io.github.yunabraska.issuelight.catalog-tests.\(UUID().uuidString)"
+            ownershipScope: "berlin.yuna.issuelight.catalog-tests.\(UUID().uuidString)"
         )
         let descriptor = try await catalog.importCertificate(at: fileURL)
         addTeardownBlock {
@@ -88,10 +88,10 @@ final class KeychainServerCertificateCatalogTests: XCTestCase {
             )
         )
         let ownerCatalog = KeychainServerCertificateCatalog(
-            ownershipScope: "io.github.yunabraska.issuelight.owner-tests.\(UUID().uuidString)"
+            ownershipScope: "berlin.yuna.issuelight.owner-tests.\(UUID().uuidString)"
         )
         let otherCatalog = KeychainServerCertificateCatalog(
-            ownershipScope: "io.github.yunabraska.issuelight.other-tests.\(UUID().uuidString)"
+            ownershipScope: "berlin.yuna.issuelight.other-tests.\(UUID().uuidString)"
         )
         let descriptor = try await ownerCatalog.importCertificate(at: fileURL)
         addTeardownBlock {
@@ -118,7 +118,7 @@ final class KeychainServerCertificateCatalogTests: XCTestCase {
 
     func testInvalidPersistentReferenceAndMalformedCertificateAreRejected() async throws {
         let catalog = KeychainServerCertificateCatalog(
-            ownershipScope: "io.github.yunabraska.issuelight.catalog-tests.\(UUID().uuidString)"
+            ownershipScope: "berlin.yuna.issuelight.catalog-tests.\(UUID().uuidString)"
         )
         do {
             _ = try await catalog.certificate(id: "not base64")
@@ -151,7 +151,7 @@ final class KeychainServerCertificateCatalogTests: XCTestCase {
         try Data(repeating: 0, count: 1_048_577).write(to: fileURL)
         defer { try? FileManager.default.removeItem(at: fileURL) }
         let catalog = KeychainServerCertificateCatalog(
-            ownershipScope: "io.github.yunabraska.issuelight.catalog-tests.\(UUID().uuidString)"
+            ownershipScope: "berlin.yuna.issuelight.catalog-tests.\(UUID().uuidString)"
         )
 
         do {

@@ -4,6 +4,49 @@ import IssueLightCore
 struct StatusWindowView: View {
     @ObservedObject var model: IssueLightModel
     @Environment(\.openWindow) private var openWindow
+
+    var body: some View {
+        StatusWindowContent(
+            hasConfiguredSource: model.hasConfiguredSource,
+            hasEnabledSource: model.hasEnabledSource,
+            hasActiveSnapshot: model.hasActiveSnapshot,
+            latestSuccessfulRefresh: model.latestSuccessfulRefresh,
+            refreshState: model.refreshState,
+            hasPartialRefreshFailure: model.hasPartialRefreshFailure,
+            failedSources: model.failedSources.map {
+                StatusSourceFailure(id: $0.source.id, sourceName: $0.source.name, message: $0.message)
+            },
+            actionableIssues: model.actionableIssues,
+            coveredIssues: model.coveredIssues,
+            sourceNames: Dictionary(uniqueKeysWithValues: model.sources.map { ($0.id, $0.name) }),
+            refresh: { model.refresh() },
+            openSources: {
+                openWindow(id: "sources")
+            }
+        )
+    }
+}
+
+struct StatusSourceFailure: Identifiable, Equatable {
+    let id: UUID
+    let sourceName: String
+    let message: String
+}
+
+struct StatusWindowContent: View {
+    let hasConfiguredSource: Bool
+    let hasEnabledSource: Bool
+    let hasActiveSnapshot: Bool
+    let latestSuccessfulRefresh: Date?
+    let refreshState: IssueLightModel.RefreshState
+    let hasPartialRefreshFailure: Bool
+    let failedSources: [StatusSourceFailure]
+    let actionableIssues: [MonitoringIssue]
+    let coveredIssues: [MonitoringIssue]
+    let sourceNames: [UUID: String]
+    let refresh: () -> Void
+    let openSources: () -> Void
+    @Environment(\.locale) private var locale
     @State private var searchText = ""
 
     var body: some View {
@@ -27,13 +70,17 @@ struct StatusWindowView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text("IssueLight")
                     .font(.title2.weight(.semibold))
-                if let observedAt = model.latestSuccessfulRefresh {
-                    let date = observedAt.formatted(date: .abbreviated, time: .omitted)
-                    let time = observedAt.formatted(date: .omitted, time: .shortened)
+                if let observedAt = latestSuccessfulRefresh {
+                    let date = observedAt.formatted(
+                        Date.FormatStyle(date: .abbreviated, time: .omitted).locale(locale)
+                    )
+                    let time = observedAt.formatted(
+                        Date.FormatStyle(date: .omitted, time: .shortened).locale(locale)
+                    )
                     Text("Zuletzt erfolgreich geprüft: \(date), \(time)")
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                } else if model.hasConfiguredSource && !model.hasEnabledSource {
+                } else if hasConfiguredSource && !hasEnabledSource {
                     Text("Alle Quellen sind pausiert")
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -44,54 +91,52 @@ struct StatusWindowView: View {
                 }
             }
             Spacer()
-            if model.refreshState == .refreshing {
+            if refreshState == .refreshing {
                 ProgressView()
                     .controlSize(.small)
                     .accessibilityLabel("Status wird aktualisiert")
             }
             Button("Aktualisieren") {
-                model.refresh()
+                refresh()
             }
             .keyboardShortcut("r")
-            .disabled(!model.hasEnabledSource)
+            .disabled(!hasEnabledSource)
         }
         .padding(16)
     }
 
     @ViewBuilder
     private var content: some View {
-        if !model.hasConfiguredSource {
+        if !hasConfiguredSource {
             ContentUnavailableView {
                 Label("Keine Quelle konfiguriert", systemImage: "server.rack")
             } description: {
                 Text("Füge zuerst eine Monitoring-Quelle hinzu.")
             } actions: {
                 Button("Quelle hinzufügen …") {
-                    openWindow(id: "sources")
+                    openSources()
                 }
                 .keyboardShortcut(.defaultAction)
             }
-        } else if !model.hasEnabledSource {
+        } else if !hasEnabledSource {
             ContentUnavailableView {
                 Label("Keine Quelle aktiv", systemImage: "pause.circle")
             } description: {
                 Text("Aktiviere mindestens eine Quelle, um den Status zu überwachen.")
             } actions: {
                 Button("Quellen öffnen …") {
-                    openWindow(id: "sources")
+                    openSources()
                 }
                 .keyboardShortcut(.defaultAction)
             }
-        } else if model.hasActiveSnapshot {
-            let actionableIssues = model.actionableIssues
-            let coveredIssues = model.coveredIssues
+        } else if hasActiveSnapshot {
             let filteredActionableIssues = filteredIssues(actionableIssues)
             let filteredCoveredIssues = filteredIssues(coveredIssues)
             VStack(spacing: 0) {
-                if !model.failedSources.isEmpty {
+                if !failedSources.isEmpty {
                     VStack(alignment: .leading, spacing: 4) {
-                        ForEach(model.failedSources) { failure in
-                            Label("\(failure.source.name): \(failure.message)", systemImage: "wifi.exclamationmark")
+                        ForEach(failedSources) { failure in
+                            Label("\(failure.sourceName): \(failure.message)", systemImage: "wifi.exclamationmark")
                         }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -99,11 +144,11 @@ struct StatusWindowView: View {
                     .background(.orange.opacity(0.12))
                     .accessibilityLabel(
                         [
-                            model.hasPartialRefreshFailure
-                                ? "Teilweise veralteter Status. \(model.failedSources.count) Quellen konnten nicht aktualisiert werden."
+                            hasPartialRefreshFailure
+                                ? "Teilweise veralteter Status. \(failedSources.count) Quellen konnten nicht aktualisiert werden."
                                 : "Veralteter Status. Keine aktive Quelle konnte aktualisiert werden.",
-                            model.failedSources
-                                .map { "\($0.source.name): \($0.message)" }
+                            failedSources
+                                .map { "\($0.sourceName): \($0.message)" }
                                 .joined(separator: " "),
                         ]
                         .joined(separator: " ")
@@ -111,10 +156,10 @@ struct StatusWindowView: View {
                 }
                 if actionableIssues.isEmpty && coveredIssues.isEmpty {
                     ContentUnavailableView(
-                        model.failedSources.isEmpty ? "Alles ruhig" : "Keine aktuellen Probleme",
+                        failedSources.isEmpty ? "Alles ruhig" : "Keine aktuellen Probleme",
                         systemImage: "checkmark.circle",
                         description: Text(
-                            model.failedSources.isEmpty
+                            failedSources.isEmpty
                                 ? "Keine Hosts oder Services benötigen Aufmerksamkeit."
                                 : "Die erreichbaren Quellen melden keine Probleme. Mindestens ein Stand ist veraltet."
                         )
@@ -134,7 +179,7 @@ struct StatusWindowView: View {
                                         ForEach(filteredActionableIssues) { issue in
                                             MonitoringIssueRow(
                                                 issue: issue,
-                                                sourceName: model.sources.count > 1 ? model.sourceName(for: issue.sourceID) : nil
+                                                sourceName: sourceNames.count > 1 ? sourceNames[issue.sourceID] : nil
                                             )
                                         }
                                     }
@@ -144,7 +189,7 @@ struct StatusWindowView: View {
                                         ForEach(filteredCoveredIssues) { issue in
                                             MonitoringIssueRow(
                                                 issue: issue,
-                                                sourceName: model.sources.count > 1 ? model.sourceName(for: issue.sourceID) : nil
+                                                sourceName: sourceNames.count > 1 ? sourceNames[issue.sourceID] : nil
                                             )
                                         }
                                     }
@@ -155,7 +200,7 @@ struct StatusWindowView: View {
                     .searchable(text: $searchText, prompt: "Probleme durchsuchen")
                 }
             }
-        } else if case .failed(let message) = model.refreshState {
+        } else if case .failed(let message) = refreshState {
             ContentUnavailableView(
                 "Status konnte nicht geladen werden",
                 systemImage: "wifi.exclamationmark",
@@ -183,7 +228,7 @@ struct StatusWindowView: View {
             issue.displayName,
             issue.hostName,
             issue.summary,
-            model.sourceName(for: issue.sourceID),
+            sourceNames[issue.sourceID] ?? "",
         ]
         .contains { $0.localizedCaseInsensitiveContains(query) }
     }

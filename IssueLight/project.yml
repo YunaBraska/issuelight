@@ -21,7 +21,7 @@ targets:
       - package: IssueLightCore
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: io.github.yunabraska.issuelight
+        PRODUCT_BUNDLE_IDENTIFIER: berlin.yuna.issuelight
         PRODUCT_NAME: IssueLight
         MARKETING_VERSION: 0.1.0
         CURRENT_PROJECT_VERSION: 1
@@ -34,7 +34,7 @@ targets:
         INFOPLIST_KEY_CFBundleDisplayName: IssueLight
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.utilities
         INFOPLIST_KEY_LSUIElement: YES
-        INFOPLIST_KEY_NSHumanReadableCopyright: Copyright © 2026 IssueLight contributors.
+        INFOPLIST_KEY_NSHumanReadableCopyright: Copyright © 2026 Yuna Morgenstern and IssueLight contributors.
         ENABLE_HARDENED_RUNTIME: YES
       configs:
         Release:
@@ -48,11 +48,13 @@ targets:
       - Tests
       - Sources/IssueLightModel.swift
       - Sources/IssueCountText.swift
+      - Sources/SourceSetupView.swift
+      - Sources/StatusWindowView.swift
     dependencies:
       - package: IssueLightCore
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: io.github.yunabraska.issuelight.model-tests
+        PRODUCT_BUNDLE_IDENTIFIER: berlin.yuna.issuelight.model-tests
         SWIFT_VERSION: 5.0
         GENERATE_INFOPLIST_FILE: YES
         ENABLE_APP_SANDBOX: NO
