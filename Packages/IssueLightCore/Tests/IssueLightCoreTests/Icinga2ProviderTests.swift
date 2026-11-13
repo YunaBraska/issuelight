@@ -3,10 +3,7 @@ import XCTest
 @testable import IssueLightCore
 
 final class Icinga2ProviderTests: XCTestCase {
-    override func tearDown() {
-        ProviderStubURLProtocol.handler = nil
-        super.tearDown()
-    }
+    private let stubHost = "provider-\(UUID().uuidString.lowercased()).example.test"
 
     func testBuiltInRegistryPublishesIcingaCapabilities() throws {
         let registry = ProviderRegistry.builtIn()
@@ -68,8 +65,8 @@ final class Icinga2ProviderTests: XCTestCase {
 
     func testRegisteredProviderTestsBasicConnection() async throws {
         let configuration = URLSessionConfiguration.ephemeral
-        configuration.protocolClasses = [ProviderStubURLProtocol.self]
-        ProviderStubURLProtocol.handler = { request in
+        configuration.protocolClasses = [StubURLProtocol.self]
+        StubURLProtocol.configure(host: stubHost) { request in
             (
                 HTTPURLResponse(
                     url: request.url!,
@@ -83,7 +80,7 @@ final class Icinga2ProviderTests: XCTestCase {
         let provider = Icinga2Provider(configuration: configuration)
 
         let result = await provider.testConnection(
-            to: source(endpoint: "https://icinga.example.test:5665"),
+            to: source(endpoint: "https://\(stubHost):5665"),
             access: ProviderAccess(credential: .password("secret"))
         )
 
@@ -114,8 +111,8 @@ final class Icinga2ProviderTests: XCTestCase {
 
     func testRegisteredProviderLoadsProviderNeutralSnapshot() async throws {
         let configuration = URLSessionConfiguration.ephemeral
-        configuration.protocolClasses = [ProviderStubURLProtocol.self]
-        ProviderStubURLProtocol.handler = { request in
+        configuration.protocolClasses = [StubURLProtocol.self]
+        StubURLProtocol.configure(host: stubHost) { request in
             let body = request.url?.path.hasSuffix("/hosts") == true
                 ? #"{"results":[{"attrs":{"acknowledgement":0,"display_name":"Edge","downtime_depth":0,"name":"edge-1","state":1},"name":"edge-1","type":"Host"}]}"#
                 : #"{"results":[]}"#
@@ -136,7 +133,7 @@ final class Icinga2ProviderTests: XCTestCase {
         let provider = try XCTUnwrap(registry.provider(for: Icinga2Provider.id))
 
         let result = await provider.loadSnapshot(
-            from: source(endpoint: "https://icinga.example.test:5665"),
+            from: source(endpoint: "https://\(stubHost):5665"),
             access: ProviderAccess(credential: .password("secret"))
         )
 

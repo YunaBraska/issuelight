@@ -2,16 +2,11 @@ import XCTest
 @testable import IssueLightCore
 
 final class Icinga2ConnectionTesterTests: XCTestCase {
-    override func tearDown() {
-        ConnectionStubURLProtocol.handler = nil
-        ConnectionStubURLProtocol.onStart = nil
-        ConnectionStubURLProtocol.blocksRequests = false
-        super.tearDown()
-    }
+    private let stubHost = "connection-\(UUID().uuidString.lowercased()).example.test"
 
     func testConnectionChecksHostsAndServicesThroughPublicIcingaEndpoints() async {
         var requests: [URLRequest] = []
-        ConnectionStubURLProtocol.handler = { request in
+        StubURLProtocol.configure(host: stubHost) { request in
             requests.append(request)
             return Self.response(request: request, statusCode: 200, body: #"{"results":[]}"#)
         }
@@ -57,13 +52,13 @@ final class Icinga2ConnectionTesterTests: XCTestCase {
     }
 
     func testConnectionMapsAuthenticationAndAuthorizationFailures() async {
-        ConnectionStubURLProtocol.handler = { request in
+        StubURLProtocol.configure(host: stubHost) { request in
             Self.response(request: request, statusCode: 401, body: #"{"error":401}"#)
         }
         let authentication = await tester().test(source(), password: "wrong")
         XCTAssertEqual(authentication, .failed(.authentication))
 
-        ConnectionStubURLProtocol.handler = { request in
+        StubURLProtocol.configure(host: stubHost) { request in
             Self.response(request: request, statusCode: 403, body: #"{"error":403}"#)
         }
         let authorization = await tester().test(source(), password: "secret")
@@ -71,7 +66,7 @@ final class Icinga2ConnectionTesterTests: XCTestCase {
     }
 
     func testConnectionRejectsNonIcingaResponse() async {
-        ConnectionStubURLProtocol.handler = { request in
+        StubURLProtocol.configure(host: stubHost) { request in
             Self.response(request: request, statusCode: 200, body: #"{"status":"ok"}"#)
         }
 
@@ -81,7 +76,7 @@ final class Icinga2ConnectionTesterTests: XCTestCase {
     }
 
     func testConnectionRejectsMalformedJSONResponse() async {
-        ConnectionStubURLProtocol.handler = { request in
+        StubURLProtocol.configure(host: stubHost) { request in
             Self.response(request: request, statusCode: 200, body: "not-json")
         }
 
@@ -91,7 +86,7 @@ final class Icinga2ConnectionTesterTests: XCTestCase {
     }
 
     func testConnectionRejectsNonObjectJSONResponse() async {
-        ConnectionStubURLProtocol.handler = { request in
+        StubURLProtocol.configure(host: stubHost) { request in
             Self.response(request: request, statusCode: 200, body: #"[]"#)
         }
 
@@ -101,7 +96,7 @@ final class Icinga2ConnectionTesterTests: XCTestCase {
     }
 
     func testConnectionRejectsNonHTTPResponse() async {
-        ConnectionStubURLProtocol.handler = { request in
+        StubURLProtocol.configure(host: stubHost) { request in
             (
                 URLResponse(
                     url: request.url!,
@@ -119,7 +114,7 @@ final class Icinga2ConnectionTesterTests: XCTestCase {
     }
 
     func testConnectionMapsServerFailure() async {
-        ConnectionStubURLProtocol.handler = { request in
+        StubURLProtocol.configure(host: stubHost) { request in
             Self.response(request: request, statusCode: 503, body: #"{"error":503}"#)
         }
 
@@ -129,7 +124,7 @@ final class Icinga2ConnectionTesterTests: XCTestCase {
     }
 
     func testConnectionMapsUnexpectedHTTPFailure() async {
-        ConnectionStubURLProtocol.handler = { request in
+        StubURLProtocol.configure(host: stubHost) { request in
             Self.response(request: request, statusCode: 429, body: #"{"error":429}"#)
         }
 
@@ -139,7 +134,7 @@ final class Icinga2ConnectionTesterTests: XCTestCase {
     }
 
     func testConnectionMapsTLSFailure() async {
-        ConnectionStubURLProtocol.handler = { _ in
+        StubURLProtocol.configure(host: stubHost) { _ in
             throw URLError(.serverCertificateHasUnknownRoot)
         }
 
@@ -149,7 +144,7 @@ final class Icinga2ConnectionTesterTests: XCTestCase {
     }
 
     func testConnectionMapsReachabilityFailure() async {
-        ConnectionStubURLProtocol.handler = { _ in
+        StubURLProtocol.configure(host: stubHost) { _ in
             throw URLError(.timedOut)
         }
 
@@ -159,7 +154,7 @@ final class Icinga2ConnectionTesterTests: XCTestCase {
     }
 
     func testConnectionMapsUnknownTransportFailureToUnreachable() async {
-        ConnectionStubURLProtocol.handler = { _ in
+        StubURLProtocol.configure(host: stubHost) { _ in
             throw NSError(domain: "IssueLightTests", code: 99)
         }
 
@@ -187,8 +182,11 @@ final class Icinga2ConnectionTesterTests: XCTestCase {
 
     func testConnectionCancellationReturnsCancelled() async {
         let started = expectation(description: "Request started")
-        ConnectionStubURLProtocol.blocksRequests = true
-        ConnectionStubURLProtocol.onStart = { started.fulfill() }
+        StubURLProtocol.configure(
+            host: stubHost,
+            onStart: { started.fulfill() },
+            blocksRequests: true
+        )
         let connection = Task {
             await self.tester().test(self.source(), password: "secret")
         }
@@ -202,7 +200,7 @@ final class Icinga2ConnectionTesterTests: XCTestCase {
 
     private func tester() -> Icinga2ConnectionTester {
         let configuration = URLSessionConfiguration.ephemeral
-        configuration.protocolClasses = [ConnectionStubURLProtocol.self]
+        configuration.protocolClasses = [StubURLProtocol.self]
         return Icinga2ConnectionTester(configuration: configuration)
     }
 
@@ -210,7 +208,7 @@ final class Icinga2ConnectionTesterTests: XCTestCase {
         MonitoringSource(
             name: "Production",
             providerID: Icinga2Provider.id,
-            endpoint: URL(string: "https://icinga.example.test:5665/v1")!,
+            endpoint: URL(string: "https://\(stubHost):5665/v1")!,
             authentication: .basic(username: "operator")
         )
     }
@@ -226,7 +224,7 @@ final class Icinga2ConnectionTesterTests: XCTestCase {
     }
 }
 
-class StubURLProtocol: URLProtocol {
+final class StubURLProtocol: URLProtocol {
     typealias Handler = (URLRequest) throws -> (URLResponse, Data)
 
     private struct State {
@@ -236,21 +234,27 @@ class StubURLProtocol: URLProtocol {
     }
 
     private static let lock = NSLock()
-    private static var stateByProtocol: [ObjectIdentifier: State] = [:]
+    // Every test instance uses a unique host. Retain its state for the test process so
+    // late URLSession cancellation callbacks cannot observe another test's fixture.
+    private static var stateByHost: [String: State] = [:]
 
-    class var handler: Handler? {
-        get { state.handler }
-        set { updateState { $0.handler = newValue } }
+    static func configure(
+        host: String,
+        onStart: (() -> Void)? = nil,
+        blocksRequests: Bool = false,
+        handler: Handler? = nil
+    ) {
+        lock.lock()
+        stateByHost[host] = State(
+            handler: handler,
+            onStart: onStart,
+            blocksRequests: blocksRequests
+        )
+        lock.unlock()
     }
 
-    class var onStart: (() -> Void)? {
-        get { state.onStart }
-        set { updateState { $0.onStart = newValue } }
-    }
-
-    class var blocksRequests: Bool {
-        get { state.blocksRequests }
-        set { updateState { $0.blocksRequests = newValue } }
+    static func configure(host: String, handler: @escaping Handler) {
+        configure(host: host, onStart: nil, blocksRequests: false, handler: handler)
     }
 
     override class func canInit(with request: URLRequest) -> Bool {
@@ -262,10 +266,13 @@ class StubURLProtocol: URLProtocol {
     }
 
     override func startLoading() {
-        let protocolType = type(of: self)
-        protocolType.onStart?()
-        if protocolType.blocksRequests { return }
-        guard let handler = protocolType.handler else {
+        guard let host = request.url?.host, let state = Self.state(for: host) else {
+            XCTFail("Missing URL protocol state")
+            return
+        }
+        state.onStart?()
+        if state.blocksRequests { return }
+        guard let handler = state.handler else {
             XCTFail("Missing URL protocol handler")
             return
         }
@@ -282,21 +289,9 @@ class StubURLProtocol: URLProtocol {
 
     override func stopLoading() {}
 
-    private class var state: State {
+    private static func state(for host: String) -> State? {
         lock.lock()
         defer { lock.unlock() }
-        return stateByProtocol[ObjectIdentifier(self)] ?? State()
-    }
-
-    private class func updateState(_ update: (inout State) -> Void) {
-        lock.lock()
-        var state = stateByProtocol[ObjectIdentifier(self)] ?? State()
-        update(&state)
-        stateByProtocol[ObjectIdentifier(self)] = state
-        lock.unlock()
+        return stateByHost[host]
     }
 }
-
-final class ConnectionStubURLProtocol: StubURLProtocol {}
-final class ProviderStubURLProtocol: StubURLProtocol {}
-final class SnapshotStubURLProtocol: StubURLProtocol {}
