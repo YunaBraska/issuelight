@@ -41,7 +41,15 @@ public enum KeychainPasswordVaultError: Error, Equatable {
 }
 
 public actor KeychainPasswordVault {
-    public init() {}
+    private let keychainContext: KeychainAccessContext?
+
+    public init() {
+        keychainContext = nil
+    }
+
+    init(keychainContext: KeychainAccessContext) {
+        self.keychainContext = keychainContext
+    }
 
     public func password(for scope: BasicCredentialScope) throws -> String? {
         guard try containsPassword(for: scope) else {
@@ -49,6 +57,7 @@ public actor KeychainPasswordVault {
         }
 
         var query = keychainQuery(for: scope)
+        query = keychainContext?.matching(query) ?? query
         query[kSecAttrLabel as String] = ownershipLabel(for: scope)
         let authenticationContext = LAContext()
         authenticationContext.interactionNotAllowed = true
@@ -75,6 +84,7 @@ public actor KeychainPasswordVault {
 
     public func containsPassword(for scope: BasicCredentialScope) throws -> Bool {
         var query = keychainQuery(for: scope)
+        query = keychainContext?.matching(query) ?? query
         query[kSecReturnAttributes as String] = true
         query[kSecMatchLimit as String] = kSecMatchLimitOne
 
@@ -93,6 +103,7 @@ public actor KeychainPasswordVault {
 
     public func store(_ password: String, for scope: BasicCredentialScope) throws {
         var query = keychainQuery(for: scope)
+        query = keychainContext?.matching(query) ?? query
         _ = try containsPassword(for: scope)
         query[kSecAttrLabel as String] = ownershipLabel(for: scope)
         let attributes = [kSecValueData as String: Data(password.utf8)]
@@ -105,7 +116,8 @@ public actor KeychainPasswordVault {
             throw KeychainPasswordVaultError.unexpectedStatus(updateStatus)
         }
 
-        var newItem = query
+        var newItem = keychainContext?.adding(keychainQuery(for: scope)) ?? keychainQuery(for: scope)
+        newItem[kSecAttrLabel as String] = ownershipLabel(for: scope)
         newItem[kSecValueData as String] = Data(password.utf8)
         let addStatus = SecItemAdd(newItem as CFDictionary, nil)
         guard addStatus == errSecSuccess else {
@@ -118,6 +130,7 @@ public actor KeychainPasswordVault {
             return
         }
         var query = keychainQuery(for: scope)
+        query = keychainContext?.matching(query) ?? query
         query[kSecAttrLabel as String] = ownershipLabel(for: scope)
         let status = SecItemDelete(query as CFDictionary)
         guard status == errSecSuccess || status == errSecItemNotFound else {

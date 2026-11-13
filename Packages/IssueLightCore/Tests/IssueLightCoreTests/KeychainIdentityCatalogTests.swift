@@ -2,6 +2,10 @@ import XCTest
 @testable import IssueLightCore
 
 final class KeychainIdentityCatalogTests: XCTestCase {
+    override func setUpWithError() throws {
+        try requireUnlockedDefaultKeychain()
+    }
+
     func testGeneratedPKCS12IdentityCanBeListedResolvedAndRemoved() async throws {
         let temporaryDirectory = FileManager.default.temporaryDirectory
             .appendingPathComponent("issuelight-identity-\(UUID().uuidString)", isDirectory: true)
@@ -37,7 +41,10 @@ final class KeychainIdentityCatalogTests: XCTestCase {
         let descriptor = try await catalog.importPKCS12(at: identityURL, password: password)
         let resolvedIdentity = try await catalog.identity(id: descriptor.id)
         let identity = try XCTUnwrap(resolvedIdentity)
-        let cleanupReferences = try Self.keychainReferences(identity: identity, id: descriptor.id)
+        let cleanupReferences = try Self.keychainReferences(
+            identity: identity,
+            id: descriptor.id
+        )
         addTeardownBlock {
             try? Self.deleteImportedIdentity(cleanupReferences)
         }
@@ -97,7 +104,10 @@ final class KeychainIdentityCatalogTests: XCTestCase {
         }
     }
 
-    private static func keychainReferences(identity: SecIdentity, id: String) throws -> IdentityReferences {
+    private static func keychainReferences(
+        identity: SecIdentity,
+        id: String
+    ) throws -> IdentityReferences {
         guard let identityReference = Data(base64Encoded: id) else {
             throw KeychainIdentityTestError.invalidPersistentReference
         }

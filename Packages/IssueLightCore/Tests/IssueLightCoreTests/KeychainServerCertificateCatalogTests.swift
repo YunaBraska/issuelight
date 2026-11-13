@@ -3,6 +3,10 @@ import XCTest
 @testable import IssueLightCore
 
 final class KeychainServerCertificateCatalogTests: XCTestCase {
+    override func setUpWithError() throws {
+        try requireUnlockedDefaultKeychain()
+    }
+
     func testCertificateImportResolvesStableKeychainReferenceAndDeletesExactItem() async throws {
         let fileURL = try XCTUnwrap(
             Bundle.module.url(

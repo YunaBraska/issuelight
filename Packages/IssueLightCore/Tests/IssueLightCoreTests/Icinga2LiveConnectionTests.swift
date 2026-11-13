@@ -3,6 +3,17 @@ import XCTest
 @testable import IssueLightCore
 
 final class Icinga2LiveConnectionTests: XCTestCase {
+    private var testKeychain: TemporaryTestKeychain!
+
+    override func setUpWithError() throws {
+        testKeychain = try TemporaryTestKeychain()
+    }
+
+    override func tearDownWithError() throws {
+        try testKeychain.delete()
+        testKeychain = nil
+    }
+
     func testPinnedLiveServerCertificateAcceptsExactLeaf() async throws {
         let environment = ProcessInfo.processInfo.environment
         guard let endpointValue = environment["ISSUELIGHT_LIVE_ICINGA_URL"],
@@ -100,6 +111,7 @@ final class Icinga2LiveConnectionTests: XCTestCase {
               let password = environment["ISSUELIGHT_ICINGA_BASIC_PASSWORD"] else {
             throw XCTSkip("Live Icinga 2 environment is not configured")
         }
+        try requireUnlockedDefaultKeychain()
         let fileURL = try XCTUnwrap(
             Bundle.module.url(
                 forResource: "issuelight-test-root",
@@ -144,6 +156,7 @@ final class Icinga2LiveConnectionTests: XCTestCase {
               let certificatePath = environment["ISSUELIGHT_LIVE_ICINGA_CA_PATH"] else {
             throw XCTSkip("Live Icinga 2 environment is not configured")
         }
+        try requireUnlockedDefaultKeychain()
         let certificateCatalog = KeychainServerCertificateCatalog(
             ownershipScope: "berlin.yuna.issuelight.live-core-tests.\(UUID().uuidString)"
         )
@@ -160,7 +173,7 @@ final class Icinga2LiveConnectionTests: XCTestCase {
             authentication: .basic(username: "issuelight-basic"),
             serverTrust: .customCertificate(certificateID: descriptor.id)
         )
-        let passwordVault = KeychainPasswordVault()
+        let passwordVault = KeychainPasswordVault(keychainContext: testKeychain.context)
         let passwordScope = try BasicCredentialScope(source: source)
         addTeardownBlock {
             try? await passwordVault.deletePassword(for: passwordScope)
@@ -237,6 +250,7 @@ final class Icinga2LiveConnectionTests: XCTestCase {
               let certificatePath = environment["ISSUELIGHT_LIVE_ICINGA_CA_PATH"] else {
             throw XCTSkip("Live Icinga 2 environment is not configured")
         }
+        try requireUnlockedDefaultKeychain()
 
         let catalog = KeychainIdentityCatalog()
         let descriptor = try await catalog.importPKCS12(
@@ -245,7 +259,10 @@ final class Icinga2LiveConnectionTests: XCTestCase {
         )
         let resolvedIdentity = try await catalog.identity(id: descriptor.id)
         let identity = try XCTUnwrap(resolvedIdentity)
-        let cleanupReferences = try Self.cleanupReferences(identity: identity, id: descriptor.id)
+        let cleanupReferences = try Self.cleanupReferences(
+            identity: identity,
+            id: descriptor.id
+        )
         addTeardownBlock {
             try? Self.deleteImportedIdentity(cleanupReferences)
         }
@@ -283,7 +300,10 @@ final class Icinga2LiveConnectionTests: XCTestCase {
         try Self.deleteImportedIdentity(cleanupReferences)
         let removedIdentity = try await catalog.identity(id: descriptor.id)
         XCTAssertNil(removedIdentity)
-        XCTAssertFalse(Self.itemExists(class: kSecClassCertificate, reference: cleanupReferences.certificate))
+        XCTAssertFalse(Self.itemExists(
+            class: kSecClassCertificate,
+            reference: cleanupReferences.certificate
+        ))
     }
 
     func testUnregisteredClientIdentityIsRejectedByLiveIcingaAPI() async throws {
@@ -295,6 +315,7 @@ final class Icinga2LiveConnectionTests: XCTestCase {
               let certificatePath = environment["ISSUELIGHT_LIVE_ICINGA_CA_PATH"] else {
             throw XCTSkip("Live Icinga 2 environment is not configured")
         }
+        try requireUnlockedDefaultKeychain()
 
         let catalog = KeychainIdentityCatalog()
         let descriptor = try await catalog.importPKCS12(
@@ -303,7 +324,10 @@ final class Icinga2LiveConnectionTests: XCTestCase {
         )
         let resolvedIdentity = try await catalog.identity(id: descriptor.id)
         let identity = try XCTUnwrap(resolvedIdentity)
-        let cleanupReferences = try Self.cleanupReferences(identity: identity, id: descriptor.id)
+        let cleanupReferences = try Self.cleanupReferences(
+            identity: identity,
+            id: descriptor.id
+        )
         addTeardownBlock {
             try? Self.deleteImportedIdentity(cleanupReferences)
         }
@@ -341,10 +365,16 @@ final class Icinga2LiveConnectionTests: XCTestCase {
         try Self.deleteImportedIdentity(cleanupReferences)
         let removedIdentity = try await catalog.identity(id: descriptor.id)
         XCTAssertNil(removedIdentity)
-        XCTAssertFalse(Self.itemExists(class: kSecClassCertificate, reference: cleanupReferences.certificate))
+        XCTAssertFalse(Self.itemExists(
+            class: kSecClassCertificate,
+            reference: cleanupReferences.certificate
+        ))
     }
 
-    private static func cleanupReferences(identity: SecIdentity?, id: String) throws -> ImportedIdentityReferences {
+    private static func cleanupReferences(
+        identity: SecIdentity?,
+        id: String
+    ) throws -> ImportedIdentityReferences {
         guard let identityReference = Data(base64Encoded: id), let identity else {
             throw LiveIdentityCleanupError.invalidPersistentReference
         }
@@ -368,11 +398,20 @@ final class Icinga2LiveConnectionTests: XCTestCase {
     }
 
     private static func deleteImportedIdentity(_ references: ImportedIdentityReferences) throws {
-        try deleteItem(class: kSecClassIdentity, reference: references.identity)
-        try deleteItem(class: kSecClassCertificate, reference: references.certificate)
+        try deleteItem(
+            class: kSecClassIdentity,
+            reference: references.identity
+        )
+        try deleteItem(
+            class: kSecClassCertificate,
+            reference: references.certificate
+        )
     }
 
-    private static func deleteItem(class itemClass: CFTypeRef, reference: Data) throws {
+    private static func deleteItem(
+        class itemClass: CFTypeRef,
+        reference: Data
+    ) throws {
         let query: [String: Any] = [
             kSecClass as String: itemClass,
             kSecValuePersistentRef as String: reference,
@@ -383,7 +422,10 @@ final class Icinga2LiveConnectionTests: XCTestCase {
         }
     }
 
-    private static func itemExists(class itemClass: CFTypeRef, reference: Data) -> Bool {
+    private static func itemExists(
+        class itemClass: CFTypeRef,
+        reference: Data
+    ) -> Bool {
         let query: [String: Any] = [
             kSecClass as String: itemClass,
             kSecValuePersistentRef as String: reference,

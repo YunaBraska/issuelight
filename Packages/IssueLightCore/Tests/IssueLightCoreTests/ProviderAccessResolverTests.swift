@@ -3,6 +3,17 @@ import XCTest
 @testable import IssueLightCore
 
 final class ProviderAccessResolverTests: XCTestCase {
+    private var testKeychain: TemporaryTestKeychain!
+
+    override func setUpWithError() throws {
+        testKeychain = try TemporaryTestKeychain()
+    }
+
+    override func tearDownWithError() throws {
+        try testKeychain.delete()
+        testKeychain = nil
+    }
+
     func testResolverUsesPasswordOverrideWhenStoredPasswordAccessIsDisabled() async {
         let source = MonitoringSource(
             name: "Edited credentials",
@@ -11,11 +22,9 @@ final class ProviderAccessResolverTests: XCTestCase {
             authentication: .basic(username: "operator")
         )
         let resolver = ProviderAccessResolver(
-            passwordVault: KeychainPasswordVault(),
-            identityCatalog: KeychainIdentityCatalog(),
-            certificateCatalog: KeychainServerCertificateCatalog(
-                ownershipScope: "berlin.yuna.issuelight.provider-tests.\(UUID().uuidString)"
-            )
+            passwordVault: passwordVault(),
+            identityCatalog: identityCatalog(),
+            certificateCatalog: certificateCatalog()
         )
 
         let resolution = await resolver.resolve(
@@ -39,7 +48,7 @@ final class ProviderAccessResolverTests: XCTestCase {
             endpoint: URL(string: "https://stored-credential-disabled.example.test:5665")!,
             authentication: .basic(username: "operator")
         )
-        let passwordVault = KeychainPasswordVault()
+        let passwordVault = passwordVault()
         let passwordScope = try BasicCredentialScope(source: source)
         addTeardownBlock {
             try? await passwordVault.deletePassword(for: passwordScope)
@@ -47,10 +56,8 @@ final class ProviderAccessResolverTests: XCTestCase {
         try await passwordVault.store("stored-password", for: passwordScope)
         let resolver = ProviderAccessResolver(
             passwordVault: passwordVault,
-            identityCatalog: KeychainIdentityCatalog(),
-            certificateCatalog: KeychainServerCertificateCatalog(
-                ownershipScope: "berlin.yuna.issuelight.provider-tests.\(UUID().uuidString)"
-            )
+            identityCatalog: identityCatalog(),
+            certificateCatalog: certificateCatalog()
         )
 
         let resolution = await resolver.resolve(
@@ -73,11 +80,9 @@ final class ProviderAccessResolverTests: XCTestCase {
             authentication: .clientCertificate(identityID: missingReference)
         )
         let resolver = ProviderAccessResolver(
-            passwordVault: KeychainPasswordVault(),
-            identityCatalog: KeychainIdentityCatalog(),
-            certificateCatalog: KeychainServerCertificateCatalog(
-                ownershipScope: "berlin.yuna.issuelight.provider-tests.\(UUID().uuidString)"
-            )
+            passwordVault: passwordVault(),
+            identityCatalog: identityCatalog(),
+            certificateCatalog: certificateCatalog()
         )
 
         let resolution = await resolver.resolve(source: source)
@@ -96,11 +101,9 @@ final class ProviderAccessResolverTests: XCTestCase {
             authentication: .clientCertificate(identityID: "not base64")
         )
         let resolver = ProviderAccessResolver(
-            passwordVault: KeychainPasswordVault(),
-            identityCatalog: KeychainIdentityCatalog(),
-            certificateCatalog: KeychainServerCertificateCatalog(
-                ownershipScope: "berlin.yuna.issuelight.provider-tests.\(UUID().uuidString)"
-            )
+            passwordVault: passwordVault(),
+            identityCatalog: identityCatalog(),
+            certificateCatalog: certificateCatalog()
         )
 
         let resolution = await resolver.resolve(source: source)
@@ -120,11 +123,9 @@ final class ProviderAccessResolverTests: XCTestCase {
             serverTrust: .customCertificate(certificateID: "not base64")
         )
         let resolver = ProviderAccessResolver(
-            passwordVault: KeychainPasswordVault(),
-            identityCatalog: KeychainIdentityCatalog(),
-            certificateCatalog: KeychainServerCertificateCatalog(
-                ownershipScope: "berlin.yuna.issuelight.provider-tests.\(UUID().uuidString)"
-            )
+            passwordVault: passwordVault(),
+            identityCatalog: identityCatalog(),
+            certificateCatalog: certificateCatalog()
         )
 
         let resolution = await resolver.resolve(
@@ -139,6 +140,7 @@ final class ProviderAccessResolverTests: XCTestCase {
     }
 
     func testResolverCombinesStoredPasswordAndCustomServerCertificate() async throws {
+        try requireUnlockedDefaultKeychain()
         let fileURL = try XCTUnwrap(
             Bundle.module.url(
                 forResource: "issuelight-test-root",
@@ -157,7 +159,7 @@ final class ProviderAccessResolverTests: XCTestCase {
             authentication: .basic(username: "operator"),
             serverTrust: .customCertificate(certificateID: certificateDescriptor.id)
         )
-        let passwordVault = KeychainPasswordVault()
+        let passwordVault = passwordVault()
         let passwordScope = try BasicCredentialScope(source: source)
         addTeardownBlock {
             try? await passwordVault.deletePassword(for: passwordScope)
@@ -166,7 +168,7 @@ final class ProviderAccessResolverTests: XCTestCase {
         try await passwordVault.store("test-only-password", for: passwordScope)
         let resolver = ProviderAccessResolver(
             passwordVault: passwordVault,
-            identityCatalog: KeychainIdentityCatalog(),
+            identityCatalog: identityCatalog(),
             certificateCatalog: certificateCatalog
         )
 
@@ -190,11 +192,9 @@ final class ProviderAccessResolverTests: XCTestCase {
             authentication: .basic(username: "operator")
         )
         let resolver = ProviderAccessResolver(
-            passwordVault: KeychainPasswordVault(),
-            identityCatalog: KeychainIdentityCatalog(),
-            certificateCatalog: KeychainServerCertificateCatalog(
-                ownershipScope: "berlin.yuna.issuelight.provider-tests.\(UUID().uuidString)"
-            )
+            passwordVault: passwordVault(),
+            identityCatalog: identityCatalog(),
+            certificateCatalog: certificateCatalog()
         )
 
         let resolution = await resolver.resolve(source: source)
@@ -216,11 +216,9 @@ final class ProviderAccessResolverTests: XCTestCase {
             )
         )
         let resolver = ProviderAccessResolver(
-            passwordVault: KeychainPasswordVault(),
-            identityCatalog: KeychainIdentityCatalog(),
-            certificateCatalog: KeychainServerCertificateCatalog(
-                ownershipScope: "berlin.yuna.issuelight.provider-tests.\(UUID().uuidString)"
-            )
+            passwordVault: passwordVault(),
+            identityCatalog: identityCatalog(),
+            certificateCatalog: certificateCatalog()
         )
 
         let resolution = await resolver.resolve(
@@ -232,5 +230,19 @@ final class ProviderAccessResolverTests: XCTestCase {
             return XCTFail("Expected provider access failure")
         }
         XCTAssertEqual(failure, .serverCertificateNotAvailable)
+    }
+
+    private func passwordVault() -> KeychainPasswordVault {
+        KeychainPasswordVault(keychainContext: testKeychain.context)
+    }
+
+    private func identityCatalog() -> KeychainIdentityCatalog {
+        KeychainIdentityCatalog()
+    }
+
+    private func certificateCatalog() -> KeychainServerCertificateCatalog {
+        KeychainServerCertificateCatalog(
+            ownershipScope: "berlin.yuna.issuelight.provider-tests.\(UUID().uuidString)"
+        )
     }
 }

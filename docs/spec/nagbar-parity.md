@@ -1,7 +1,7 @@
 # NagBar compatibility and product scope
 
 Status: Reviewed against `volendavidov/NagBar` and the maintained
-`YunaBraska/NagBar` fork on 2026-11-13.
+`YunaBraska/NagBar` fork on 2026-11-14.
 
 IssueLight is not a visual rewrite of NagBar. It preserves the useful operator
 journey, replaces unsafe or noisy behavior, and keeps the first supported
@@ -26,7 +26,7 @@ release deliberately smaller.
 | Configurable refresh interval | Done | Partial | IssueLight owns one conservative refresh loop. A small preset choice is reasonable only if measured deployments need it. |
 | Keychain credentials | Partial | Done | Passwords and identity references remain in macOS Keychain. Public source JSON contains no secrets. |
 | TLS verification controls | Partial | Done | System trust by default, private CA, exact leaf pin, and an explicit per-source insecure mode. |
-| Protected mTLS private keys | Partial | Blocked | Installed-app denial without authentication UI still requires a usable signing-key approval in the local login Keychain. |
+| Protected mTLS private keys | Partial | Partial | Normal mTLS, non-interactive lookup, locked-Keychain skipping, and prompt-free test isolation pass. Deterministic installed-app denial during protected-key signing remains open. |
 | Stale and partial failure state | Partial | Done | Keep the last successful snapshot and identify the failing source instead of replacing status with one global error. |
 | User-defined status colors | Done | Dismissed | Use semantic system colors and symbols so dark mode, contrast, and accessibility stay coherent. |
 | Configurable columns and output length | Done | Dismissed | Keep one scannable row hierarchy and bounded output instead of exposing layout internals as preferences. |

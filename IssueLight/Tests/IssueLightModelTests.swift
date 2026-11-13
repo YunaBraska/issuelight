@@ -1,9 +1,20 @@
 import Foundation
-import IssueLightCore
 import XCTest
+@testable import IssueLightCore
 
 @MainActor
 final class IssueLightModelTests: XCTestCase {
+    private var testKeychain: TemporaryTestKeychain!
+
+    override func setUpWithError() throws {
+        testKeychain = try TemporaryTestKeychain()
+    }
+
+    override func tearDownWithError() throws {
+        try testKeychain.delete()
+        testKeychain = nil
+    }
+
     func testStartRefreshesEveryEnabledSourceAndAggregatesIssues() async throws {
         let script = SnapshotScript()
         let harness = try await makeHarness(sourceCount: 2, script: script)
@@ -109,6 +120,7 @@ final class IssueLightModelTests: XCTestCase {
     }
 
     func testSavingLastPrivateCAReferenceRemovesOnlyIssueLightManagedCertificate() async throws {
+        try requireUnlockedDefaultKeychain()
         let catalog = KeychainServerCertificateCatalog(
             ownershipScope: "berlin.yuna.issuelight.model-tests.\(UUID().uuidString)"
         )
@@ -148,6 +160,7 @@ final class IssueLightModelTests: XCTestCase {
     }
 
     func testDeletingLastPrivateCASourceRemovesIssueLightManagedCertificate() async throws {
+        try requireUnlockedDefaultKeychain()
         let catalog = KeychainServerCertificateCatalog(
             ownershipScope: "berlin.yuna.issuelight.model-tests.\(UUID().uuidString)"
         )
@@ -172,6 +185,7 @@ final class IssueLightModelTests: XCTestCase {
     }
 
     func testLoadingRemovesOrphanedManagedCertificateFromSameAppProfile() async throws {
+        try requireUnlockedDefaultKeychain()
         let catalog = KeychainServerCertificateCatalog(
             ownershipScope: "berlin.yuna.issuelight.model-tests.\(UUID().uuidString)"
         )
@@ -323,6 +337,7 @@ final class IssueLightModelTests: XCTestCase {
             }
             throw XCTSkip("Live Icinga 2 environment is not configured")
         }
+        try requireUnlockedDefaultKeychain()
 
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("IssueLightLiveModelTests-\(UUID().uuidString)", isDirectory: true)
@@ -343,7 +358,7 @@ final class IssueLightModelTests: XCTestCase {
             )
         }
         let store = SourceStore(fileURL: directory.appendingPathComponent("sources.json"))
-        let vault = KeychainPasswordVault()
+        let vault = KeychainPasswordVault(keychainContext: testKeychain.context)
         let scopes = try sources.map(BasicCredentialScope.init(source:))
         addTeardownBlock {
             for scope in scopes {
@@ -405,7 +420,7 @@ final class IssueLightModelTests: XCTestCase {
         }
         let store = SourceStore(fileURL: directory.appendingPathComponent("sources.json"))
         _ = try await store.save(sources)
-        let vault = KeychainPasswordVault()
+        let vault = KeychainPasswordVault(keychainContext: testKeychain.context)
         let scopes = try sources.map(BasicCredentialScope.init(source:))
         for (index, scope) in scopes.enumerated() {
             try await vault.store("test-only-password-\(index + 1)", for: scope)

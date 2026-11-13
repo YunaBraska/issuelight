@@ -174,25 +174,21 @@ struct StatusWindowContent: View {
                                 description: Text("Kein Problem passt zu „\(searchText)“.")
                             )
                         } else {
-                            List {
-                                if !filteredActionableIssues.isEmpty {
-                                    Section("Benötigt Aufmerksamkeit") {
-                                        ForEach(filteredActionableIssues) { issue in
-                                            MonitoringIssueRow(
-                                                issue: issue,
-                                                sourceName: sourceNames.count > 1 ? sourceNames[issue.sourceID] : nil
-                                            )
-                                        }
+                            ScrollView {
+                                LazyVStack(spacing: 0, pinnedViews: [.sectionHeaders]) {
+                                    if !filteredActionableIssues.isEmpty {
+                                        MonitoringIssueSection(
+                                            title: "Benötigt Aufmerksamkeit",
+                                            issues: filteredActionableIssues,
+                                            sourceNames: sourceNames
+                                        )
                                     }
-                                }
-                                if !filteredCoveredIssues.isEmpty {
-                                    Section("Quittiert oder in Wartungszeit") {
-                                        ForEach(filteredCoveredIssues) { issue in
-                                            MonitoringIssueRow(
-                                                issue: issue,
-                                                sourceName: sourceNames.count > 1 ? sourceNames[issue.sourceID] : nil
-                                            )
-                                        }
+                                    if !filteredCoveredIssues.isEmpty {
+                                        MonitoringIssueSection(
+                                            title: "Quittiert oder in Wartungszeit",
+                                            issues: filteredCoveredIssues,
+                                            sourceNames: sourceNames
+                                        )
                                     }
                                 }
                             }
@@ -237,6 +233,34 @@ struct MonitoringIssueSearch {
     }
 }
 
+private struct MonitoringIssueSection: View {
+    let title: String
+    let issues: [MonitoringIssue]
+    let sourceNames: [UUID: String]
+
+    var body: some View {
+        Section {
+            ForEach(issues) { issue in
+                MonitoringIssueRow(
+                    issue: issue,
+                    sourceName: sourceNames.count > 1 ? sourceNames[issue.sourceID] : nil
+                )
+                .padding(.horizontal, 16)
+                Divider()
+                    .padding(.leading, 48)
+            }
+        } header: {
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(.bar)
+        }
+    }
+}
+
 private struct MonitoringIssueRow: View {
     let issue: MonitoringIssue
     let sourceName: String?
@@ -270,7 +294,7 @@ private struct MonitoringIssueRow: View {
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(color)
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 8)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(accessibilityLabel)
     }

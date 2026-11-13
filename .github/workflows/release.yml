@@ -1,0 +1,27 @@
+# yuna-release: true
+name: 🏷️ CD · Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      force:
+        description: Release unchanged source.
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  release:
+    uses: YunaBraska/YunaBraska/.github/workflows/wc_swift_release.yml@29bd56f4cc120be2bdcab1b484c34fae14c51b35
+    with:
+      force: ${{ inputs.force }}
+    secrets:
+      MACOS_SIGNING_CERTIFICATE: ${{ secrets.MACOS_SIGNING_CERTIFICATE }}
+      MACOS_SIGNING_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_SIGNING_CERTIFICATE_PASSWORD }}
+      MACOS_NOTARY_KEY: ${{ secrets.MACOS_NOTARY_KEY }}
+      MACOS_NOTARY_KEY_ID: ${{ secrets.MACOS_NOTARY_KEY_ID }}
+      MACOS_NOTARY_ISSUER_ID: ${{ secrets.MACOS_NOTARY_ISSUER_ID }}

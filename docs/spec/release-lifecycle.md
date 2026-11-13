@@ -22,8 +22,9 @@ not perform automatic update checks or install executable code.
   first release. Opening the release page MUST be an explicit user action.
 - `REL-004` A publishable archive MUST contain the universal, Developer-ID-
   signed, notarized, and stapled app accepted by Gatekeeper.
-- `REL-005` Every public release MUST include the app archive, SPDX 2.3 SBOM,
-  and verified SHA-256 manifest produced from the same revision.
+- `REL-005` Every public release MUST include the ZIP app archive, installable
+  DMG, SPDX 2.3 SBOM, and verified SHA-256 manifest produced from the same
+  revision.
 - `REL-006` Release notes MUST identify the supported macOS version plus
   compatibility changes and security fixes relevant to updating users.
 

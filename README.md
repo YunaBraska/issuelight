@@ -23,8 +23,9 @@ real containerized Icinga 2 compatibility lab are implemented. The first
 attention-first host and service view now
 aggregates independently refreshed, enabled sources. The first supported
 release is intentionally read-only. Notifications and remote actions remain
-outside that release scope. A real Developer ID build path is verified locally;
-accepted notarization and end-user distribution remain open.
+outside that release scope. The universal ZIP/DMG/SBOM release path is verified
+locally; credentialed signing, accepted notarization, and end-user distribution
+remain open.
 
 ## Requirements
 
@@ -58,7 +59,7 @@ Regenerate the Xcode project after changing `IssueLight/project.yml`:
 xcodegen generate --spec IssueLight/project.yml
 ```
 
-The real Icinga 2 matrix is documented in
+Run the complete local CI contract with `sh scripts/check.sh`. The real Icinga 2 matrix is documented in
 [`integration/icinga2/README.md`](integration/icinga2/README.md).
 
 ## Project documentation

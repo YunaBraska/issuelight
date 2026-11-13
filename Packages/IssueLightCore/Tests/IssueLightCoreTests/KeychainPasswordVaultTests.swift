@@ -2,12 +2,23 @@ import XCTest
 @testable import IssueLightCore
 
 final class KeychainPasswordVaultTests: XCTestCase {
+    private var testKeychain: TemporaryTestKeychain!
+
+    override func setUpWithError() throws {
+        testKeychain = try TemporaryTestKeychain()
+    }
+
+    override func tearDownWithError() throws {
+        try testKeychain.delete()
+        testKeychain = nil
+    }
+
     func testRealKeychainInternetPasswordLifecycleIsScopedPerSource() async throws {
         let firstSource = source(id: UUID(), account: "operator")
         let secondSource = source(id: UUID(), account: "operator")
         let firstScope = try BasicCredentialScope(source: firstSource)
         let secondScope = try BasicCredentialScope(source: secondSource)
-        let vault = KeychainPasswordVault()
+        let vault = KeychainPasswordVault(keychainContext: testKeychain.context)
 
         try await vault.deletePassword(for: firstScope)
         try await vault.deletePassword(for: secondScope)
@@ -49,6 +60,7 @@ final class KeychainPasswordVaultTests: XCTestCase {
         let scope = try BasicCredentialScope(source: source)
         let label = "IssueLight foreign credential \(source.id.uuidString.lowercased())"
         let path = "/issuelight/sources/\(source.id.uuidString.lowercased())"
+        let keychainPath = testKeychain.fileURL.path
         let add = Process()
         add.executableURL = URL(fileURLWithPath: "/usr/bin/security")
         add.arguments = [
@@ -62,6 +74,7 @@ final class KeychainPasswordVaultTests: XCTestCase {
             "-l", label,
             "-w", "foreign-test-secret",
             "-T", "/usr/bin/security",
+            keychainPath,
         ]
         add.standardOutput = FileHandle.nullDevice
         add.standardError = FileHandle.nullDevice
@@ -72,14 +85,14 @@ final class KeychainPasswordVaultTests: XCTestCase {
         addTeardownBlock {
             let delete = Process()
             delete.executableURL = URL(fileURLWithPath: "/usr/bin/security")
-            delete.arguments = ["delete-internet-password", "-l", label]
+            delete.arguments = ["delete-internet-password", "-l", label, keychainPath]
             delete.standardOutput = FileHandle.nullDevice
             delete.standardError = FileHandle.nullDevice
             try? delete.run()
             delete.waitUntilExit()
         }
 
-        let vault = KeychainPasswordVault()
+        let vault = KeychainPasswordVault(keychainContext: testKeychain.context)
         do {
             _ = try await vault.password(for: scope)
             XCTFail("Expected the foreign Keychain item to be rejected")
