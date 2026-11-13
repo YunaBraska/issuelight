@@ -56,6 +56,8 @@ remote actions remain outside its scope.
   acknowledged or downtime-covered issues and MUST expose host/service context
   without relying on color alone.
 - `MENU-005` A refresh failure MUST expose a short cause and a retry action.
+- `MENU-006` The status window MUST let a person find an issue by its host,
+  service, summary, or source without performing network or storage work.
 
 ## Acceptance evidence
 
@@ -64,4 +66,4 @@ remote actions remain outside its scope.
 | SNAP-001..005 | `MonitoringSnapshot` | Core tests cover realistic host and service payloads, acknowledgement, downtime, mixed severity, and ordering |
 | REF-001 | Icinga snapshot loader | Shared transport tests and a real Icinga 2 Basic-auth query both pass; a 5,000-problem synthetic Icinga response traverses request handling, decoding, provider-neutral mapping, and sorting under a five-second regression limit |
 | REF-002..006 | app refresh model | App-model tests cover initial and manual refresh, replacement cancellation, stale retention, and source removal with persisted source and Keychain boundaries; an installed signed app retained its last successful Icinga snapshot after exact password revocation and exposed the missing credential after relaunch |
-| MENU-001..005 | running menu bar app | Empty setup, loading, deterministic two-problem, failure with stale data, exact password-revocation and relaunch failures, recovery, all-paused, and dark-mode inspection pass; healthy and realistic-volume inspection remain |
+| MENU-001..006 | running menu bar app and status window | Empty setup, loading, deterministic two-problem, failure with stale data, exact password-revocation and relaunch failures, recovery, all-paused, and dark-mode inspection pass; direct empty-state setup actions and local issue search build and pass the app suite, while their current running-product inspection plus healthy and realistic-volume inspection remain open |

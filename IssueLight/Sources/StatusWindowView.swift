@@ -3,6 +3,8 @@ import IssueLightCore
 
 struct StatusWindowView: View {
     @ObservedObject var model: IssueLightModel
+    @Environment(\.openWindow) private var openWindow
+    @State private var searchText = ""
 
     var body: some View {
         VStack(spacing: 0) {
@@ -59,18 +61,32 @@ struct StatusWindowView: View {
     @ViewBuilder
     private var content: some View {
         if !model.hasConfiguredSource {
-            ContentUnavailableView(
-                "Keine Quelle konfiguriert",
-                systemImage: "server.rack",
-                description: Text("Füge zuerst eine Monitoring-Quelle hinzu.")
-            )
+            ContentUnavailableView {
+                Label("Keine Quelle konfiguriert", systemImage: "server.rack")
+            } description: {
+                Text("Füge zuerst eine Monitoring-Quelle hinzu.")
+            } actions: {
+                Button("Quelle hinzufügen …") {
+                    openWindow(id: "sources")
+                }
+                .keyboardShortcut(.defaultAction)
+            }
         } else if !model.hasEnabledSource {
-            ContentUnavailableView(
-                "Keine Quelle aktiv",
-                systemImage: "pause.circle",
-                description: Text("Aktiviere mindestens eine Quelle, um den Status zu überwachen.")
-            )
+            ContentUnavailableView {
+                Label("Keine Quelle aktiv", systemImage: "pause.circle")
+            } description: {
+                Text("Aktiviere mindestens eine Quelle, um den Status zu überwachen.")
+            } actions: {
+                Button("Quellen öffnen …") {
+                    openWindow(id: "sources")
+                }
+                .keyboardShortcut(.defaultAction)
+            }
         } else if model.hasActiveSnapshot {
+            let actionableIssues = model.actionableIssues
+            let coveredIssues = model.coveredIssues
+            let filteredActionableIssues = filteredIssues(actionableIssues)
+            let filteredCoveredIssues = filteredIssues(coveredIssues)
             VStack(spacing: 0) {
                 if !model.failedSources.isEmpty {
                     VStack(alignment: .leading, spacing: 4) {
@@ -93,7 +109,7 @@ struct StatusWindowView: View {
                         .joined(separator: " ")
                     )
                 }
-                if model.actionableIssues.isEmpty && model.coveredIssues.isEmpty {
+                if actionableIssues.isEmpty && coveredIssues.isEmpty {
                     ContentUnavailableView(
                         model.failedSources.isEmpty ? "Alles ruhig" : "Keine aktuellen Probleme",
                         systemImage: "checkmark.circle",
@@ -104,28 +120,39 @@ struct StatusWindowView: View {
                         )
                     )
                 } else {
-                    List {
-                        if !model.actionableIssues.isEmpty {
-                            Section("Benötigt Aufmerksamkeit") {
-                                ForEach(model.actionableIssues) { issue in
-                                    MonitoringIssueRow(
-                                        issue: issue,
-                                        sourceName: model.sources.count > 1 ? model.sourceName(for: issue.sourceID) : nil
-                                    )
+                    Group {
+                        if filteredActionableIssues.isEmpty && filteredCoveredIssues.isEmpty {
+                            ContentUnavailableView(
+                                "Keine Treffer",
+                                systemImage: "magnifyingglass",
+                                description: Text("Kein Problem passt zu „\(searchText)“.")
+                            )
+                        } else {
+                            List {
+                                if !filteredActionableIssues.isEmpty {
+                                    Section("Benötigt Aufmerksamkeit") {
+                                        ForEach(filteredActionableIssues) { issue in
+                                            MonitoringIssueRow(
+                                                issue: issue,
+                                                sourceName: model.sources.count > 1 ? model.sourceName(for: issue.sourceID) : nil
+                                            )
+                                        }
+                                    }
                                 }
-                            }
-                        }
-                        if !model.coveredIssues.isEmpty {
-                            Section("Quittiert oder in Wartungszeit") {
-                                ForEach(model.coveredIssues) { issue in
-                                    MonitoringIssueRow(
-                                        issue: issue,
-                                        sourceName: model.sources.count > 1 ? model.sourceName(for: issue.sourceID) : nil
-                                    )
+                                if !filteredCoveredIssues.isEmpty {
+                                    Section("Quittiert oder in Wartungszeit") {
+                                        ForEach(filteredCoveredIssues) { issue in
+                                            MonitoringIssueRow(
+                                                issue: issue,
+                                                sourceName: model.sources.count > 1 ? model.sourceName(for: issue.sourceID) : nil
+                                            )
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
+                    .searchable(text: $searchText, prompt: "Probleme durchsuchen")
                 }
             }
         } else if case .failed(let message) = model.refreshState {
@@ -141,6 +168,24 @@ struct StatusWindowView: View {
                 description: Text("IssueLight fragt Hosts und Services bei der Quelle ab.")
             )
         }
+    }
+
+    private func filteredIssues(_ issues: [MonitoringIssue]) -> [MonitoringIssue] {
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return issues }
+        return issues.filter { issue in
+            matchesSearch(issue, query: query)
+        }
+    }
+
+    private func matchesSearch(_ issue: MonitoringIssue, query: String) -> Bool {
+        return [
+            issue.displayName,
+            issue.hostName,
+            issue.summary,
+            model.sourceName(for: issue.sourceID),
+        ]
+        .contains { $0.localizedCaseInsensitiveContains(query) }
     }
 }
 
