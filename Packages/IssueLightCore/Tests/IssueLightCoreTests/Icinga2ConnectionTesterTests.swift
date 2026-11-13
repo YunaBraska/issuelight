@@ -20,7 +20,40 @@ final class Icinga2ConnectionTesterTests: XCTestCase {
 
         XCTAssertEqual(result, .connected)
         XCTAssertEqual(requests.map { $0.url?.path }, ["/v1/objects/hosts", "/v1/objects/services"])
+        XCTAssertEqual(
+            requests.map { request in
+                URLComponents(url: request.url!, resolvingAgainstBaseURL: false)?.queryItems
+            },
+            [
+                [URLQueryItem(name: "attrs", value: "name"), URLQueryItem(name: "limit", value: "1")],
+                [URLQueryItem(name: "attrs", value: "name"), URLQueryItem(name: "limit", value: "1")],
+            ]
+        )
+        XCTAssertTrue(requests.allSatisfy { $0.httpMethod == "GET" })
+        XCTAssertTrue(requests.allSatisfy { $0.timeoutInterval == 15 })
+        XCTAssertTrue(requests.allSatisfy { $0.value(forHTTPHeaderField: "Accept") == "application/json" })
+        XCTAssertTrue(requests.allSatisfy { $0.value(forHTTPHeaderField: "User-Agent") == "IssueLight" })
         XCTAssertTrue(requests.allSatisfy { $0.value(forHTTPHeaderField: "Authorization") == "Basic b3BlcmF0b3I6c2VjcmV0" })
+    }
+
+    func testConnectionRejectsMissingAndEmptyPasswordsBeforeSendingARequest() async {
+        let missing = await tester().test(source(), password: nil)
+        let empty = await tester().test(source(), password: "")
+
+        XCTAssertEqual(missing, .failed(.authentication))
+        XCTAssertEqual(empty, .failed(.authentication))
+    }
+
+    func testConnectionRejectsInvalidSourceBeforeSendingARequest() async {
+        var invalidSource = source()
+        invalidSource.endpoint = URL(string: "http://icinga.example.test:5665/custom")!
+
+        let result = await tester().test(invalidSource, password: "secret")
+
+        XCTAssertEqual(
+            result,
+            .failed(.invalidConfiguration([.unsupportedScheme("http"), .unsupportedPath("/custom")]))
+        )
     }
 
     func testConnectionMapsAuthenticationAndAuthorizationFailures() async {
@@ -45,6 +78,94 @@ final class Icinga2ConnectionTesterTests: XCTestCase {
         let result = await tester().test(source(), password: "secret")
 
         XCTAssertEqual(result, .failed(.incompatibleResponse))
+    }
+
+    func testConnectionRejectsMalformedJSONResponse() async {
+        StubURLProtocol.handler = { request in
+            Self.response(request: request, statusCode: 200, body: "not-json")
+        }
+
+        let result = await tester().test(source(), password: "secret")
+
+        XCTAssertEqual(result, .failed(.incompatibleResponse))
+    }
+
+    func testConnectionRejectsNonObjectJSONResponse() async {
+        StubURLProtocol.handler = { request in
+            Self.response(request: request, statusCode: 200, body: #"[]"#)
+        }
+
+        let result = await tester().test(source(), password: "secret")
+
+        XCTAssertEqual(result, .failed(.incompatibleResponse))
+    }
+
+    func testConnectionRejectsNonHTTPResponse() async {
+        StubURLProtocol.handler = { request in
+            (
+                URLResponse(
+                    url: request.url!,
+                    mimeType: "application/json",
+                    expectedContentLength: 14,
+                    textEncodingName: "utf-8"
+                ),
+                Data(#"{"results":[]}"#.utf8)
+            )
+        }
+
+        let result = await tester().test(source(), password: "secret")
+
+        XCTAssertEqual(result, .failed(.incompatibleResponse))
+    }
+
+    func testConnectionMapsServerFailure() async {
+        StubURLProtocol.handler = { request in
+            Self.response(request: request, statusCode: 503, body: #"{"error":503}"#)
+        }
+
+        let result = await tester().test(source(), password: "secret")
+
+        XCTAssertEqual(result, .failed(.server(statusCode: 503)))
+    }
+
+    func testConnectionMapsUnexpectedHTTPFailure() async {
+        StubURLProtocol.handler = { request in
+            Self.response(request: request, statusCode: 429, body: #"{"error":429}"#)
+        }
+
+        let result = await tester().test(source(), password: "secret")
+
+        XCTAssertEqual(result, .failed(.http(statusCode: 429)))
+    }
+
+    func testConnectionMapsTLSFailure() async {
+        StubURLProtocol.handler = { _ in
+            throw URLError(.serverCertificateHasUnknownRoot)
+        }
+
+        let result = await tester().test(source(), password: "secret")
+
+        XCTAssertEqual(result, .failed(.tls))
+    }
+
+    func testConnectionMapsReachabilityFailure() async {
+        StubURLProtocol.handler = { _ in
+            throw URLError(.timedOut)
+        }
+
+        let result = await tester().test(source(), password: "secret")
+
+        XCTAssertEqual(result, .failed(.unreachable))
+    }
+
+    func testConnectionMapsUnknownTransportFailureToUnreachable() async {
+        StubURLProtocol.handler = { _ in
+            throw NSError(domain: "IssueLightTests", code: 99)
+        }
+
+        let result = await tester().test(source(), password: "secret")
+
+        XCTAssertEqual(result, .failed(.unreachable))
     }
 
     func testConnectionRequiresConfiguredTrustMaterialAndClientIdentity() async {

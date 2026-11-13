@@ -29,7 +29,7 @@ Snapshot date: 2026-11-13.
 | OSS repository controls | Apache-2.0, provenance notice, contributor/security/privacy policies, private vulnerability reporting, secret scanning with push protection, SHA-pinned Actions, required CI and Swift CodeQL, and protected `main` | Verified in the public repository; the first 27-rule Swift scan completed with zero results and zero open alerts |
 | Release-candidate artifacts | Universal Developer ID build, hardened runtime, timestamp, fail-closed notarization, ZIP, SPDX 2.3 SBOM, and verified SHA-256 manifest | Unsigned path verified locally and in CI; real universal Developer ID signing passes locally; Gatekeeper and packaging reject the unnotarized app; an accepted notarization remains open |
 
-The local package suite currently executes 79 tests. Seventy-one deterministic
+The local package suite currently executes 89 tests. Eighty-one deterministic
 tests pass, while eight live Icinga tests are skipped unless the integration
 environment is configured. The app suite executes sixteen deterministic tests
 and one live integration test, skipped outside the lab. It exercises
@@ -37,8 +37,8 @@ multiple-source management and refresh isolation through persisted source,
 real Keychain, and real Icinga 2 boundaries. The full live matrix passed locally
 on 2026-11-10.
 
-Source-only LLVM coverage for `IssueLightCore` is currently 81.5% of lines and
-75.8% of regions locally. CI enforces floors of 80.9% and 75.1% respectively so
+Source-only LLVM coverage for `IssueLightCore` is currently 81.6% of lines and
+76.0% of regions locally. CI enforces floors of 81.0% and 75.3% respectively so
 the verified baseline cannot silently regress. Swift does not report branch
 totals in this configuration. Coverage remains below the project goals.
 
