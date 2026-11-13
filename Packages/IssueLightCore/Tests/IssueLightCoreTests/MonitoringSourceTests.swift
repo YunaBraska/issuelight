@@ -36,6 +36,27 @@ final class MonitoringSourceTests: XCTestCase {
         )
     }
 
+    func testSharedValidationRejectsInvalidAuthenticationFields() {
+        XCTAssertEqual(
+            MonitoringSourceValidator.validateSharedFields(
+                source(authentication: .basic(username: ""))
+            ),
+            [.emptyUsername]
+        )
+        XCTAssertEqual(
+            MonitoringSourceValidator.validateSharedFields(
+                source(authentication: .basic(username: "operator:password"))
+            ),
+            [.invalidUsername]
+        )
+        XCTAssertEqual(
+            MonitoringSourceValidator.validateSharedFields(
+                source(authentication: .clientCertificate(identityID: ""))
+            ),
+            [.missingClientIdentity]
+        )
+    }
+
     func testEndpointAuthorityChangeRestoresSystemTrust() {
         var source = source(serverTrust: .disabled)
 
@@ -58,6 +79,14 @@ final class MonitoringSourceTests: XCTestCase {
         XCTAssertTrue(source().serverTrust.verifiesServerCertificate)
         XCTAssertFalse(source(serverTrust: .disabled).serverTrust.verifiesServerCertificate)
         XCTAssertEqual(source().serverTrust.method, .system)
+        XCTAssertEqual(
+            source(serverTrust: .customCertificate(certificateID: "private-ca")).serverTrust.method,
+            .customCertificate
+        )
+        XCTAssertEqual(
+            source(serverTrust: .pinnedCertificate(sha256: "ABC")).serverTrust.method,
+            .pinnedCertificate
+        )
         XCTAssertEqual(source(serverTrust: .disabled).serverTrust.method, .disabled)
         XCTAssertNil(source().customServerCertificateID)
         XCTAssertEqual(

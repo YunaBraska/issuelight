@@ -116,6 +116,85 @@ final class Icinga2SnapshotLoaderTests: XCTestCase {
         XCTAssertEqual(result, .failed(.unreachable))
     }
 
+    func testLoadMapsUnexpectedTransportErrorToReachabilityFailure() async {
+        StubURLProtocol.handler = { _ in
+            throw NSError(domain: "IssueLightTests", code: 1)
+        }
+
+        let result = await loader().load(source(), password: "secret")
+
+        XCTAssertEqual(result, .failed(.unreachable))
+    }
+
+    func testLoadRejectsNonHTTPResponse() async {
+        StubURLProtocol.handler = { request in
+            (
+                URLResponse(
+                    url: request.url!,
+                    mimeType: "application/json",
+                    expectedContentLength: 14,
+                    textEncodingName: "utf-8"
+                ),
+                Data(#"{"results":[]}"#.utf8)
+            )
+        }
+
+        let result = await loader().load(source(), password: "secret")
+
+        XCTAssertEqual(result, .failed(.incompatibleResponse))
+    }
+
+    func testLoadRejectsHostResultWithWrongObjectType() async {
+        let result = await load(
+            hostBody: #"{"results":[{"attrs":{"acknowledgement":0,"display_name":"Host","downtime_depth":0,"name":"host-1","state":1},"name":"host-1","type":"Service"}]}"#
+        )
+
+        XCTAssertEqual(result, .failed(.incompatibleResponse))
+    }
+
+    func testLoadRejectsUnsupportedHostState() async {
+        let result = await load(
+            hostBody: #"{"results":[{"attrs":{"acknowledgement":0,"display_name":"Host","downtime_depth":0,"name":"host-1","state":2},"name":"host-1","type":"Host"}]}"#
+        )
+
+        XCTAssertEqual(result, .failed(.incompatibleResponse))
+    }
+
+    func testLoadRejectsServiceResultWithWrongObjectType() async {
+        let result = await load(
+            serviceBody: #"{"results":[{"attrs":{"acknowledgement":0,"display_name":"Disk","downtime_depth":0,"host_name":"host-1","name":"disk","state":2},"name":"host-1!disk","type":"Host"}]}"#
+        )
+
+        XCTAssertEqual(result, .failed(.incompatibleResponse))
+    }
+
+    func testLoadRejectsServiceWithoutHostName() async {
+        let result = await load(
+            serviceBody: #"{"results":[{"attrs":{"acknowledgement":0,"display_name":"Disk","downtime_depth":0,"name":"disk","state":2},"name":"host-1!disk","type":"Service"}]}"#
+        )
+
+        XCTAssertEqual(result, .failed(.incompatibleResponse))
+    }
+
+    func testLoadRejectsUnsupportedServiceState() async {
+        let result = await load(
+            serviceBody: #"{"results":[{"attrs":{"acknowledgement":0,"display_name":"Disk","downtime_depth":0,"host_name":"host-1","name":"disk","state":4},"name":"host-1!disk","type":"Service"}]}"#
+        )
+
+        XCTAssertEqual(result, .failed(.incompatibleResponse))
+    }
+
+    func testLoadIgnoresHealthyServiceResults() async {
+        let result = await load(
+            serviceBody: #"{"results":[{"attrs":{"acknowledgement":0,"display_name":"Disk","downtime_depth":0,"host_name":"host-1","name":"disk","state":0},"name":"host-1!disk","type":"Service"}]}"#
+        )
+
+        guard case .loaded(let snapshot) = result else {
+            return XCTFail("Expected a loaded snapshot, got \(result)")
+        }
+        XCTAssertEqual(snapshot.issues, [])
+    }
+
     func testLoadRejectsSuccessfulButIncompatiblePayload() async {
         StubURLProtocol.handler = { request in
             Self.response(request: request, statusCode: 200, body: #"{"status":"ok"}"#)
@@ -175,6 +254,20 @@ final class Icinga2SnapshotLoaderTests: XCTestCase {
             endpoint: URL(string: "https://icinga.example.test:5665/v1")!,
             authentication: .basic(username: "operator")
         )
+    }
+
+    private func load(
+        hostBody: String = #"{"results":[]}"#,
+        serviceBody: String = #"{"results":[]}"#
+    ) async -> SnapshotLoadResult {
+        StubURLProtocol.handler = { request in
+            Self.response(
+                request: request,
+                statusCode: 200,
+                body: request.url?.path.hasSuffix("/hosts") == true ? hostBody : serviceBody
+            )
+        }
+        return await loader().load(source(), password: "secret")
     }
 
     private static func response(request: URLRequest, statusCode: Int, body: String) -> (HTTPURLResponse, Data) {

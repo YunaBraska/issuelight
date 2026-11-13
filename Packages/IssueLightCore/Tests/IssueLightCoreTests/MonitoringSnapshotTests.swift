@@ -65,6 +65,59 @@ final class MonitoringSnapshotTests: XCTestCase {
         XCTAssertEqual(snapshot.highestAttentionSeverity, .warning)
     }
 
+    func testIssueIdentityIsStableAndNamespacedBySourceAndKind() {
+        let issue = MonitoringIssue(
+            sourceID: UUID(uuidString: "11111111-1111-1111-1111-111111111111")!,
+            nativeID: "host-1!disk",
+            kind: .service,
+            hostName: "host-1",
+            serviceName: "disk",
+            displayName: "Disk",
+            severity: .critical,
+            summary: "Disk full",
+            isAcknowledged: false,
+            isInDowntime: false
+        )
+
+        XCTAssertEqual(
+            issue.id,
+            "11111111-1111-1111-1111-111111111111:service:host-1!disk"
+        )
+    }
+
+    func testDecoderSortsHostsBeforeServicesAndUsesDisplayNameAsFinalTieBreaker() throws {
+        let hostData = Data(
+            #"{"results":[{"attrs":{"acknowledgement":0,"display_name":"Host","downtime_depth":0,"name":"host-1","state":1},"name":"host-1","type":"Host"}]}"#.utf8
+        )
+        let serviceData = Data(
+            #"{"results":[{"attrs":{"acknowledgement":0,"display_name":"Beta","downtime_depth":0,"host_name":"host-1","name":"beta","state":2},"name":"host-1!beta","type":"Service"},{"attrs":{"acknowledgement":0,"display_name":"Alpha","downtime_depth":0,"host_name":"host-1","name":"alpha","state":2},"name":"host-1!alpha","type":"Service"}]}"#.utf8
+        )
+
+        let snapshot = try Icinga2SnapshotDecoder().decode(
+            sourceID: UUID(),
+            observedAt: .distantPast,
+            hostData: hostData,
+            serviceData: serviceData
+        )
+
+        XCTAssertEqual(snapshot.issues.map(\.displayName), ["Host", "Alpha", "Beta"])
+    }
+
+    func testDecoderUsesNativeIdentifierWhenDisplayNamesAreEqual() throws {
+        let serviceData = Data(
+            #"{"results":[{"attrs":{"acknowledgement":0,"display_name":"Disk","downtime_depth":0,"host_name":"host-1","name":"zeta","state":2},"name":"host-1!zeta","type":"Service"},{"attrs":{"acknowledgement":0,"display_name":"Disk","downtime_depth":0,"host_name":"host-1","name":"alpha","state":2},"name":"host-1!alpha","type":"Service"}]}"#.utf8
+        )
+
+        let snapshot = try Icinga2SnapshotDecoder().decode(
+            sourceID: UUID(),
+            observedAt: .distantPast,
+            hostData: Data(#"{"results":[]}"#.utf8),
+            serviceData: serviceData
+        )
+
+        XCTAssertEqual(snapshot.issues.map(\.nativeID), ["host-1!alpha", "host-1!zeta"])
+    }
+
     func testDecoderRejectsMalformedOrIncompleteProviderPayloads() {
         let validEmpty = Data(#"{"results":[]}"#.utf8)
         let missingResults = Data(#"{"status":"ok"}"#.utf8)

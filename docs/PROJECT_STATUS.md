@@ -15,8 +15,8 @@ Snapshot date: 2026-11-13.
 | Client identities | PKCS#12 parsing and persistent-reference tests | Verified locally |
 | Private CA trust | PEM/DER import, Keychain persistent reference, source-specific Apple trust evaluation, hostname checks, accepted lab CA, rejected unrelated CA, and ownership-aware cleanup after the final source reference | Verified in package, app-model, and live tests |
 | Exact server-certificate pinning | PEM/DER leaf selection, normalized SHA-256 persistence, source-specific Apple trust evaluation, authority-change reset, accepted exact lab leaf, rejected mismatched leaf, and rejected hostname mismatch | Verified in package, app-model, and live tests |
-| Connection classification | Tests for success, cancellation, authentication, authorization, TLS, reachability, and incompatible responses | Verified |
-| Monitoring snapshots | Provider-neutral host and service issues, severity, acknowledgement, downtime, and deterministic ordering | Verified in package tests |
+| Connection classification | Tests for success, cancellation, authentication, authorization, TLS, reachability, non-HTTP responses, and incompatible responses | Verified |
+| Monitoring snapshots | Provider-neutral host and service issues, severity, acknowledgement, downtime, stable identity, deterministic ordering, and explicit rejection of unsupported provider objects and states | Verified in package tests |
 | Snapshot transport | Shared connection and refresh transport, same-origin redirects, Basic auth, mTLS, and explicit failures | Verified in package and live tests |
 | Large provider payload | 5,000 synthetic Icinga service problems traverse request handling, JSON decoding, provider-neutral mapping, and deterministic sorting under a five-second regression limit; the local coverage build completed in 52 ms or less | Verified at the Core adapter boundary; running UI volume remains open |
 | Refresh lifecycle | Initial and manual refresh per enabled source, isolated replacement cancellation, stale retention, and source removal | Verified in app-model tests |
@@ -29,7 +29,7 @@ Snapshot date: 2026-11-13.
 | OSS repository controls | Apache-2.0, provenance notice, contributor/security/privacy policies, private vulnerability reporting, secret scanning with push protection, SHA-pinned Actions, required CI and Swift CodeQL, and protected `main` | Verified in the public repository; the first 27-rule Swift scan completed with zero results and zero open alerts |
 | Release-candidate artifacts | Universal Developer ID build, hardened runtime, timestamp, fail-closed notarization, ZIP, SPDX 2.3 SBOM, and verified SHA-256 manifest | Unsigned path verified locally and in CI; real universal Developer ID signing passes locally; Gatekeeper and packaging reject the unnotarized app; an accepted notarization remains open |
 
-The local package suite currently executes 67 tests. Fifty-nine deterministic
+The local package suite currently executes 79 tests. Seventy-one deterministic
 tests pass, while eight live Icinga tests are skipped unless the integration
 environment is configured. The app suite executes sixteen deterministic tests
 and one live integration test, skipped outside the lab. It exercises
@@ -37,8 +37,8 @@ multiple-source management and refresh isolation through persisted source,
 real Keychain, and real Icinga 2 boundaries. The full live matrix passed locally
 on 2026-11-10.
 
-Source-only LLVM coverage for `IssueLightCore` is currently 80.1% of lines and
-72.7% of regions locally. CI enforces floors of 79.5% and 72% respectively so
+Source-only LLVM coverage for `IssueLightCore` is currently 81.5% of lines and
+75.8% of regions locally. CI enforces floors of 80.9% and 75.1% respectively so
 the verified baseline cannot silently regress. Swift does not report branch
 totals in this configuration. Coverage remains below the project goals.
 

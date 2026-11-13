@@ -168,7 +168,11 @@ struct Icinga2SnapshotDecoder {
             if hostOrder != .orderedSame {
                 return hostOrder == .orderedAscending
             }
-            return lhs.displayName.localizedCaseInsensitiveCompare(rhs.displayName) == .orderedAscending
+            let displayNameOrder = lhs.displayName.localizedCaseInsensitiveCompare(rhs.displayName)
+            if displayNameOrder != .orderedSame {
+                return displayNameOrder == .orderedAscending
+            }
+            return lhs.nativeID < rhs.nativeID
         }
 
         return MonitoringSnapshot(sourceID: sourceID, observedAt: observedAt, issues: issues)
