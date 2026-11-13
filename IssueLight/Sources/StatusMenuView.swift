@@ -49,6 +49,18 @@ struct StatusMenuView: View {
 
         Divider()
 
+        Link(
+            "Veröffentlichungen anzeigen …",
+            destination: URL(string: "https://github.com/YunaBraska/issuelight/releases")!
+        )
+
+        Button("Über IssueLight") {
+            NSApplication.shared.activate(ignoringOtherApps: true)
+            NSApplication.shared.orderFrontStandardAboutPanel(nil)
+        }
+
+        Divider()
+
         Button("IssueLight beenden") {
             NSApplication.shared.terminate(nil)
         }

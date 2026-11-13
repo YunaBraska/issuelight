@@ -13,6 +13,7 @@
 		3B697920252CDC321476EDE8 /* IssueLightCore in Frameworks */ = {isa = PBXBuildFile; productRef = DC7D45D252B87DCC417AA92F /* IssueLightCore */; };
 		3F4967764AD2F5DB24DD3B20 /* StatusWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E5924EEBB9B7E034A29E654 /* StatusWindowView.swift */; };
 		5D1B5DC3F19762A3AD5DC2B2 /* IssueCountText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 502E71E6DEA91CB94AB31AD7 /* IssueCountText.swift */; };
+		5F248D226902BC01E7D9E28F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B4A3CB918861A6E32F276DAF /* Assets.xcassets */; };
 		715C1238E7DC2FB96E762C96 /* IssueLightModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 708ED225862B8236A5E0FD62 /* IssueLightModel.swift */; };
 		815D4ECC8D5B172C7C0C273F /* IssueLightModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 708ED225862B8236A5E0FD62 /* IssueLightModel.swift */; };
 		BBBD8F6DA31720A7A7FB2B55 /* IssueLightModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B9C6A87B0F7798160330A47 /* IssueLightModelTests.swift */; };
@@ -31,6 +32,7 @@
 		708ED225862B8236A5E0FD62 /* IssueLightModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IssueLightModel.swift; sourceTree = "<group>"; };
 		91EE3ED68B171A6AE0F289E8 /* SourceSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SourceSetupView.swift; sourceTree = "<group>"; };
 		A9314850837CB46A15DED06A /* IssueLight.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = IssueLight.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B4A3CB918861A6E32F276DAF /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		BED4B5CC52CB74943616BC82 /* IssueLightModelTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = IssueLightModelTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		FFCAE8E8019BB6AAC0EEAAC2 /* IssueLightCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = IssueLightCore; path = ../Packages/IssueLightCore; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
@@ -85,6 +87,7 @@
 			isa = PBXGroup;
 			children = (
 				581391636F9109EC47B2B64D /* Packages */,
+				FF3A3D01053070F3C7BEE15F /* Resources */,
 				DA4E9E6D8421D5237CA2A767 /* Sources */,
 				3AA6CD3F61AFBA0101E030AC /* Tests */,
 				400AA8A0637F3F720E218030 /* Products */,
@@ -104,6 +107,14 @@
 			path = Sources;
 			sourceTree = "<group>";
 		};
+		FF3A3D01053070F3C7BEE15F /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				B4A3CB918861A6E32F276DAF /* Assets.xcassets */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -112,6 +123,7 @@
 			buildConfigurationList = 923FCD7AA0339A307C4C74ED /* Build configuration list for PBXNativeTarget "IssueLight" */;
 			buildPhases = (
 				B33066B95ECCD03E2C533925 /* Sources */,
+				45E56172000029AADA853435 /* Resources */,
 				294A11FAF09551E404982378 /* Frameworks */,
 			);
 			buildRules = (
@@ -161,11 +173,11 @@
 				};
 			};
 			buildConfigurationList = 870157CC69BCD90E9CD4AF0B /* Build configuration list for PBXProject "IssueLight" */;
-			developmentRegion = en;
+			developmentRegion = de;
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				Base,
-				en,
+				de,
 			);
 			mainGroup = 817AB4E1C9B6A6543633F03B;
 			minimizedProjectReferenceProxies = 1;
@@ -182,6 +194,17 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		45E56172000029AADA853435 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5F248D226902BC01E7D9E28F /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		B33066B95ECCD03E2C533925 /* Sources */ = {

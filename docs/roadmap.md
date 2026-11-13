@@ -10,7 +10,7 @@ Status: Active.
 | M3 | Multiple source management | Add, edit, disable, test, and remove sources without losing unrelated credentials | In progress |
 | M4 | Supported operator actions | Acknowledge and downtime through explicit provider capabilities with safe retry behavior | Planned |
 | M5 | Native notification policy | Actionable, deduplicated notifications with quiet defaults and recovery behavior | Planned |
-| M6 | Release candidate | Accessibility, localization, performance, privacy, packaging, signing, notarization, SBOM, clean-account smoke | Planned |
+| M6 | Release candidate | Accessibility, declared German localization, performance, privacy, packaging, signing, notarization, SBOM, clean-account smoke | In progress |
 
 Work proceeds in complete journeys. A second provider is added only after M2
 proves the shared read path, and it must change one adapter plus the built-in

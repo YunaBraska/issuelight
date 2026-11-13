@@ -3,6 +3,7 @@ name: IssueLight
 options:
   deploymentTarget:
     macOS: "14.0"
+  developmentLanguage: de
   createIntermediateGroups: true
 
 packages:
@@ -15,6 +16,7 @@ targets:
     platform: macOS
     sources:
       - Sources
+      - Resources
     dependencies:
       - package: IssueLightCore
     settings:
@@ -27,6 +29,7 @@ targets:
         CODE_SIGN_IDENTITY: "-"
         CODE_SIGN_STYLE: Manual
         DEVELOPMENT_TEAM: ""
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_CFBundleDisplayName: IssueLight
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.utilities

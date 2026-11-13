@@ -13,12 +13,15 @@ credentials, strict-by-default TLS, source-specific private CAs, optional
 exact server-certificate pinning, optional per-source certificate bypass, and a
 real containerized Icinga 2 compatibility lab are implemented. The first
 attention-first host and service view now
-aggregates independently refreshed, enabled sources. Notifications, Developer
-ID signing, notarization, and end-user distribution are not yet release-ready.
+aggregates independently refreshed, enabled sources. The first supported
+release is intentionally read-only. Notifications and remote actions remain
+outside that release scope. A real Developer ID build path is verified locally;
+accepted notarization and end-user distribution remain open.
 
 ## Requirements
 
 - macOS 14 or newer
+- German user interface
 - Xcode 16 or newer
 - XcodeGen 2.45 or newer when changing `IssueLight/project.yml`
 - Docker with Compose for the optional real Icinga 2 integration matrix
@@ -57,6 +60,7 @@ The real Icinga 2 matrix is documented in
 - [`docs/spec/source-connection.md`](docs/spec/source-connection.md): accepted source and security behavior
 - [`docs/spec/attention-snapshot.md`](docs/spec/attention-snapshot.md): attention and refresh behavior
 - [`docs/spec/multiple-sources.md`](docs/spec/multiple-sources.md): multiple-source management and aggregation
+- [`docs/spec/release-lifecycle.md`](docs/spec/release-lifecycle.md): supported installation and update behavior
 - [`docs/adr/`](docs/adr/): lasting architecture decisions
 - [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md): local build and release-candidate verification
 - [`CONTRIBUTING.md`](CONTRIBUTING.md): contributor workflow
