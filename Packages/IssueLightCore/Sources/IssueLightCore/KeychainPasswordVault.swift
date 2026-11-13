@@ -1,4 +1,5 @@
 import Foundation
+import LocalAuthentication
 import Security
 
 public struct BasicCredentialScope: Equatable, Sendable {
@@ -34,6 +35,7 @@ public enum CredentialScopeError: Error, Equatable {
 }
 
 public enum KeychainPasswordVaultError: Error, Equatable {
+    case interactionNotAllowed
     case unexpectedStatus(OSStatus)
     case invalidStoredPassword
 }
@@ -43,13 +45,19 @@ public actor KeychainPasswordVault {
 
     public func password(for scope: BasicCredentialScope) throws -> String? {
         var query = keychainQuery(for: scope)
+        let authenticationContext = LAContext()
+        authenticationContext.interactionNotAllowed = true
         query[kSecReturnData as String] = true
         query[kSecMatchLimit as String] = kSecMatchLimitOne
+        query[kSecUseAuthenticationContext as String] = authenticationContext
 
         var result: CFTypeRef?
         let status = SecItemCopyMatching(query as CFDictionary, &result)
         if status == errSecItemNotFound {
             return nil
+        }
+        if status == errSecInteractionNotAllowed {
+            throw KeychainPasswordVaultError.interactionNotAllowed
         }
         guard status == errSecSuccess else {
             throw KeychainPasswordVaultError.unexpectedStatus(status)

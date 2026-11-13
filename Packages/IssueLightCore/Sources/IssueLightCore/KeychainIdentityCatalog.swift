@@ -1,4 +1,5 @@
 import Foundation
+import LocalAuthentication
 import Security
 
 public struct ClientIdentityDescriptor: Equatable, Identifiable, Sendable {
@@ -12,6 +13,7 @@ public struct ClientIdentityDescriptor: Equatable, Identifiable, Sendable {
 }
 
 public enum KeychainIdentityCatalogError: Error, Equatable {
+    case interactionNotAllowed
     case unexpectedStatus(OSStatus)
     case malformedKeychainResult
     case invalidPersistentReference
@@ -26,6 +28,7 @@ public actor KeychainIdentityCatalog {
             kSecClass as String: kSecClassIdentity,
             kSecReturnRef as String: true,
             kSecMatchLimit as String: kSecMatchLimitAll,
+            kSecUseAuthenticationUI as String: kSecUseAuthenticationUISkip,
         ]
 
         var result: CFTypeRef?
@@ -53,16 +56,22 @@ public actor KeychainIdentityCatalog {
         guard let reference = Data(base64Encoded: id) else {
             throw KeychainIdentityCatalogError.invalidPersistentReference
         }
+        let authenticationContext = LAContext()
+        authenticationContext.interactionNotAllowed = true
         let query: [String: Any] = [
             kSecValuePersistentRef as String: reference,
             kSecReturnRef as String: true,
             kSecMatchLimit as String: kSecMatchLimitOne,
+            kSecUseAuthenticationContext as String: authenticationContext,
         ]
 
         var result: CFTypeRef?
         let status = SecItemCopyMatching(query as CFDictionary, &result)
         if status == errSecItemNotFound {
             return nil
+        }
+        if status == errSecInteractionNotAllowed {
+            throw KeychainIdentityCatalogError.interactionNotAllowed
         }
         guard status == errSecSuccess else {
             throw KeychainIdentityCatalogError.unexpectedStatus(status)
@@ -96,15 +105,21 @@ public actor KeychainIdentityCatalog {
     }
 
     private func persistentReference(for identity: SecIdentity) throws -> Data {
+        let authenticationContext = LAContext()
+        authenticationContext.interactionNotAllowed = true
         let query: [String: Any] = [
             kSecClass as String: kSecClassIdentity,
             kSecValueRef as String: identity,
             kSecReturnPersistentRef as String: true,
             kSecMatchLimit as String: kSecMatchLimitOne,
+            kSecUseAuthenticationContext as String: authenticationContext,
         ]
 
         var result: CFTypeRef?
         let status = SecItemCopyMatching(query as CFDictionary, &result)
+        if status == errSecInteractionNotAllowed {
+            throw KeychainIdentityCatalogError.interactionNotAllowed
+        }
         guard status == errSecSuccess else {
             throw KeychainIdentityCatalogError.unexpectedStatus(status)
         }
