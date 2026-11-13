@@ -69,6 +69,7 @@ The real Icinga 2 matrix is documented in
 - [`docs/spec/attention-snapshot.md`](docs/spec/attention-snapshot.md): attention and refresh behavior
 - [`docs/spec/multiple-sources.md`](docs/spec/multiple-sources.md): multiple-source management and aggregation
 - [`docs/spec/release-lifecycle.md`](docs/spec/release-lifecycle.md): supported installation and update behavior
+- [`docs/spec/nagbar-parity.md`](docs/spec/nagbar-parity.md): retained NagBar journeys, deliberate simplifications, and open capability gaps
 - [`docs/adr/`](docs/adr/): lasting architecture decisions
 - [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md): local build and release-candidate verification
 - [`docs/site/`](docs/site/): GitHub Pages product site and reproducible app screenshots

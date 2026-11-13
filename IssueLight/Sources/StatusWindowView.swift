@@ -130,8 +130,9 @@ struct StatusWindowContent: View {
                 .keyboardShortcut(.defaultAction)
             }
         } else if hasActiveSnapshot {
-            let filteredActionableIssues = filteredIssues(actionableIssues)
-            let filteredCoveredIssues = filteredIssues(coveredIssues)
+            let search = MonitoringIssueSearch(query: searchText, sourceNames: sourceNames)
+            let filteredActionableIssues = search.filter(actionableIssues)
+            let filteredCoveredIssues = search.filter(coveredIssues)
             VStack(spacing: 0) {
                 if !failedSources.isEmpty {
                     VStack(alignment: .leading, spacing: 4) {
@@ -214,23 +215,25 @@ struct StatusWindowContent: View {
             )
         }
     }
+}
 
-    private func filteredIssues(_ issues: [MonitoringIssue]) -> [MonitoringIssue] {
-        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !query.isEmpty else { return issues }
-        return issues.filter { issue in
-            matchesSearch(issue, query: query)
-        }
+struct MonitoringIssueSearch {
+    let query: String
+    let sourceNames: [UUID: String]
+
+    init(query: String, sourceNames: [UUID: String]) {
+        self.query = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        self.sourceNames = sourceNames
     }
 
-    private func matchesSearch(_ issue: MonitoringIssue, query: String) -> Bool {
-        return [
-            issue.displayName,
-            issue.hostName,
-            issue.summary,
-            sourceNames[issue.sourceID] ?? "",
-        ]
-        .contains { $0.localizedCaseInsensitiveContains(query) }
+    func filter(_ issues: [MonitoringIssue]) -> [MonitoringIssue] {
+        guard !query.isEmpty else { return issues }
+        return issues.filter { issue in
+            issue.displayName.localizedCaseInsensitiveContains(query)
+                || issue.hostName.localizedCaseInsensitiveContains(query)
+                || issue.summary.localizedCaseInsensitiveContains(query)
+                || (sourceNames[issue.sourceID] ?? "").localizedCaseInsensitiveContains(query)
+        }
     }
 }
 

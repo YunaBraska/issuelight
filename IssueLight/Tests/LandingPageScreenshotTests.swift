@@ -6,11 +6,11 @@ import XCTest
 @MainActor
 final class LandingPageScreenshotTests: XCTestCase {
     func testLandingPageScreenshotsRenderFromProductionViews() throws {
-        let statusData = try pngData(
+        let statusData = try NativeViewRenderer.pngData(
             for: statusView,
             size: CGSize(width: 760, height: 560)
         )
-        let sourceData = try pngData(
+        let sourceData = try NativeViewRenderer.pngData(
             for: sourceSetupView,
             size: CGSize(width: 920, height: 680)
         )
@@ -152,44 +152,4 @@ final class LandingPageScreenshotTests: XCTestCase {
         )
     }
 
-    private func pngData<Content: View>(
-        for view: Content,
-        size: CGSize
-    ) throws -> Data {
-        let renderedView = ZStack {
-            Color(nsColor: .windowBackgroundColor)
-            view
-        }
-        .frame(width: size.width, height: size.height)
-        let hostingView = NSHostingView(rootView: renderedView)
-        hostingView.frame = NSRect(origin: .zero, size: size)
-        hostingView.appearance = NSAppearance(named: .aqua)
-        let window = NSWindow(
-            contentRect: NSRect(origin: .zero, size: size),
-            styleMask: [.titled],
-            backing: .buffered,
-            defer: false
-        )
-        window.contentView = hostingView
-        window.setContentSize(size)
-        window.setFrameOrigin(NSPoint(x: -20_000, y: -20_000))
-        window.orderFrontRegardless()
-        window.makeFirstResponder(nil)
-        hostingView.layoutSubtreeIfNeeded()
-        RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.15))
-        hostingView.layoutSubtreeIfNeeded()
-        guard let bitmap = hostingView.bitmapImageRepForCachingDisplay(in: hostingView.bounds) else {
-            throw ScreenshotError.renderFailed
-        }
-        hostingView.cacheDisplay(in: hostingView.bounds, to: bitmap)
-        window.orderOut(nil)
-        guard let data = bitmap.representation(using: .png, properties: [:]) else {
-            throw ScreenshotError.renderFailed
-        }
-        return data
-    }
-}
-
-private enum ScreenshotError: Error {
-    case renderFailed
 }
