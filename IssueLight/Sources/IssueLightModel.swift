@@ -380,12 +380,18 @@ final class IssueLightModel: ObservableObject {
         do {
             let hasPassword: Bool
             if case .basic = source.authentication {
-                hasPassword = try await passwordVault.password(for: BasicCredentialScope(source: source)) != nil
+                hasPassword = try await passwordVault.containsPassword(for: BasicCredentialScope(source: source))
             } else {
                 hasPassword = false
             }
             guard selectedSourceID == source.id else { return }
             hasStoredBasicPassword = hasPassword
+        } catch KeychainPasswordVaultError.interactionNotAllowed {
+            guard selectedSourceID == source.id else { return }
+            hasStoredBasicPassword = false
+            activity = .failure(
+                "macOS gibt diesen Schlüsselbund-Eintrag nicht ohne Nachfrage frei. Gib das Passwort in der Quelle erneut ein."
+            )
         } catch {
             guard selectedSourceID == source.id else { return }
             hasStoredBasicPassword = false
@@ -606,6 +612,10 @@ final class IssueLightModel: ObservableObject {
             activity = cleanupFailed
                 ? .failure("Quelle gespeichert, aber nicht mehr verwendete Schlüsselbund-Einträge konnten nicht vollständig entfernt werden.")
                 : .success("Quelle gespeichert. Geheimnisse bleiben im macOS-Schlüsselbund.")
+        } catch KeychainPasswordVaultError.interactionNotAllowed {
+            activity = .failure(
+                "macOS gibt diesen Schlüsselbund-Eintrag nicht ohne Nachfrage frei. Entferne den alten IssueLight-Eintrag in der Schlüsselbundverwaltung und speichere die Quelle erneut."
+            )
         } catch {
             activity = .failure("Die Quelle konnte nicht gespeichert werden: \(error.localizedDescription)")
         }
@@ -957,7 +967,7 @@ final class IssueLightModel: ObservableObject {
         case .passwordNotAvailable:
             return "Das Passwort ist nicht mehr im Schlüsselbund verfügbar."
         case .passwordAccessFailed:
-            return "Das Passwort konnte nicht aus dem Schlüsselbund gelesen werden."
+            return "macOS gibt das Passwort im Hintergrund nicht ohne Nachfrage frei. Öffne die Quelle und gib es erneut ein."
         case .clientIdentityNotAvailable:
             return "Das Client-Zertifikat ist nicht mehr im Schlüsselbund verfügbar."
         case .clientIdentityAccessFailed:

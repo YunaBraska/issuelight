@@ -78,6 +78,9 @@ remote actions.
   return an explicit failure without falling back to another credential.
 - `AUTH-004` A PKCS#12 import password MUST be used only for that import and
   MUST NOT be persisted.
+- `AUTH-005` Background credential discovery MUST inspect only non-secret
+  Keychain metadata. An item that matches a source scope but is not owned by
+  IssueLight MUST fail without requesting or reading its secret.
 
 ### Server trust
 
@@ -123,6 +126,6 @@ remote actions.
 | PRV-001..004 | provider registry and Icinga 2 adapter | Package tests cover discovery, capabilities, endpoint rules, and provider-neutral snapshot dispatch; the live matrix crosses the same registry boundary |
 | AUTH-001 | `KeychainPasswordVault` | Integration test against a temporary real Keychain item with cleanup |
 | AUTH-002, AUTH-004 | Keychain identity catalog and connection test | Real PKCS#12 import, persistent-reference resolution, accepted and rejected live Icinga mTLS, and exact cleanup |
-| AUTH-003 | source setup journey | Background password and exact-identity reads use a non-interactive authentication context, broad identity searches silently skip protected items, and missing identities fail explicitly; installed protected-item denial and cancellation still need running-app evidence |
+| AUTH-003, AUTH-005 | source setup journey | Password availability uses only non-secret ownership metadata; a real foreign legacy Keychain item is rejected without reading its secret; background password and exact-identity reads use a non-interactive authentication context; broad identity searches silently skip protected items; missing identities fail explicitly; installed protected-private-key denial still needs running-app evidence |
 | TLS-001..006 | connection test and source lifecycle | Default, source-specific private CA, exact leaf pinning, and unchecked trust implemented; the live matrix accepts the configured CA and exact leaf, rejects an unrelated CA, mismatched leaf, and exact leaf under the wrong hostname; Apple trust evaluation preserves certificate validity policy; authority changes reset custom trust; real Keychain tests cover ownership-aware CA cleanup after the final source reference; pin replacement remains an explicit user action |
 | CONN-001..003 | connection test | Real containerized Icinga 2 Basic and mTLS success, distinct 401 and 403 failures, plus unit and running-UI cancellation evidence |

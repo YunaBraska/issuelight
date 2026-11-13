@@ -34,7 +34,7 @@ the real Icinga compatibility matrix.
 ## Coverage ratchet
 
 CI exports source-only LLVM coverage after the Core tests and requires at least
-81.0% line coverage and 75.3% region coverage. Test sources and Swift build output
+86.0% line coverage and 79.0% region coverage. Test sources and Swift build output
 are excluded. These floors prevent regression from the verified baseline; they
 do not replace the project goals of 95% reachable line coverage and 90% branch
 coverage.
@@ -55,7 +55,7 @@ xcrun llvm-cov export "$test_binary" \
   -instr-profile="$coverage_profile" \
   -ignore-filename-regex='Tests/|\.build/' \
   -summary-only >"$coverage_json"
-scripts/check_coverage.sh "$coverage_json" 81.0 75.3
+scripts/check_coverage.sh "$coverage_json" 86.0 79.0
 rm -f "$coverage_json"
 ```
 
@@ -100,6 +100,9 @@ that flag, packaging requires Developer ID Application from the configured
 Apple team, hardened runtime, strict signature verification, a stapled
 notarization ticket, a secure timestamp, no `get-task-allow` entitlement, and
 successful Gatekeeper assessment.
+
+Release configuration disables code-coverage instrumentation. Coverage is a
+test concern and must not add profiling runtime work to the distributed app.
 
 ## Credentialed release
 

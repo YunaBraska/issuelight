@@ -81,6 +81,10 @@ case " $architectures " in
     *' x86_64 '*) ;;
     *) echo "Release executable is missing x86_64." >&2; exit 65 ;;
 esac
+if nm "$executable" 2>/dev/null | grep -q '__llvm_profile'; then
+    echo "Release executable contains code-coverage instrumentation." >&2
+    exit 65
+fi
 
 if test "$verification_mode" = "signed"; then
     codesign --verify --deep --strict "$app_path"

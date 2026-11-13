@@ -44,7 +44,12 @@ public actor KeychainPasswordVault {
     public init() {}
 
     public func password(for scope: BasicCredentialScope) throws -> String? {
+        guard try containsPassword(for: scope) else {
+            return nil
+        }
+
         var query = keychainQuery(for: scope)
+        query[kSecAttrLabel as String] = ownershipLabel(for: scope)
         let authenticationContext = LAContext()
         authenticationContext.interactionNotAllowed = true
         query[kSecReturnData as String] = true
@@ -68,8 +73,28 @@ public actor KeychainPasswordVault {
         return password
     }
 
+    public func containsPassword(for scope: BasicCredentialScope) throws -> Bool {
+        var query = keychainQuery(for: scope)
+        query[kSecReturnAttributes as String] = true
+        query[kSecMatchLimit as String] = kSecMatchLimitOne
+
+        var result: CFTypeRef?
+        let status = SecItemCopyMatching(query as CFDictionary, &result)
+        if status == errSecItemNotFound {
+            return false
+        }
+        guard status == errSecSuccess,
+              let attributes = result as? [String: Any],
+              attributes[kSecAttrLabel as String] as? String == ownershipLabel(for: scope) else {
+            throw KeychainPasswordVaultError.interactionNotAllowed
+        }
+        return true
+    }
+
     public func store(_ password: String, for scope: BasicCredentialScope) throws {
-        let query = keychainQuery(for: scope)
+        var query = keychainQuery(for: scope)
+        _ = try containsPassword(for: scope)
+        query[kSecAttrLabel as String] = ownershipLabel(for: scope)
         let attributes = [kSecValueData as String: Data(password.utf8)]
         let updateStatus = SecItemUpdate(query as CFDictionary, attributes as CFDictionary)
 
@@ -89,10 +114,19 @@ public actor KeychainPasswordVault {
     }
 
     public func deletePassword(for scope: BasicCredentialScope) throws {
-        let status = SecItemDelete(keychainQuery(for: scope) as CFDictionary)
+        guard try containsPassword(for: scope) else {
+            return
+        }
+        var query = keychainQuery(for: scope)
+        query[kSecAttrLabel as String] = ownershipLabel(for: scope)
+        let status = SecItemDelete(query as CFDictionary)
         guard status == errSecSuccess || status == errSecItemNotFound else {
             throw KeychainPasswordVaultError.unexpectedStatus(status)
         }
+    }
+
+    private func ownershipLabel(for scope: BasicCredentialScope) -> String {
+        "IssueLight Basic credential \(scope.sourceID.uuidString.lowercased())"
     }
 
     private func keychainQuery(for scope: BasicCredentialScope) -> [String: Any] {

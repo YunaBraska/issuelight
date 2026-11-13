@@ -1,6 +1,6 @@
 # Project status
 
-Status: Pre-release development. Not production-ready.
+Status: Release-candidate engineering. Not publicly production-ready.
 
 Snapshot date: 2026-11-13.
 
@@ -11,8 +11,8 @@ Snapshot date: 2026-11-13.
 | Provider-neutral source records | Swift package tests for validation, encoding, and authority changes | Verified |
 | Provider runtime boundary | Registry dispatches validation, credential and trust resolution, connection testing, and snapshot loading without provider logic in app views | Verified in package and live tests |
 | Icinga 2 endpoint rules | Provider and URL construction tests | Verified |
-| Basic credentials | Real temporary macOS Keychain item lifecycle with cleanup; an installed Developer-ID-signed app stored and read a scoped password, detected its exact external revocation on manual refresh, retained the prior snapshot as stale, and failed explicitly after relaunch | Verified locally |
-| Non-interactive background credentials | Password and exact client-identity reads use `LAContext.interactionNotAllowed`; broad identity searches skip protected items instead of opening authentication UI | Verified in source, real password lifecycle, and generated PKCS#12 identity lifecycle tests; protected-item installed-app denial remains open |
+| Basic credentials | Real temporary macOS Keychain item lifecycle with cleanup; ownership is identified through non-secret metadata; a foreign legacy item with an incompatible application partition is rejected before its secret is read; an installed Developer-ID-signed app stored and read a scoped password, detected its exact external revocation on manual refresh, retained the prior snapshot as stale, and failed explicitly after relaunch | Verified locally |
+| Non-interactive background credentials | Password availability reads only metadata; password and exact client-identity reads use `LAContext.interactionNotAllowed`; broad identity searches skip protected items instead of opening authentication UI | Verified in source, real owned and foreign password lifecycles, and generated PKCS#12 identity lifecycle tests; protected-private-key installed-app denial remains open |
 | Client identities | Generated PKCS#12 import, real Keychain listing, persistent-reference resolution, exact cleanup, and malformed-import rejection | Verified locally |
 | Private CA trust | PEM/DER import, Keychain persistent reference, source-specific Apple trust evaluation, hostname checks, accepted lab CA, rejected unrelated CA, and ownership-aware cleanup after the final source reference | Verified in package, app-model, and live tests |
 | Exact server-certificate pinning | PEM/DER leaf selection, normalized SHA-256 persistence, source-specific Apple trust evaluation, authority-change reset, accepted exact lab leaf, rejected mismatched leaf, and rejected hostname mismatch | Verified in package, app-model, and live tests |
@@ -29,18 +29,18 @@ Snapshot date: 2026-11-13.
 | Release identity and manual update journey | Own asset-catalog icon, German bundle region, native About panel, installed version/build, and explicit link to the official release channel without an automatic network check | Universal bundle metadata, icon renditions, running menu, About panel, and isolated first-run source window inspected locally |
 | Real Icinga 2 integration | Isolated pinned official container lab covers Basic auth, permission denial, private CA, mTLS, exact real host/service problem payloads, stable initial checks, and two persisted app-model sources | Verified locally |
 | OSS repository controls | Apache-2.0, provenance notice, contributor/security/privacy policies, private vulnerability reporting, secret scanning with push protection, SHA-pinned Actions, required CI and Swift CodeQL, and protected `main` | Verified in the public repository; the first 27-rule Swift scan completed with zero results and zero open alerts |
-| Release-candidate artifacts | Universal Developer ID build, hardened runtime, timestamp, fail-closed notarization, ZIP, SPDX 2.3 SBOM, and verified SHA-256 manifest | Unsigned path verified locally and in CI; real universal Developer ID signing passes locally; Gatekeeper and packaging reject the unnotarized app; an accepted notarization remains open |
+| Release-candidate artifacts | Universal Developer ID build, hardened runtime, timestamp, fail-closed notarization, ZIP, SPDX 2.3 SBOM, verified SHA-256 manifest, and a release configuration without coverage instrumentation | Unsigned path verified locally and in CI; real universal Developer ID signing passes locally; Gatekeeper and packaging reject the unnotarized app; an accepted notarization remains open |
 
-The local package suite currently executes 90 tests. Eighty-two deterministic
+The local package suite currently executes 91 tests. Eighty-three deterministic
 tests pass, while eight live Icinga tests are skipped unless the integration
 environment is configured. The app suite executes sixteen deterministic tests
 and one live integration test, skipped outside the lab. It exercises
 multiple-source management and refresh isolation through persisted source,
 real Keychain, and real Icinga 2 boundaries. The full live matrix passed locally
-on 2026-11-10.
+on 2026-11-13 after the Keychain ownership change.
 
-Source-only LLVM coverage for `IssueLightCore` is currently 86.6% of lines and
-79.8% of regions locally. CI enforces floors of 86.0% and 79.0% respectively so
+Source-only LLVM coverage for `IssueLightCore` is currently 86.8% of lines and
+79.9% of regions locally. CI enforces floors of 86.0% and 79.0% respectively so
 the verified baseline cannot silently regress. Swift does not report branch
 totals in this configuration. Coverage remains below the project goals. The
 goals are not an automatic release gate, but uncovered reachable behavior
@@ -49,13 +49,9 @@ requirement.
 
 ## Release blockers
 
-- A protected Keychain item still needs installed-app evidence that background
-  access fails without authentication UI. Exact password revocation is verified
-  in an installed Developer-ID-signed app, and background queries are now
-  explicitly non-interactive.
-- The live Icinga matrix must be rerun after the non-interactive Keychain change.
-  The 2026-11-13 attempt was blocked because Docker Desktop could not start on
-  the full internal disk.
+- A protected client-identity private key still needs installed-app evidence
+  that background signing fails without authentication UI. Password discovery
+  and access are covered by owned, revoked, missing, and foreign legacy items.
 - Current local search, healthy and multi-source combinations, realistic-volume
   UI behavior, and idle energy use need running-product verification. The
   current isolated first-run setup, menu, About panel, keyboard source
