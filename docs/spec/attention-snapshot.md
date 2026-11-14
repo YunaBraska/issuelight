@@ -57,8 +57,10 @@ provider confirms the command.
 - `MENU-004` A problem snapshot MUST group actionable issues before
   acknowledged or downtime-covered issues and MUST expose host/service context
   without relying on color alone.
-- `MENU-005` A refresh failure MUST expose a short cause while automatic
-  refresh continues to own retry timing.
+- `MENU-005` Each failed source MUST appear as its own compact panel row with
+  the source name and a short cause while automatic refresh continues to own
+  retry timing. A source failure MUST NOT be counted or presented as a host or
+  service problem.
 - `MENU-006` The first row of the menu panel MUST let a person find an issue by
   its host, service, summary, or source without performing network or storage
   work.
@@ -82,4 +84,4 @@ provider confirms the command.
 | SNAP-001..005 | `MonitoringSnapshot` | Core tests cover realistic host and service payloads, acknowledgement, downtime, mixed severity, and ordering |
 | REF-001 | Icinga snapshot loader | Shared transport tests and a real Icinga 2 Basic-auth query both pass; a 5,000-problem synthetic Icinga response traverses request handling, decoding, provider-neutral mapping, and sorting under a five-second regression limit |
 | REF-002..006 | app refresh model | App-model tests cover initial and manual refresh, replacement cancellation, stale retention, and source removal with persisted source and Keychain boundaries; an installed signed app retained its last successful Icinga snapshot after exact password revocation and exposed the missing credential after relaunch |
-| MENU-001..011 | running menu-bar app | Empty setup, loading, deterministic two-problem, failure with stale data, recovery, and all-paused states pass automated rendering; pointer tests exercise Settings, row opening, all three quick actions, and inline error dismissal; successful actions have a model-level no-modal regression test; filter tests cover persistence and source removal; an installed review app connects to the real Icinga lab; the searchable 5,000-row menu panel renders lazily within five seconds |
+| MENU-001..011 | running menu-bar app | Empty setup, loading, deterministic two-problem, compact source-failure row, recovery, and all-paused states pass automated rendering; pointer tests exercise Settings, row opening, all three quick actions, and inline error dismissal; successful actions have a model-level no-modal regression test; filter tests cover persistence and source removal; an installed review app connects to the real Icinga lab; the searchable 5,000-row menu panel renders lazily within five seconds |

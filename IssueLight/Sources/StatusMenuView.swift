@@ -59,9 +59,9 @@ struct StatusMenuView: View {
             actionableIssues: model.actionableIssues,
             coveredIssues: model.coveredIssues,
             sourceNames: Dictionary(uniqueKeysWithValues: model.sources.map { ($0.id, $0.name) }),
+            sourceFailures: model.failedSources,
             filters: filters,
             refreshState: model.refreshState,
-            hasPartialRefreshFailure: model.hasPartialRefreshFailure,
             actionError: model.actionError?.message,
             supportedActions: model.supportedActions,
             activeActionIssueIDs: model.activeActionIssueIDs,
@@ -140,9 +140,9 @@ struct StatusMenuContent: View {
     let actionableIssues: [MonitoringIssue]
     let coveredIssues: [MonitoringIssue]
     let sourceNames: [UUID: String]
+    let sourceFailures: [IssueLightModel.SourceFailure]
     @ObservedObject var filters: PanelFilterSettings
     let refreshState: IssueLightModel.RefreshState
-    let hasPartialRefreshFailure: Bool
     let actionError: String?
     let supportedActions: (MonitoringIssue) -> Set<MonitoringActionKind>
     let activeActionIssueIDs: Set<String>
@@ -171,7 +171,7 @@ struct StatusMenuContent: View {
                 )
                 .textFieldStyle(.plain)
                 .accessibilityIdentifier("issue-search")
-                .disabled(!hasActiveSnapshot || actionableIssues.isEmpty && coveredIssues.isEmpty)
+                .disabled(!hasPanelRows)
                 if refreshState == .refreshing {
                     ProgressView()
                         .controlSize(.small)
@@ -198,22 +198,6 @@ struct StatusMenuContent: View {
                 Divider()
             }
 
-            if hasActiveSnapshot, case .failed(let message) = refreshState {
-                Label(
-                    hasPartialRefreshFailure
-                        ? AppLocalization.string("Aktualisierung teilweise fehlgeschlagen", locale: locale)
-                        : AppLocalization.string("Status ist veraltet", locale: locale),
-                    systemImage: "wifi.exclamationmark"
-                )
-                .font(.caption.weight(.medium))
-                .foregroundStyle(.orange)
-                .help(message)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 7)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                Divider()
-            }
-
             issuePanel
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
@@ -221,30 +205,32 @@ struct StatusMenuContent: View {
     }
 
     private var panelHeight: CGFloat {
-        if !hasConfiguredSource || !hasEnabledSource || !hasActiveSnapshot {
+        if !hasConfiguredSource || !hasEnabledSource {
             return 220
         }
-        if actionableIssues.isEmpty && coveredIssues.isEmpty {
+        if !hasActiveSnapshot && sourceFailures.isEmpty {
+            return 220
+        }
+        if !hasPanelRows {
             return 200
         }
-        let visibleIssueCount = filteredActionableIssues.count + filteredCoveredIssues.count
-        if visibleIssueCount == 0 {
+        let visibleRowCount = filteredSourceFailures.count
+            + filteredActionableIssues.count
+            + filteredCoveredIssues.count
+        if visibleRowCount == 0 {
             return 200
-        }
-        let failureHeight: CGFloat
-        if case .failed = refreshState {
-            failureHeight = ceil(30 * panelTextScale)
-        } else {
-            failureHeight = 0
         }
         let actionErrorHeight: CGFloat = actionError == nil ? 0 : ceil(44 * panelTextScale)
         return min(
             520,
             ceil(49 * panelTextScale)
-                + CGFloat(visibleIssueCount) * issueRowHeight
-                + failureHeight
+                + CGFloat(visibleRowCount) * issueRowHeight
                 + actionErrorHeight
         )
+    }
+
+    private var hasPanelRows: Bool {
+        !sourceFailures.isEmpty || !actionableIssues.isEmpty || !coveredIssues.isEmpty
     }
 
     private var issueRowHeight: CGFloat {
@@ -286,6 +272,20 @@ struct StatusMenuContent: View {
         MonitoringIssueSearch(query: searchText, sourceNames: sourceNames)
             .filter(coveredIssues)
             .filter { filters.includes($0, isCovered: true) }
+    }
+
+    private var filteredSourceFailures: [IssueLightModel.SourceFailure] {
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        return sourceFailures.filter { failure in
+            if !filters.sourceID.isEmpty,
+               failure.source.id.uuidString.lowercased() != filters.sourceID {
+                return false
+            }
+            guard !query.isEmpty else { return true }
+            return failure.source.name.localizedCaseInsensitiveContains(query)
+                || failure.source.endpoint.absoluteString.localizedCaseInsensitiveContains(query)
+                || failure.message.localizedCaseInsensitiveContains(query)
+        }
     }
 
     private var filterMenu: some View {
@@ -341,14 +341,10 @@ struct StatusMenuContent: View {
                 systemImage: "pause.circle",
                 description: Text(verbatim: AppLocalization.string("Aktiviere mindestens eine Quelle, um den Status zu überwachen.", locale: locale))
             )
-        } else if hasActiveSnapshot, actionableIssues.isEmpty, coveredIssues.isEmpty {
-            ContentUnavailableView(
-                AppLocalization.string("Alles ruhig", locale: locale),
-                systemImage: "checkmark.circle",
-                description: Text(verbatim: AppLocalization.string("Keine Hosts oder Services benötigen Aufmerksamkeit.", locale: locale))
-            )
-        } else if hasActiveSnapshot {
-            if filteredActionableIssues.isEmpty && filteredCoveredIssues.isEmpty {
+        } else if hasPanelRows {
+            if filteredSourceFailures.isEmpty
+                && filteredActionableIssues.isEmpty
+                && filteredCoveredIssues.isEmpty {
                 ContentUnavailableView(
                     AppLocalization.string("Keine Treffer", locale: locale),
                     systemImage: "magnifyingglass",
@@ -364,6 +360,12 @@ struct StatusMenuContent: View {
             } else {
                 ScrollView {
                     LazyVStack(spacing: 0) {
+                        ForEach(filteredSourceFailures) { failure in
+                            StatusPanelSourceFailureRow(
+                                failure: failure,
+                                rowHeight: issueRowHeight
+                            )
+                        }
                         ForEach(filteredActionableIssues) { issue in
                             issueEntry(issue)
                         }
@@ -373,6 +375,12 @@ struct StatusMenuContent: View {
                     }
                 }
             }
+        } else if hasActiveSnapshot {
+            ContentUnavailableView(
+                AppLocalization.string("Alles ruhig", locale: locale),
+                systemImage: "checkmark.circle",
+                description: Text(verbatim: AppLocalization.string("Keine Hosts oder Services benötigen Aufmerksamkeit.", locale: locale))
+            )
         } else if case .failed(let message) = refreshState {
             ContentUnavailableView(
                 AppLocalization.string("Status konnte nicht geladen werden", locale: locale),
@@ -404,6 +412,56 @@ struct StatusMenuContent: View {
         )
     }
 
+}
+
+private struct StatusPanelSourceFailureRow: View {
+    let failure: IssueLightModel.SourceFailure
+    let rowHeight: CGFloat
+    @Environment(\.locale) private var locale
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "wifi.exclamationmark")
+                .foregroundStyle(.red)
+                .frame(width: 20)
+            Text(verbatim: failure.source.name)
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .frame(width: 82, alignment: .leading)
+            Text(verbatim: AppLocalization.string("Status konnte nicht geladen werden", locale: locale))
+                .font(.caption.weight(.medium))
+                .lineLimit(1)
+                .frame(width: 204, alignment: .leading)
+            Text(verbatim: failure.message)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.horizontal, 10)
+        .frame(height: rowHeight)
+        .background(Color.red.opacity(0.09))
+        .overlay(alignment: .leading) {
+            Rectangle()
+                .fill(Color.red)
+                .frame(width: 3)
+        }
+        .overlay(alignment: .bottom) { Divider().padding(.leading, 34) }
+        .help(hoverText)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(hoverText)
+    }
+
+    private var hoverText: String {
+        [
+            failure.source.name,
+            failure.source.endpoint.absoluteString,
+            AppLocalization.string("Status konnte nicht geladen werden", locale: locale),
+            failure.message,
+        ]
+        .joined(separator: "\n")
+    }
 }
 
 struct StatusActionErrorBanner: View {

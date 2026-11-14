@@ -13,11 +13,11 @@ final class StatusMenuInteractionTests: XCTestCase {
             actionableIssues: [],
             coveredIssues: [],
             sourceNames: [:],
+            sourceFailures: [],
             filters: PanelFilterSettings(
                 defaults: UserDefaults(suiteName: "StatusMenuInteractionTests.\(UUID().uuidString)")!
             ),
             refreshState: .notConfigured,
-            hasPartialRefreshFailure: false,
             actionError: nil,
             supportedActions: { _ in [] },
             activeActionIssueIDs: [],
@@ -72,11 +72,11 @@ final class StatusMenuInteractionTests: XCTestCase {
             actionableIssues: [issue],
             coveredIssues: [],
             sourceNames: [sourceID: "Production"],
+            sourceFailures: [],
             filters: PanelFilterSettings(
                 defaults: UserDefaults(suiteName: "StatusMenuInteractionTests.\(UUID().uuidString)")!
             ),
             refreshState: .current,
-            hasPartialRefreshFailure: false,
             actionError: nil,
             supportedActions: { _ in [.recheck, .acknowledge, .scheduleDowntime] },
             activeActionIssueIDs: [],
@@ -113,6 +113,55 @@ final class StatusMenuInteractionTests: XCTestCase {
         XCTAssertEqual(rechecked, 1)
         XCTAssertEqual(acknowledged, 1)
         XCTAssertEqual(scheduledDowntime, 1)
+    }
+
+    func testFailedSourceRendersAsCompactPanelRowWithoutSnapshot() {
+        let source = MonitoringSource(
+            name: "Production",
+            providerID: Icinga2Provider.id,
+            endpoint: URL(string: "https://icinga.internal:5665")!,
+            authentication: .basic(username: "monitoring")
+        )
+        let view = StatusMenuContent(
+            hasConfiguredSource: true,
+            hasEnabledSource: true,
+            hasActiveSnapshot: false,
+            actionableIssues: [],
+            coveredIssues: [],
+            sourceNames: [source.id: source.name],
+            sourceFailures: [
+                IssueLightModel.SourceFailure(
+                    source: source,
+                    message: "Der Server ist nicht erreichbar."
+                )
+            ],
+            filters: PanelFilterSettings(
+                defaults: UserDefaults(suiteName: "StatusMenuInteractionTests.\(UUID().uuidString)")!
+            ),
+            refreshState: .failed("Production: Der Server ist nicht erreichbar."),
+            actionError: nil,
+            supportedActions: { _ in [] },
+            activeActionIssueIDs: [],
+            openSettings: {},
+            openIssue: { _ in },
+            openSSH: { _ in },
+            openRDP: { _ in },
+            hasSSH: { _ in false },
+            hasRDP: { _ in false },
+            performRecheck: { _ in },
+            requestAcknowledgement: { _ in },
+            requestDowntime: { _ in },
+            dismissActionError: {}
+        )
+        .environment(\.locale, Locale(identifier: "de_DE"))
+        .environment(\.colorScheme, .light)
+
+        let fittedSize = NativeViewRenderer.fittingSize(
+            for: view,
+            maximumSize: CGSize(width: 720, height: 520)
+        )
+
+        XCTAssertEqual(fittedSize.height, 88, accuracy: 1)
     }
 
     func testActionErrorCanBeDismissedWithoutAWindowModal() {

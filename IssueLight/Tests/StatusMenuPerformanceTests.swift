@@ -38,11 +38,11 @@ final class StatusMenuPerformanceTests: XCTestCase {
             actionableIssues: fixture.issues,
             coveredIssues: [],
             sourceNames: fixture.sourceNames,
+            sourceFailures: [],
             filters: PanelFilterSettings(
                 defaults: UserDefaults(suiteName: "StatusMenuPerformanceTests.\(UUID().uuidString)")!
             ),
             refreshState: .current,
-            hasPartialRefreshFailure: false,
             actionError: nil,
             supportedActions: { _ in [.recheck, .acknowledge, .scheduleDowntime] },
             activeActionIssueIDs: [],

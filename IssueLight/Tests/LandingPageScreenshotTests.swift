@@ -26,6 +26,10 @@ final class LandingPageScreenshotTests: XCTestCase {
             for: menuPanelView(language: .arabic),
             size: CGSize(width: 720, height: 127)
         )
+        let sourceFailureMenuData = try NativeViewRenderer.pngData(
+            for: sourceFailureMenuView,
+            size: CGSize(width: 720, height: 88)
+        )
         let swedishSettingsData = try NativeViewRenderer.pngData(
             for: languageSettingsView(language: .swedish),
             size: CGSize(width: 920, height: 680)
@@ -44,6 +48,7 @@ final class LandingPageScreenshotTests: XCTestCase {
         XCTAssertGreaterThan(germanMenuData.count, 10_000)
         XCTAssertGreaterThan(swedishMenuData.count, 10_000)
         XCTAssertGreaterThan(arabicMenuData.count, 10_000)
+        XCTAssertGreaterThan(sourceFailureMenuData.count, 8_000)
         XCTAssertGreaterThan(swedishSettingsData.count, 8_000)
         XCTAssertGreaterThan(arabicSettingsData.count, 8_000)
         XCTAssertGreaterThan(aboutSettingsData.count, 20_000)
@@ -74,6 +79,10 @@ final class LandingPageScreenshotTests: XCTestCase {
         )
         try arabicMenuData.write(
             to: outputDirectory.appendingPathComponent("menu-panel-ar.png"),
+            options: .atomic
+        )
+        try sourceFailureMenuData.write(
+            to: outputDirectory.appendingPathComponent("menu-panel-source-failure.png"),
             options: .atomic
         )
         try swedishSettingsData.write(
@@ -187,9 +196,9 @@ final class LandingPageScreenshotTests: XCTestCase {
                 actionableIssues: issues,
                 coveredIssues: [],
                 sourceNames: [productionID: "Production"],
+                sourceFailures: [],
                 filters: filterSettings(),
                 refreshState: .current,
-                hasPartialRefreshFailure: false,
                 actionError: nil,
                 supportedActions: { _ in [.recheck, .acknowledge, .scheduleDowntime] },
                 activeActionIssueIDs: [],
@@ -214,6 +223,46 @@ final class LandingPageScreenshotTests: XCTestCase {
     private func filterSettings() -> PanelFilterSettings {
         let defaults = UserDefaults(suiteName: "LandingPageScreenshotTests.\(UUID().uuidString)")!
         return PanelFilterSettings(defaults: defaults)
+    }
+
+    private var sourceFailureMenuView: some View {
+        let source = MonitoringSource(
+            name: "Production",
+            providerID: Icinga2Provider.id,
+            endpoint: URL(string: "https://icinga.internal:5665")!,
+            authentication: .basic(username: "monitoring")
+        )
+        return StatusMenuContent(
+            hasConfiguredSource: true,
+            hasEnabledSource: true,
+            hasActiveSnapshot: false,
+            actionableIssues: [],
+            coveredIssues: [],
+            sourceNames: [source.id: source.name],
+            sourceFailures: [
+                IssueLightModel.SourceFailure(
+                    source: source,
+                    message: "Der Server ist nicht erreichbar."
+                )
+            ],
+            filters: filterSettings(),
+            refreshState: .failed("Production: Der Server ist nicht erreichbar."),
+            actionError: nil,
+            supportedActions: { _ in [] },
+            activeActionIssueIDs: [],
+            openSettings: {},
+            openIssue: { _ in },
+            openSSH: { _ in },
+            openRDP: { _ in },
+            hasSSH: { _ in false },
+            hasRDP: { _ in false },
+            performRecheck: { _ in },
+            requestAcknowledgement: { _ in },
+            requestDowntime: { _ in },
+            dismissActionError: {}
+        )
+        .environment(\.locale, Locale(identifier: "de_DE"))
+        .environment(\.colorScheme, .light)
     }
 
     private func languageSettingsView(language: AppLanguage) -> some View {
