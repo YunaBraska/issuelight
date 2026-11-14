@@ -98,12 +98,17 @@ final class StatusMenuInteractionTests: XCTestCase {
             for: view,
             maximumSize: CGSize(width: 720, height: 520)
         )
+        let largerTextSize = NativeViewRenderer.fittingSize(
+            for: view.environment(\.dynamicTypeSize, .accessibility1),
+            maximumSize: CGSize(width: 720, height: 520)
+        )
         NativeViewRenderer.click(CGPoint(x: 300, y: 19), in: view, size: fittedSize)
         NativeViewRenderer.click(CGPoint(x: 644, y: 19), in: view, size: fittedSize)
         NativeViewRenderer.click(CGPoint(x: 672, y: 19), in: view, size: fittedSize)
         NativeViewRenderer.click(CGPoint(x: 700, y: 19), in: view, size: fittedSize)
 
         XCTAssertEqual(fittedSize.height, 88, accuracy: 1)
+        XCTAssertGreaterThan(largerTextSize.height, fittedSize.height)
         XCTAssertEqual(opened, 1)
         XCTAssertEqual(rechecked, 1)
         XCTAssertEqual(acknowledged, 1)

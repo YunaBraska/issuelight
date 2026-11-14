@@ -157,6 +157,7 @@ struct StatusMenuContent: View {
     let requestDowntime: (MonitoringIssue) -> Void
     let dismissActionError: () -> Void
     @Environment(\.locale) private var locale
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var searchText = ""
 
     var body: some View {
@@ -240,10 +241,35 @@ struct StatusMenuContent: View {
         return min(
             520,
             49
-                + CGFloat(visibleIssueCount) * 39
+                + CGFloat(visibleIssueCount) * issueRowHeight
                 + failureHeight
                 + actionErrorHeight
         )
+    }
+
+    private var issueRowHeight: CGFloat {
+        switch dynamicTypeSize {
+        case .xSmall, .small, .medium, .large:
+            39
+        case .xLarge:
+            42
+        case .xxLarge:
+            46
+        case .xxxLarge:
+            50
+        case .accessibility1:
+            54
+        case .accessibility2:
+            58
+        case .accessibility3:
+            62
+        case .accessibility4:
+            68
+        case .accessibility5:
+            74
+        @unknown default:
+            54
+        }
     }
 
     private var filteredActionableIssues: [MonitoringIssue] {
@@ -369,7 +395,8 @@ struct StatusMenuContent: View {
             openRDP: hasRDP(issue) ? { openRDP(issue) } : nil,
             performRecheck: { performRecheck(issue) },
             requestAcknowledgement: { requestAcknowledgement(issue) },
-            requestDowntime: { requestDowntime(issue) }
+            requestDowntime: { requestDowntime(issue) },
+            rowHeight: issueRowHeight
         )
     }
 
@@ -438,6 +465,7 @@ private struct StatusPanelIssueEntry: View {
     let performRecheck: () -> Void
     let requestAcknowledgement: () -> Void
     let requestDowntime: () -> Void
+    let rowHeight: CGFloat
     @Environment(\.locale) private var locale
 
     var body: some View {
@@ -476,7 +504,7 @@ private struct StatusPanelIssueEntry: View {
             }
         }
         .padding(.trailing, 8)
-        .frame(height: 39)
+        .frame(height: rowHeight)
         .background(issue.presentationColor.opacity(issue.requiresAttention ? 0.09 : 0.045))
         .overlay(alignment: .leading) {
             Rectangle()
