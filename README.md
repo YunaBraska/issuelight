@@ -1,7 +1,6 @@
 # IssueLight
 
 [![CI](https://github.com/YunaBraska/issuelight/actions/workflows/ci.yml/badge.svg)](https://github.com/YunaBraska/issuelight/actions/workflows/ci.yml)
-[![CodeQL](https://github.com/YunaBraska/issuelight/actions/workflows/codeql.yml/badge.svg)](https://github.com/YunaBraska/issuelight/actions/workflows/codeql.yml)
 [![Product Pages](https://github.com/YunaBraska/issuelight/actions/workflows/product-pages.yml/badge.svg)](https://github.com/YunaBraska/issuelight/actions/workflows/product-pages.yml)
 
 [Product page](https://yunabraska.github.io/issuelight/) ·
