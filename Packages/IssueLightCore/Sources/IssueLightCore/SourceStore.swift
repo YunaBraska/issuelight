@@ -42,7 +42,11 @@ public actor SourceStore {
         )
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-        try encoder.encode(sources).write(to: fileURL, options: [.atomic, .completeFileProtection])
+        try encoder.encode(sources).write(to: fileURL, options: .atomic)
+        try FileManager.default.setAttributes(
+            [.posixPermissions: 0o600],
+            ofItemAtPath: fileURL.path
+        )
         return sources
     }
 

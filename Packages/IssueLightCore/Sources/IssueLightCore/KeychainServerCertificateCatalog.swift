@@ -1,0 +1,321 @@
+import CryptoKit
+import Foundation
+import Security
+
+public struct ServerCertificateDescriptor: Equatable, Identifiable, Sendable {
+    public let id: String
+    public let displayName: String
+    public let sha256Fingerprint: String
+
+    public init(id: String, displayName: String, sha256Fingerprint: String) {
+        self.id = id
+        self.displayName = displayName
+        self.sha256Fingerprint = sha256Fingerprint
+    }
+}
+
+public enum KeychainServerCertificateCatalogError: Error, Equatable {
+    case certificateFileTooLarge
+    case invalidCertificate
+    case invalidPersistentReference
+    case malformedKeychainResult
+    case multipleCertificatesNotSupported
+    case unexpectedStatus(OSStatus)
+}
+
+public actor KeychainServerCertificateCatalog {
+    private static let anyManagedLabelPrefix = "IssueLight CA ["
+    private let managedLabelPrefix: String
+    private let accessContext: KeychainAccessContext?
+
+    /// Creates a certificate catalog with cleanup ownership isolated to one app profile.
+    ///
+    /// Use a stable bundle or profile identifier. Catalogs with different scopes cannot
+    /// delete each other's imported certificates.
+    ///
+    /// - Parameter ownershipScope: Stable identifier for the source store using this catalog.
+    public init(ownershipScope: String = "berlin.yuna.issuelight") {
+        let scopeFingerprint = SHA256.hash(data: Data(ownershipScope.utf8))
+            .prefix(16)
+            .map { String(format: "%02x", $0) }
+            .joined()
+        managedLabelPrefix = "IssueLight CA [\(scopeFingerprint)] — "
+        accessContext = nil
+    }
+
+    init(ownershipScope: String, accessContext: KeychainAccessContext) {
+        let scopeFingerprint = SHA256.hash(data: Data(ownershipScope.utf8))
+            .prefix(16)
+            .map { String(format: "%02x", $0) }
+            .joined()
+        managedLabelPrefix = "IssueLight CA [\(scopeFingerprint)] — "
+        self.accessContext = accessContext
+    }
+
+    public func importCertificate(at fileURL: URL) throws -> ServerCertificateDescriptor {
+        let certificate: SecCertificate
+        do {
+            certificate = try ServerCertificateFingerprint.certificate(at: fileURL)
+        } catch ServerCertificateFingerprintError.certificateFileTooLarge {
+            throw KeychainServerCertificateCatalogError.certificateFileTooLarge
+        } catch ServerCertificateFingerprintError.multipleCertificatesNotSupported {
+            throw KeychainServerCertificateCatalogError.multipleCertificatesNotSupported
+        } catch {
+            throw KeychainServerCertificateCatalogError.invalidCertificate
+        }
+        let certificateData = SecCertificateCopyData(certificate) as Data
+
+        let ownershipFingerprint = SHA256.hash(data: certificateData)
+            .map { String(format: "%02x", $0) }
+            .joined()
+        let certificateName = SecCertificateCopySubjectSummary(certificate) as String? ?? "Unnamed CA"
+        let addQuery: [String: Any] = [
+            kSecClass as String: kSecClassCertificate,
+            kSecValueRef as String: certificate,
+        ]
+        let addStatus = SecItemAdd(
+            (accessContext?.adding(addQuery) ?? addQuery) as CFDictionary,
+            nil
+        )
+        let wasAdded: Bool
+        switch addStatus {
+        case errSecSuccess:
+            wasAdded = true
+        case errSecDuplicateItem:
+            wasAdded = false
+        default:
+            throw KeychainServerCertificateCatalogError.unexpectedStatus(addStatus)
+        }
+
+        let reference: Data
+        do {
+            reference = try persistentReference(for: certificate)
+        } catch {
+            if wasAdded {
+                _ = SecItemDelete(
+                    (accessContext?.matching(addQuery) ?? addQuery) as CFDictionary
+                )
+            }
+            throw error
+        }
+        let ownershipQuery: [String: Any] = [
+            kSecClass as String: kSecClassCertificate,
+            kSecValuePersistentRef as String: reference,
+        ]
+        let expectedLabel = managedLabelPrefix + certificateName + " — " + ownershipFingerprint
+        if wasAdded {
+            let ownershipAttributes: [String: Any] = [
+                kSecAttrLabel as String: expectedLabel,
+            ]
+            let updateStatus = SecItemUpdate(
+                (accessContext?.matching(ownershipQuery) ?? ownershipQuery) as CFDictionary,
+                ownershipAttributes as CFDictionary
+            )
+            guard updateStatus == errSecSuccess else {
+                try? deleteCertificate(id: reference.base64EncodedString())
+                throw KeychainServerCertificateCatalogError.unexpectedStatus(updateStatus)
+            }
+        } else {
+            var existingResult: CFTypeRef?
+            var existingQuery = ownershipQuery
+            existingQuery[kSecReturnAttributes as String] = true
+            existingQuery[kSecMatchLimit as String] = kSecMatchLimitOne
+            let existingStatus = SecItemCopyMatching(
+                (accessContext?.matching(existingQuery) ?? existingQuery) as CFDictionary,
+                &existingResult
+            )
+            guard existingStatus == errSecSuccess else {
+                throw KeychainServerCertificateCatalogError.unexpectedStatus(existingStatus)
+            }
+            guard let existingAttributes = existingResult as? [String: Any] else {
+                throw KeychainServerCertificateCatalogError.malformedKeychainResult
+            }
+            if let existingLabel = existingAttributes[kSecAttrLabel as String] as? String,
+               existingLabel.hasPrefix(Self.anyManagedLabelPrefix),
+               existingLabel != expectedLabel {
+                let sharedAttributes: [String: Any] = [
+                    kSecAttrLabel as String: "IssueLight Shared CA — \(certificateName) — \(ownershipFingerprint)",
+                ]
+                let updateStatus = SecItemUpdate(
+                    (accessContext?.matching(ownershipQuery) ?? ownershipQuery) as CFDictionary,
+                    sharedAttributes as CFDictionary
+                )
+                guard updateStatus == errSecSuccess else {
+                    throw KeychainServerCertificateCatalogError.unexpectedStatus(updateStatus)
+                }
+            }
+        }
+        return Self.descriptor(certificate: certificate, reference: reference)
+    }
+
+    public func certificate(id: String) throws -> SecCertificate? {
+        guard let reference = Data(base64Encoded: id) else {
+            throw KeychainServerCertificateCatalogError.invalidPersistentReference
+        }
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassCertificate,
+            kSecValuePersistentRef as String: reference,
+            kSecReturnRef as String: true,
+            kSecMatchLimit as String: kSecMatchLimitOne,
+        ]
+
+        var result: CFTypeRef?
+        let status = SecItemCopyMatching(
+            (accessContext?.matching(query) ?? query) as CFDictionary,
+            &result
+        )
+        if status == errSecItemNotFound {
+            return nil
+        }
+        guard status == errSecSuccess else {
+            throw KeychainServerCertificateCatalogError.unexpectedStatus(status)
+        }
+        guard let result, CFGetTypeID(result) == SecCertificateGetTypeID() else {
+            throw KeychainServerCertificateCatalogError.malformedKeychainResult
+        }
+        return unsafeBitCast(result, to: SecCertificate.self)
+    }
+
+    public func descriptor(id: String) throws -> ServerCertificateDescriptor? {
+        guard let certificate = try certificate(id: id),
+              let reference = Data(base64Encoded: id) else {
+            return nil
+        }
+        return Self.descriptor(certificate: certificate, reference: reference)
+    }
+
+    public func deleteCertificate(id: String) throws {
+        guard let reference = Data(base64Encoded: id) else {
+            throw KeychainServerCertificateCatalogError.invalidPersistentReference
+        }
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassCertificate,
+            kSecValuePersistentRef as String: reference,
+        ]
+        let status = SecItemDelete(
+            (accessContext?.matching(query) ?? query) as CFDictionary
+        )
+        guard status == errSecSuccess || status == errSecItemNotFound else {
+            throw KeychainServerCertificateCatalogError.unexpectedStatus(status)
+        }
+    }
+
+    /// Deletes certificates created and marked by IssueLight when no source references them.
+    ///
+    /// Certificates that existed before import or have lost the IssueLight ownership marker
+    /// remain untouched.
+    ///
+    /// - Parameter referencedCertificateIDs: Persistent Keychain references retained by sources.
+    /// - Returns: Persistent references deleted during this cleanup pass.
+    public func deleteUnreferencedManagedCertificates(
+        referencedCertificateIDs: Set<String>
+    ) throws -> Set<String> {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassCertificate,
+            kSecReturnAttributes as String: true,
+            kSecReturnPersistentRef as String: true,
+            kSecMatchLimit as String: kSecMatchLimitAll,
+        ]
+        var result: CFTypeRef?
+        let status = SecItemCopyMatching(
+            (accessContext?.matching(query) ?? query) as CFDictionary,
+            &result
+        )
+        if status == errSecItemNotFound {
+            return []
+        }
+        guard status == errSecSuccess else {
+            throw KeychainServerCertificateCatalogError.unexpectedStatus(status)
+        }
+        guard let items = result as? [[String: Any]] else {
+            throw KeychainServerCertificateCatalogError.malformedKeychainResult
+        }
+        let managedReferences = items.compactMap { item -> Data? in
+            guard let label = item[kSecAttrLabel as String] as? String,
+                  label.hasPrefix(managedLabelPrefix),
+                  let reference = item[kSecValuePersistentRef as String] as? Data else {
+                return nil
+            }
+            return reference
+        }
+        var deletedIDs = Set<String>()
+        for reference in managedReferences {
+            let id = reference.base64EncodedString()
+            guard !referencedCertificateIDs.contains(id) else { continue }
+            let deleteQuery: [String: Any] = [
+                kSecClass as String: kSecClassCertificate,
+                kSecValuePersistentRef as String: reference,
+            ]
+            let deleteStatus = SecItemDelete(
+                (accessContext?.matching(deleteQuery) ?? deleteQuery) as CFDictionary
+            )
+            if deleteStatus == errSecSuccess {
+                deletedIDs.insert(id)
+            } else if deleteStatus != errSecItemNotFound {
+                throw KeychainServerCertificateCatalogError.unexpectedStatus(deleteStatus)
+            }
+        }
+        return deletedIDs
+    }
+
+    private func persistentReference(for certificate: SecCertificate) throws -> Data {
+        if let accessContext {
+            let scopedQuery: [String: Any] = [
+                kSecClass as String: kSecClassCertificate,
+                kSecReturnRef as String: true,
+                kSecReturnPersistentRef as String: true,
+                kSecMatchLimit as String: kSecMatchLimitAll,
+            ]
+            var scopedResult: CFTypeRef?
+            let scopedStatus = SecItemCopyMatching(
+                accessContext.matching(scopedQuery) as CFDictionary,
+                &scopedResult
+            )
+            guard scopedStatus == errSecSuccess, let items = scopedResult as? [[String: Any]] else {
+                throw KeychainServerCertificateCatalogError.unexpectedStatus(scopedStatus)
+            }
+            let certificateData = SecCertificateCopyData(certificate) as Data
+            if let reference = items.first(where: { item in
+                guard let candidate = item[kSecValueRef as String],
+                      CFGetTypeID(candidate as CFTypeRef) == SecCertificateGetTypeID() else {
+                    return false
+                }
+                let candidateCertificate = unsafeBitCast(candidate as CFTypeRef, to: SecCertificate.self)
+                return SecCertificateCopyData(candidateCertificate) as Data == certificateData
+            })?[kSecValuePersistentRef as String] as? Data {
+                return reference
+            }
+            throw KeychainServerCertificateCatalogError.malformedKeychainResult
+        }
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassCertificate,
+            kSecValueRef as String: certificate,
+            kSecReturnPersistentRef as String: true,
+            kSecMatchLimit as String: kSecMatchLimitOne,
+        ]
+
+        var result: CFTypeRef?
+        let status = SecItemCopyMatching(
+            (accessContext?.matching(query) ?? query) as CFDictionary,
+            &result
+        )
+        guard status == errSecSuccess else {
+            throw KeychainServerCertificateCatalogError.unexpectedStatus(status)
+        }
+        guard let reference = result as? Data else {
+            throw KeychainServerCertificateCatalogError.malformedKeychainResult
+        }
+        return reference
+    }
+
+    private static func descriptor(
+        certificate: SecCertificate,
+        reference: Data
+    ) -> ServerCertificateDescriptor {
+        return ServerCertificateDescriptor(
+            id: reference.base64EncodedString(),
+            displayName: SecCertificateCopySubjectSummary(certificate) as String? ?? "Unnamed CA",
+            sha256Fingerprint: ServerCertificateFingerprint.sha256(of: certificate)
+        )
+    }
+}

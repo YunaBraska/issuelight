@@ -1,125 +1,66 @@
 import SwiftUI
 import UniformTypeIdentifiers
+import IssueLightCore
 
 struct SourceSetupView: View {
-    @ObservedObject var model: SourceSetupModel
+    private enum PendingNavigation {
+        case add
+        case select(UUID)
+    }
+
+    @ObservedObject var model: IssueLightModel
+    @Environment(\.locale) private var locale
+    private let certificateContentTypes: [UTType] = [
+        UTType(filenameExtension: "cer") ?? .data,
+        UTType(filenameExtension: "crt") ?? .data,
+        UTType(filenameExtension: "der") ?? .data,
+        UTType(filenameExtension: "pem") ?? .data,
+    ]
     @State private var importURL: URL?
     @State private var isChoosingIdentity = false
     @State private var isImportingIdentity = false
+    @State private var isChoosingServerCertificate = false
+    @State private var isChoosingPinnedServerCertificate = false
+    @State private var isChoosingSSHIdentity = false
+    @State private var isShowingSSHOverrides = false
     @State private var isConfirmingDeletion = false
+    @State private var isConfirmingDiscard = false
+    @State private var pendingNavigation: PendingNavigation?
     @State private var connectionTask: Task<Void, Never>?
 
     var body: some View {
-        VStack(spacing: 0) {
-            Form {
-                Section {
-                    LabeledContent("Typ", value: "Icinga 2")
-                    TextField("Name", text: $model.name, prompt: Text("Produktion"))
-                    TextField("Server", text: $model.endpoint, prompt: Text("https://icinga.example:5665"))
-                        .textContentType(.URL)
-                } header: {
-                    Text("Quelle")
-                } footer: {
-                    Text("IssueLight prüft Hosts und Services über die echte Icinga-2-API.")
-                }
-
-                Section("Authentifizierung") {
-                    Picker("Methode", selection: $model.authenticationChoice) {
-                        ForEach(SourceSetupModel.AuthenticationChoice.allCases) { choice in
-                            Text(choice.rawValue).tag(choice)
-                        }
+        HStack(spacing: 0) {
+            VStack(spacing: 0) {
+                List(selection: sourceSelection) {
+                    ForEach(model.sources) { source in
+                        SourceRow(source: source, model: model)
+                            .tag(source.id)
                     }
-                    .pickerStyle(.segmented)
-
-                    if model.authenticationChoice == .basic {
-                        TextField("Benutzername", text: $model.username)
-                            .textContentType(.username)
-                        SecureField("Passwort", text: $model.password)
-                            .textContentType(.password)
-                        Text("Das Passwort wird ausschließlich im macOS-Schlüsselbund gespeichert.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    } else {
-                        if let identityLoadError = model.identityLoadError {
-                            Label(identityLoadError, systemImage: "exclamationmark.circle")
-                                .foregroundStyle(.red)
-                        }
-                        Picker("Identität", selection: $model.selectedIdentityID) {
-                            Text("Zertifikat auswählen …").tag("")
-                            ForEach(model.identities) { identity in
-                                Text(identity.displayName).tag(identity.id)
-                            }
-                        }
-                        Button("PKCS#12 importieren …") {
-                            isChoosingIdentity = true
-                        }
-                        .fileImporter(
-                            isPresented: $isChoosingIdentity,
-                            allowedContentTypes: [UTType(filenameExtension: "p12") ?? .data, UTType(filenameExtension: "pfx") ?? .data],
-                            allowsMultipleSelection: false
-                        ) { result in
-                            if case .success(let urls) = result, let url = urls.first {
-                                importURL = url
-                                isImportingIdentity = true
-                            }
-                        }
+                }
+                .overlay {
+                    if model.sources.isEmpty {
+                        ContentUnavailableView(
+                            "Noch keine Quellen",
+                            systemImage: "server.rack",
+                            description: Text("Füge deine erste Monitoring-Quelle hinzu.")
+                        )
                     }
                 }
 
-                Section {
-                    Toggle("Serverzertifikat prüfen", isOn: $model.verifiesServerCertificate)
-                    if !model.verifiesServerCertificate {
-                        Label {
-                            Text("Unsicher. Identität und Serverdaten können abgefangen oder verändert werden. Diese Ausnahme gilt nur für diese Quelle.")
-                        } icon: {
-                            Image(systemName: "exclamationmark.triangle.fill")
-                        }
-                        .foregroundStyle(.orange)
-                    }
-                } header: {
-                    Text("TLS")
-                } footer: {
-                    Text("Die Prüfung ist standardmäßig aktiv. Selbstsignierte Homelab-Systeme können sie bewusst deaktivieren.")
-                }
-
-                Section {
-                    activityView
-                }
+                Divider()
+                SourceSidebarFooter(addSource: requestAdd)
             }
-            .formStyle(.grouped)
+            .frame(width: 250)
 
             Divider()
-            HStack {
-                if model.hasConfiguredSource {
-                    Button("Quelle entfernen", role: .destructive) {
-                        isConfirmingDeletion = true
-                    }
-                    .disabled(isWorking)
-                }
-                Spacer()
-                if model.isTestingConnection {
-                    Button("Abbrechen", role: .cancel) {
-                        connectionTask?.cancel()
-                    }
-                } else {
-                    Button("Verbindung testen") {
-                        connectionTask = Task { await model.testConnection() }
-                    }
-                    .disabled(isWorking)
-                }
 
-                Button("Speichern") {
-                    Task { await model.save() }
-                }
-                .keyboardShortcut(.defaultAction)
-                .disabled(isWorking)
-            }
-            .padding(16)
-            .background(.bar)
+            editor
         }
-        .frame(minWidth: 560, minHeight: 560)
-        .task { await model.load() }
-        .onDisappear { connectionTask?.cancel() }
+        .frame(minWidth: 700, minHeight: 500)
+        .onDisappear {
+            connectionTask?.cancel()
+            Task { _ = await model.cleanupUnreferencedManagedServerCertificates() }
+        }
         .sheet(isPresented: $isImportingIdentity) {
             if let importURL {
                 IdentityImportView(fileURL: importURL, model: model, isPresented: $isImportingIdentity)
@@ -136,14 +77,352 @@ struct SourceSetupView: View {
         } message: {
             Text(model.deletionMessage)
         }
+        .confirmationDialog(
+            "Ungespeicherte Änderungen verwerfen?",
+            isPresented: $isConfirmingDiscard,
+            titleVisibility: .visible
+        ) {
+            Button("Änderungen verwerfen", role: .destructive) {
+                performPendingNavigation()
+            }
+            Button("Weiter bearbeiten", role: .cancel) {
+                pendingNavigation = nil
+            }
+        } message: {
+            Text("Die Änderungen an der aktuellen Quelle wurden noch nicht gespeichert.")
+        }
+    }
+
+    private var sourceSelection: Binding<UUID?> {
+        Binding(
+            get: { model.selectedSourceID },
+            set: { sourceID in
+                guard let sourceID, sourceID != model.selectedSourceID else { return }
+                requestSelection(sourceID)
+            }
+        )
+    }
+
+    private var editor: some View {
+        VStack(spacing: 0) {
+            Form {
+                Section {
+                    Toggle("Quelle aktiv", isOn: $model.isSourceEnabled)
+                    if model.providers.count == 1 {
+                        LabeledContent("Typ", value: model.providerDisplayName)
+                    } else {
+                        Picker("Typ", selection: $model.selectedProviderID) {
+                            ForEach(model.providers, id: \.id) { provider in
+                                Text(provider.displayName).tag(provider.id)
+                            }
+                        }
+                    }
+                    TextField("Name", text: $model.name, prompt: Text("Produktion"))
+                    TextField("Server", text: $model.endpoint, prompt: Text("https://icinga.example:5665"))
+                        .textContentType(.URL)
+                } header: {
+                    if model.isCreatingSource {
+                        Text("Neue Quelle")
+                    } else {
+                        Text("Quelle")
+                    }
+                } footer: {
+                    Text("IssueLight prüft Hosts und Services über die reale API dieser Quelle.")
+                }
+
+                Section("Authentifizierung") {
+                    Picker("Methode", selection: $model.authenticationChoice) {
+                        ForEach(model.authenticationChoices) { choice in
+                            Text(verbatim: choice.displayName(locale: locale)).tag(choice)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+
+                    if model.authenticationChoice == .basic {
+                        TextField("Benutzername", text: $model.username)
+                            .textContentType(.username)
+                        SecureField("Passwort", text: $model.password)
+                            .textContentType(.password)
+                        Text(
+                            model.hasStoredBasicPassword
+                                ? AppLocalization.string(
+                                    "Leer lassen, um das vorhandene Passwort bei unveränderten Zugangsdaten beizubehalten.",
+                                    locale: locale
+                                )
+                                : AppLocalization.string(
+                                    "Das Passwort wird ausschließlich im macOS-Schlüsselbund gespeichert.",
+                                    locale: locale
+                                )
+                        )
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    } else {
+                        if let identityLoadError = model.identityLoadError {
+                            Label(identityLoadError, systemImage: "exclamationmark.circle")
+                                .foregroundStyle(.red)
+                        }
+                        Picker("Identität", selection: $model.selectedIdentityID) {
+                            Text("Zertifikat auswählen …").tag("")
+                            ForEach(model.identities) { identity in
+                                Text(identity.displayName).tag(identity.id)
+                            }
+                        }
+                        Button("PKCS#12 importieren …") {
+                            isChoosingIdentity = true
+                        }
+                        .fileImporter(
+                            isPresented: $isChoosingIdentity,
+                            allowedContentTypes: [
+                                UTType(filenameExtension: "p12") ?? .data,
+                                UTType(filenameExtension: "pfx") ?? .data,
+                            ],
+                            allowsMultipleSelection: false
+                        ) { result in
+                            if case .success(let urls) = result, let url = urls.first {
+                                importURL = url
+                                isImportingIdentity = true
+                            }
+                        }
+                    }
+                }
+
+                Section {
+                    Picker("Serververtrauen", selection: $model.serverTrustChoice) {
+                        ForEach(model.serverTrustChoices) { choice in
+                            Text(verbatim: choice.displayName(locale: locale)).tag(choice)
+                        }
+                    }
+
+                    if model.serverTrustChoice == .customCertificate {
+                        if let certificate = model.selectedServerCertificate {
+                            LabeledContent("CA", value: certificate.displayName)
+                            Text("SHA-256: \(certificate.sha256Fingerprint)")
+                                .font(.caption.monospaced())
+                                .foregroundStyle(.secondary)
+                                .textSelection(.enabled)
+                        } else {
+                            Label("Importiere genau ein CA-Zertifikat.", systemImage: "exclamationmark.circle")
+                                .foregroundStyle(.orange)
+                        }
+                        Button(
+                            model.selectedServerCertificate == nil
+                                ? AppLocalization.string("CA-Zertifikat importieren …", locale: locale)
+                                : AppLocalization.string("CA-Zertifikat ersetzen …", locale: locale)
+                        ) {
+                            isChoosingServerCertificate = true
+                        }
+                        .fileImporter(
+                            isPresented: $isChoosingServerCertificate,
+                            allowedContentTypes: certificateContentTypes,
+                            allowsMultipleSelection: false
+                        ) { result in
+                            if case .success(let urls) = result, let url = urls.first {
+                                Task { _ = await model.importServerCertificate(at: url) }
+                            }
+                        }
+                    } else if model.serverTrustChoice == .pinnedCertificate {
+                        if model.pinnedServerCertificateSHA256.isEmpty {
+                            Label("Wähle genau ein Serverzertifikat aus.", systemImage: "exclamationmark.circle")
+                                .foregroundStyle(.orange)
+                        } else {
+                            Text("SHA-256: \(model.pinnedServerCertificateSHA256)")
+                                .font(.caption.monospaced())
+                                .foregroundStyle(.secondary)
+                                .textSelection(.enabled)
+                            Text("Bei einer Zertifikatserneuerung bleibt die Verbindung blockiert, bis du das neue Zertifikat hier geprüft und ausgewählt hast.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        Button(
+                            model.pinnedServerCertificateSHA256.isEmpty
+                                ? AppLocalization.string("Serverzertifikat auswählen …", locale: locale)
+                                : AppLocalization.string("Serverzertifikat ersetzen …", locale: locale)
+                        ) {
+                            isChoosingPinnedServerCertificate = true
+                        }
+                        .fileImporter(
+                            isPresented: $isChoosingPinnedServerCertificate,
+                            allowedContentTypes: certificateContentTypes,
+                            allowsMultipleSelection: false
+                        ) { result in
+                            if case .success(let urls) = result, let url = urls.first {
+                                _ = model.pinServerCertificate(at: url)
+                            }
+                        }
+                    } else if model.serverTrustChoice == .disabled {
+                        Label {
+                            Text("Unsicher. Identität und Serverdaten können abgefangen oder verändert werden. Diese Ausnahme gilt nur für diese Quelle.")
+                        } icon: {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                        }
+                        .foregroundStyle(.orange)
+                    }
+                } header: {
+                    Text("TLS")
+                } footer: {
+                    Text("macOS-Systemvertrauen ist der Standard. Eigene CAs und exakte Serverzertifikate gelten nur für diese Quelle. Die vollständige Deaktivierung ist für isolierte Homelabs gedacht.")
+                }
+
+                Section {
+                    LabeledContent {
+                        connectionStatus(model.selectedConnectionStatus.api)
+                    } label: {
+                        Text(verbatim: "API")
+                    }
+                    LabeledContent {
+                        connectionStatus(model.selectedConnectionStatus.web)
+                    } label: {
+                        Text(verbatim: "Web")
+                    }
+                    LabeledContent {
+                        TextField(
+                            text: $model.webURL,
+                            prompt: Text(verbatim: model.automaticWebBaseURL?.absoluteString ?? "https://monitoring.example/web")
+                        ) {
+                            Text("Web-URL")
+                        }
+                        .labelsHidden()
+                        .textContentType(.URL)
+                    } label: {
+                        Text("Web-URL")
+                    }
+
+                    if AppDistribution.supportsSSHTunnels {
+                        SSHSettingsDisclosureRow(isExpanded: $isShowingSSHOverrides)
+                    }
+                    if AppDistribution.supportsSSHTunnels && isShowingSSHOverrides {
+                        TextField(
+                            "Bastion",
+                            text: $model.sshTunnelHost,
+                            prompt: Text(verbatim: automaticSSHHost)
+                        )
+                        TextField(
+                            "Benutzername",
+                            text: $model.sshTunnelUsername,
+                            prompt: Text(verbatim: "OpenSSH")
+                        )
+                            .textContentType(.username)
+                        TextField("SSH-Port", text: $model.sshTunnelPort, prompt: Text(verbatim: "22"))
+                        TextField(
+                            "Bevorzugter lokaler Port",
+                            text: $model.sshTunnelPreferredLocalPort,
+                            prompt: Text(verbatim: "macOS")
+                        )
+                        LabeledContent("SSH-Schlüssel") {
+                            HStack(spacing: 8) {
+                                if model.sshTunnelIdentityFilePath.isEmpty {
+                                    Text(verbatim: "~/.ssh/config / SSH agent")
+                                        .foregroundStyle(.tertiary)
+                                        .lineLimit(1)
+                                } else {
+                                    Text(URL(fileURLWithPath: model.sshTunnelIdentityFilePath).lastPathComponent)
+                                        .foregroundStyle(.secondary)
+                                        .lineLimit(1)
+                                    Button {
+                                        model.sshTunnelIdentityFilePath = ""
+                                    } label: {
+                                        Image(systemName: "xmark.circle.fill")
+                                    }
+                                    .buttonStyle(.borderless)
+                                    .help("Ausgewählten Schlüssel entfernen")
+                                }
+                                Button("Auswählen …") {
+                                    isChoosingSSHIdentity = true
+                                }
+                                .fileImporter(
+                                    isPresented: $isChoosingSSHIdentity,
+                                    allowedContentTypes: [.data],
+                                    allowsMultipleSelection: false
+                                ) { result in
+                                    if case .success(let urls) = result, let url = urls.first {
+                                        model.sshTunnelIdentityFilePath = url.path
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    if AppDistribution.supportsRemoteAccess {
+                        Toggle("SSH für überwachten Host", isOn: $model.sshActionEnabled)
+                    }
+                    if AppDistribution.supportsRemoteAccess && model.sshActionEnabled {
+                        TextField(
+                            "SSH-Benutzername",
+                            text: $model.sshUsername,
+                            prompt: Text(verbatim: "OpenSSH")
+                        )
+                            .textContentType(.username)
+                        PortNumberField("SSH-Port", value: $model.sshPort)
+                    }
+
+                    if AppDistribution.supportsRemoteAccess {
+                        Toggle("RDP für überwachten Host", isOn: $model.rdpActionEnabled)
+                    }
+                    if AppDistribution.supportsRemoteAccess && model.rdpActionEnabled {
+                        TextField("RDP-Benutzername", text: $model.rdpUsername)
+                            .textContentType(.username)
+                        PortNumberField("RDP-Port", value: $model.rdpPort)
+                    }
+                } header: {
+                    if AppDistribution.supportsRemoteAccess {
+                        Text("Navigation & Fernzugriff")
+                    } else {
+                        Text("Navigation")
+                    }
+                } footer: {
+                    if !AppDistribution.supportsSSHTunnels {
+                        Text("Die App-Store-Ausgabe verbindet sich direkt mit Icinga. SSH-Tunnel sowie SSH- und RDP-Startaktionen stehen in der direkten GitHub-Ausgabe bereit.")
+                    }
+                }
+
+            }
+            .formStyle(.grouped)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .layoutPriority(0)
+            .disabled(isWorking)
+
+            Divider()
+            VStack(alignment: .leading, spacing: 12) {
+                activityView
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                HStack {
+                    if !model.isCreatingSource {
+                        Button("Quelle entfernen", role: .destructive) {
+                            isConfirmingDeletion = true
+                        }
+                        .disabled(isWorking)
+                    }
+                    Spacer()
+                    if model.isTestingConnection {
+                        Button("Abbrechen", role: .cancel) {
+                            connectionTask?.cancel()
+                        }
+                    } else {
+                        Button("Verbindung testen") {
+                            connectionTask = Task { await model.testConnection() }
+                        }
+                        .disabled(isWorking)
+                    }
+
+                    Button("Speichern") {
+                        Task { await model.save() }
+                    }
+                    .keyboardShortcut(.defaultAction)
+                    .disabled(isWorking || !model.hasUnsavedChanges)
+                }
+            }
+            .padding(16)
+            .background(.bar)
+            .layoutPriority(1)
+        }
     }
 
     @ViewBuilder
     private var activityView: some View {
         switch model.activity {
         case .idle:
-            Text("Konfiguration eingeben, Verbindung prüfen und anschließend speichern.")
-                .foregroundStyle(.secondary)
+            EmptyView()
         case .working(let message):
             HStack {
                 ProgressView()
@@ -159,15 +438,237 @@ struct SourceSetupView: View {
         }
     }
 
+    @ViewBuilder
+    private func connectionStatus(_ state: IssueLightModel.ConnectionEndpointState) -> some View {
+        switch state {
+        case .notTested:
+            Text(verbatim: "—")
+                .foregroundStyle(.secondary)
+        case .checking:
+            ProgressView()
+                .controlSize(.small)
+                .accessibilityLabel(Text("Verbindung wird geprüft …"))
+        case .direct:
+            Label("Direkt", systemImage: "checkmark.circle.fill")
+                .foregroundStyle(.green)
+        case .ssh:
+            Label("SSH", systemImage: "checkmark.circle.fill")
+                .foregroundStyle(.green)
+        case .failed(let message):
+            Label(message, systemImage: "exclamationmark.circle.fill")
+                .foregroundStyle(.red)
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .frame(maxWidth: 260, alignment: .trailing)
+                .help(message)
+        }
+    }
+
+    private var automaticSSHHost: String {
+        URL(string: model.endpoint.trimmingCharacters(in: .whitespacesAndNewlines))?.host
+            ?? "api.example"
+    }
+
     private var isWorking: Bool {
         if case .working = model.activity { return true }
         return false
+    }
+
+    private func requestAdd() {
+        connectionTask?.cancel()
+        if model.hasUnsavedChanges {
+            pendingNavigation = .add
+            isConfirmingDiscard = true
+        } else {
+            model.beginAddingSource()
+        }
+    }
+
+    private func requestSelection(_ sourceID: UUID) {
+        connectionTask?.cancel()
+        if model.hasUnsavedChanges {
+            pendingNavigation = .select(sourceID)
+            isConfirmingDiscard = true
+        } else {
+            Task { await model.selectSource(id: sourceID) }
+        }
+    }
+
+    private func performPendingNavigation() {
+        guard let pendingNavigation else { return }
+        self.pendingNavigation = nil
+        Task {
+            _ = await model.cleanupUnreferencedManagedServerCertificates()
+            switch pendingNavigation {
+            case .add:
+                model.beginAddingSource()
+            case .select(let sourceID):
+                await model.selectSource(id: sourceID)
+            }
+        }
+    }
+}
+
+private struct SourceRow: View {
+    let source: MonitoringSource
+    @ObservedObject var model: IssueLightModel
+    @Environment(\.locale) private var locale
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: statusSymbol)
+                .foregroundStyle(statusColor)
+                .frame(width: 18)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(source.name)
+                    .lineLimit(1)
+                Group {
+                    if source.isEnabled {
+                        Text(verbatim: "\(model.providerName(for: source)) · \(statusLabel)")
+                    } else {
+                        Text("Pausiert")
+                    }
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+            }
+        }
+        .padding(.vertical, 2)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(source.name), \(statusLabel)")
+    }
+
+    private var statusSymbol: String {
+        switch model.sourceRefreshState(for: source.id) {
+        case .notConfigured:
+            return "circle"
+        case .disabled:
+            return "pause.circle"
+        case .refreshing:
+            return "arrow.clockwise"
+        case .current:
+            switch model.snapshots[source.id]?.highestAttentionSeverity {
+            case .critical:
+                return "exclamationmark.octagon.fill"
+            case .unknown:
+                return "questionmark.diamond.fill"
+            case .warning:
+                return "exclamationmark.triangle.fill"
+            case nil:
+                return "checkmark.circle"
+            }
+        case .failed:
+            return "wifi.exclamationmark"
+        }
+    }
+
+    private var statusColor: Color {
+        switch model.sourceRefreshState(for: source.id) {
+        case .notConfigured, .disabled, .refreshing:
+            return .secondary
+        case .current:
+            switch model.snapshots[source.id]?.highestAttentionSeverity {
+            case .critical:
+                return .red
+            case .unknown:
+                return .purple
+            case .warning:
+                return .orange
+            case nil:
+                return .green
+            }
+        case .failed:
+            return .red
+        }
+    }
+
+    private var statusLabel: String {
+        switch model.sourceRefreshState(for: source.id) {
+        case .notConfigured:
+            return AppLocalization.string("nicht konfiguriert", locale: locale)
+        case .disabled:
+            return AppLocalization.string("pausiert", locale: locale)
+        case .refreshing:
+            return AppLocalization.string("wird aktualisiert", locale: locale)
+        case .current:
+            let count = model.snapshots[source.id]?.actionableIssues.count ?? 0
+            return IssueCountText.sourceStatus(count, locale: locale)
+        case .failed(let message):
+            return AppLocalization.string("Aktualisierung fehlgeschlagen, \(message)", locale: locale)
+        }
+    }
+}
+
+struct SSHSettingsDisclosureRow: View {
+    @Binding var isExpanded: Bool
+
+    var body: some View {
+        Button {
+            isExpanded.toggle()
+        } label: {
+            HStack(spacing: 7) {
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .rotationEffect(.degrees(isExpanded ? 90 : 0))
+                    .accessibilityHidden(true)
+                Text(verbatim: "SSH")
+                Spacer()
+                Text(verbatim: "API · Web")
+                    .foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity, minHeight: 28, alignment: .leading)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text(verbatim: "SSH, API, Web"))
+        .accessibilityAddTraits(isExpanded ? .isSelected : [])
+        .accessibilityIdentifier("ssh-settings-disclosure")
+    }
+}
+
+struct PortNumberField: View {
+    static var format: IntegerFormatStyle<Int> {
+        .number.grouping(.never)
+    }
+
+    let title: LocalizedStringKey
+    @Binding var value: Int
+
+    init(_ title: LocalizedStringKey, value: Binding<Int>) {
+        self.title = title
+        _value = value
+    }
+
+    var body: some View {
+        TextField(title, value: $value, format: Self.format)
+    }
+}
+
+struct SourceSidebarFooter: View {
+    let addSource: () -> Void
+
+    var body: some View {
+        HStack {
+            Button(action: addSource) {
+                Label("Quelle hinzufügen", systemImage: "plus")
+                    .frame(minHeight: 24)
+            }
+            .buttonStyle(.borderless)
+            .help("Neue Quelle")
+            .accessibilityIdentifier("add-source")
+            Spacer()
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(.bar)
     }
 }
 
 private struct IdentityImportView: View {
     let fileURL: URL
-    @ObservedObject var model: SourceSetupModel
+    @ObservedObject var model: IssueLightModel
     @Binding var isPresented: Bool
     @State private var password = ""
 

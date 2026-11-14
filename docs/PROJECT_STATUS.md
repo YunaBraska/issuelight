@@ -1,35 +1,45 @@
 # Project status
 
-Status: Pre-release development. Not production-ready.
+IssueLight is a release candidate, not a published production release.
 
-Snapshot date: 2026-11-10.
+## Implemented
 
-## Verified behavior
+- Native macOS menu-bar status with severity counters and issue rows.
+- Multiple independently refreshed Icinga 2 sources.
+- Basic authentication and mTLS identities from macOS Keychain.
+- System trust, source-specific private CA trust, exact certificate pinning,
+  and an explicit per-source certificate-verification bypass.
+- Recheck, acknowledgement, and fixed downtime through the Icinga 2 action
+  API. Acknowledgement and downtime require an author and comment.
+- Compact single-line issue rows with source names, persistent source/severity/
+  coverage filters, direct quick actions, and Icinga Web row navigation.
+- Optional SSH and RDP host actions plus direct-first, source-wide SSH fallback
+  for API and web reachability with app-owned cleanup.
+- System Default plus 21 selectable app languages, including Swedish and
+  right-to-left layout for Arabic and Urdu.
+- Universal ZIP and DMG packaging, SPDX SBOM, checksums, signing, notarization,
+  and GitHub release automation that fails closed when credentials are absent.
+- Sandboxed App Store package automation for direct Icinga connections. The
+  Store edition deliberately excludes SSH tunnels and remote-client launchers.
 
-| Area | Evidence | Status |
-| --- | --- | --- |
-| Provider-neutral source records | Swift package tests for validation, encoding, and authority changes | Verified |
-| Icinga 2 endpoint rules | Provider and URL construction tests | Verified |
-| Basic credentials | Real temporary macOS Keychain item lifecycle with cleanup | Verified locally |
-| Client identities | PKCS#12 parsing and persistent-reference tests | Verified locally |
-| Connection classification | Tests for success, cancellation, authentication, authorization, TLS, reachability, and incompatible responses | Verified |
-| Source setup UI | Native SwiftUI app builds for macOS 14+ | Build verified |
-| Real Icinga 2 integration | Pinned official container lab covers Basic auth, permission denial, private CA, and mTLS | Available, requires Docker and local lab secrets |
+## Evidence
 
-The local package suite currently executes 23 tests. Two live Icinga tests are
-skipped unless the integration environment is configured.
+- `sh scripts/check.sh` runs package, app, localization, screenshot, coverage,
+  packaging, and repository checks.
+- `sh scripts/icinga2_lab.sh verify` runs the real containerized Icinga 2 and
+  Icinga Web matrix for Basic authentication, mTLS, private CA trust,
+  certificate pinning, object deep links, and expected failures.
+- Screenshot tests render the production SwiftUI views used by the product
+  page.
 
-## Release blockers
+## Remaining release gates
 
-- No attention-first monitoring snapshot or background refresh is shipped.
-- Multiple sources are not manageable through the UI.
-- Custom CA trust and certificate pinning are specified but not implemented.
-- Keychain denial and revocation need installed-app evidence.
-- Accessibility, localization, dark mode, large-data behavior, energy use, and
-  notification journeys need running-product verification.
-- Packaging, update behavior, Developer ID signing, notarization, stapling,
-  checksums, SBOM, and clean-account installation are not implemented or proven.
-- No release has completed the real GitHub distribution workflow.
+- Run the installed-app protected-private-key case described in
+  `docs/DEVELOPMENT.md`. Background refresh must fail without authentication UI
+  and retain the previous snapshot.
+- Add the repository signing, notarization, and App Store signing secrets, run
+  the release workflow, then verify direct stapling, Gatekeeper assessment,
+  Store package upload, and installation on clean macOS accounts.
 
-Do not describe IssueLight as production-ready until these blockers are closed
-or explicitly removed from the supported scope.
+Native notifications and providers other than Icinga 2 are not part of this
+release.

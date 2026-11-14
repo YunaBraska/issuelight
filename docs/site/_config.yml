@@ -1,0 +1,10 @@
+title: IssueLight
+product: IssueLight
+author: Yuna Morgenstern
+description: Attention-first Icinga 2 monitoring for the macOS menu bar.
+repository: https://github.com/YunaBraska/issuelight
+support: https://github.com/YunaBraska/issuelight/issues
+releases: https://github.com/YunaBraska/issuelight/releases
+accent: "#ffc45b"
+accent_cyan: "#52d9df"
+color_scheme: dark
