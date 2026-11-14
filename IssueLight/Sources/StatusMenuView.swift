@@ -233,14 +233,14 @@ struct StatusMenuContent: View {
         }
         let failureHeight: CGFloat
         if case .failed = refreshState {
-            failureHeight = 30
+            failureHeight = ceil(30 * panelTextScale)
         } else {
             failureHeight = 0
         }
-        let actionErrorHeight: CGFloat = actionError == nil ? 0 : 44
+        let actionErrorHeight: CGFloat = actionError == nil ? 0 : ceil(44 * panelTextScale)
         return min(
             520,
-            49
+            ceil(49 * panelTextScale)
                 + CGFloat(visibleIssueCount) * issueRowHeight
                 + failureHeight
                 + actionErrorHeight
@@ -248,27 +248,31 @@ struct StatusMenuContent: View {
     }
 
     private var issueRowHeight: CGFloat {
+        ceil(39 * panelTextScale)
+    }
+
+    private var panelTextScale: CGFloat {
         switch dynamicTypeSize {
         case .xSmall, .small, .medium, .large:
-            39
+            1
         case .xLarge:
-            42
+            1.08
         case .xxLarge:
-            46
+            1.18
         case .xxxLarge:
-            50
+            1.28
         case .accessibility1:
-            54
+            1.38
         case .accessibility2:
-            58
+            1.49
         case .accessibility3:
-            62
+            1.59
         case .accessibility4:
-            68
+            1.74
         case .accessibility5:
-            74
+            1.9
         @unknown default:
-            54
+            1.38
         }
     }
 
