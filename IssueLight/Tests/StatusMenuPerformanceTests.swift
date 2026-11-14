@@ -38,11 +38,19 @@ final class StatusMenuPerformanceTests: XCTestCase {
             actionableIssues: fixture.issues,
             coveredIssues: [],
             sourceNames: fixture.sourceNames,
+            filters: PanelFilterSettings(
+                defaults: UserDefaults(suiteName: "StatusMenuPerformanceTests.\(UUID().uuidString)")!
+            ),
             refreshState: .current,
             hasPartialRefreshFailure: false,
             supportedActions: { _ in [.recheck, .acknowledge, .scheduleDowntime] },
             activeActionIssueIDs: [],
             openSettings: {},
+            openIssue: { _ in },
+            openSSH: { _ in },
+            openRDP: { _ in },
+            hasSSH: { _ in true },
+            hasRDP: { _ in true },
             performRecheck: { _ in },
             requestAcknowledgement: { _ in },
             requestDowntime: { _ in }
@@ -53,7 +61,7 @@ final class StatusMenuPerformanceTests: XCTestCase {
         let startedAt = ContinuousClock.now
         let renderedExpectedSize = NativeViewRenderer.exerciseWindow(
             for: view,
-            size: CGSize(width: 430, height: 520)
+            size: CGSize(width: 720, height: 520)
         )
         let elapsed = ContinuousClock.now - startedAt
         let holdSeconds = Int(ProcessInfo.processInfo.environment["ISSUELIGHT_UI_HOLD_SECONDS"] ?? "0") ?? 0
@@ -63,7 +71,7 @@ final class StatusMenuPerformanceTests: XCTestCase {
         if let outputPath = ProcessInfo.processInfo.environment["ISSUELIGHT_VOLUME_SCREENSHOT_PATH"] {
             let pngData = try NativeViewRenderer.pngData(
                 for: view,
-                size: CGSize(width: 430, height: 520)
+                size: CGSize(width: 720, height: 520)
             )
             XCTAssertGreaterThan(pngData.count, 30_000)
             try pngData.write(to: URL(fileURLWithPath: outputPath), options: .atomic)

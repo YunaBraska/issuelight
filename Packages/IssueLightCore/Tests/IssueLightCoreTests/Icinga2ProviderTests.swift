@@ -87,6 +87,70 @@ final class Icinga2ProviderTests: XCTestCase {
         )
     }
 
+    func testIcingaBuildsHostAndServiceWebURLsFromConfiguredBase() throws {
+        let provider = Icinga2Provider()
+        var configuredSource = source(endpoint: "https://icinga.example.test:5665")
+        configuredSource.web = MonitoringWebConfiguration(
+            baseURL: URL(string: "https://monitoring.example.test/icingaweb2/")!
+        )
+
+        XCTAssertEqual(
+            provider.webURL(
+                for: issue(sourceID: configuredSource.id, kind: .host),
+                from: configuredSource
+            )?.absoluteString,
+            "https://monitoring.example.test/icingaweb2/monitoring/host/show?host=edge-1"
+        )
+        XCTAssertEqual(
+            provider.webURL(
+                for: issue(sourceID: configuredSource.id, kind: .service, serviceName: "Disk /"),
+                from: configuredSource
+            )?.absoluteString,
+            "https://monitoring.example.test/icingaweb2/monitoring/service/show?host=edge-1&service=Disk%20/"
+        )
+    }
+
+    func testIcingaBuildsIcingaDBWebHostAndServiceURLsWhenModulePathIsConfigured() throws {
+        let provider = Icinga2Provider()
+        var configuredSource = source(endpoint: "https://icinga.example.test:5665")
+        configuredSource.web = MonitoringWebConfiguration(
+            baseURL: URL(string: "https://monitoring.example.test/icingaweb2/icingadb")!
+        )
+
+        XCTAssertEqual(
+            provider.webURL(
+                for: issue(sourceID: configuredSource.id, kind: .host),
+                from: configuredSource
+            )?.absoluteString,
+            "https://monitoring.example.test/icingaweb2/icingadb/host?name=edge-1"
+        )
+        XCTAssertEqual(
+            provider.webURL(
+                for: issue(sourceID: configuredSource.id, kind: .service, serviceName: "HTTP TLS"),
+                from: configuredSource
+            )?.absoluteString,
+            "https://monitoring.example.test/icingaweb2/icingadb/service?host.name=edge-1&name=HTTP%20TLS"
+        )
+    }
+
+    func testIcingaDoesNotBuildWebURLForMissingBaseOrForeignIssue() {
+        let provider = Icinga2Provider()
+        var configuredSource = source(endpoint: "https://icinga.example.test:5665")
+        let sourceIssue = issue(sourceID: configuredSource.id, kind: .host)
+
+        XCTAssertNil(provider.webURL(for: sourceIssue, from: configuredSource))
+
+        configuredSource.web = MonitoringWebConfiguration(
+            baseURL: URL(string: "https://monitoring.example.test/icingaweb2")!
+        )
+        XCTAssertNil(
+            provider.webURL(
+                for: issue(sourceID: UUID(), kind: .host),
+                from: configuredSource
+            )
+        )
+    }
+
     func testIcingaRejectsStatusURLForInvalidSource() {
         let provider = Icinga2Provider()
         let invalidSource = source(endpoint: "http://icinga.example.test:5665/custom")

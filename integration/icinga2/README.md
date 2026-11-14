@@ -12,6 +12,13 @@ only `127.0.0.1:5665`, uses Icinga's generated private CA, and provides:
 - healthy and failing host/service objects;
 - generated CA and PKCS#12 artifacts outside the repository.
 
+The same Compose project includes an isolated OpenSSH gateway on
+`127.0.0.1:2222`. Its key-only account may forward only to the fixture's local
+HTTP endpoint. The live app test uses the real macOS OpenSSH client, verifies
+the forwarded response, reuses one process for concurrent opens, disables the
+source, and confirms that the owned local port closes. Host-key checking
+remains strict through a generated, isolated `known_hosts` file.
+
 The Compose project name is fixed to `issuelight-icinga2` so old monitoring
 labs cannot leak objects or volumes into this fixture. The image's sample host
 and service definitions are masked. `start` forces the four IssueLight checks

@@ -18,7 +18,7 @@ monitoring provider.
 The first increment includes Icinga 2, HTTP Basic authentication, X.509 client
 certificate authentication, macOS Keychain storage, and source-specific TLS
 policy. It does not yet own monitoring-state presentation, notifications, or
-remote actions.
+notifications.
 
 ## Decisions
 
@@ -40,6 +40,13 @@ remote actions.
   exception to system trust.
 - The app stores only public source configuration. Its Keychain items remain
   the authority for passwords and client identities.
+- A source may additionally store a monitoring-web base URL and optional SSH
+  and RDP launch settings. These are provider-neutral public configuration.
+- An automatic web tunnel tries the direct route first and then runs system
+  OpenSSH with non-interactive authentication. It binds only to `127.0.0.1`,
+  stops with the app, and supports HTTP web targets only. HTTPS tunneling fails
+  closed because replacing the browser hostname would break certificate
+  identity verification.
 
 ## Requirements
 
@@ -111,6 +118,23 @@ remote actions.
 - `CONN-003` Icinga 2 success MUST be established through a successful real API
   request. A local canned response is not production success.
 
+### Navigation
+
+- `NAV-001` The provider MUST build web object URLs from its own object model
+  and a source-owned web base URL. Icinga Web's monitoring module is the
+  default; a base ending in `/icingadb` selects Icinga DB Web routes.
+- `NAV-002` A row click MUST open the web object directly unless an enabled
+  tunnel is needed because the target host and port are unreachable.
+- `NAV-003` An automatic tunnel MUST use `/usr/bin/ssh`, non-interactive
+  authentication, loopback binding, a configured preferred port or a free
+  fallback, and the user's OpenSSH configuration and agent unless an identity
+  file was explicitly selected.
+- `NAV-004` IssueLight MUST terminate owned tunnels when the direct route
+  recovers, their source is disabled, removed, or reconfigured, and when the
+  app terminates.
+- `NAV-005` SSH and RDP actions MUST use escaped URLs handed to the registered
+  system application. A missing handler MUST produce an explicit failure.
+
 ## First journey
 
 1. The user adds an Icinga 2 source and enters its API endpoint.
@@ -132,3 +156,4 @@ remote actions.
 | AUTH-003, AUTH-005 | source setup journey | Password availability uses only non-secret ownership metadata; a real foreign legacy Keychain item is rejected without reading its secret; background password and exact-identity reads use a non-interactive authentication context; broad identity searches silently skip protected items; missing identities fail explicitly; installed protected-private-key denial still needs running-app evidence |
 | TLS-001..006 | connection test and source lifecycle | Default, source-specific private CA, exact leaf pinning, and unchecked trust implemented; the live matrix accepts the configured CA and exact leaf, rejects an unrelated CA, mismatched leaf, and exact leaf under the wrong hostname; Apple trust evaluation preserves certificate validity policy; authority changes reset custom trust; real Keychain tests cover ownership-aware CA cleanup after the final source reference; pin replacement remains an explicit user action |
 | CONN-001..003 | connection test | Real containerized Icinga 2 Basic and mTLS success, distinct 401 and 403 failures, plus unit and running-UI cancellation evidence |
+| NAV-001..005 | issue row and source settings | Core tests cover classic and Icinga DB Web host/service links plus escaped SSH/RDP URLs; app tests cover persisted navigation settings, direct opening without a probe, row clicks, and source-owned cleanup; a real OpenSSH integration test verifies the forwarded HTTP response and closes the owned port |

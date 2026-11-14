@@ -46,8 +46,10 @@ struct MenuBarIssueCounts: Equatable {
 
 struct StatusMenuView: View {
     @ObservedObject var model: IssueLightModel
+    @ObservedObject var externalActions: ExternalActionCoordinator
     @Environment(\.openSettings) private var openSettings
     @State private var pendingAction: PendingIssueAction?
+    @StateObject private var filters = PanelFilterSettings()
     @Environment(\.locale) private var locale
 
     var body: some View {
@@ -58,6 +60,7 @@ struct StatusMenuView: View {
             actionableIssues: model.actionableIssues,
             coveredIssues: model.coveredIssues,
             sourceNames: Dictionary(uniqueKeysWithValues: model.sources.map { ($0.id, $0.name) }),
+            filters: filters,
             refreshState: model.refreshState,
             hasPartialRefreshFailure: model.hasPartialRefreshFailure,
             supportedActions: model.supportedActions,
@@ -66,6 +69,31 @@ struct StatusMenuView: View {
                 openSettings()
                 NSApp.activate()
             },
+            openIssue: { issue in
+                Task {
+                    guard let target = model.webTarget(for: issue) else {
+                        model.reportMissingWebConfiguration()
+                        return
+                    }
+                    if case .failure(let error) = await externalActions.openWeb(target) {
+                        model.reportExternalActionError(error)
+                    }
+                }
+            },
+            openSSH: { issue in
+                guard let url = model.sshURL(for: issue) else { return }
+                if case .failure(let error) = externalActions.openRemote(url) {
+                    model.reportExternalActionError(error)
+                }
+            },
+            openRDP: { issue in
+                guard let url = model.rdpURL(for: issue) else { return }
+                if case .failure(let error) = externalActions.openRemote(url) {
+                    model.reportExternalActionError(error)
+                }
+            },
+            hasSSH: { model.sshURL(for: $0) != nil },
+            hasRDP: { model.rdpURL(for: $0) != nil },
             performRecheck: { issue in
                 Task { await model.perform(.recheck, on: issue) }
             },
@@ -76,6 +104,18 @@ struct StatusMenuView: View {
                 pendingAction = PendingIssueAction(issue: issue, kind: .scheduleDowntime)
             }
         )
+        .onChange(of: model.sources.map(\.id), initial: true) { _, sourceIDs in
+            filters.reconcile(
+                sourceIDs: Set(sourceIDs),
+                isAuthoritative: model.hasLoadedSources
+            )
+        }
+        .onChange(of: model.hasLoadedSources) { _, hasLoadedSources in
+            filters.reconcile(
+                sourceIDs: Set(model.sources.map(\.id)),
+                isAuthoritative: hasLoadedSources
+            )
+        }
         .sheet(item: $pendingAction) { pendingAction in
             IssueActionSheet(model: model, pendingAction: pendingAction)
         }
@@ -109,16 +149,21 @@ struct StatusMenuContent: View {
     let actionableIssues: [MonitoringIssue]
     let coveredIssues: [MonitoringIssue]
     let sourceNames: [UUID: String]
+    @ObservedObject var filters: PanelFilterSettings
     let refreshState: IssueLightModel.RefreshState
     let hasPartialRefreshFailure: Bool
     let supportedActions: (MonitoringIssue) -> Set<MonitoringActionKind>
     let activeActionIssueIDs: Set<String>
     let openSettings: () -> Void
+    let openIssue: (MonitoringIssue) -> Void
+    let openSSH: (MonitoringIssue) -> Void
+    let openRDP: (MonitoringIssue) -> Void
+    let hasSSH: (MonitoringIssue) -> Bool
+    let hasRDP: (MonitoringIssue) -> Bool
     let performRecheck: (MonitoringIssue) -> Void
     let requestAcknowledgement: (MonitoringIssue) -> Void
     let requestDowntime: (MonitoringIssue) -> Void
     @Environment(\.locale) private var locale
-    @State private var expandedIssueID: String?
     @State private var searchText = ""
 
     var body: some View {
@@ -137,6 +182,7 @@ struct StatusMenuContent: View {
                     ProgressView()
                         .controlSize(.small)
                 }
+                filterMenu
                 Button(action: openSettings) {
                     Image(systemName: "gearshape")
                         .frame(width: 28, height: 28)
@@ -172,18 +218,16 @@ struct StatusMenuContent: View {
             issuePanel
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .frame(width: 430, height: panelHeight)
+        .frame(width: 720, height: panelHeight)
     }
 
     private var panelHeight: CGFloat {
         if !hasConfiguredSource || !hasEnabledSource || !hasActiveSnapshot {
-            return 260
+            return 220
         }
         if actionableIssues.isEmpty && coveredIssues.isEmpty {
-            return 240
+            return 200
         }
-        let coveredSummaryHeight: CGFloat = filteredCoveredIssues.isEmpty ? 0 : 38
-        let actionHeight: CGFloat = expandedIssueID == nil ? 0 : 42
         let failureHeight: CGFloat
         if case .failed = refreshState {
             failureHeight = 30
@@ -193,22 +237,63 @@ struct StatusMenuContent: View {
         return min(
             520,
             max(
-                240,
+                180,
                 52
-                    + CGFloat(filteredActionableIssues.count + filteredCoveredIssues.count) * 76
-                    + coveredSummaryHeight
-                    + actionHeight
+                    + CGFloat(filteredActionableIssues.count + filteredCoveredIssues.count) * 40
                     + failureHeight
             )
         )
     }
 
     private var filteredActionableIssues: [MonitoringIssue] {
-        MonitoringIssueSearch(query: searchText, sourceNames: sourceNames).filter(actionableIssues)
+        MonitoringIssueSearch(query: searchText, sourceNames: sourceNames)
+            .filter(actionableIssues)
+            .filter { filters.includes($0, isCovered: false) }
     }
 
     private var filteredCoveredIssues: [MonitoringIssue] {
-        MonitoringIssueSearch(query: searchText, sourceNames: sourceNames).filter(coveredIssues)
+        MonitoringIssueSearch(query: searchText, sourceNames: sourceNames)
+            .filter(coveredIssues)
+            .filter { filters.includes($0, isCovered: true) }
+    }
+
+    private var filterMenu: some View {
+        Menu {
+            Picker(AppLocalization.string("Instanz", locale: locale), selection: $filters.sourceID) {
+                Text(verbatim: AppLocalization.string("Alle Instanzen", locale: locale)).tag("")
+                ForEach(sourceNames.sorted(by: { $0.value.localizedCaseInsensitiveCompare($1.value) == .orderedAscending }), id: \.key) { sourceID, name in
+                    Text(verbatim: name).tag(sourceID.uuidString.lowercased())
+                }
+            }
+            Picker(AppLocalization.string("Status", locale: locale), selection: $filters.severity) {
+                Text(verbatim: AppLocalization.string("Alle Zustände", locale: locale)).tag(PanelSeverityFilter.all)
+                Text(verbatim: AppLocalization.string("Kritisch", locale: locale)).tag(PanelSeverityFilter.critical)
+                Text(verbatim: AppLocalization.string("Warnung", locale: locale)).tag(PanelSeverityFilter.warning)
+                Text(verbatim: AppLocalization.string("Unbekannt", locale: locale)).tag(PanelSeverityFilter.unknown)
+                Text(verbatim: "DOWN").tag(PanelSeverityFilter.down)
+            }
+            Picker(AppLocalization.string("Sichtbarkeit", locale: locale), selection: $filters.coverage) {
+                Text(verbatim: AppLocalization.string("Alle Probleme", locale: locale)).tag(PanelCoverageFilter.all)
+                Text(verbatim: AppLocalization.string("Benötigt Aufmerksamkeit", locale: locale)).tag(PanelCoverageFilter.attention)
+                Text(verbatim: AppLocalization.string("Quittiert oder in Wartungszeit", locale: locale)).tag(PanelCoverageFilter.covered)
+            }
+            if filters.isActive {
+                Divider()
+                Button(AppLocalization.string("Filter zurücksetzen", locale: locale)) {
+                    filters.reset()
+                }
+            }
+        } label: {
+            Image(systemName: filters.isActive ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
+                .frame(width: 28, height: 28)
+                .contentShape(Rectangle())
+        }
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .help(AppLocalization.string("Filter", locale: locale))
+        .accessibilityLabel(AppLocalization.string("Filter", locale: locale))
+        .accessibilityIdentifier("issue-filter")
     }
 
     @ViewBuilder
@@ -238,7 +323,9 @@ struct StatusMenuContent: View {
                     systemImage: "magnifyingglass",
                     description: Text(
                         verbatim: AppLocalization.string(
-                            "Kein Problem passt zu „\(searchText)“.",
+                            searchText.isEmpty
+                                ? "Keine Probleme entsprechen den aktiven Filtern."
+                                : "Kein Problem passt zu „\(searchText)“.",
                             locale: locale
                         )
                     )
@@ -248,17 +335,6 @@ struct StatusMenuContent: View {
                     LazyVStack(spacing: 0) {
                         ForEach(filteredActionableIssues) { issue in
                             issueEntry(issue)
-                        }
-                        if !filteredCoveredIssues.isEmpty {
-                            Label(
-                                IssueCountText.covered(filteredCoveredIssues.count, locale: locale),
-                                systemImage: "checkmark.shield"
-                            )
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                            .padding(12)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            Divider()
                         }
                         ForEach(filteredCoveredIssues) { issue in
                             issueEntry(issue)
@@ -284,13 +360,12 @@ struct StatusMenuContent: View {
     private func issueEntry(_ issue: MonitoringIssue) -> some View {
         StatusPanelIssueEntry(
             issue: issue,
-            sourceName: sourceNames.count > 1 ? sourceNames[issue.sourceID] : nil,
-            isExpanded: expandedIssueID == issue.id,
+            sourceName: sourceNames[issue.sourceID] ?? AppLocalization.string("Unbekannte Quelle", locale: locale),
             isPerformingAction: activeActionIssueIDs.contains(issue.id),
             actions: supportedActions(issue),
-            toggle: {
-                expandedIssueID = expandedIssueID == issue.id ? nil : issue.id
-            },
+            openIssue: { openIssue(issue) },
+            openSSH: hasSSH(issue) ? { openSSH(issue) } : nil,
+            openRDP: hasRDP(issue) ? { openRDP(issue) } : nil,
             performRecheck: { performRecheck(issue) },
             requestAcknowledgement: { requestAcknowledgement(issue) },
             requestDowntime: { requestDowntime(issue) }
@@ -321,66 +396,88 @@ struct MonitoringIssueSearch {
 
 private struct StatusPanelIssueEntry: View {
     let issue: MonitoringIssue
-    let sourceName: String?
-    let isExpanded: Bool
+    let sourceName: String
     let isPerformingAction: Bool
     let actions: Set<MonitoringActionKind>
-    let toggle: () -> Void
+    let openIssue: () -> Void
+    let openSSH: (() -> Void)?
+    let openRDP: (() -> Void)?
     let performRecheck: () -> Void
     let requestAcknowledgement: () -> Void
     let requestDowntime: () -> Void
     @Environment(\.locale) private var locale
 
     var body: some View {
-        VStack(spacing: 0) {
-            Button(action: toggle) {
+        HStack(spacing: 4) {
+            Button(action: openIssue) {
                 StatusPanelIssueRow(
                     issue: issue,
-                    sourceName: sourceName,
-                    isExpanded: isExpanded
+                    sourceName: sourceName
                 )
             }
             .buttonStyle(.plain)
-            if isExpanded {
-                HStack(spacing: 12) {
-                    Spacer(minLength: 32)
-                    Button(action: performRecheck) {
-                        Label(
-                            AppLocalization.string("Erneut prüfen", locale: locale),
-                            systemImage: "play.circle"
-                        )
-                    }
-                    .disabled(!actions.contains(.recheck))
-                    Button(action: requestAcknowledgement) {
-                        Label(
-                            AppLocalization.string("Quittieren …", locale: locale),
-                            systemImage: "checkmark.message"
-                        )
-                    }
-                    .disabled(!actions.contains(.acknowledge) || issue.isAcknowledged)
-                    Button(action: requestDowntime) {
-                        Label(
-                            AppLocalization.string("Wartungszeit", locale: locale),
-                            systemImage: "calendar.badge.clock"
-                        )
-                    }
-                    .disabled(!actions.contains(.scheduleDowntime) || issue.isInDowntime)
-                    Spacer(minLength: 8)
-                }
-                .buttonStyle(.borderless)
-                .font(.caption)
-                .padding(.bottom, 8)
+            .help(AppLocalization.string("In Weboberfläche öffnen", locale: locale))
+
+            if isPerformingAction {
+                ProgressView()
+                    .controlSize(.small)
+                    .frame(width: 84)
+            } else {
+                quickAction(
+                    AppLocalization.string("Erneut prüfen", locale: locale),
+                    systemImage: "play.circle",
+                    enabled: actions.contains(.recheck),
+                    action: performRecheck
+                )
+                quickAction(
+                    AppLocalization.string("Quittieren …", locale: locale),
+                    systemImage: "checkmark.message",
+                    enabled: actions.contains(.acknowledge) && !issue.isAcknowledged,
+                    action: requestAcknowledgement
+                )
+                quickAction(
+                    AppLocalization.string("Wartungszeit", locale: locale),
+                    systemImage: "calendar.badge.clock",
+                    enabled: actions.contains(.scheduleDowntime) && !issue.isInDowntime,
+                    action: requestDowntime
+                )
             }
-            Divider()
-                .padding(.leading, 44)
         }
-        .background(issue.presentationColor.opacity(isExpanded ? 0.16 : 0.09))
+        .padding(.trailing, 8)
+        .frame(height: 39)
+        .background(issue.presentationColor.opacity(issue.requiresAttention ? 0.09 : 0.045))
         .overlay(alignment: .leading) {
             Rectangle()
                 .fill(issue.presentationColor)
                 .frame(width: 3)
         }
-        .disabled(isPerformingAction)
+        .overlay(alignment: .bottom) { Divider().padding(.leading, 34) }
+        .contextMenu {
+            Button(AppLocalization.string("In Weboberfläche öffnen", locale: locale), systemImage: "safari", action: openIssue)
+            if let openSSH {
+                Button("SSH", systemImage: "terminal", action: openSSH)
+            }
+            if let openRDP {
+                Button("RDP", systemImage: "rectangle.connected.to.line.below", action: openRDP)
+            }
+        }
+    }
+
+    private func quickAction(
+        _ title: String,
+        systemImage: String,
+        enabled: Bool,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Image(systemName: systemImage)
+                .frame(width: 24, height: 28)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.borderless)
+        .disabled(!enabled)
+        .help(title)
+        .accessibilityLabel(title)
     }
 }
 
@@ -456,58 +553,57 @@ private struct IssueActionSheet: View {
 
 private struct StatusPanelIssueRow: View {
     let issue: MonitoringIssue
-    let sourceName: String?
-    let isExpanded: Bool
+    let sourceName: String
     @Environment(\.locale) private var locale
 
     var body: some View {
-        HStack(alignment: .top, spacing: 10) {
+        HStack(spacing: 8) {
             Image(systemName: symbol)
                 .foregroundStyle(color)
-                .frame(width: 22)
-            VStack(alignment: .leading, spacing: 3) {
-                Text(verbatim: title)
-                    .fontWeight(.medium)
-                    .lineLimit(1)
-                Text(verbatim: issue.summary)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
-                if durationText != nil || attemptText != nil {
-                    HStack(spacing: 10) {
-                        if let durationText {
-                            Label(durationText, systemImage: "clock")
-                        }
-                        if let attemptText {
-                            Label(attemptText, systemImage: "repeat")
-                        }
-                    }
-                    .font(.caption2.monospacedDigit())
-                    .foregroundStyle(.secondary)
-                }
-                if issue.isAcknowledged || issue.isInDowntime {
-                    Text(verbatim: coverageText)
-                        .font(.caption2.weight(.medium))
-                        .foregroundStyle(.secondary)
-                }
-                if let sourceName {
-                    Label(sourceName, systemImage: "server.rack")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                }
-            }
-            Spacer(minLength: 8)
-            Text(verbatim: severityText)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.primary)
-            Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                .frame(width: 20)
+                .help(severityText)
+            Text(verbatim: sourceName)
                 .font(.caption2.weight(.semibold))
                 .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .frame(width: 82, alignment: .leading)
+                .help(sourceName)
+            Text(verbatim: title)
+                .font(.caption.weight(.medium))
+                .lineLimit(1)
+                .frame(width: 154, alignment: .leading)
+                .help(title)
+            Text(verbatim: issue.summary)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .help(issue.summary)
+            if let durationText {
+                Text(verbatim: durationText)
+                    .font(.caption2.monospacedDigit())
+                    .foregroundStyle(.secondary)
+                    .frame(width: 58, alignment: .trailing)
+                    .help(AppLocalization.string("Dauer", locale: locale))
+            }
+            if let attemptText {
+                Text(verbatim: attemptText)
+                    .font(.caption2.monospacedDigit())
+                    .foregroundStyle(.secondary)
+                    .frame(width: 30, alignment: .trailing)
+                    .help(AppLocalization.string("Versuch", locale: locale))
+            }
+            if issue.isAcknowledged || issue.isInDowntime {
+                Image(systemName: issue.isInDowntime ? "calendar.badge.clock" : "checkmark.message")
+                    .foregroundStyle(.secondary)
+                    .frame(width: 18)
+                    .help(coverageText)
+            }
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 9)
+        .padding(.leading, 10)
         .contentShape(Rectangle())
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilityText)
     }
 
     private var title: String {
@@ -573,6 +669,15 @@ private struct StatusPanelIssueRow: View {
         case (false, false):
             return ""
         }
+    }
+
+    private var accessibilityText: String {
+        [sourceName, severityText, title, issue.summary, durationText, attemptText, coverageText]
+            .compactMap { value in
+                guard let value, !value.isEmpty else { return nil }
+                return value
+            }
+            .joined(separator: ", ")
     }
 }
 

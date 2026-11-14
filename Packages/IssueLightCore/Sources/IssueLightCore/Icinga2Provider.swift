@@ -58,6 +58,38 @@ public struct Icinga2Provider: MonitoringProvider {
         return components.url!
     }
 
+    public func webURL(for issue: MonitoringIssue, from source: MonitoringSource) -> URL? {
+        guard issue.sourceID == source.id, let baseURL = source.web?.baseURL else {
+            return nil
+        }
+        var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false)
+        var path = components?.path
+            .split(separator: "/")
+            .map(String.init) ?? []
+        let usesIcingaDBWeb = path.last?.lowercased() == "icingadb"
+        var queryItems: [URLQueryItem]
+        if usesIcingaDBWeb {
+            path.append(issue.kind == .host ? "host" : "service")
+            queryItems = [URLQueryItem(name: issue.kind == .host ? "name" : "host.name", value: issue.hostName)]
+            if issue.kind == .service, let serviceName = issue.serviceName {
+                queryItems.append(URLQueryItem(name: "name", value: serviceName))
+            }
+        } else {
+            if path.last?.lowercased() != "monitoring" {
+                path.append("monitoring")
+            }
+            path.append(contentsOf: issue.kind == .host ? ["host", "show"] : ["service", "show"])
+            queryItems = [URLQueryItem(name: "host", value: issue.hostName)]
+            if issue.kind == .service, let serviceName = issue.serviceName {
+                queryItems.append(URLQueryItem(name: "service", value: serviceName))
+            }
+        }
+        components?.path = "/" + path.joined(separator: "/")
+        components?.queryItems = queryItems
+        components?.fragment = nil
+        return components?.url
+    }
+
     public func testConnection(
         to source: MonitoringSource,
         access: ProviderAccess

@@ -130,6 +130,7 @@ struct AboutSettingsView: View {
     private let coffeeURL = URL(string: "https://buymeacoffee.com/YunaBraska")!
     private let koFiURL = URL(string: "https://ko-fi.com/YunaBraska")!
     private let liberapayURL = URL(string: "https://liberapay.com/YunaBraska")!
+    private let nagBarURL = URL(string: "https://github.com/volendavidov/NagBar")!
 
     init(
         icon: NSImage = NSApp.applicationIconImage,
@@ -219,6 +220,11 @@ struct AboutSettingsView: View {
             aboutLink("Buy Me a Coffee", systemImage: "cup.and.saucer", destination: coffeeURL)
             aboutLink("Ko-fi", systemImage: "mug", destination: koFiURL)
             aboutLink("Liberapay", systemImage: "gift", destination: liberapayURL)
+            aboutLink(
+                AppLocalization.string("NagBar · Danke für die Inspiration", locale: locale),
+                systemImage: "sparkles",
+                destination: nagBarURL
+            )
         }
     }
 

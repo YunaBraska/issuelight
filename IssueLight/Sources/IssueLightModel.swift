@@ -111,9 +111,23 @@ final class IssueLightModel: ObservableObject {
     @Published var serverTrustChoice = ServerTrustChoice.system
     @Published private(set) var selectedServerCertificate: ServerCertificateDescriptor?
     @Published private(set) var pinnedServerCertificateSHA256 = ""
+    @Published var webURL = ""
+    @Published var automaticWebSSHTunnel = false
+    @Published var webTunnelBastionHost = ""
+    @Published var webTunnelUsername = ""
+    @Published var webTunnelPort = 22
+    @Published var webTunnelIdentityFilePath = ""
+    @Published var webTunnelPreferredLocalPort = ""
+    @Published var sshActionEnabled = false
+    @Published var sshUsername = ""
+    @Published var sshPort = 22
+    @Published var rdpActionEnabled = false
+    @Published var rdpUsername = ""
+    @Published var rdpPort = 3_389
     @Published private(set) var activity = Activity.idle
     @Published private(set) var isTestingConnection = false
     @Published private(set) var sources: [MonitoringSource] = []
+    @Published private(set) var hasLoadedSources = false
     @Published private(set) var selectedSourceID: UUID?
     @Published private(set) var snapshots: [UUID: MonitoringSnapshot] = [:]
     @Published private(set) var refreshStates: [UUID: RefreshState] = [:]
@@ -159,6 +173,7 @@ final class IssueLightModel: ObservableObject {
                 || !selectedIdentityID.isEmpty
                 || !pinnedServerCertificateSHA256.isEmpty
                 || !isSourceEnabled
+                || hasNavigationInput
         }
 
         let authentication: AuthenticationConfiguration
@@ -185,6 +200,19 @@ final class IssueLightModel: ObservableObject {
             || selectedProviderID != selectedSource.providerID
             || authentication != selectedSource.authentication
             || serverTrust != selectedSource.serverTrust
+            || webURL != (selectedSource.web?.baseURL.absoluteString ?? "")
+            || automaticWebSSHTunnel != (selectedSource.web?.automaticSSHTunnel != nil)
+            || webTunnelBastionHost != (selectedSource.web?.automaticSSHTunnel?.bastionHost ?? "")
+            || webTunnelUsername != (selectedSource.web?.automaticSSHTunnel?.username ?? "")
+            || webTunnelPort != (selectedSource.web?.automaticSSHTunnel?.port ?? 22)
+            || webTunnelIdentityFilePath != (selectedSource.web?.automaticSSHTunnel?.identityFilePath ?? "")
+            || webTunnelPreferredLocalPort != selectedSource.web?.automaticSSHTunnel?.preferredLocalPort.map(String.init) ?? ""
+            || sshActionEnabled != (selectedSource.remoteAccess?.ssh != nil)
+            || sshUsername != (selectedSource.remoteAccess?.ssh?.username ?? "")
+            || sshPort != (selectedSource.remoteAccess?.ssh?.port ?? 22)
+            || rdpActionEnabled != (selectedSource.remoteAccess?.rdp != nil)
+            || rdpUsername != (selectedSource.remoteAccess?.rdp?.username ?? "")
+            || rdpPort != (selectedSource.remoteAccess?.rdp?.port ?? 3_389)
     }
 
     var providers: [ProviderDescriptor] {
@@ -217,6 +245,55 @@ final class IssueLightModel: ObservableObject {
     func supportedActions(for issue: MonitoringIssue) -> Set<MonitoringActionKind> {
         guard let source = sources.first(where: { $0.id == issue.sourceID }) else { return [] }
         return providerRegistry.provider(for: source.providerID)?.descriptor.capabilities.actions ?? []
+    }
+
+    func webTarget(for issue: MonitoringIssue) -> IssueWebTarget? {
+        guard let source = sources.first(where: { $0.id == issue.sourceID }),
+              let provider = providerRegistry.provider(for: source.providerID),
+              let url = provider.webURL(for: issue, from: source) else {
+            return nil
+        }
+        return IssueWebTarget(
+            sourceID: source.id,
+            url: url,
+            automaticSSHTunnel: source.web?.automaticSSHTunnel
+        )
+    }
+
+    func sshURL(for issue: MonitoringIssue) -> URL? {
+        guard let source = sources.first(where: { $0.id == issue.sourceID }),
+              let configuration = source.remoteAccess?.ssh else {
+            return nil
+        }
+        return IssueNavigationURL.ssh(for: issue, configuration: configuration)
+    }
+
+    func rdpURL(for issue: MonitoringIssue) -> URL? {
+        guard let source = sources.first(where: { $0.id == issue.sourceID }),
+              let configuration = source.remoteAccess?.rdp else {
+            return nil
+        }
+        return IssueNavigationURL.rdp(for: issue, configuration: configuration)
+    }
+
+    func reportMissingWebConfiguration() {
+        actionFeedback = ActionFeedback(
+            succeeded: false,
+            message: localized("Konfiguriere zuerst die Web-URL dieser Quelle.")
+        )
+    }
+
+    func reportExternalActionError(_ error: ExternalActionError) {
+        let message: String
+        switch error {
+        case .applicationUnavailable:
+            message = localized("Für diese Aktion ist keine passende App installiert.")
+        case .secureTunnelUnsupported:
+            message = localized("Automatische SSH-Tunnel für HTTPS-Webseiten sind wegen der Zertifikatsprüfung nicht verfügbar. Verwende direkten Zugriff oder eine HTTP-Verbindung innerhalb des Tunnels.")
+        case .tunnelCouldNotStart(let detail):
+            message = localized("Der SSH-Tunnel konnte nicht gestartet werden: \(detail)")
+        }
+        actionFeedback = ActionFeedback(succeeded: false, message: message)
     }
 
     func dismissActionFeedback() {
@@ -430,6 +507,7 @@ final class IssueLightModel: ObservableObject {
         activity = .working(localized("Gespeicherte Quellen werden geladen …"))
         do {
             sources = try await sourceStore.load()
+            hasLoadedSources = true
             for source in sources where !source.isEnabled {
                 refreshStates[source.id] = .disabled
             }
@@ -533,6 +611,7 @@ final class IssueLightModel: ObservableObject {
         serverTrustChoice = .system
         selectedServerCertificate = nil
         pinnedServerCertificateSHA256 = ""
+        resetNavigationForm()
         activity = .idle
     }
 
@@ -879,6 +958,12 @@ final class IssueLightModel: ObservableObject {
             activity = .failure(localized("Die Serveradresse ist keine gültige URL."))
             return nil
         }
+        let trimmedWebURL = webURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        let webConfiguration = navigationWebConfiguration()
+        if !trimmedWebURL.isEmpty, webConfiguration == nil {
+            activity = .failure(localized("Gib eine gültige Web-URL ohne Zugangsdaten, Abfrage oder Fragment ein."))
+            return nil
+        }
 
         let authentication: AuthenticationConfiguration
         switch authenticationChoice {
@@ -913,6 +998,8 @@ final class IssueLightModel: ObservableObject {
                 serverTrust = .system
             }
             existingSource.serverTrust = serverTrust
+            existingSource.web = webConfiguration
+            existingSource.remoteAccess = navigationRemoteAccessConfiguration()
             source = existingSource
         } else {
             source = MonitoringSource(
@@ -922,7 +1009,9 @@ final class IssueLightModel: ObservableObject {
                 endpoint: url,
                 isEnabled: isSourceEnabled,
                 authentication: authentication,
-                serverTrust: serverTrust
+                serverTrust: serverTrust,
+                web: webConfiguration,
+                remoteAccess: navigationRemoteAccessConfiguration()
             )
         }
         guard let provider = providerRegistry.provider(for: selectedProviderID) else {
@@ -1016,6 +1105,19 @@ final class IssueLightModel: ObservableObject {
         case .disabled:
             serverTrustChoice = .disabled
         }
+        webURL = source.web?.baseURL.absoluteString ?? ""
+        automaticWebSSHTunnel = source.web?.automaticSSHTunnel != nil
+        webTunnelBastionHost = source.web?.automaticSSHTunnel?.bastionHost ?? ""
+        webTunnelUsername = source.web?.automaticSSHTunnel?.username ?? ""
+        webTunnelPort = source.web?.automaticSSHTunnel?.port ?? 22
+        webTunnelIdentityFilePath = source.web?.automaticSSHTunnel?.identityFilePath ?? ""
+        webTunnelPreferredLocalPort = source.web?.automaticSSHTunnel?.preferredLocalPort.map(String.init) ?? ""
+        sshActionEnabled = source.remoteAccess?.ssh != nil
+        sshUsername = source.remoteAccess?.ssh?.username ?? ""
+        sshPort = source.remoteAccess?.ssh?.port ?? 22
+        rdpActionEnabled = source.remoteAccess?.rdp != nil
+        rdpUsername = source.remoteAccess?.rdp?.username ?? ""
+        rdpPort = source.remoteAccess?.rdp?.port ?? 3_389
     }
 
     private func validationMessage(_ issues: [SourceValidationIssue]) -> String {
@@ -1026,6 +1128,16 @@ final class IssueLightModel: ObservableObject {
         if issues.contains(.missingClientIdentity) { return localized("Wähle ein Client-Zertifikat aus dem Schlüsselbund.") }
         if issues.contains(.missingServerCertificate) { return localized("Importiere ein CA-Zertifikat.") }
         if issues.contains(.invalidPinnedCertificate) { return localized("Wähle ein gültiges Serverzertifikat für den SHA-256-Pin aus.") }
+        if issues.contains(.invalidWebURL) { return localized("Gib eine gültige Web-URL ohne Zugangsdaten, Abfrage oder Fragment ein.") }
+        if issues.contains(.emptyBastionHost) { return localized("Gib den Hostnamen des SSH-Bastionsservers ein.") }
+        if issues.contains(.emptyBastionUsername) { return localized("Gib den SSH-Benutzernamen für den Bastionsserver ein.") }
+        if issues.contains(.secureWebTunnelUnsupported) { return localized("Automatische SSH-Tunnel unterstützen nur HTTP-Webziele. HTTPS würde im Browser eine falsche Zertifikatsidentität erhalten.") }
+        if issues.contains(where: {
+            if case .invalidRemotePort = $0 { return true }
+            return false
+        }) {
+            return localized("Ports müssen zwischen 1 und 65535 liegen.")
+        }
         if issues.contains(where: {
             if case .unsupportedAuthentication = $0 { return true }
             return false
@@ -1058,6 +1170,73 @@ final class IssueLightModel: ObservableObject {
             selectedServerCertificate = nil
             pinnedServerCertificateSHA256 = ""
         }
+    }
+
+    private var hasNavigationInput: Bool {
+        !webURL.isEmpty
+            || automaticWebSSHTunnel
+            || !webTunnelBastionHost.isEmpty
+            || !webTunnelUsername.isEmpty
+            || webTunnelPort != 22
+            || !webTunnelIdentityFilePath.isEmpty
+            || !webTunnelPreferredLocalPort.isEmpty
+            || sshActionEnabled
+            || !sshUsername.isEmpty
+            || sshPort != 22
+            || rdpActionEnabled
+            || !rdpUsername.isEmpty
+            || rdpPort != 3_389
+    }
+
+    private func navigationWebConfiguration() -> MonitoringWebConfiguration? {
+        let value = webURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !value.isEmpty, let url = URL(string: value) else { return nil }
+        let preferredPort = webTunnelPreferredLocalPort.isEmpty
+            ? nil
+            : Int(webTunnelPreferredLocalPort)
+        let tunnel = automaticWebSSHTunnel
+            ? SSHTunnelConfiguration(
+                bastionHost: webTunnelBastionHost.trimmingCharacters(in: .whitespacesAndNewlines),
+                username: webTunnelUsername.trimmingCharacters(in: .whitespacesAndNewlines),
+                port: webTunnelPort,
+                identityFilePath: webTunnelIdentityFilePath.isEmpty ? nil : webTunnelIdentityFilePath,
+                preferredLocalPort: preferredPort ?? (webTunnelPreferredLocalPort.isEmpty ? nil : 0)
+            )
+            : nil
+        return MonitoringWebConfiguration(baseURL: url, automaticSSHTunnel: tunnel)
+    }
+
+    private func navigationRemoteAccessConfiguration() -> RemoteAccessConfiguration? {
+        let ssh = sshActionEnabled
+            ? RemoteLoginConfiguration(
+                username: sshUsername.trimmingCharacters(in: .whitespacesAndNewlines),
+                port: sshPort
+            )
+            : nil
+        let rdp = rdpActionEnabled
+            ? RemoteLoginConfiguration(
+                username: rdpUsername.trimmingCharacters(in: .whitespacesAndNewlines),
+                port: rdpPort
+            )
+            : nil
+        guard ssh != nil || rdp != nil else { return nil }
+        return RemoteAccessConfiguration(ssh: ssh, rdp: rdp)
+    }
+
+    private func resetNavigationForm() {
+        webURL = ""
+        automaticWebSSHTunnel = false
+        webTunnelBastionHost = ""
+        webTunnelUsername = ""
+        webTunnelPort = 22
+        webTunnelIdentityFilePath = ""
+        webTunnelPreferredLocalPort = ""
+        sshActionEnabled = false
+        sshUsername = ""
+        sshPort = 22
+        rdpActionEnabled = false
+        rdpUsername = ""
+        rdpPort = 3_389
     }
 
     private func accessMessage(for failure: ProviderAccessFailure) -> String {

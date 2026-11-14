@@ -21,6 +21,7 @@ struct SourceSetupView: View {
     @State private var isImportingIdentity = false
     @State private var isChoosingServerCertificate = false
     @State private var isChoosingPinnedServerCertificate = false
+    @State private var isChoosingSSHIdentity = false
     @State private var isConfirmingDeletion = false
     @State private var isConfirmingDiscard = false
     @State private var pendingNavigation: PendingNavigation?
@@ -266,6 +267,71 @@ struct SourceSetupView: View {
                     Text("TLS")
                 } footer: {
                     Text("macOS-Systemvertrauen ist der Standard. Eigene CAs und exakte Serverzertifikate gelten nur für diese Quelle. Die vollständige Deaktivierung ist für isolierte Homelabs gedacht.")
+                }
+
+                Section {
+                    TextField("Web-URL", text: $model.webURL, prompt: Text("https://monitoring.example/web"))
+                        .textContentType(.URL)
+
+                    Toggle("Automatischer SSH-Tunnel", isOn: $model.automaticWebSSHTunnel)
+                        .disabled(model.webURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    if model.automaticWebSSHTunnel {
+                        TextField("Bastion", text: $model.webTunnelBastionHost, prompt: Text("bastion.example"))
+                        TextField("Benutzername", text: $model.webTunnelUsername)
+                            .textContentType(.username)
+                        TextField("SSH-Port", value: $model.webTunnelPort, format: .number)
+                        TextField(
+                            "Bevorzugter lokaler Port",
+                            text: $model.webTunnelPreferredLocalPort,
+                            prompt: Text("Automatisch")
+                        )
+                        LabeledContent("SSH-Schlüssel") {
+                            HStack(spacing: 8) {
+                                if !model.webTunnelIdentityFilePath.isEmpty {
+                                    Text(URL(fileURLWithPath: model.webTunnelIdentityFilePath).lastPathComponent)
+                                        .foregroundStyle(.secondary)
+                                        .lineLimit(1)
+                                    Button {
+                                        model.webTunnelIdentityFilePath = ""
+                                    } label: {
+                                        Image(systemName: "xmark.circle.fill")
+                                    }
+                                    .buttonStyle(.borderless)
+                                    .help("Ausgewählten Schlüssel entfernen")
+                                }
+                                Button("Auswählen …") {
+                                    isChoosingSSHIdentity = true
+                                }
+                                .fileImporter(
+                                    isPresented: $isChoosingSSHIdentity,
+                                    allowedContentTypes: [.data],
+                                    allowsMultipleSelection: false
+                                ) { result in
+                                    if case .success(let urls) = result, let url = urls.first {
+                                        model.webTunnelIdentityFilePath = url.path
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    Toggle("SSH-Aktion", isOn: $model.sshActionEnabled)
+                    if model.sshActionEnabled {
+                        TextField("SSH-Benutzername", text: $model.sshUsername)
+                            .textContentType(.username)
+                        TextField("SSH-Port", value: $model.sshPort, format: .number)
+                    }
+
+                    Toggle("RDP-Aktion", isOn: $model.rdpActionEnabled)
+                    if model.rdpActionEnabled {
+                        TextField("RDP-Benutzername", text: $model.rdpUsername)
+                            .textContentType(.username)
+                        TextField("RDP-Port", value: $model.rdpPort, format: .number)
+                    }
+                } header: {
+                    Text("Navigation & Fernzugriff")
+                } footer: {
+                    Text("Ein Klick auf ein Problem öffnet die Monitoring-Weboberfläche. SSH und RDP erscheinen im Kontextmenü. Der automatische Tunnel greift nur bei nicht erreichbaren HTTP-Zielen und beendet sich mit IssueLight.")
                 }
 
             }

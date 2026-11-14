@@ -23810,7 +23810,4585 @@
           }
         }
       }
+    },
+  "Alle Instanzen": {
+    "localizations": {
+"de": {
+  "stringUnit": { "state": "translated",
+    "value": "Alle Instanzen"
+  }
+},
+"en": {
+  "stringUnit": { "state": "translated",
+    "value": "All instances"
+  }
+},
+"sv": {
+  "stringUnit": { "state": "translated",
+    "value": "Alla instanser"
+  }
+},
+"es": {
+  "stringUnit": { "state": "translated",
+    "value": "Todas las instancias"
+  }
+},
+"fr": {
+  "stringUnit": { "state": "translated",
+    "value": "Toutes les instances"
+  }
+},
+"pt": {
+  "stringUnit": { "state": "translated",
+    "value": "Todas as instâncias"
+  }
+},
+"ru": {
+  "stringUnit": { "state": "translated",
+    "value": "Все экземпляры"
+  }
+},
+"tr": {
+  "stringUnit": { "state": "translated",
+    "value": "Tüm örnekler"
+  }
+},
+"id": {
+  "stringUnit": { "state": "translated",
+    "value": "Semua instance"
+  }
+},
+"vi": {
+  "stringUnit": { "state": "translated",
+    "value": "Tất cả các trường hợp"
+  }
+},
+"zh-Hans": {
+  "stringUnit": { "state": "translated",
+    "value": "所有实例"
+  }
+},
+"ja": {
+  "stringUnit": { "state": "translated",
+    "value": "すべてのインスタンス"
+  }
+},
+"ar": {
+  "stringUnit": { "state": "translated",
+    "value": "جميع الحالات"
+  }
+},
+"hi": {
+  "stringUnit": { "state": "translated",
+    "value": "सभी इंस्टेंस"
+  }
+},
+"bn": {
+  "stringUnit": { "state": "translated",
+    "value": "সমস্ত ইনস্ট্যান্স"
+  }
+},
+"mr": {
+  "stringUnit": { "state": "translated",
+    "value": "सर्व उदाहरणे"
+  }
+},
+"te": {
+  "stringUnit": { "state": "translated",
+    "value": "అన్ని సందర్భాలు"
+  }
+},
+"ur": {
+  "stringUnit": { "state": "translated",
+    "value": "تمام مثالیں۔"
+  }
+},
+"sw": {
+  "stringUnit": { "state": "translated",
+    "value": "Vituo vyote"
+  }
+},
+"ha": {
+  "stringUnit": { "state": "translated",
+    "value": "Duk misalai"
+  }
+},
+"pcm": {
+  "stringUnit": { "state": "translated",
+    "value": "All instances"
+  }
+}
     }
+  },
+  "Alle Probleme": {
+    "localizations": {
+"de": {
+  "stringUnit": { "state": "translated",
+    "value": "Alle Probleme"
+  }
+},
+"en": {
+  "stringUnit": { "state": "translated",
+    "value": "All issues"
+  }
+},
+"sv": {
+  "stringUnit": { "state": "translated",
+    "value": "Alla problem"
+  }
+},
+"es": {
+  "stringUnit": { "state": "translated",
+    "value": "Todos los problemas"
+  }
+},
+"fr": {
+  "stringUnit": { "state": "translated",
+    "value": "Tous les problèmes"
+  }
+},
+"pt": {
+  "stringUnit": { "state": "translated",
+    "value": "Todos os problemas"
+  }
+},
+"ru": {
+  "stringUnit": { "state": "translated",
+    "value": "Все проблемы"
+  }
+},
+"tr": {
+  "stringUnit": { "state": "translated",
+    "value": "Tüm sorunlar"
+  }
+},
+"id": {
+  "stringUnit": { "state": "translated",
+    "value": "Semua masalah"
+  }
+},
+"vi": {
+  "stringUnit": { "state": "translated",
+    "value": "Tất cả sự cố"
+  }
+},
+"zh-Hans": {
+  "stringUnit": { "state": "translated",
+    "value": "所有问题"
+  }
+},
+"ja": {
+  "stringUnit": { "state": "translated",
+    "value": "すべての問題"
+  }
+},
+"ar": {
+  "stringUnit": { "state": "translated",
+    "value": "جميع المشكلات"
+  }
+},
+"hi": {
+  "stringUnit": { "state": "translated",
+    "value": "सभी इश्यू"
+  }
+},
+"bn": {
+  "stringUnit": { "state": "translated",
+    "value": "সমস্ত ইস্যু"
+  }
+},
+"mr": {
+  "stringUnit": { "state": "translated",
+    "value": "सर्व समस्या"
+  }
+},
+"te": {
+  "stringUnit": { "state": "translated",
+    "value": "అన్ని సమస్యలు"
+  }
+},
+"ur": {
+  "stringUnit": { "state": "translated",
+    "value": "تمام مسائل"
+  }
+},
+"sw": {
+  "stringUnit": { "state": "translated",
+    "value": "Masuala yote"
+  }
+},
+"ha": {
+  "stringUnit": { "state": "translated",
+    "value": "Duk matsaloli"
+  }
+},
+"pcm": {
+  "stringUnit": { "state": "translated",
+    "value": "All problems"
+  }
+}
+    }
+  },
+  "Alle Zustände": {
+    "localizations": {
+"de": {
+  "stringUnit": { "state": "translated",
+    "value": "Alle Zustände"
+  }
+},
+"en": {
+  "stringUnit": { "state": "translated",
+    "value": "All states"
+  }
+},
+"sv": {
+  "stringUnit": { "state": "translated",
+    "value": "Alla tillstånd"
+  }
+},
+"es": {
+  "stringUnit": { "state": "translated",
+    "value": "Todos los estados"
+  }
+},
+"fr": {
+  "stringUnit": { "state": "translated",
+    "value": "Tous les états"
+  }
+},
+"pt": {
+  "stringUnit": { "state": "translated",
+    "value": "Todos os estados"
+  }
+},
+"ru": {
+  "stringUnit": { "state": "translated",
+    "value": "Все состояния"
+  }
+},
+"tr": {
+  "stringUnit": { "state": "translated",
+    "value": "Tüm durumlar"
+  }
+},
+"id": {
+  "stringUnit": { "state": "translated",
+    "value": "Semua status"
+  }
+},
+"vi": {
+  "stringUnit": { "state": "translated",
+    "value": "Tất cả trạng thái"
+  }
+},
+"zh-Hans": {
+  "stringUnit": { "state": "translated",
+    "value": "所有状态"
+  }
+},
+"ja": {
+  "stringUnit": { "state": "translated",
+    "value": "すべての状態"
+  }
+},
+"ar": {
+  "stringUnit": { "state": "translated",
+    "value": "جميع الحالات"
+  }
+},
+"hi": {
+  "stringUnit": { "state": "translated",
+    "value": "सभी स्टेट्स"
+  }
+},
+"bn": {
+  "stringUnit": { "state": "translated",
+    "value": "সমস্ত স্টেট"
+  }
+},
+"mr": {
+  "stringUnit": { "state": "translated",
+    "value": "सर्व स्थिती"
+  }
+},
+"te": {
+  "stringUnit": { "state": "translated",
+    "value": "అన్ని స్థితులు"
+  }
+},
+"ur": {
+  "stringUnit": { "state": "translated",
+    "value": "تمام ریاستیں۔"
+  }
+},
+"sw": {
+  "stringUnit": { "state": "translated",
+    "value": "Majimbo yote"
+  }
+},
+"ha": {
+  "stringUnit": { "state": "translated",
+    "value": "Duk jihohi"
+  }
+},
+"pcm": {
+  "stringUnit": { "state": "translated",
+    "value": "All states"
+  }
+}
+    }
+  },
+  "Ausgewählten Schlüssel entfernen": {
+    "localizations": {
+"de": {
+  "stringUnit": { "state": "translated",
+    "value": "Ausgewählten Schlüssel entfernen"
+  }
+},
+"en": {
+  "stringUnit": { "state": "translated",
+    "value": "Remove selected key"
+  }
+},
+"sv": {
+  "stringUnit": { "state": "translated",
+    "value": "Ta bort vald nyckel"
+  }
+},
+"es": {
+  "stringUnit": { "state": "translated",
+    "value": "Eliminar clave seleccionada"
+  }
+},
+"fr": {
+  "stringUnit": { "state": "translated",
+    "value": "Supprimer la clé sélectionnée"
+  }
+},
+"pt": {
+  "stringUnit": { "state": "translated",
+    "value": "Remover chave selecionada"
+  }
+},
+"ru": {
+  "stringUnit": { "state": "translated",
+    "value": "Удалить выбранный ключ"
+  }
+},
+"tr": {
+  "stringUnit": { "state": "translated",
+    "value": "Seçilen anahtarı kaldır"
+  }
+},
+"id": {
+  "stringUnit": { "state": "translated",
+    "value": "Hapus kunci yang dipilih"
+  }
+},
+"vi": {
+  "stringUnit": { "state": "translated",
+    "value": "Xóa khóa đã chọn"
+  }
+},
+"zh-Hans": {
+  "stringUnit": { "state": "translated",
+    "value": "移除选定密钥"
+  }
+},
+"ja": {
+  "stringUnit": { "state": "translated",
+    "value": "選択したキーを削除"
+  }
+},
+"ar": {
+  "stringUnit": { "state": "translated",
+    "value": "إزالة المفتاح المحدد"
+  }
+},
+"hi": {
+  "stringUnit": { "state": "translated",
+    "value": "चुनी गई की हटाएँ"
+  }
+},
+"bn": {
+  "stringUnit": { "state": "translated",
+    "value": "নির্বাচিত কী সরান"
+  }
+},
+"mr": {
+  "stringUnit": { "state": "translated",
+    "value": "निवडलेली की काढा"
+  }
+},
+"te": {
+  "stringUnit": { "state": "translated",
+    "value": "ఎంచుకున్న కీని తీసివేయండి"
+  }
+},
+"ur": {
+  "stringUnit": { "state": "translated",
+    "value": "منتخب کلید کو ہٹا دیں۔"
+  }
+},
+"sw": {
+  "stringUnit": { "state": "translated",
+    "value": "Ondoa kitufe kilichochaguliwa"
+  }
+},
+"ha": {
+  "stringUnit": { "state": "translated",
+    "value": "Cire maɓalli da aka zaɓa"
+  }
+},
+"pcm": {
+  "stringUnit": { "state": "translated",
+    "value": "Remove selected key"
+  }
+}
+    }
+  },
+  "Auswählen …": {
+    "localizations": {
+"de": {
+  "stringUnit": { "state": "translated",
+    "value": "Auswählen …"
+  }
+},
+"en": {
+  "stringUnit": { "state": "translated",
+    "value": "Select…"
+  }
+},
+"sv": {
+  "stringUnit": { "state": "translated",
+    "value": "Välj…"
+  }
+},
+"es": {
+  "stringUnit": { "state": "translated",
+    "value": "Seleccionar…"
+  }
+},
+"fr": {
+  "stringUnit": { "state": "translated",
+    "value": "Sélectionner…"
+  }
+},
+"pt": {
+  "stringUnit": { "state": "translated",
+    "value": "Selecionar…"
+  }
+},
+"ru": {
+  "stringUnit": { "state": "translated",
+    "value": "Выбрать…"
+  }
+},
+"tr": {
+  "stringUnit": { "state": "translated",
+    "value": "Seç…"
+  }
+},
+"id": {
+  "stringUnit": { "state": "translated",
+    "value": "Pilih…"
+  }
+},
+"vi": {
+  "stringUnit": { "state": "translated",
+    "value": "Chọn…"
+  }
+},
+"zh-Hans": {
+  "stringUnit": { "state": "translated",
+    "value": "选择…"
+  }
+},
+"ja": {
+  "stringUnit": { "state": "translated",
+    "value": "選択…"
+  }
+},
+"ar": {
+  "stringUnit": { "state": "translated",
+    "value": "تحديد…"
+  }
+},
+"hi": {
+  "stringUnit": { "state": "translated",
+    "value": "चुनें…"
+  }
+},
+"bn": {
+  "stringUnit": { "state": "translated",
+    "value": "নির্বাচন করুন…"
+  }
+},
+"mr": {
+  "stringUnit": { "state": "translated",
+    "value": "निवडा…"
+  }
+},
+"te": {
+  "stringUnit": { "state": "translated",
+    "value": "ఎంచుకోండి…"
+  }
+},
+"ur": {
+  "stringUnit": { "state": "translated",
+    "value": "منتخب کریں…"
+  }
+},
+"sw": {
+  "stringUnit": { "state": "translated",
+    "value": "Chagua…"
+  }
+},
+"ha": {
+  "stringUnit": { "state": "translated",
+    "value": "Zaɓi…"
+  }
+},
+"pcm": {
+  "stringUnit": { "state": "translated",
+    "value": "Choose …"
+  }
+}
+    }
+  },
+  "Automatisch": {
+    "localizations": {
+"de": {
+  "stringUnit": { "state": "translated",
+    "value": "Automatisch"
+  }
+},
+"en": {
+  "stringUnit": { "state": "translated",
+    "value": "Automatic"
+  }
+},
+"sv": {
+  "stringUnit": { "state": "translated",
+    "value": "Automatisk"
+  }
+},
+"es": {
+  "stringUnit": { "state": "translated",
+    "value": "Automático"
+  }
+},
+"fr": {
+  "stringUnit": { "state": "translated",
+    "value": "Automatique"
+  }
+},
+"pt": {
+  "stringUnit": { "state": "translated",
+    "value": "Automático"
+  }
+},
+"ru": {
+  "stringUnit": { "state": "translated",
+    "value": "Автоматический"
+  }
+},
+"tr": {
+  "stringUnit": { "state": "translated",
+    "value": "Otomatik"
+  }
+},
+"id": {
+  "stringUnit": { "state": "translated",
+    "value": "Otomatis"
+  }
+},
+"vi": {
+  "stringUnit": { "state": "translated",
+    "value": "Tự động"
+  }
+},
+"zh-Hans": {
+  "stringUnit": { "state": "translated",
+    "value": "自动"
+  }
+},
+"ja": {
+  "stringUnit": { "state": "translated",
+    "value": "自動"
+  }
+},
+"ar": {
+  "stringUnit": { "state": "translated",
+    "value": "تلقائي"
+  }
+},
+"hi": {
+  "stringUnit": { "state": "translated",
+    "value": "ऑटोमैटिक"
+  }
+},
+"bn": {
+  "stringUnit": { "state": "translated",
+    "value": "স্বয়ংক্রিয়"
+  }
+},
+"mr": {
+  "stringUnit": { "state": "translated",
+    "value": "स्वयंचलित"
+  }
+},
+"te": {
+  "stringUnit": { "state": "translated",
+    "value": "ఆటోమేటిక్"
+  }
+},
+"ur": {
+  "stringUnit": { "state": "translated",
+    "value": "خودکار"
+  }
+},
+"sw": {
+  "stringUnit": { "state": "translated",
+    "value": "Otomatiki"
+  }
+},
+"ha": {
+  "stringUnit": { "state": "translated",
+    "value": "Atomatik"
+  }
+},
+"pcm": {
+  "stringUnit": { "state": "translated",
+    "value": "Automatic"
+  }
+}
+    }
+  },
+  "Automatische SSH-Tunnel für HTTPS-Webseiten sind wegen der Zertifikatsprüfung nicht verfügbar. Verwende direkten Zugriff oder eine HTTP-Verbindung innerhalb des Tunnels.": {
+    "localizations": {
+"de": {
+  "stringUnit": { "state": "translated",
+    "value": "Automatische SSH-Tunnel für HTTPS-Webseiten sind wegen der Zertifikatsprüfung nicht verfügbar. Verwende direkten Zugriff oder eine HTTP-Verbindung innerhalb des Tunnels."
+  }
+},
+"en": {
+  "stringUnit": { "state": "translated",
+    "value": "Automatic SSH tunnels for HTTPS websites are unavailable due to certificate verification. Use direct access or an HTTP connection within the tunnel."
+  }
+},
+"sv": {
+  "stringUnit": { "state": "translated",
+    "value": "Automatiska SSH-tunnlar för HTTPS-webbplatser är inte tillgängliga på grund av certifikatverifiering. Använd direktåtkomst eller en HTTP-anslutning inom tunneln."
+  }
+},
+"es": {
+  "stringUnit": { "state": "translated",
+    "value": "Los túneles SSH automáticos para sitios web HTTPS no están disponibles debido a la verificación del certificado. Utilice el acceso directo o una conexión HTTP dentro del túnel."
+  }
+},
+"fr": {
+  "stringUnit": { "state": "translated",
+    "value": "Les tunnels SSH automatiques pour les sites web HTTPS sont indisponibles en raison de la vérification du certificat. Utilisez un accès direct ou une connexion HTTP au sein du tunnel."
+  }
+},
+"pt": {
+  "stringUnit": { "state": "translated",
+    "value": "Os túneis SSH automáticos para sites HTTPS estão indisponíveis devido à verificação do certificado. Use acesso direto ou uma conexão HTTP dentro do túnel."
+  }
+},
+"ru": {
+  "stringUnit": { "state": "translated",
+    "value": "Автоматические SSH-туннели для веб-сайтов HTTPS недоступны из-за проверки сертификата. Используйте прямой доступ или HTTP-соединение внутри туннеля."
+  }
+},
+"tr": {
+  "stringUnit": { "state": "translated",
+    "value": "Sertifika doğrulaması nedeniyle HTTPS web siteleri için otomatik SSH tünelleri kullanılamıyor. Doğrudan erişim veya tünel içindeki bir HTTP bağlantısı kullanın."
+  }
+},
+"id": {
+  "stringUnit": { "state": "translated",
+    "value": "Terowongan SSH otomatis untuk situs web HTTPS tidak tersedia karena verifikasi sertifikat. Gunakan akses langsung atau koneksi HTTP di dalam terowongan."
+  }
+},
+"vi": {
+  "stringUnit": { "state": "translated",
+    "value": "Đường hầm SSH tự động cho các trang web HTTPS không khả dụng do xác minh chứng chỉ. Sử dụng truy cập trực tiếp hoặc kết nối HTTP trong đường hầm."
+  }
+},
+"zh-Hans": {
+  "stringUnit": { "state": "translated",
+    "value": "由于证书验证问题，HTTPS 网站的自动 SSH 隧道不可用。 请使用直接访问或在隧道内建立 HTTP 连接。"
+  }
+},
+"ja": {
+  "stringUnit": { "state": "translated",
+    "value": "証明書の検証のため、HTTPS Webサイト用の自動SSHトンネルは利用できません。 トンネル内で直接アクセスするか、HTTP接続を使用してください。"
+  }
+},
+"ar": {
+  "stringUnit": { "state": "translated",
+    "value": "أنفاق SSH التلقائية لمواقع HTTPS غير متاحة بسبب التحقق من الشهادة. استخدم الوصول المباشر أو اتصال HTTP داخل النفق."
+  }
+},
+"hi": {
+  "stringUnit": { "state": "translated",
+    "value": "सर्टिफ़िकेट वेरिफ़िकेशन की वजह से HTTPS वेबसाइट के लिए ऑटोमैटिक SSH टनल उपलब्ध नहीं हैं।टनल के अंदर डायरेक्ट एक्सेस या HTTP कनेक्शन का इस्तेमाल करें।"
+  }
+},
+"bn": {
+  "stringUnit": { "state": "translated",
+    "value": "সার্টিফিকেট যাচাইকরণের কারণে HTTPS ওয়েবসাইটের জন্য স্বয়ংক্রিয় SSH টানেল অনুপলব্ধ।টানেলের মধ্যে সরাসরি অ্যাক্সেস বা একটি HTTP সংযোগ ব্যবহার করুন।"
+  }
+},
+"mr": {
+  "stringUnit": { "state": "translated",
+    "value": "प्रमाणपत्र पडताळणीमुळे HTTPS वेबसाइटसाठी स्वयंचलित SSH टनेल्स अनुपलब्ध आहेत. थेट प्रवेश किंवा टनेलमधील HTTP कनेक्शन वापरा."
+  }
+},
+"te": {
+  "stringUnit": { "state": "translated",
+    "value": "సర్టిఫికెట్ ధృవీకరణ కారణంగా HTTPS వెబ్‌సైట్‌ల కోసం ఆటోమేటిక్ SSH టన్నెల్స్ అందుబాటులో లేవు. టన్నెల్ లోపల డైరెక్ట్ యాక్సెస్ లేదా HTTP కనెక్షన్‌ను ఉపయోగించండి."
+  }
+},
+"ur": {
+  "stringUnit": { "state": "translated",
+    "value": "سرٹیفکیٹ کی تصدیق کی وجہ سے HTTPS ویب سائٹس کے لیے خودکار SSH سرنگیں دستیاب نہیں ہیں۔سرنگ کے اندر براہ راست رسائی یا HTTP کنکشن استعمال کریں۔"
+  }
+},
+"sw": {
+  "stringUnit": { "state": "translated",
+    "value": "Vituo vya SSH otomatiki kwa tovuti za HTTPS havipatikani kutokana na uthibitisho wa cheti. Tumia ufikiaji wa moja kwa moja au muunganisho wa HTTP ndani ya handaki."
+  }
+},
+"ha": {
+  "stringUnit": { "state": "translated",
+    "value": "Ramin SSH ta atomatik don gidajen yanar gizo na HTTPS ba su samuwa saboda tabbatar da takardar shaida. Yi amfani da damar shiga kai tsaye ko haɗin HTTP a cikin ramin."
+  }
+},
+"pcm": {
+  "stringUnit": { "state": "translated",
+    "value": "Automatic SSH tunnel no dey available for HTTPS website because of certificate check. Use direct access or HTTP connection inside the tunnel."
+  }
+}
+    }
+  },
+  "Automatische SSH-Tunnel unterstützen nur HTTP-Webziele. HTTPS würde im Browser eine falsche Zertifikatsidentität erhalten.": {
+    "localizations": {
+"de": {
+  "stringUnit": { "state": "translated",
+    "value": "Automatische SSH-Tunnel unterstützen nur HTTP-Webziele. HTTPS würde im Browser eine falsche Zertifikatsidentität erhalten."
+  }
+},
+"en": {
+  "stringUnit": { "state": "translated",
+    "value": "Automatic SSH tunnels only support HTTP web destinations. HTTPS would receive an incorrect certificate identity in the browser."
+  }
+},
+"sv": {
+  "stringUnit": { "state": "translated",
+    "value": "Automatiska SSH-tunnlar stöder endast HTTP-webbdestinationer. HTTPS skulle få en felaktig certifikatidentitet i webbläsaren."
+  }
+},
+"es": {
+  "stringUnit": { "state": "translated",
+    "value": "Los túneles SSH automáticos solo admiten destinos web HTTP. HTTPS recibiría una identidad de certificado incorrecta en el navegador."
+  }
+},
+"fr": {
+  "stringUnit": { "state": "translated",
+    "value": "Les tunnels SSH automatiques prennent uniquement en charge les destinations web HTTP. Le navigateur recevrait une identité de certificat incorrecte pour les destinations HTTPS."
+  }
+},
+"pt": {
+  "stringUnit": { "state": "translated",
+    "value": "Os túneis SSH automáticos suportam apenas destinos web HTTP. O HTTPS receberia uma identidade de certificado incorreta no navegador."
+  }
+},
+"ru": {
+  "stringUnit": { "state": "translated",
+    "value": "Автоматические SSH-туннели поддерживают только веб-адреса HTTP. HTTPS получит неверную идентификацию сертификата в браузере."
+  }
+},
+"tr": {
+  "stringUnit": { "state": "translated",
+    "value": "Otomatik SSH tünelleri yalnızca HTTP web hedeflerini destekler. HTTPS, tarayıcıda yanlış bir sertifika kimliği alacaktır."
+  }
+},
+"id": {
+  "stringUnit": { "state": "translated",
+    "value": "Terowongan SSH otomatis hanya mendukung tujuan web HTTP. HTTPS akan menerima identitas sertifikat yang salah di browser."
+  }
+},
+"vi": {
+  "stringUnit": { "state": "translated",
+    "value": "Đường hầm SSH tự động chỉ hỗ trợ các đích đến web HTTP. HTTPS sẽ nhận được danh tính chứng chỉ không chính xác trong trình duyệt."
+  }
+},
+"zh-Hans": {
+  "stringUnit": { "state": "translated",
+    "value": "自动 SSH 隧道仅支持 HTTP 网站目标。 HTTPS 网站会在浏览器中收到错误的证书标识。"
+  }
+},
+"ja": {
+  "stringUnit": { "state": "translated",
+    "value": "自動SSHトンネルはHTTP Webサイトのみをサポートします。 HTTPSでは、ブラウザで誤った証明書IDが返されます。"
+  }
+},
+"ar": {
+  "stringUnit": { "state": "translated",
+    "value": "تدعم أنفاق SSH التلقائية وجهات HTTP فقط. سيتلقى HTTPS هوية شهادة غير صحيحة في المتصفح."
+  }
+},
+"hi": {
+  "stringUnit": { "state": "translated",
+    "value": "ऑटोमैटिक SSH टनल सिर्फ़ HTTP वेब डेस्टिनेशन को सपोर्ट करते हैं।HTTPS को ब्राउज़र में गलत सर्टिफ़िकेट आइडेंटिटी मिलेगी।"
+  }
+},
+"bn": {
+  "stringUnit": { "state": "translated",
+    "value": "স্বয়ংক্রিয় SSH টানেল শুধুমাত্র HTTP ওয়েব গন্তব্য সমর্থন করে।ব্রাউজারে HTTPS একটি ভুল সার্টিফিকেট পরিচয় পাবে।"
+  }
+},
+"mr": {
+  "stringUnit": { "state": "translated",
+    "value": "स्वयंचलित SSH टनेल्स फक्त HTTP वेब डेस्टिनेशन्सना सपोर्ट करतात. HTTPS ला ब्राउझरमध्ये चुकीची प्रमाणपत्र ओळख मिळेल."
+  }
+},
+"te": {
+  "stringUnit": { "state": "translated",
+    "value": "ఆటోమేటిక్ SSH టన్నెల్స్ కేవలం HTTP వెబ్ గమ్యస్థానాలకు మాత్రమే మద్దతు ఇస్తాయి. బ్రౌజర్‌లో HTTPS తప్పు సర్టిఫికేట్ గుర్తింపును అందుకుంటుంది."
+  }
+},
+"ur": {
+  "stringUnit": { "state": "translated",
+    "value": "خودکار SSH سرنگیں صرف HTTP ویب منزلوں کو سپورٹ کرتی ہیں۔HTTPS کو براؤزر میں ایک غلط سرٹیفکیٹ کی شناخت ملے گی۔"
+  }
+},
+"sw": {
+  "stringUnit": { "state": "translated",
+    "value": "Vituo vya SSH otomatiki huunga mkono maeneo ya wavuti ya HTTP pekee. HTTPS ingepokea utambulisho usio sahihi wa cheti kwenye kivinjari."
+  }
+},
+"ha": {
+  "stringUnit": { "state": "translated",
+    "value": "Ramin SSH ta atomatik yana goyan bayan wuraren yanar gizo na HTTP kawai. HTTPS zai sami shaidar takardar shaida mara daidai a cikin mai bincike."
+  }
+},
+"pcm": {
+  "stringUnit": { "state": "translated",
+    "value": "Automatic SSH tunnel support only HTTP web target. HTTPS go get wrong certificate identity for browser."
+  }
+}
+    }
+  },
+  "Automatischer SSH-Tunnel": {
+    "localizations": {
+"de": {
+  "stringUnit": { "state": "translated",
+    "value": "Automatischer SSH-Tunnel"
+  }
+},
+"en": {
+  "stringUnit": { "state": "translated",
+    "value": "Automatic SSH tunnel"
+  }
+},
+"sv": {
+  "stringUnit": { "state": "translated",
+    "value": "Automatisk SSH-tunnel"
+  }
+},
+"es": {
+  "stringUnit": { "state": "translated",
+    "value": "Túnel SSH automático"
+  }
+},
+"fr": {
+  "stringUnit": { "state": "translated",
+    "value": "Tunnel SSH automatique"
+  }
+},
+"pt": {
+  "stringUnit": { "state": "translated",
+    "value": "Túnel SSH automático"
+  }
+},
+"ru": {
+  "stringUnit": { "state": "translated",
+    "value": "Автоматический SSH-туннель"
+  }
+},
+"tr": {
+  "stringUnit": { "state": "translated",
+    "value": "Otomatik SSH tüneli"
+  }
+},
+"id": {
+  "stringUnit": { "state": "translated",
+    "value": "Terowongan SSH otomatis"
+  }
+},
+"vi": {
+  "stringUnit": { "state": "translated",
+    "value": "Đường hầm SSH tự động"
+  }
+},
+"zh-Hans": {
+  "stringUnit": { "state": "translated",
+    "value": "自动 SSH 隧道"
+  }
+},
+"ja": {
+  "stringUnit": { "state": "translated",
+    "value": "自動SSHトンネル"
+  }
+},
+"ar": {
+  "stringUnit": { "state": "translated",
+    "value": "نفق SSH تلقائي"
+  }
+},
+"hi": {
+  "stringUnit": { "state": "translated",
+    "value": "ऑटोमैटिक SSH टनल"
+  }
+},
+"bn": {
+  "stringUnit": { "state": "translated",
+    "value": "স্বয়ংক্রিয় SSH টানেল"
+  }
+},
+"mr": {
+  "stringUnit": { "state": "translated",
+    "value": "स्वयंचलित SSH टनेल"
+  }
+},
+"te": {
+  "stringUnit": { "state": "translated",
+    "value": "ఆటోమేటిక్ SSH టన్నెల్"
+  }
+},
+"ur": {
+  "stringUnit": { "state": "translated",
+    "value": "خودکار SSH سرنگ"
+  }
+},
+"sw": {
+  "stringUnit": { "state": "translated",
+    "value": "Handaki ya SSH otomatiki"
+  }
+},
+"ha": {
+  "stringUnit": { "state": "translated",
+    "value": "Ramin SSH ta atomatik"
+  }
+},
+"pcm": {
+  "stringUnit": { "state": "translated",
+    "value": "Automatic SSH tunnel"
+  }
+}
+    }
+  },
+  "Bastion": {
+    "localizations": {
+"de": {
+  "stringUnit": { "state": "translated",
+    "value": "Bastion"
+  }
+},
+"en": {
+  "stringUnit": { "state": "translated",
+    "value": "Bastion"
+  }
+},
+"sv": {
+  "stringUnit": { "state": "translated",
+    "value": "Bastion"
+  }
+},
+"es": {
+  "stringUnit": { "state": "translated",
+    "value": "Bastión"
+  }
+},
+"fr": {
+  "stringUnit": { "state": "translated",
+    "value": "Bastion"
+  }
+},
+"pt": {
+  "stringUnit": { "state": "translated",
+    "value": "Bastion"
+  }
+},
+"ru": {
+  "stringUnit": { "state": "translated",
+    "value": "Бастион"
+  }
+},
+"tr": {
+  "stringUnit": { "state": "translated",
+    "value": "Bastion"
+  }
+},
+"id": {
+  "stringUnit": { "state": "translated",
+    "value": "Bastion"
+  }
+},
+"vi": {
+  "stringUnit": { "state": "translated",
+    "value": "Bastion"
+  }
+},
+"zh-Hans": {
+  "stringUnit": { "state": "translated",
+    "value": "堡垒机"
+  }
+},
+"ja": {
+  "stringUnit": { "state": "translated",
+    "value": "バスティオン"
+  }
+},
+"ar": {
+  "stringUnit": { "state": "translated",
+    "value": "Bastion"
+  }
+},
+"hi": {
+  "stringUnit": { "state": "translated",
+    "value": "बैशन"
+  }
+},
+"bn": {
+  "stringUnit": { "state": "translated",
+    "value": "ব্যাস্টিয়ন"
+  }
+},
+"mr": {
+  "stringUnit": { "state": "translated",
+    "value": "बॅस्टियन"
+  }
+},
+"te": {
+  "stringUnit": { "state": "translated",
+    "value": "బాస్టియన్"
+  }
+},
+"ur": {
+  "stringUnit": { "state": "translated",
+    "value": "گڑھ"
+  }
+},
+"sw": {
+  "stringUnit": { "state": "translated",
+    "value": "Bastion"
+  }
+},
+"ha": {
+  "stringUnit": { "state": "translated",
+    "value": "Bastion"
+  }
+},
+"pcm": {
+  "stringUnit": { "state": "translated",
+    "value": "Bastion"
+  }
+}
+    }
+  },
+  "Bevorzugter lokaler Port": {
+    "localizations": {
+"de": {
+  "stringUnit": { "state": "translated",
+    "value": "Bevorzugter lokaler Port"
+  }
+},
+"en": {
+  "stringUnit": { "state": "translated",
+    "value": "Preferred local port"
+  }
+},
+"sv": {
+  "stringUnit": { "state": "translated",
+    "value": "Föredragen lokal port"
+  }
+},
+"es": {
+  "stringUnit": { "state": "translated",
+    "value": "Puerto local preferido"
+  }
+},
+"fr": {
+  "stringUnit": { "state": "translated",
+    "value": "Port local préféré"
+  }
+},
+"pt": {
+  "stringUnit": { "state": "translated",
+    "value": "Porta local preferencial"
+  }
+},
+"ru": {
+  "stringUnit": { "state": "translated",
+    "value": "Предпочтительный локальный порт"
+  }
+},
+"tr": {
+  "stringUnit": { "state": "translated",
+    "value": "Tercih edilen yerel port"
+  }
+},
+"id": {
+  "stringUnit": { "state": "translated",
+    "value": "Port lokal pilihan"
+  }
+},
+"vi": {
+  "stringUnit": { "state": "translated",
+    "value": "Cổng cục bộ ưu tiên"
+  }
+},
+"zh-Hans": {
+  "stringUnit": { "state": "translated",
+    "value": "首选本地端口"
+  }
+},
+"ja": {
+  "stringUnit": { "state": "translated",
+    "value": "優先ローカルポート"
+  }
+},
+"ar": {
+  "stringUnit": { "state": "translated",
+    "value": "المنفذ المحلي المفضل"
+  }
+},
+"hi": {
+  "stringUnit": { "state": "translated",
+    "value": "पसंदीदा लोकल पोर्ट"
+  }
+},
+"bn": {
+  "stringUnit": { "state": "translated",
+    "value": "পছন্দের স্থানীয় পোর্ট"
+  }
+},
+"mr": {
+  "stringUnit": { "state": "translated",
+    "value": "पसंतीचे स्थानिक पोर्ट"
+  }
+},
+"te": {
+  "stringUnit": { "state": "translated",
+    "value": "ప్రాధాన్యత గల స్థానిక పోర్ట్"
+  }
+},
+"ur": {
+  "stringUnit": { "state": "translated",
+    "value": "ترجیحی مقامی بندرگاہ"
+  }
+},
+"sw": {
+  "stringUnit": { "state": "translated",
+    "value": "Lango la ndani linalopendelewa"
+  }
+},
+"ha": {
+  "stringUnit": { "state": "translated",
+    "value": "Tashar jiragen ruwa ta gida da aka fi so"
+  }
+},
+"pcm": {
+  "stringUnit": { "state": "translated",
+    "value": "Preferred local port"
+  }
+}
+    }
+  },
+  "Der SSH-Tunnel konnte nicht gestartet werden: %@": {
+    "localizations": {
+"de": {
+  "stringUnit": { "state": "translated",
+    "value": "Der SSH-Tunnel konnte nicht gestartet werden: %@"
+  }
+},
+"en": {
+  "stringUnit": { "state": "translated",
+    "value": "The SSH tunnel could not be started: %@"
+  }
+},
+"sv": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH-tunneln kunde inte startas: %@"
+  }
+},
+"es": {
+  "stringUnit": { "state": "translated",
+    "value": "No se pudo iniciar el túnel SSH: %@"
+  }
+},
+"fr": {
+  "stringUnit": { "state": "translated",
+    "value": "Impossible de démarrer le tunnel SSH : %@"
+  }
+},
+"pt": {
+  "stringUnit": { "state": "translated",
+    "value": "Não foi possível iniciar o túnel SSH: %@"
+  }
+},
+"ru": {
+  "stringUnit": { "state": "translated",
+    "value": "Не удалось запустить SSH-туннель: %@"
+  }
+},
+"tr": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH tüneli başlatılamadı: %@"
+  }
+},
+"id": {
+  "stringUnit": { "state": "translated",
+    "value": "Terowongan SSH tidak dapat dimulai: %@"
+  }
+},
+"vi": {
+  "stringUnit": { "state": "translated",
+    "value": "Không thể khởi động đường hầm SSH: %@"
+  }
+},
+"zh-Hans": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH 隧道无法启动：%@"
+  }
+},
+"ja": {
+  "stringUnit": { "state": "translated",
+    "value": "SSHトンネルを開始できませんでした: %@"
+  }
+},
+"ar": {
+  "stringUnit": { "state": "translated",
+    "value": "تعذر بدء نفق SSH: %@"
+  }
+},
+"hi": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH टनल शुरू नहीं हो सका: %@"
+  }
+},
+"bn": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH টানেল শুরু করা যায়নি: %@"
+  }
+},
+"mr": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH टनेल सुरू होऊ शकला नाही: %@"
+  }
+},
+"te": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH టన్నెల్ ప్రారంభించబడలేదు: %@"
+  }
+},
+"ur": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH سرنگ شروع نہیں ہو سکی: %@"
+  }
+},
+"sw": {
+  "stringUnit": { "state": "translated",
+    "value": "Handaki ya SSH haikuweza kuanzishwa: %@"
+  }
+},
+"ha": {
+  "stringUnit": { "state": "translated",
+    "value": "Ba za a iya fara ramin SSH ba: %@"
+  }
+},
+"pcm": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH tunnel no fit start: %@"
+  }
+}
+    }
+  },
+  "DOWN": {
+    "localizations": {
+"de": {
+  "stringUnit": { "state": "translated",
+    "value": "DOWN"
+  }
+},
+"en": {
+  "stringUnit": { "state": "translated",
+    "value": "DOWN"
+  }
+},
+"sv": {
+  "stringUnit": { "state": "translated",
+    "value": "DOWN"
+  }
+},
+"es": {
+  "stringUnit": { "state": "translated",
+    "value": "DOWN"
+  }
+},
+"fr": {
+  "stringUnit": { "state": "translated",
+    "value": "DOWN"
+  }
+},
+"pt": {
+  "stringUnit": { "state": "translated",
+    "value": "DOWN"
+  }
+},
+"ru": {
+  "stringUnit": { "state": "translated",
+    "value": "DOWN"
+  }
+},
+"tr": {
+  "stringUnit": { "state": "translated",
+    "value": "DOWN"
+  }
+},
+"id": {
+  "stringUnit": { "state": "translated",
+    "value": "DOWN"
+  }
+},
+"vi": {
+  "stringUnit": { "state": "translated",
+    "value": "DOWN"
+  }
+},
+"zh-Hans": {
+  "stringUnit": { "state": "translated",
+    "value": "DOWN"
+  }
+},
+"ja": {
+  "stringUnit": { "state": "translated",
+    "value": "DOWN"
+  }
+},
+"ar": {
+  "stringUnit": { "state": "translated",
+    "value": "DOWN"
+  }
+},
+"hi": {
+  "stringUnit": { "state": "translated",
+    "value": "DOWN"
+  }
+},
+"bn": {
+  "stringUnit": { "state": "translated",
+    "value": "DOWN"
+  }
+},
+"mr": {
+  "stringUnit": { "state": "translated",
+    "value": "DOWN"
+  }
+},
+"te": {
+  "stringUnit": { "state": "translated",
+    "value": "DOWN"
+  }
+},
+"ur": {
+  "stringUnit": { "state": "translated",
+    "value": "DOWN"
+  }
+},
+"sw": {
+  "stringUnit": { "state": "translated",
+    "value": "DOWN"
+  }
+},
+"ha": {
+  "stringUnit": { "state": "translated",
+    "value": "DOWN"
+  }
+},
+"pcm": {
+  "stringUnit": { "state": "translated",
+    "value": "DOWN"
+  }
+}
+    }
+  },
+  "Ein Klick auf ein Problem öffnet die Monitoring-Weboberfläche. SSH und RDP erscheinen im Kontextmenü. Der automatische Tunnel greift nur bei nicht erreichbaren HTTP-Zielen und beendet sich mit IssueLight.": {
+    "localizations": {
+"de": {
+  "stringUnit": { "state": "translated",
+    "value": "Ein Klick auf ein Problem öffnet die Monitoring-Weboberfläche. SSH und RDP erscheinen im Kontextmenü. Der automatische Tunnel greift nur bei nicht erreichbaren HTTP-Zielen und beendet sich mit IssueLight."
+  }
+},
+"en": {
+  "stringUnit": { "state": "translated",
+    "value": "Clicking an issue opens the monitoring web interface. SSH and RDP appear in the context menu. The automatic tunnel only works for unreachable HTTP destinations and terminates with IssueLight."
+  }
+},
+"sv": {
+  "stringUnit": { "state": "translated",
+    "value": "Om du klickar på ett problem öppnas övervakningswebbgränssnittet. SSH och RDP visas i snabbmenyn. Den automatiska tunneln fungerar endast för oåtkomliga HTTP-destinationer och avslutas med IssueLight."
+  }
+},
+"es": {
+  "stringUnit": { "state": "translated",
+    "value": "Al hacer clic en un problema, se abre la interfaz web de monitorización. SSH y RDP aparecen en el menú contextual. El túnel automático solo funciona para destinos HTTP inaccesibles y finaliza con IssueLight."
+  }
+},
+"fr": {
+  "stringUnit": { "state": "translated",
+    "value": "Cliquer sur un problème ouvre l’interface web de surveillance. Les options SSH et RDP apparaissent dans le menu contextuel. Le tunnel automatique fonctionne uniquement pour les destinations HTTP inaccessibles et se termine avec IssueLight."
+  }
+},
+"pt": {
+  "stringUnit": { "state": "translated",
+    "value": "Clicar em um problema abre a interface web de monitoramento. SSH e RDP aparecem no menu de contexto. O túnel automático funciona apenas para destinos HTTP inacessíveis e é encerrado com o IssueLight."
+  }
+},
+"ru": {
+  "stringUnit": { "state": "translated",
+    "value": "Нажатие на проблему открывает веб-интерфейс мониторинга. SSH и RDP отображаются в контекстном меню. Автоматический туннель работает только для недоступных HTTP-адресов и завершается с IssueLight."
+  }
+},
+"tr": {
+  "stringUnit": { "state": "translated",
+    "value": "Bir soruna tıklamak, izleme web arayüzünü açar. Bağlam menüsünde SSH ve RDP görünür. Otomatik tünel yalnızca ulaşılamayan HTTP hedefleri için çalışır ve IssueLight ile sonlanır."
+  }
+},
+"id": {
+  "stringUnit": { "state": "translated",
+    "value": "Mengklik masalah akan membuka antarmuka web pemantauan. SSH dan RDP muncul di menu konteks. Terowongan otomatis hanya berfungsi untuk tujuan HTTP yang tidak dapat dijangkau dan berakhir dengan IssueLight."
+  }
+},
+"vi": {
+  "stringUnit": { "state": "translated",
+    "value": "Nhấp vào một sự cố sẽ mở giao diện web giám sát. SSH và RDP xuất hiện trong menu ngữ cảnh. Đường hầm tự động chỉ hoạt động đối với các đích đến HTTP không thể truy cập và kết thúc với IssueLight."
+  }
+},
+"zh-Hans": {
+  "stringUnit": { "state": "translated",
+    "value": "单击问题将打开监控 Web 界面。 SSH 和 RDP 将显示在上下文菜单中。 自动隧道仅适用于无法访问的 HTTP 目标，并在 IssueLight 处终止。"
+  }
+},
+"ja": {
+  "stringUnit": { "state": "translated",
+    "value": "問題をクリックすると、監視Webインターフェースが開きます。 コンテキストメニューにSSHとRDPが表示されます。 自動トンネルは到達不能なHTTP宛先に対してのみ機能し、IssueLightで終了します。"
+  }
+},
+"ar": {
+  "stringUnit": { "state": "translated",
+    "value": "يؤدي النقر على مشكلة إلى فتح واجهة الويب الخاصة بالمراقبة. يظهر SSH وRDP في قائمة السياق. يعمل النفق التلقائي فقط مع وجهات HTTP غير القابلة للوصول وينتهي مع IssueLight."
+  }
+},
+"hi": {
+  "stringUnit": { "state": "translated",
+    "value": "किसी इश्यू पर क्लिक करने से मॉनिटरिंग वेब इंटरफ़ेस खुल जाता है।SSH और RDP कॉन्टेक्स्ट मेन्यू में दिखाई देते हैं।ऑटोमैटिक टनल सिर्फ़ उन HTTP डेस्टिनेशन के लिए काम करता है जहाँ पहुँचा नहीं जा सकता और IssueLight के साथ खत्म होता है।"
+  }
+},
+"bn": {
+  "stringUnit": { "state": "translated",
+    "value": "একটি ইস্যুতে ক্লিক করলে মনিটরিং ওয়েব ইন্টারফেস খোলে।কনটেক্সট মেনুতে SSH এবং RDP দেখা যায়।স্বয়ংক্রিয় টানেলটি শুধুমাত্র অপ্রাপ্য HTTP গন্তব্যের জন্য কাজ করে এবং IssueLight-এর মাধ্যমে টার্মিনেট হয়।"
+  }
+},
+"mr": {
+  "stringUnit": { "state": "translated",
+    "value": "एखाद्या समस्येवर क्लिक केल्यावर मॉनिटरिंग वेब इंटरफेस उघडतो. संदर्भ मेनूमध्ये SSH आणि RDP दिसतात. स्वयंचलित टनेल फक्त पोहोचण्यायोग्य नसलेल्या HTTP डेस्टिनेशन्ससाठी काम करतो आणि IssueLightसह समाप्त होतो."
+  }
+},
+"te": {
+  "stringUnit": { "state": "translated",
+    "value": "ఒక సమస్యపై క్లిక్ చేయడం వలన పర్యవేక్షణ వెబ్ ఇంటర్‌ఫేస్ తెరుచుకుంటుంది. కాంటెక్స్ట్ మెనూలో SSH మరియు RDP కనిపిస్తాయి. ఆటోమేటిక్ టన్నెల్ చేరుకోలేని HTTP గమ్యస్థానాలకు మాత్రమే పనిచేస్తుంది మరియు IssueLightతో ముగుస్తుంది."
+  }
+},
+"ur": {
+  "stringUnit": { "state": "translated",
+    "value": "مسئلہ پر کلک کرنے سے مانیٹرنگ ویب انٹرفیس کھل جاتا ہے۔SSH اور RDP سیاق و سباق کے مینو میں ظاہر ہوتے ہیں۔خودکار سرنگ صرف ناقابل رسائی HTTP منزلوں کے لیے کام کرتی ہے اور IssueLight کے ساتھ ختم ہو جاتی ہے۔"
+  }
+},
+"sw": {
+  "stringUnit": { "state": "translated",
+    "value": "Kubofya tatizo hufungua kiolesura cha wavuti cha ufuatiliaji. SSH na RDP huonekana kwenye menyu ya muktadha. Handaki otomatiki hufanya kazi tu kwa maeneo ya HTTP yasiyofikika na huisha na IssueLight."
+  }
+},
+"ha": {
+  "stringUnit": { "state": "translated",
+    "value": "Danna matsala yana buɗe hanyar haɗin yanar gizo na sa ido. SSH da RDP suna bayyana a cikin menu na mahallin. Ramin atomatik yana aiki ne kawai ga wuraren HTTP da ba za a iya isa ba kuma yana ƙarewa da IssueLight."
+  }
+},
+"pcm": {
+  "stringUnit": { "state": "translated",
+    "value": "Click problem to open the monitoring web interface. SSH and RDP dey for context menu. Automatic tunnel works only for HTTP targets wey no reachable and e stops with IssueLight."
+  }
+}
+    }
+  },
+  "Filter": {
+    "localizations": {
+"de": {
+  "stringUnit": { "state": "translated",
+    "value": "Filter"
+  }
+},
+"en": {
+  "stringUnit": { "state": "translated",
+    "value": "Filter"
+  }
+},
+"sv": {
+  "stringUnit": { "state": "translated",
+    "value": "Filter"
+  }
+},
+"es": {
+  "stringUnit": { "state": "translated",
+    "value": "Filtro"
+  }
+},
+"fr": {
+  "stringUnit": { "state": "translated",
+    "value": "Filtre"
+  }
+},
+"pt": {
+  "stringUnit": { "state": "translated",
+    "value": "Filtrar"
+  }
+},
+"ru": {
+  "stringUnit": { "state": "translated",
+    "value": "Фильтр"
+  }
+},
+"tr": {
+  "stringUnit": { "state": "translated",
+    "value": "Filtre"
+  }
+},
+"id": {
+  "stringUnit": { "state": "translated",
+    "value": "Filter"
+  }
+},
+"vi": {
+  "stringUnit": { "state": "translated",
+    "value": "Bộ lọc"
+  }
+},
+"zh-Hans": {
+  "stringUnit": { "state": "translated",
+    "value": "过滤器"
+  }
+},
+"ja": {
+  "stringUnit": { "state": "translated",
+    "value": "フィルタ"
+  }
+},
+"ar": {
+  "stringUnit": { "state": "translated",
+    "value": "تصفية"
+  }
+},
+"hi": {
+  "stringUnit": { "state": "translated",
+    "value": "फ़िल्टर"
+  }
+},
+"bn": {
+  "stringUnit": { "state": "translated",
+    "value": "ফিল্টার"
+  }
+},
+"mr": {
+  "stringUnit": { "state": "translated",
+    "value": "फिल्टर"
+  }
+},
+"te": {
+  "stringUnit": { "state": "translated",
+    "value": "ఫిల్టర్"
+  }
+},
+"ur": {
+  "stringUnit": { "state": "translated",
+    "value": "فلٹر"
+  }
+},
+"sw": {
+  "stringUnit": { "state": "translated",
+    "value": "Kichujio"
+  }
+},
+"ha": {
+  "stringUnit": { "state": "translated",
+    "value": "Tace"
+  }
+},
+"pcm": {
+  "stringUnit": { "state": "translated",
+    "value": "Filter"
+  }
+}
+    }
+  },
+  "Filter zurücksetzen": {
+    "localizations": {
+"de": {
+  "stringUnit": { "state": "translated",
+    "value": "Filter zurücksetzen"
+  }
+},
+"en": {
+  "stringUnit": { "state": "translated",
+    "value": "Reset Filter"
+  }
+},
+"sv": {
+  "stringUnit": { "state": "translated",
+    "value": "Återställ filter"
+  }
+},
+"es": {
+  "stringUnit": { "state": "translated",
+    "value": "Restablecer filtro"
+  }
+},
+"fr": {
+  "stringUnit": { "state": "translated",
+    "value": "Réinitialiser le filtre"
+  }
+},
+"pt": {
+  "stringUnit": { "state": "translated",
+    "value": "Redefinir filtro"
+  }
+},
+"ru": {
+  "stringUnit": { "state": "translated",
+    "value": "Сбросить фильтр"
+  }
+},
+"tr": {
+  "stringUnit": { "state": "translated",
+    "value": "Filtreyi Sıfırla"
+  }
+},
+"id": {
+  "stringUnit": { "state": "translated",
+    "value": "Reset Filter"
+  }
+},
+"vi": {
+  "stringUnit": { "state": "translated",
+    "value": "Đặt lại bộ lọc"
+  }
+},
+"zh-Hans": {
+  "stringUnit": { "state": "translated",
+    "value": "重置过滤器"
+  }
+},
+"ja": {
+  "stringUnit": { "state": "translated",
+    "value": "フィルタのリセット"
+  }
+},
+"ar": {
+  "stringUnit": { "state": "translated",
+    "value": "إعادة ضبط التصفية"
+  }
+},
+"hi": {
+  "stringUnit": { "state": "translated",
+    "value": "फ़िल्टर रीसेट करें"
+  }
+},
+"bn": {
+  "stringUnit": { "state": "translated",
+    "value": "ফিল্টার রিসেট করুন"
+  }
+},
+"mr": {
+  "stringUnit": { "state": "translated",
+    "value": "फिल्टर रीसेट करा"
+  }
+},
+"te": {
+  "stringUnit": { "state": "translated",
+    "value": "ఫిల్టర్‌ను రీసెట్ చేయండి"
+  }
+},
+"ur": {
+  "stringUnit": { "state": "translated",
+    "value": "ری سیٹ فلٹر"
+  }
+},
+"sw": {
+  "stringUnit": { "state": "translated",
+    "value": "Weka Kichujio Upya"
+  }
+},
+"ha": {
+  "stringUnit": { "state": "translated",
+    "value": "Sake saita Tace"
+  }
+},
+"pcm": {
+  "stringUnit": { "state": "translated",
+    "value": "Reset filter"
+  }
+}
+    }
+  },
+  "Für diese Aktion ist keine passende App installiert.": {
+    "localizations": {
+"de": {
+  "stringUnit": { "state": "translated",
+    "value": "Für diese Aktion ist keine passende App installiert."
+  }
+},
+"en": {
+  "stringUnit": { "state": "translated",
+    "value": "No suitable app is installed for this action."
+  }
+},
+"sv": {
+  "stringUnit": { "state": "translated",
+    "value": "Ingen lämplig app är installerad för den här åtgärden."
+  }
+},
+"es": {
+  "stringUnit": { "state": "translated",
+    "value": "No hay ninguna aplicación adecuada instalada para esta acción."
+  }
+},
+"fr": {
+  "stringUnit": { "state": "translated",
+    "value": "Aucune application appropriée n'est installée pour cette action."
+  }
+},
+"pt": {
+  "stringUnit": { "state": "translated",
+    "value": "Nenhum aplicativo adequado está instalado para esta ação."
+  }
+},
+"ru": {
+  "stringUnit": { "state": "translated",
+    "value": "Для этого действия не установлено подходящее приложение."
+  }
+},
+"tr": {
+  "stringUnit": { "state": "translated",
+    "value": "Bu işlem için uygun bir uygulama yüklü değil."
+  }
+},
+"id": {
+  "stringUnit": { "state": "translated",
+    "value": "Tidak ada aplikasi yang sesuai yang terpasang untuk tindakan ini."
+  }
+},
+"vi": {
+  "stringUnit": { "state": "translated",
+    "value": "Không có ứng dụng phù hợp nào được cài đặt cho hành động này."
+  }
+},
+"zh-Hans": {
+  "stringUnit": { "state": "translated",
+    "value": "未安装适用于此操作的应用程序。"
+  }
+},
+"ja": {
+  "stringUnit": { "state": "translated",
+    "value": "この操作に適したアプリケーションがインストールされていません。"
+  }
+},
+"ar": {
+  "stringUnit": { "state": "translated",
+    "value": "لا يوجد تطبيق مناسب مثبت لهذا الإجراء."
+  }
+},
+"hi": {
+  "stringUnit": { "state": "translated",
+    "value": "इस एक्शन के लिए कोई सही ऐप इंस्टॉल नहीं है।"
+  }
+},
+"bn": {
+  "stringUnit": { "state": "translated",
+    "value": "এই কাজের জন্য কোনো উপযুক্ত অ্যাপ ইনস্টল করা নেই।"
+  }
+},
+"mr": {
+  "stringUnit": { "state": "translated",
+    "value": "या कृतीसाठी कोणतेही योग्य ॲप इन्स्टॉल केलेले नाही."
+  }
+},
+"te": {
+  "stringUnit": { "state": "translated",
+    "value": "ఈ చర్య కోసం తగిన యాప్ ఏదీ ఇన్‌స్టాల్ చేయబడలేదు."
+  }
+},
+"ur": {
+  "stringUnit": { "state": "translated",
+    "value": "اس کارروائی کے لیے کوئی موزوں ایپ انسٹال نہیں ہے۔"
+  }
+},
+"sw": {
+  "stringUnit": { "state": "translated",
+    "value": "Hakuna programu inayofaa iliyosakinishwa kwa kitendo hiki."
+  }
+},
+"ha": {
+  "stringUnit": { "state": "translated",
+    "value": "Ba a shigar da wani app mai dacewa don wannan aikin ba."
+  }
+},
+"pcm": {
+  "stringUnit": { "state": "translated",
+    "value": "No suitable app dey installed for this action."
+  }
+}
+    }
+  },
+  "Gib den Hostnamen des SSH-Bastionsservers ein.": {
+    "localizations": {
+"de": {
+  "stringUnit": { "state": "translated",
+    "value": "Gib den Hostnamen des SSH-Bastionsservers ein."
+  }
+},
+"en": {
+  "stringUnit": { "state": "translated",
+    "value": "Enter the hostname of the SSH bastion server."
+  }
+},
+"sv": {
+  "stringUnit": { "state": "translated",
+    "value": "Ange värdnamnet för SSH-bastionservern."
+  }
+},
+"es": {
+  "stringUnit": { "state": "translated",
+    "value": "Introduzca el nombre de host del servidor bastión SSH."
+  }
+},
+"fr": {
+  "stringUnit": { "state": "translated",
+    "value": "Saisissez le nom d'hôte du serveur bastion SSH."
+  }
+},
+"pt": {
+  "stringUnit": { "state": "translated",
+    "value": "Digite o nome do host do servidor bastion SSH."
+  }
+},
+"ru": {
+  "stringUnit": { "state": "translated",
+    "value": "Введите имя хоста бастионного SSH-сервера."
+  }
+},
+"tr": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH bastion sunucusunun ana bilgisayar adını girin."
+  }
+},
+"id": {
+  "stringUnit": { "state": "translated",
+    "value": "Masukkan nama host server bastion SSH."
+  }
+},
+"vi": {
+  "stringUnit": { "state": "translated",
+    "value": "Nhập tên máy chủ SSH bastion."
+  }
+},
+"zh-Hans": {
+  "stringUnit": { "state": "translated",
+    "value": "请输入 SSH 堡垒服务器的主机名。"
+  }
+},
+"ja": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH踏み台サーバーのホスト名を入力してください。"
+  }
+},
+"ar": {
+  "stringUnit": { "state": "translated",
+    "value": "أدخل اسم مضيف خادم SSH الوسيط."
+  }
+},
+"hi": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH बैस्टियन सर्वर का होस्टनेम डालें।"
+  }
+},
+"bn": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH ব্যাস্টিয়ন সার্ভারের হোস্টনেম লিখুন।"
+  }
+},
+"mr": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH बॅस्टियन सर्व्हरचे होस्टनेम प्रविष्ट करा."
+  }
+},
+"te": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH బాస్టియన్ సర్వర్ యొక్క హోస్ట్ పేరును నమోదు చేయండి."
+  }
+},
+"ur": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH بیسشن سرور کا میزبان نام درج کریں۔"
+  }
+},
+"sw": {
+  "stringUnit": { "state": "translated",
+    "value": "Ingiza jina la mwenyeji la seva ya bastion ya SSH."
+  }
+},
+"ha": {
+  "stringUnit": { "state": "translated",
+    "value": "Shigar da sunan mai masaukin baki na uwar garken SSH bastion."
+  }
+},
+"pcm": {
+  "stringUnit": { "state": "translated",
+    "value": "Enter the SSH bastion server hostname."
+  }
+}
+    }
+  },
+  "Gib den SSH-Benutzernamen für den Bastionsserver ein.": {
+    "localizations": {
+"de": {
+  "stringUnit": { "state": "translated",
+    "value": "Gib den SSH-Benutzernamen für den Bastionsserver ein."
+  }
+},
+"en": {
+  "stringUnit": { "state": "translated",
+    "value": "Enter the SSH username for the bastion server."
+  }
+},
+"sv": {
+  "stringUnit": { "state": "translated",
+    "value": "Ange SSH-användarnamnet för bastionservern."
+  }
+},
+"es": {
+  "stringUnit": { "state": "translated",
+    "value": "Introduzca el nombre de usuario SSH del servidor bastión."
+  }
+},
+"fr": {
+  "stringUnit": { "state": "translated",
+    "value": "Saisissez le nom d'utilisateur SSH du serveur bastion."
+  }
+},
+"pt": {
+  "stringUnit": { "state": "translated",
+    "value": "Digite o nome de usuário SSH do servidor bastion."
+  }
+},
+"ru": {
+  "stringUnit": { "state": "translated",
+    "value": "Введите имя пользователя SSH для бастионного сервера."
+  }
+},
+"tr": {
+  "stringUnit": { "state": "translated",
+    "value": "Bastion sunucusu için SSH kullanıcı adını girin."
+  }
+},
+"id": {
+  "stringUnit": { "state": "translated",
+    "value": "Masukkan nama pengguna SSH untuk server bastion."
+  }
+},
+"vi": {
+  "stringUnit": { "state": "translated",
+    "value": "Nhập tên người dùng SSH cho máy chủ bastion."
+  }
+},
+"zh-Hans": {
+  "stringUnit": { "state": "translated",
+    "value": "请输入堡垒服务器的 SSH 用户名。"
+  }
+},
+"ja": {
+  "stringUnit": { "state": "translated",
+    "value": "踏み台サーバーのSSHユーザー名を入力してください。"
+  }
+},
+"ar": {
+  "stringUnit": { "state": "translated",
+    "value": "أدخل اسم مستخدم SSH لخادم الوسيط."
+  }
+},
+"hi": {
+  "stringUnit": { "state": "translated",
+    "value": "बैस्टियन सर्वर के लिए SSH यूज़रनेम डालें।"
+  }
+},
+"bn": {
+  "stringUnit": { "state": "translated",
+    "value": "ব্যাস্টিয়ন সার্ভারের জন্য SSH ইউজারনেম লিখুন।"
+  }
+},
+"mr": {
+  "stringUnit": { "state": "translated",
+    "value": "बॅस्टियन सर्व्हरसाठी SSH युझरनेम प्रविष्ट करा."
+  }
+},
+"te": {
+  "stringUnit": { "state": "translated",
+    "value": "బాస్టియన్ సర్వర్ కోసం SSH వినియోగదారు పేరును నమోదు చేయండి."
+  }
+},
+"ur": {
+  "stringUnit": { "state": "translated",
+    "value": "بیشن سرور کے لیے SSH صارف نام درج کریں۔"
+  }
+},
+"sw": {
+  "stringUnit": { "state": "translated",
+    "value": "Ingiza jina la mtumiaji la SSH kwa seva ya bastion."
+  }
+},
+"ha": {
+  "stringUnit": { "state": "translated",
+    "value": "Shigar da sunan mai amfani na SSH don uwar garken bastion."
+  }
+},
+"pcm": {
+  "stringUnit": { "state": "translated",
+    "value": "Enter the SSH username for the bastion server."
+  }
+}
+    }
+  },
+  "Gib eine gültige Web-URL ohne Zugangsdaten, Abfrage oder Fragment ein.": {
+    "localizations": {
+"de": {
+  "stringUnit": { "state": "translated",
+    "value": "Gib eine gültige Web-URL ohne Zugangsdaten, Abfrage oder Fragment ein."
+  }
+},
+"en": {
+  "stringUnit": { "state": "translated",
+    "value": "Enter a valid web URL without credentials, a query, or a fragment."
+  }
+},
+"sv": {
+  "stringUnit": { "state": "translated",
+    "value": "Ange en giltig webb-URL utan inloggningsuppgifter, frågor eller fragment."
+  }
+},
+"es": {
+  "stringUnit": { "state": "translated",
+    "value": "Introduzca una URL web válida sin credenciales, solicitudes ni fragmentos."
+  }
+},
+"fr": {
+  "stringUnit": { "state": "translated",
+    "value": "Saisissez une URL web valide sans identifiants, invites ni fragments."
+  }
+},
+"pt": {
+  "stringUnit": { "state": "translated",
+    "value": "Digite um URL da Web válido, sem credenciais, prompts ou fragmentos."
+  }
+},
+"ru": {
+  "stringUnit": { "state": "translated",
+    "value": "Введите действительный веб-адрес без учетных данных, запросов или фрагментов."
+  }
+},
+"tr": {
+  "stringUnit": { "state": "translated",
+    "value": "Kimlik bilgileri, istemler veya parçalar içermeyen geçerli bir web URL'si girin."
+  }
+},
+"id": {
+  "stringUnit": { "state": "translated",
+    "value": "Masukkan URL web yang valid tanpa kredensial, permintaan, atau fragmen."
+  }
+},
+"vi": {
+  "stringUnit": { "state": "translated",
+    "value": "Nhập URL web hợp lệ mà không có thông tin đăng nhập, lời nhắc hoặc đoạn mã."
+  }
+},
+"zh-Hans": {
+  "stringUnit": { "state": "translated",
+    "value": "请输入有效的 Web URL，无需凭据、提示或片段。"
+  }
+},
+"ja": {
+  "stringUnit": { "state": "translated",
+    "value": "認証情報、プロンプト、フラグメントを含まない有効なWeb URLを入力してください。"
+  }
+},
+"ar": {
+  "stringUnit": { "state": "translated",
+    "value": "أدخل عنوان URL صالحًا لموقع ويب بدون بيانات اعتماد أو مطالبات أو أجزاء."
+  }
+},
+"hi": {
+  "stringUnit": { "state": "translated",
+    "value": "बिना क्रेडेंशियल, प्रॉम्प्ट या फ़्रैगमेंट के एक वैलिड वेब URL डालें।"
+  }
+},
+"bn": {
+  "stringUnit": { "state": "translated",
+    "value": "ক্রেডেনশিয়াল, প্রম্পট বা ফ্র্যাগমেন্ট ছাড়া একটি বৈধ ওয়েব URL লিখুন।"
+  }
+},
+"mr": {
+  "stringUnit": { "state": "translated",
+    "value": "क्रेडेंशियल्स, प्रॉम्प्ट्स किंवा फ्रॅगमेंट्सशिवाय एक वैध वेब URL प्रविष्ट करा."
+  }
+},
+"te": {
+  "stringUnit": { "state": "translated",
+    "value": "క్రెడెన్షియల్స్, ప్రాంప్ట్‌లు లేదా ఫ్రాగ్మెంట్‌లు లేకుండా చెల్లుబాటు అయ్యే వెబ్ URLను నమోదు చేయండి."
+  }
+},
+"ur": {
+  "stringUnit": { "state": "translated",
+    "value": "اسناد، اشارے، یا ٹکڑے کے بغیر ایک درست ویب URL درج کریں۔"
+  }
+},
+"sw": {
+  "stringUnit": { "state": "translated",
+    "value": "Ingiza URL halali ya wavuti bila vitambulisho, vidokezo, au vipande."
+  }
+},
+"ha": {
+  "stringUnit": { "state": "translated",
+    "value": "Shigar da ingantaccen URL na yanar gizo ba tare da takaddun shaida, umarni, ko gutsuttsura ba."
+  }
+},
+"pcm": {
+  "stringUnit": { "state": "translated",
+    "value": "Enter valid web URL without login details, query or fragment."
+  }
+}
+    }
+  },
+  "https://monitoring.example/web": {
+    "localizations": {
+"de": {
+  "stringUnit": { "state": "translated",
+    "value": "https://monitoring.example/web"
+  }
+},
+"en": {
+  "stringUnit": { "state": "translated",
+    "value": "https://monitoring.example/web"
+  }
+},
+"sv": {
+  "stringUnit": { "state": "translated",
+    "value": "https://monitoring.example/web"
+  }
+},
+"es": {
+  "stringUnit": { "state": "translated",
+    "value": "https://monitoring.example/web"
+  }
+},
+"fr": {
+  "stringUnit": { "state": "translated",
+    "value": "https://monitoring.example/web"
+  }
+},
+"pt": {
+  "stringUnit": { "state": "translated",
+    "value": "https://monitoring.example/web"
+  }
+},
+"ru": {
+  "stringUnit": { "state": "translated",
+    "value": "https://monitoring.example/web"
+  }
+},
+"tr": {
+  "stringUnit": { "state": "translated",
+    "value": "https://monitoring.example/web"
+  }
+},
+"id": {
+  "stringUnit": { "state": "translated",
+    "value": "https://monitoring.example/web"
+  }
+},
+"vi": {
+  "stringUnit": { "state": "translated",
+    "value": "https://monitoring.example/web"
+  }
+},
+"zh-Hans": {
+  "stringUnit": { "state": "translated",
+    "value": "https://monitoring.example/web"
+  }
+},
+"ja": {
+  "stringUnit": { "state": "translated",
+    "value": "https://monitoring.example/web"
+  }
+},
+"ar": {
+  "stringUnit": { "state": "translated",
+    "value": "https://monitoring.example/web"
+  }
+},
+"hi": {
+  "stringUnit": { "state": "translated",
+    "value": "https://monitoring.example/web"
+  }
+},
+"bn": {
+  "stringUnit": { "state": "translated",
+    "value": "https://monitoring.example/web"
+  }
+},
+"mr": {
+  "stringUnit": { "state": "translated",
+    "value": "https://monitoring.example/web"
+  }
+},
+"te": {
+  "stringUnit": { "state": "translated",
+    "value": "https://monitoring.example/web"
+  }
+},
+"ur": {
+  "stringUnit": { "state": "translated",
+    "value": "https://monitoring.example/web"
+  }
+},
+"sw": {
+  "stringUnit": { "state": "translated",
+    "value": "https://monitoring.example/web"
+  }
+},
+"ha": {
+  "stringUnit": { "state": "translated",
+    "value": "https://monitoring.example/web"
+  }
+},
+"pcm": {
+  "stringUnit": { "state": "translated",
+    "value": "https://monitoring.example/web"
+  }
+}
+    }
+  },
+  "In Weboberfläche öffnen": {
+    "localizations": {
+"de": {
+  "stringUnit": { "state": "translated",
+    "value": "In Weboberfläche öffnen"
+  }
+},
+"en": {
+  "stringUnit": { "state": "translated",
+    "value": "Open in Web Interface"
+  }
+},
+"sv": {
+  "stringUnit": { "state": "translated",
+    "value": "Öppna i webbgränssnittet"
+  }
+},
+"es": {
+  "stringUnit": { "state": "translated",
+    "value": "Abrir en la interfaz web"
+  }
+},
+"fr": {
+  "stringUnit": { "state": "translated",
+    "value": "Ouvrir dans l'interface web"
+  }
+},
+"pt": {
+  "stringUnit": { "state": "translated",
+    "value": "Abrir na interface da Web"
+  }
+},
+"ru": {
+  "stringUnit": { "state": "translated",
+    "value": "Открыть в веб-интерфейсе"
+  }
+},
+"tr": {
+  "stringUnit": { "state": "translated",
+    "value": "Web Arayüzünde Aç"
+  }
+},
+"id": {
+  "stringUnit": { "state": "translated",
+    "value": "Buka di Antarmuka Web"
+  }
+},
+"vi": {
+  "stringUnit": { "state": "translated",
+    "value": "Mở trong giao diện web"
+  }
+},
+"zh-Hans": {
+  "stringUnit": { "state": "translated",
+    "value": "在 Web 界面中打开"
+  }
+},
+"ja": {
+  "stringUnit": { "state": "translated",
+    "value": "Webインターフェースで開く"
+  }
+},
+"ar": {
+  "stringUnit": { "state": "translated",
+    "value": "فتح في واجهة الويب"
+  }
+},
+"hi": {
+  "stringUnit": { "state": "translated",
+    "value": "वेब इंटरफ़ेस में खोलें"
+  }
+},
+"bn": {
+  "stringUnit": { "state": "translated",
+    "value": "ওয়েব ইন্টারফেসে খুলুন"
+  }
+},
+"mr": {
+  "stringUnit": { "state": "translated",
+    "value": "वेब इंटरफेसमध्ये उघडा"
+  }
+},
+"te": {
+  "stringUnit": { "state": "translated",
+    "value": "వెబ్ ఇంటర్‌ఫేస్‌లో తెరవండి"
+  }
+},
+"ur": {
+  "stringUnit": { "state": "translated",
+    "value": "ویب انٹرفیس میں کھولیں۔"
+  }
+},
+"sw": {
+  "stringUnit": { "state": "translated",
+    "value": "Fungua katika Kiolesura cha Wavuti"
+  }
+},
+"ha": {
+  "stringUnit": { "state": "translated",
+    "value": "Buɗe a cikin Intanet"
+  }
+},
+"pcm": {
+  "stringUnit": { "state": "translated",
+    "value": "Open for web interface"
+  }
+}
+    }
+  },
+  "Instanz": {
+    "localizations": {
+"de": {
+  "stringUnit": { "state": "translated",
+    "value": "Instanz"
+  }
+},
+"en": {
+  "stringUnit": { "state": "translated",
+    "value": "Instance"
+  }
+},
+"sv": {
+  "stringUnit": { "state": "translated",
+    "value": "Instans"
+  }
+},
+"es": {
+  "stringUnit": { "state": "translated",
+    "value": "Instancia"
+  }
+},
+"fr": {
+  "stringUnit": { "state": "translated",
+    "value": "Instance"
+  }
+},
+"pt": {
+  "stringUnit": { "state": "translated",
+    "value": "Instância"
+  }
+},
+"ru": {
+  "stringUnit": { "state": "translated",
+    "value": "Экземпляр"
+  }
+},
+"tr": {
+  "stringUnit": { "state": "translated",
+    "value": "Örnek"
+  }
+},
+"id": {
+  "stringUnit": { "state": "translated",
+    "value": "Instance"
+  }
+},
+"vi": {
+  "stringUnit": { "state": "translated",
+    "value": "Phiên bản"
+  }
+},
+"zh-Hans": {
+  "stringUnit": { "state": "translated",
+    "value": "实例"
+  }
+},
+"ja": {
+  "stringUnit": { "state": "translated",
+    "value": "インスタンス"
+  }
+},
+"ar": {
+  "stringUnit": { "state": "translated",
+    "value": "مثيل"
+  }
+},
+"hi": {
+  "stringUnit": { "state": "translated",
+    "value": "इंस्टेंस"
+  }
+},
+"bn": {
+  "stringUnit": { "state": "translated",
+    "value": "ইনস্ট্যান্স"
+  }
+},
+"mr": {
+  "stringUnit": { "state": "translated",
+    "value": "इन्स्टन्स"
+  }
+},
+"te": {
+  "stringUnit": { "state": "translated",
+    "value": "ఇన్‌స్టాన్స్"
+  }
+},
+"ur": {
+  "stringUnit": { "state": "translated",
+    "value": "مثال"
+  }
+},
+"sw": {
+  "stringUnit": { "state": "translated",
+    "value": "Instance"
+  }
+},
+"ha": {
+  "stringUnit": { "state": "translated",
+    "value": "Misali"
+  }
+},
+"pcm": {
+  "stringUnit": { "state": "translated",
+    "value": "Instance"
+  }
+}
+    }
+  },
+  "Keine Probleme entsprechen den aktiven Filtern.": {
+    "localizations": {
+"de": {
+  "stringUnit": { "state": "translated",
+    "value": "Keine Probleme entsprechen den aktiven Filtern."
+  }
+},
+"en": {
+  "stringUnit": { "state": "translated",
+    "value": "No issues match the active filters."
+  }
+},
+"sv": {
+  "stringUnit": { "state": "translated",
+    "value": "Inga problem matchar de aktiva filtren."
+  }
+},
+"es": {
+  "stringUnit": { "state": "translated",
+    "value": "No hay incidencias que coincidan con los filtros activos."
+  }
+},
+"fr": {
+  "stringUnit": { "state": "translated",
+    "value": "Aucun problème ne correspond aux filtres actifs."
+  }
+},
+"pt": {
+  "stringUnit": { "state": "translated",
+    "value": "Nenhum problema corresponde aos filtros ativos."
+  }
+},
+"ru": {
+  "stringUnit": { "state": "translated",
+    "value": "Нет проблем, соответствующих активным фильтрам."
+  }
+},
+"tr": {
+  "stringUnit": { "state": "translated",
+    "value": "Aktif filtrelerle eşleşen sorun yok."
+  }
+},
+"id": {
+  "stringUnit": { "state": "translated",
+    "value": "Tidak ada masalah yang cocok dengan filter aktif."
+  }
+},
+"vi": {
+  "stringUnit": { "state": "translated",
+    "value": "Không có vấn đề nào khớp với các bộ lọc đang hoạt động."
+  }
+},
+"zh-Hans": {
+  "stringUnit": { "state": "translated",
+    "value": "没有问题与当前活动的过滤器匹配。"
+  }
+},
+"ja": {
+  "stringUnit": { "state": "translated",
+    "value": "有効なフィルタに一致する問題はありません。"
+  }
+},
+"ar": {
+  "stringUnit": { "state": "translated",
+    "value": "لا توجد مشكلات تطابق عوامل التصفية النشطة."
+  }
+},
+"hi": {
+  "stringUnit": { "state": "translated",
+    "value": "एक्टिव फ़िल्टर से कोई दिक्कत मैच नहीं होती।"
+  }
+},
+"bn": {
+  "stringUnit": { "state": "translated",
+    "value": "সক্রিয় ফিল্টারগুলোর সাথে কোনো সমস্যা মেলে না।"
+  }
+},
+"mr": {
+  "stringUnit": { "state": "translated",
+    "value": "सक्रिय फिल्टर्सशी जुळणाऱ्या कोणत्याही समस्या नाहीत."
+  }
+},
+"te": {
+  "stringUnit": { "state": "translated",
+    "value": "యాక్టివ్ ఫిల్టర్‌లకు ఏ సమస్యలూ సరిపోలడం లేదు."
+  }
+},
+"ur": {
+  "stringUnit": { "state": "translated",
+    "value": "کوئی مسئلہ فعال فلٹرز سے میل نہیں کھاتا۔"
+  }
+},
+"sw": {
+  "stringUnit": { "state": "translated",
+    "value": "Hakuna matatizo yanayolingana na vichujio vinavyotumika."
+  }
+},
+"ha": {
+  "stringUnit": { "state": "translated",
+    "value": "Babu wata matsala da ta dace da matattara masu aiki."
+  }
+},
+"pcm": {
+  "stringUnit": { "state": "translated",
+    "value": "No problem match the active filters."
+  }
+}
+    }
+  },
+  "Konfiguriere zuerst die Web-URL dieser Quelle.": {
+    "localizations": {
+"de": {
+  "stringUnit": { "state": "translated",
+    "value": "Konfiguriere zuerst die Web-URL dieser Quelle."
+  }
+},
+"en": {
+  "stringUnit": { "state": "translated",
+    "value": "Configure this source's web URL first."
+  }
+},
+"sv": {
+  "stringUnit": { "state": "translated",
+    "value": "Konfigurera först den här källans webb-URL."
+  }
+},
+"es": {
+  "stringUnit": { "state": "translated",
+    "value": "Configure primero la URL web de esta fuente."
+  }
+},
+"fr": {
+  "stringUnit": { "state": "translated",
+    "value": "Configurez d'abord l'URL web de cette source."
+  }
+},
+"pt": {
+  "stringUnit": { "state": "translated",
+    "value": "Configure primeiro o URL da Web desta fonte. IL024"
+  }
+},
+"ru": {
+  "stringUnit": { "state": "translated",
+    "value": "Сначала настройте веб-адрес этого источника."
+  }
+},
+"tr": {
+  "stringUnit": { "state": "translated",
+    "value": "Önce bu kaynağın web URL'sini yapılandırın."
+  }
+},
+"id": {
+  "stringUnit": { "state": "translated",
+    "value": "Konfigurasikan URL web sumber ini terlebih dahulu."
+  }
+},
+"vi": {
+  "stringUnit": { "state": "translated",
+    "value": "Trước tiên hãy cấu hình URL web của nguồn này."
+  }
+},
+"zh-Hans": {
+  "stringUnit": { "state": "translated",
+    "value": "请先配置此源的 Web URL。"
+  }
+},
+"ja": {
+  "stringUnit": { "state": "translated",
+    "value": "まず、このソースのWeb URLを設定してください。"
+  }
+},
+"ar": {
+  "stringUnit": { "state": "translated",
+    "value": "قم بتكوين عنوان URL لهذا المصدر أولاً."
+  }
+},
+"hi": {
+  "stringUnit": { "state": "translated",
+    "value": "पहले इस सोर्स का वेब URL कॉन्फ़िगर करें।"
+  }
+},
+"bn": {
+  "stringUnit": { "state": "translated",
+    "value": "প্রথমে এই সোর্সের ওয়েব URL কনফিগার করুন।"
+  }
+},
+"mr": {
+  "stringUnit": { "state": "translated",
+    "value": "प्रथम या स्रोताचा वेब URL कॉन्फिगर करा."
+  }
+},
+"te": {
+  "stringUnit": { "state": "translated",
+    "value": "ముందుగా ఈ సోర్స్ యొక్క వెబ్ URLను కాన్ఫిగర్ చేయండి."
+  }
+},
+"ur": {
+  "stringUnit": { "state": "translated",
+    "value": "پہلے اس سورس کے ویب یو آر ایل کو کنفیگر کریں۔"
+  }
+},
+"sw": {
+  "stringUnit": { "state": "translated",
+    "value": "Sanidi URL ya wavuti ya chanzo hiki kwanza."
+  }
+},
+"ha": {
+  "stringUnit": { "state": "translated",
+    "value": "Saita URL na wannan tushen da farko."
+  }
+},
+"pcm": {
+  "stringUnit": { "state": "translated",
+    "value": "First configure the web URL for this source."
+  }
+}
+    }
+  },
+  "NagBar · Danke für die Inspiration": {
+    "localizations": {
+"de": {
+  "stringUnit": { "state": "translated",
+    "value": "NagBar · Danke für die Inspiration"
+  }
+},
+"en": {
+  "stringUnit": { "state": "translated",
+    "value": "NagBar · Thanks for the inspiration"
+  }
+},
+"sv": {
+  "stringUnit": { "state": "translated",
+    "value": "NagBar · Tack för inspirationen"
+  }
+},
+"es": {
+  "stringUnit": { "state": "translated",
+    "value": "NagBar · Gracias por la inspiración"
+  }
+},
+"fr": {
+  "stringUnit": { "state": "translated",
+    "value": "NagBar · Merci pour l'inspiration"
+  }
+},
+"pt": {
+  "stringUnit": { "state": "translated",
+    "value": "NagBar · Obrigado pela inspiração"
+  }
+},
+"ru": {
+  "stringUnit": { "state": "translated",
+    "value": "NagBar · Спасибо за вдохновение"
+  }
+},
+"tr": {
+  "stringUnit": { "state": "translated",
+    "value": "NagBar · İlham için teşekkürler"
+  }
+},
+"id": {
+  "stringUnit": { "state": "translated",
+    "value": "NagBar · Terima kasih atas inspirasinya"
+  }
+},
+"vi": {
+  "stringUnit": { "state": "translated",
+    "value": "NagBar · Cảm ơn vì nguồn cảm hứng"
+  }
+},
+"zh-Hans": {
+  "stringUnit": { "state": "translated",
+    "value": "NagBar · 感谢您的启发"
+  }
+},
+"ja": {
+  "stringUnit": { "state": "translated",
+    "value": "NagBar · インスピレーションをありがとうございます"
+  }
+},
+"ar": {
+  "stringUnit": { "state": "translated",
+    "value": "NagBar · شكرًا على الإلهام"
+  }
+},
+"hi": {
+  "stringUnit": { "state": "translated",
+    "value": "NagBar · प्रेरणा के लिए धन्यवाद"
+  }
+},
+"bn": {
+  "stringUnit": { "state": "translated",
+    "value": "NagBar · অনুপ্রেরণার জন্য ধন্যবাদ"
+  }
+},
+"mr": {
+  "stringUnit": { "state": "translated",
+    "value": "NagBar · प्रेरणेबद्दल धन्यवाद"
+  }
+},
+"te": {
+  "stringUnit": { "state": "translated",
+    "value": "NagBar · ప్రేరణకు ధన్యవాదాలు"
+  }
+},
+"ur": {
+  "stringUnit": { "state": "translated",
+    "value": "NagBar · حوصلہ افزائی کے لیے شکریہ"
+  }
+},
+"sw": {
+  "stringUnit": { "state": "translated",
+    "value": "NagBar · Asante kwa msukumo"
+  }
+},
+"ha": {
+  "stringUnit": { "state": "translated",
+    "value": "NagBar · Na gode da wannan wahayin"
+  }
+},
+"pcm": {
+  "stringUnit": { "state": "translated",
+    "value": "NagBar · Thank you for the inspiration"
+  }
+}
+    }
+  },
+  "Navigation & Fernzugriff": {
+    "localizations": {
+"de": {
+  "stringUnit": { "state": "translated",
+    "value": "Navigation & Fernzugriff"
+  }
+},
+"en": {
+  "stringUnit": { "state": "translated",
+    "value": "Navigation & Remote Access"
+  }
+},
+"sv": {
+  "stringUnit": { "state": "translated",
+    "value": "Navigering och fjärråtkomst"
+  }
+},
+"es": {
+  "stringUnit": { "state": "translated",
+    "value": "Navegación y acceso remoto"
+  }
+},
+"fr": {
+  "stringUnit": { "state": "translated",
+    "value": "Navigation et accès distant"
+  }
+},
+"pt": {
+  "stringUnit": { "state": "translated",
+    "value": "Navegação e Acesso Remoto"
+  }
+},
+"ru": {
+  "stringUnit": { "state": "translated",
+    "value": "Навигация и удаленный доступ"
+  }
+},
+"tr": {
+  "stringUnit": { "state": "translated",
+    "value": "Navigasyon ve Uzaktan Erişim"
+  }
+},
+"id": {
+  "stringUnit": { "state": "translated",
+    "value": "Navigasi & Akses Jarak Jauh"
+  }
+},
+"vi": {
+  "stringUnit": { "state": "translated",
+    "value": "Điều hướng & Truy cập từ xa"
+  }
+},
+"zh-Hans": {
+  "stringUnit": { "state": "translated",
+    "value": "导航与远程访问"
+  }
+},
+"ja": {
+  "stringUnit": { "state": "translated",
+    "value": "ナビゲーションとリモートアクセス"
+  }
+},
+"ar": {
+  "stringUnit": { "state": "translated",
+    "value": "التنقل والوصول عن بُعد"
+  }
+},
+"hi": {
+  "stringUnit": { "state": "translated",
+    "value": "नेविगेशन और रिमोट एक्सेस"
+  }
+},
+"bn": {
+  "stringUnit": { "state": "translated",
+    "value": "নেভিগেশন ও রিমোট অ্যাক্সেস"
+  }
+},
+"mr": {
+  "stringUnit": { "state": "translated",
+    "value": "नॅव्हिगेशन आणि रिमोट ऍक्सेस"
+  }
+},
+"te": {
+  "stringUnit": { "state": "translated",
+    "value": "నావిగేషన్ & రిమోట్ యాక్సెస్"
+  }
+},
+"ur": {
+  "stringUnit": { "state": "translated",
+    "value": "نیویگیشن اور ریموٹ رسائی"
+  }
+},
+"sw": {
+  "stringUnit": { "state": "translated",
+    "value": "Usogezaji na Ufikiaji wa Mbali"
+  }
+},
+"ha": {
+  "stringUnit": { "state": "translated",
+    "value": "Kewaya & Samun Dama Daga Nesa"
+  }
+},
+"pcm": {
+  "stringUnit": { "state": "translated",
+    "value": "Navigation & remote access"
+  }
+}
+    }
+  },
+  "Ports müssen zwischen 1 und 65535 liegen.": {
+    "localizations": {
+"de": {
+  "stringUnit": { "state": "translated",
+    "value": "Ports müssen zwischen 1 und 65535 liegen."
+  }
+},
+"en": {
+  "stringUnit": { "state": "translated",
+    "value": "Ports must be between 1 and 65535."
+  }
+},
+"sv": {
+  "stringUnit": { "state": "translated",
+    "value": "Portar måste vara mellan 1 och 65535."
+  }
+},
+"es": {
+  "stringUnit": { "state": "translated",
+    "value": "Los puertos deben estar entre 1 y 65535."
+  }
+},
+"fr": {
+  "stringUnit": { "state": "translated",
+    "value": "Les ports doivent être compris entre 1 et 65535."
+  }
+},
+"pt": {
+  "stringUnit": { "state": "translated",
+    "value": "As portas devem estar entre 1 e 65535."
+  }
+},
+"ru": {
+  "stringUnit": { "state": "translated",
+    "value": "Порты должны быть от 1 до 65535."
+  }
+},
+"tr": {
+  "stringUnit": { "state": "translated",
+    "value": "Portlar 1 ile 65535 arasında olmalıdır."
+  }
+},
+"id": {
+  "stringUnit": { "state": "translated",
+    "value": "Port harus antara 1 dan 65535."
+  }
+},
+"vi": {
+  "stringUnit": { "state": "translated",
+    "value": "Cổng phải nằm trong khoảng từ 1 đến 65535."
+  }
+},
+"zh-Hans": {
+  "stringUnit": { "state": "translated",
+    "value": "端口号必须介于 1 和 65535 之间。"
+  }
+},
+"ja": {
+  "stringUnit": { "state": "translated",
+    "value": "ポート番号は1～65535の範囲である必要があります。"
+  }
+},
+"ar": {
+  "stringUnit": { "state": "translated",
+    "value": "يجب أن تكون المنافذ بين 1 و65535."
+  }
+},
+"hi": {
+  "stringUnit": { "state": "translated",
+    "value": "पोर्ट 1 और 65535 के बीच होने चाहिए।"
+  }
+},
+"bn": {
+  "stringUnit": { "state": "translated",
+    "value": "পোর্ট অবশ্যই ১ থেকে ৬৫৫৩৫ এর মধ্যে হতে হবে।"
+  }
+},
+"mr": {
+  "stringUnit": { "state": "translated",
+    "value": "पोर्ट्स 1 ते 65535 च्या दरम्यान असले पाहिजेत."
+  }
+},
+"te": {
+  "stringUnit": { "state": "translated",
+    "value": "పోర్ట్‌లు 1 మరియు 65535 మధ్య ఉండాలి."
+  }
+},
+"ur": {
+  "stringUnit": { "state": "translated",
+    "value": "پورٹس 1 اور 65535 کے درمیان ہونی چاہئیں۔"
+  }
+},
+"sw": {
+  "stringUnit": { "state": "translated",
+    "value": "Lango lazima ziwe kati ya 1 na 65535."
+  }
+},
+"ha": {
+  "stringUnit": { "state": "translated",
+    "value": "Tashoshin dole ne su kasance tsakanin 1 da 65535."
+  }
+},
+"pcm": {
+  "stringUnit": { "state": "translated",
+    "value": "Port must dey between 1 and 65535."
+  }
+}
+    }
+  },
+  "RDP": {
+    "localizations": {
+"de": {
+  "stringUnit": { "state": "translated",
+    "value": "RDP"
+  }
+},
+"en": {
+  "stringUnit": { "state": "translated",
+    "value": "RDP"
+  }
+},
+"sv": {
+  "stringUnit": { "state": "translated",
+    "value": "RDP"
+  }
+},
+"es": {
+  "stringUnit": { "state": "translated",
+    "value": "RDP"
+  }
+},
+"fr": {
+  "stringUnit": { "state": "translated",
+    "value": "RDP"
+  }
+},
+"pt": {
+  "stringUnit": { "state": "translated",
+    "value": "RDP"
+  }
+},
+"ru": {
+  "stringUnit": { "state": "translated",
+    "value": "RDP"
+  }
+},
+"tr": {
+  "stringUnit": { "state": "translated",
+    "value": "RDP"
+  }
+},
+"id": {
+  "stringUnit": { "state": "translated",
+    "value": "RDP"
+  }
+},
+"vi": {
+  "stringUnit": { "state": "translated",
+    "value": "RDP"
+  }
+},
+"zh-Hans": {
+  "stringUnit": { "state": "translated",
+    "value": "RDP"
+  }
+},
+"ja": {
+  "stringUnit": { "state": "translated",
+    "value": "RDP"
+  }
+},
+"ar": {
+  "stringUnit": { "state": "translated",
+    "value": "RDP"
+  }
+},
+"hi": {
+  "stringUnit": { "state": "translated",
+    "value": "RDP"
+  }
+},
+"bn": {
+  "stringUnit": { "state": "translated",
+    "value": "RDP"
+  }
+},
+"mr": {
+  "stringUnit": { "state": "translated",
+    "value": "RDP"
+  }
+},
+"te": {
+  "stringUnit": { "state": "translated",
+    "value": "RDP"
+  }
+},
+"ur": {
+  "stringUnit": { "state": "translated",
+    "value": "RDP"
+  }
+},
+"sw": {
+  "stringUnit": { "state": "translated",
+    "value": "RDP"
+  }
+},
+"ha": {
+  "stringUnit": { "state": "translated",
+    "value": "RDP"
+  }
+},
+"pcm": {
+  "stringUnit": { "state": "translated",
+    "value": "RDP"
+  }
+}
+    }
+  },
+  "RDP-Aktion": {
+    "localizations": {
+"de": {
+  "stringUnit": { "state": "translated",
+    "value": "RDP-Aktion"
+  }
+},
+"en": {
+  "stringUnit": { "state": "translated",
+    "value": "RDP Action"
+  }
+},
+"sv": {
+  "stringUnit": { "state": "translated",
+    "value": "RDP-åtgärd"
+  }
+},
+"es": {
+  "stringUnit": { "state": "translated",
+    "value": "Acción RDP"
+  }
+},
+"fr": {
+  "stringUnit": { "state": "translated",
+    "value": "Action RDP"
+  }
+},
+"pt": {
+  "stringUnit": { "state": "translated",
+    "value": "Ação RDP"
+  }
+},
+"ru": {
+  "stringUnit": { "state": "translated",
+    "value": "Действие RDP"
+  }
+},
+"tr": {
+  "stringUnit": { "state": "translated",
+    "value": "RDP İşlemi"
+  }
+},
+"id": {
+  "stringUnit": { "state": "translated",
+    "value": "Aksi RDP"
+  }
+},
+"vi": {
+  "stringUnit": { "state": "translated",
+    "value": "Hành động RDP"
+  }
+},
+"zh-Hans": {
+  "stringUnit": { "state": "translated",
+    "value": "RDP 操作"
+  }
+},
+"ja": {
+  "stringUnit": { "state": "translated",
+    "value": "RDPアクション"
+  }
+},
+"ar": {
+  "stringUnit": { "state": "translated",
+    "value": "إجراء RDP"
+  }
+},
+"hi": {
+  "stringUnit": { "state": "translated",
+    "value": "RDP एक्शन"
+  }
+},
+"bn": {
+  "stringUnit": { "state": "translated",
+    "value": "RDP অ্যাকশন"
+  }
+},
+"mr": {
+  "stringUnit": { "state": "translated",
+    "value": "RDP कृती"
+  }
+},
+"te": {
+  "stringUnit": { "state": "translated",
+    "value": "RDP చర్య"
+  }
+},
+"ur": {
+  "stringUnit": { "state": "translated",
+    "value": "RDP ایکشن"
+  }
+},
+"sw": {
+  "stringUnit": { "state": "translated",
+    "value": "Kitendo cha RDP"
+  }
+},
+"ha": {
+  "stringUnit": { "state": "translated",
+    "value": "Aikin RDP"
+  }
+},
+"pcm": {
+  "stringUnit": { "state": "translated",
+    "value": "RDP action"
+  }
+}
+    }
+  },
+  "RDP-Benutzername": {
+    "localizations": {
+"de": {
+  "stringUnit": { "state": "translated",
+    "value": "RDP-Benutzername"
+  }
+},
+"en": {
+  "stringUnit": { "state": "translated",
+    "value": "RDP Username"
+  }
+},
+"sv": {
+  "stringUnit": { "state": "translated",
+    "value": "RDP-användarnamn"
+  }
+},
+"es": {
+  "stringUnit": { "state": "translated",
+    "value": "Nombre de usuario RDP"
+  }
+},
+"fr": {
+  "stringUnit": { "state": "translated",
+    "value": "Nom d'utilisateur RDP"
+  }
+},
+"pt": {
+  "stringUnit": { "state": "translated",
+    "value": "Nome de Usuário RDP"
+  }
+},
+"ru": {
+  "stringUnit": { "state": "translated",
+    "value": "Имя пользователя RDP"
+  }
+},
+"tr": {
+  "stringUnit": { "state": "translated",
+    "value": "RDP Kullanıcı Adı"
+  }
+},
+"id": {
+  "stringUnit": { "state": "translated",
+    "value": "Nama Pengguna RDP"
+  }
+},
+"vi": {
+  "stringUnit": { "state": "translated",
+    "value": "Tên người dùng RDP"
+  }
+},
+"zh-Hans": {
+  "stringUnit": { "state": "translated",
+    "value": "RDP 用户名"
+  }
+},
+"ja": {
+  "stringUnit": { "state": "translated",
+    "value": "RDPユーザー名"
+  }
+},
+"ar": {
+  "stringUnit": { "state": "translated",
+    "value": "اسم مستخدم RDP"
+  }
+},
+"hi": {
+  "stringUnit": { "state": "translated",
+    "value": "RDP यूज़रनेम"
+  }
+},
+"bn": {
+  "stringUnit": { "state": "translated",
+    "value": "RDP ইউজারনেম"
+  }
+},
+"mr": {
+  "stringUnit": { "state": "translated",
+    "value": "RDP वापरकर्तानाव"
+  }
+},
+"te": {
+  "stringUnit": { "state": "translated",
+    "value": "RDP యూజర్‌నేమ్"
+  }
+},
+"ur": {
+  "stringUnit": { "state": "translated",
+    "value": "RDP صارف نام"
+  }
+},
+"sw": {
+  "stringUnit": { "state": "translated",
+    "value": "Jina la Mtumiaji la RDP"
+  }
+},
+"ha": {
+  "stringUnit": { "state": "translated",
+    "value": "Sunan mai amfani na RDP"
+  }
+},
+"pcm": {
+  "stringUnit": { "state": "translated",
+    "value": "RDP username"
+  }
+}
+    }
+  },
+  "RDP-Port": {
+    "localizations": {
+"de": {
+  "stringUnit": { "state": "translated",
+    "value": "RDP-Port"
+  }
+},
+"en": {
+  "stringUnit": { "state": "translated",
+    "value": "RDP Port"
+  }
+},
+"sv": {
+  "stringUnit": { "state": "translated",
+    "value": "RDP-port"
+  }
+},
+"es": {
+  "stringUnit": { "state": "translated",
+    "value": "Puerto RDP"
+  }
+},
+"fr": {
+  "stringUnit": { "state": "translated",
+    "value": "Port RDP"
+  }
+},
+"pt": {
+  "stringUnit": { "state": "translated",
+    "value": "Porta RDP"
+  }
+},
+"ru": {
+  "stringUnit": { "state": "translated",
+    "value": "Порт RDP"
+  }
+},
+"tr": {
+  "stringUnit": { "state": "translated",
+    "value": "RDP Portu"
+  }
+},
+"id": {
+  "stringUnit": { "state": "translated",
+    "value": "Port RDP"
+  }
+},
+"vi": {
+  "stringUnit": { "state": "translated",
+    "value": "Cổng RDP"
+  }
+},
+"zh-Hans": {
+  "stringUnit": { "state": "translated",
+    "value": "RDP 端口"
+  }
+},
+"ja": {
+  "stringUnit": { "state": "translated",
+    "value": "RDPポート"
+  }
+},
+"ar": {
+  "stringUnit": { "state": "translated",
+    "value": "منفذ RDP"
+  }
+},
+"hi": {
+  "stringUnit": { "state": "translated",
+    "value": "RDP पोर्ट"
+  }
+},
+"bn": {
+  "stringUnit": { "state": "translated",
+    "value": "RDP পোর্ট"
+  }
+},
+"mr": {
+  "stringUnit": { "state": "translated",
+    "value": "RDP पोर्ट"
+  }
+},
+"te": {
+  "stringUnit": { "state": "translated",
+    "value": "RDP పోర్ట్"
+  }
+},
+"ur": {
+  "stringUnit": { "state": "translated",
+    "value": "RDP پورٹ"
+  }
+},
+"sw": {
+  "stringUnit": { "state": "translated",
+    "value": "Lango la RDP"
+  }
+},
+"ha": {
+  "stringUnit": { "state": "translated",
+    "value": "Tashar RDP"
+  }
+},
+"pcm": {
+  "stringUnit": { "state": "translated",
+    "value": "RDP port"
+  }
+}
+    }
+  },
+  "SSH": {
+    "localizations": {
+"de": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH"
+  }
+},
+"en": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH"
+  }
+},
+"sv": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH"
+  }
+},
+"es": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH"
+  }
+},
+"fr": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH"
+  }
+},
+"pt": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH"
+  }
+},
+"ru": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH"
+  }
+},
+"tr": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH"
+  }
+},
+"id": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH"
+  }
+},
+"vi": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH"
+  }
+},
+"zh-Hans": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH"
+  }
+},
+"ja": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH"
+  }
+},
+"ar": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH"
+  }
+},
+"hi": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH"
+  }
+},
+"bn": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH"
+  }
+},
+"mr": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH"
+  }
+},
+"te": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH"
+  }
+},
+"ur": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH"
+  }
+},
+"sw": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH"
+  }
+},
+"ha": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH"
+  }
+},
+"pcm": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH"
+  }
+}
+    }
+  },
+  "SSH-Aktion": {
+    "localizations": {
+"de": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH-Aktion"
+  }
+},
+"en": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH Action"
+  }
+},
+"sv": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH-åtgärd"
+  }
+},
+"es": {
+  "stringUnit": { "state": "translated",
+    "value": "Acción SSH"
+  }
+},
+"fr": {
+  "stringUnit": { "state": "translated",
+    "value": "Action SSH"
+  }
+},
+"pt": {
+  "stringUnit": { "state": "translated",
+    "value": "Ação SSH"
+  }
+},
+"ru": {
+  "stringUnit": { "state": "translated",
+    "value": "Действие SSH"
+  }
+},
+"tr": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH İşlemi"
+  }
+},
+"id": {
+  "stringUnit": { "state": "translated",
+    "value": "Aksi SSH"
+  }
+},
+"vi": {
+  "stringUnit": { "state": "translated",
+    "value": "Hành động SSH"
+  }
+},
+"zh-Hans": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH 操作"
+  }
+},
+"ja": {
+  "stringUnit": { "state": "translated",
+    "value": "SSHアクション"
+  }
+},
+"ar": {
+  "stringUnit": { "state": "translated",
+    "value": "إجراء SSH"
+  }
+},
+"hi": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH एक्शन"
+  }
+},
+"bn": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH অ্যাকশন"
+  }
+},
+"mr": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH कृती"
+  }
+},
+"te": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH చర్య"
+  }
+},
+"ur": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH ایکشن"
+  }
+},
+"sw": {
+  "stringUnit": { "state": "translated",
+    "value": "Kitendo cha SSH"
+  }
+},
+"ha": {
+  "stringUnit": { "state": "translated",
+    "value": "Aikin SSH"
+  }
+},
+"pcm": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH action"
+  }
+}
+    }
+  },
+  "SSH-Benutzername": {
+    "localizations": {
+"de": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH-Benutzername"
+  }
+},
+"en": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH Username"
+  }
+},
+"sv": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH-användarnamn"
+  }
+},
+"es": {
+  "stringUnit": { "state": "translated",
+    "value": "Nombre de usuario SSH"
+  }
+},
+"fr": {
+  "stringUnit": { "state": "translated",
+    "value": "Nom d'utilisateur SSH"
+  }
+},
+"pt": {
+  "stringUnit": { "state": "translated",
+    "value": "Nome de Usuário SSH"
+  }
+},
+"ru": {
+  "stringUnit": { "state": "translated",
+    "value": "Имя пользователя SSH"
+  }
+},
+"tr": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH Kullanıcı Adı"
+  }
+},
+"id": {
+  "stringUnit": { "state": "translated",
+    "value": "Nama Pengguna SSH"
+  }
+},
+"vi": {
+  "stringUnit": { "state": "translated",
+    "value": "Tên người dùng SSH"
+  }
+},
+"zh-Hans": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH 用户名"
+  }
+},
+"ja": {
+  "stringUnit": { "state": "translated",
+    "value": "SSHユーザー名"
+  }
+},
+"ar": {
+  "stringUnit": { "state": "translated",
+    "value": "اسم مستخدم SSH"
+  }
+},
+"hi": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH यूज़रनेम"
+  }
+},
+"bn": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH ইউজারনেম"
+  }
+},
+"mr": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH वापरकर्तानाव"
+  }
+},
+"te": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH యూజర్‌నేమ్"
+  }
+},
+"ur": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH صارف نام"
+  }
+},
+"sw": {
+  "stringUnit": { "state": "translated",
+    "value": "Jina la Mtumiaji la SSH"
+  }
+},
+"ha": {
+  "stringUnit": { "state": "translated",
+    "value": "Sunan mai amfani na SSH"
+  }
+},
+"pcm": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH username"
+  }
+}
+    }
+  },
+  "SSH-Port": {
+    "localizations": {
+"de": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH-Port"
+  }
+},
+"en": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH Port"
+  }
+},
+"sv": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH-port"
+  }
+},
+"es": {
+  "stringUnit": { "state": "translated",
+    "value": "Puerto SSH"
+  }
+},
+"fr": {
+  "stringUnit": { "state": "translated",
+    "value": "Port SSH"
+  }
+},
+"pt": {
+  "stringUnit": { "state": "translated",
+    "value": "Porta SSH"
+  }
+},
+"ru": {
+  "stringUnit": { "state": "translated",
+    "value": "Порт SSH"
+  }
+},
+"tr": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH Portu"
+  }
+},
+"id": {
+  "stringUnit": { "state": "translated",
+    "value": "Port SSH"
+  }
+},
+"vi": {
+  "stringUnit": { "state": "translated",
+    "value": "Cổng SSH"
+  }
+},
+"zh-Hans": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH 端口"
+  }
+},
+"ja": {
+  "stringUnit": { "state": "translated",
+    "value": "SSHポート"
+  }
+},
+"ar": {
+  "stringUnit": { "state": "translated",
+    "value": "منفذ SSH"
+  }
+},
+"hi": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH पोर्ट"
+  }
+},
+"bn": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH পোর্ট"
+  }
+},
+"mr": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH पोर्ट"
+  }
+},
+"te": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH పోర్ట్"
+  }
+},
+"ur": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH پورٹ"
+  }
+},
+"sw": {
+  "stringUnit": { "state": "translated",
+    "value": "Lango la SSH"
+  }
+},
+"ha": {
+  "stringUnit": { "state": "translated",
+    "value": "Tashar SSH"
+  }
+},
+"pcm": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH port"
+  }
+}
+    }
+  },
+  "SSH-Schlüssel": {
+    "localizations": {
+"de": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH-Schlüssel"
+  }
+},
+"en": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH Key"
+  }
+},
+"sv": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH-nyckel"
+  }
+},
+"es": {
+  "stringUnit": { "state": "translated",
+    "value": "Clave SSH"
+  }
+},
+"fr": {
+  "stringUnit": { "state": "translated",
+    "value": "Clé SSH"
+  }
+},
+"pt": {
+  "stringUnit": { "state": "translated",
+    "value": "Chave SSH"
+  }
+},
+"ru": {
+  "stringUnit": { "state": "translated",
+    "value": "Ключ SSH"
+  }
+},
+"tr": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH Anahtarı"
+  }
+},
+"id": {
+  "stringUnit": { "state": "translated",
+    "value": "Kunci SSH"
+  }
+},
+"vi": {
+  "stringUnit": { "state": "translated",
+    "value": "Khóa SSH"
+  }
+},
+"zh-Hans": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH 密钥"
+  }
+},
+"ja": {
+  "stringUnit": { "state": "translated",
+    "value": "SSHキー"
+  }
+},
+"ar": {
+  "stringUnit": { "state": "translated",
+    "value": "مفتاح SSH"
+  }
+},
+"hi": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH की"
+  }
+},
+"bn": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH কী"
+  }
+},
+"mr": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH की"
+  }
+},
+"te": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH కీ"
+  }
+},
+"ur": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH کلید"
+  }
+},
+"sw": {
+  "stringUnit": { "state": "translated",
+    "value": "Ufunguo wa SSH"
+  }
+},
+"ha": {
+  "stringUnit": { "state": "translated",
+    "value": "Maɓallin SSH"
+  }
+},
+"pcm": {
+  "stringUnit": { "state": "translated",
+    "value": "SSH key"
+  }
+}
+    }
+  },
+  "Sichtbarkeit": {
+    "localizations": {
+"de": {
+  "stringUnit": { "state": "translated",
+    "value": "Sichtbarkeit"
+  }
+},
+"en": {
+  "stringUnit": { "state": "translated",
+    "value": "Visibility"
+  }
+},
+"sv": {
+  "stringUnit": { "state": "translated",
+    "value": "Synlighet"
+  }
+},
+"es": {
+  "stringUnit": { "state": "translated",
+    "value": "Visibilidad"
+  }
+},
+"fr": {
+  "stringUnit": { "state": "translated",
+    "value": "Visibilité"
+  }
+},
+"pt": {
+  "stringUnit": { "state": "translated",
+    "value": "Visibilidade"
+  }
+},
+"ru": {
+  "stringUnit": { "state": "translated",
+    "value": "Видимость"
+  }
+},
+"tr": {
+  "stringUnit": { "state": "translated",
+    "value": "Görünürlük"
+  }
+},
+"id": {
+  "stringUnit": { "state": "translated",
+    "value": "Visibilitas"
+  }
+},
+"vi": {
+  "stringUnit": { "state": "translated",
+    "value": "Khả năng hiển thị"
+  }
+},
+"zh-Hans": {
+  "stringUnit": { "state": "translated",
+    "value": "可见性"
+  }
+},
+"ja": {
+  "stringUnit": { "state": "translated",
+    "value": "可視性"
+  }
+},
+"ar": {
+  "stringUnit": { "state": "translated",
+    "value": "مستوى الرؤية"
+  }
+},
+"hi": {
+  "stringUnit": { "state": "translated",
+    "value": "विज़िबिलिटी"
+  }
+},
+"bn": {
+  "stringUnit": { "state": "translated",
+    "value": "ভিজিবিলিটি"
+  }
+},
+"mr": {
+  "stringUnit": { "state": "translated",
+    "value": "दृश्यमानता"
+  }
+},
+"te": {
+  "stringUnit": { "state": "translated",
+    "value": "విజిబిలిటీ"
+  }
+},
+"ur": {
+  "stringUnit": { "state": "translated",
+    "value": "مرئیت"
+  }
+},
+"sw": {
+  "stringUnit": { "state": "translated",
+    "value": "Mwonekano"
+  }
+},
+"ha": {
+  "stringUnit": { "state": "translated",
+    "value": "Ganuwa"
+  }
+},
+"pcm": {
+  "stringUnit": { "state": "translated",
+    "value": "Visibility"
+  }
+}
+    }
+  },
+  "Status": {
+    "localizations": {
+"de": {
+  "stringUnit": { "state": "translated",
+    "value": "Status"
+  }
+},
+"en": {
+  "stringUnit": { "state": "translated",
+    "value": "Status"
+  }
+},
+"sv": {
+  "stringUnit": { "state": "translated",
+    "value": "Status"
+  }
+},
+"es": {
+  "stringUnit": { "state": "translated",
+    "value": "Estado"
+  }
+},
+"fr": {
+  "stringUnit": { "state": "translated",
+    "value": "Statut"
+  }
+},
+"pt": {
+  "stringUnit": { "state": "translated",
+    "value": "Status"
+  }
+},
+"ru": {
+  "stringUnit": { "state": "translated",
+    "value": "Статус"
+  }
+},
+"tr": {
+  "stringUnit": { "state": "translated",
+    "value": "Durum"
+  }
+},
+"id": {
+  "stringUnit": { "state": "translated",
+    "value": "Status"
+  }
+},
+"vi": {
+  "stringUnit": { "state": "translated",
+    "value": "Trạng thái"
+  }
+},
+"zh-Hans": {
+  "stringUnit": { "state": "translated",
+    "value": "状态"
+  }
+},
+"ja": {
+  "stringUnit": { "state": "translated",
+    "value": "ステータス"
+  }
+},
+"ar": {
+  "stringUnit": { "state": "translated",
+    "value": "الحالة"
+  }
+},
+"hi": {
+  "stringUnit": { "state": "translated",
+    "value": "स्टेटस"
+  }
+},
+"bn": {
+  "stringUnit": { "state": "translated",
+    "value": "স্ট্যাটাস"
+  }
+},
+"mr": {
+  "stringUnit": { "state": "translated",
+    "value": "स्थिती"
+  }
+},
+"te": {
+  "stringUnit": { "state": "translated",
+    "value": "స్టేటస్"
+  }
+},
+"ur": {
+  "stringUnit": { "state": "translated",
+    "value": "اسٹیٹس"
+  }
+},
+"sw": {
+  "stringUnit": { "state": "translated",
+    "value": "Hali"
+  }
+},
+"ha": {
+  "stringUnit": { "state": "translated",
+    "value": "Matsayi"
+  }
+},
+"pcm": {
+  "stringUnit": { "state": "translated",
+    "value": "Status"
+  }
+}
+    }
+  },
+  "Versuch": {
+    "localizations": {
+"de": {
+  "stringUnit": { "state": "translated",
+    "value": "Versuch"
+  }
+},
+"en": {
+  "stringUnit": { "state": "translated",
+    "value": "Attempt"
+  }
+},
+"sv": {
+  "stringUnit": { "state": "translated",
+    "value": "Försök"
+  }
+},
+"es": {
+  "stringUnit": { "state": "translated",
+    "value": "Intento"
+  }
+},
+"fr": {
+  "stringUnit": { "state": "translated",
+    "value": "Tentative"
+  }
+},
+"pt": {
+  "stringUnit": { "state": "translated",
+    "value": "Tentativa"
+  }
+},
+"ru": {
+  "stringUnit": { "state": "translated",
+    "value": "Попытка"
+  }
+},
+"tr": {
+  "stringUnit": { "state": "translated",
+    "value": "Deneme"
+  }
+},
+"id": {
+  "stringUnit": { "state": "translated",
+    "value": "Upaya"
+  }
+},
+"vi": {
+  "stringUnit": { "state": "translated",
+    "value": "Thử"
+  }
+},
+"zh-Hans": {
+  "stringUnit": { "state": "translated",
+    "value": "尝试次数"
+  }
+},
+"ja": {
+  "stringUnit": { "state": "translated",
+    "value": "試行回数"
+  }
+},
+"ar": {
+  "stringUnit": { "state": "translated",
+    "value": "محاولة"
+  }
+},
+"hi": {
+  "stringUnit": { "state": "translated",
+    "value": "अटेम्प्ट"
+  }
+},
+"bn": {
+  "stringUnit": { "state": "translated",
+    "value": "চেষ্টা"
+  }
+},
+"mr": {
+  "stringUnit": { "state": "translated",
+    "value": "प्रयत्न"
+  }
+},
+"te": {
+  "stringUnit": { "state": "translated",
+    "value": "ప్రయత్నం"
+  }
+},
+"ur": {
+  "stringUnit": { "state": "translated",
+    "value": "کوشش"
+  }
+},
+"sw": {
+  "stringUnit": { "state": "translated",
+    "value": "Jaribio"
+  }
+},
+"ha": {
+  "stringUnit": { "state": "translated",
+    "value": "Gwada"
+  }
+},
+"pcm": {
+  "stringUnit": { "state": "translated",
+    "value": "Attempt"
+  }
+}
+    }
+  },
+  "Web-URL": {
+    "localizations": {
+"de": {
+  "stringUnit": { "state": "translated",
+    "value": "Web-URL"
+  }
+},
+"en": {
+  "stringUnit": { "state": "translated",
+    "value": "Web URL"
+  }
+},
+"sv": {
+  "stringUnit": { "state": "translated",
+    "value": "Webbadress"
+  }
+},
+"es": {
+  "stringUnit": { "state": "translated",
+    "value": "URL web"
+  }
+},
+"fr": {
+  "stringUnit": { "state": "translated",
+    "value": "URL Web"
+  }
+},
+"pt": {
+  "stringUnit": { "state": "translated",
+    "value": "URL da Web"
+  }
+},
+"ru": {
+  "stringUnit": { "state": "translated",
+    "value": "Веб-адрес"
+  }
+},
+"tr": {
+  "stringUnit": { "state": "translated",
+    "value": "Web URL'si"
+  }
+},
+"id": {
+  "stringUnit": { "state": "translated",
+    "value": "URL Web"
+  }
+},
+"vi": {
+  "stringUnit": { "state": "translated",
+    "value": "URL web"
+  }
+},
+"zh-Hans": {
+  "stringUnit": { "state": "translated",
+    "value": "Web URL"
+  }
+},
+"ja": {
+  "stringUnit": { "state": "translated",
+    "value": "Web URL"
+  }
+},
+"ar": {
+  "stringUnit": { "state": "translated",
+    "value": "عنوان URL للموقع الإلكتروني"
+  }
+},
+"hi": {
+  "stringUnit": { "state": "translated",
+    "value": "वेब URL"
+  }
+},
+"bn": {
+  "stringUnit": { "state": "translated",
+    "value": "ওয়েব ইউআরএল"
+  }
+},
+"mr": {
+  "stringUnit": { "state": "translated",
+    "value": "वेब URL"
+  }
+},
+"te": {
+  "stringUnit": { "state": "translated",
+    "value": "వెబ్ URL"
+  }
+},
+"ur": {
+  "stringUnit": { "state": "translated",
+    "value": "ویب URL"
+  }
+},
+"sw": {
+  "stringUnit": { "state": "translated",
+    "value": "URL ya Wavuti"
+  }
+},
+"ha": {
+  "stringUnit": { "state": "translated",
+    "value": "URL ɗin Yanar Gizo"
+  }
+},
+"pcm": {
+  "stringUnit": { "state": "translated",
+    "value": "Web URL"
+  }
+}
+    }
+  },
+  "bastion.example": {
+    "localizations": {
+"de": {
+  "stringUnit": { "state": "translated",
+    "value": "bastion.example"
+  }
+},
+"en": {
+  "stringUnit": { "state": "translated",
+    "value": "bastion.example"
+  }
+},
+"sv": {
+  "stringUnit": { "state": "translated",
+    "value": "bastion.example"
+  }
+},
+"es": {
+  "stringUnit": { "state": "translated",
+    "value": "bastion.example"
+  }
+},
+"fr": {
+  "stringUnit": { "state": "translated",
+    "value": "bastion.example"
+  }
+},
+"pt": {
+  "stringUnit": { "state": "translated",
+    "value": "bastion.example"
+  }
+},
+"ru": {
+  "stringUnit": { "state": "translated",
+    "value": "bastion.example"
+  }
+},
+"tr": {
+  "stringUnit": { "state": "translated",
+    "value": "bastion.example"
+  }
+},
+"id": {
+  "stringUnit": { "state": "translated",
+    "value": "bastion.example"
+  }
+},
+"vi": {
+  "stringUnit": { "state": "translated",
+    "value": "bastion.example"
+  }
+},
+"zh-Hans": {
+  "stringUnit": { "state": "translated",
+    "value": "bastion.example"
+  }
+},
+"ja": {
+  "stringUnit": { "state": "translated",
+    "value": "bastion.example"
+  }
+},
+"ar": {
+  "stringUnit": { "state": "translated",
+    "value": "bastion.example"
+  }
+},
+"hi": {
+  "stringUnit": { "state": "translated",
+    "value": "bastion.example"
+  }
+},
+"bn": {
+  "stringUnit": { "state": "translated",
+    "value": "bastion.example"
+  }
+},
+"mr": {
+  "stringUnit": { "state": "translated",
+    "value": "bastion.example"
+  }
+},
+"te": {
+  "stringUnit": { "state": "translated",
+    "value": "bastion.example"
+  }
+},
+"ur": {
+  "stringUnit": { "state": "translated",
+    "value": "bastion.example"
+  }
+},
+"sw": {
+  "stringUnit": { "state": "translated",
+    "value": "bastion.example"
+  }
+},
+"ha": {
+  "stringUnit": { "state": "translated",
+    "value": "bastion.example"
+  }
+},
+"pcm": {
+  "stringUnit": { "state": "translated",
+    "value": "bastion.example"
+  }
+}
+    }
+  }
   },
   "version": "1.0"
 }

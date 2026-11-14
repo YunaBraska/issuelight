@@ -12,6 +12,21 @@ final class MonitoringSourceTests: XCTestCase {
         XCTAssertFalse(json.localizedCaseInsensitiveContains("privateKey"))
     }
 
+    func testOlderStoredSourceDecodesWithoutNavigationConfiguration() throws {
+        let encoded = try JSONEncoder().encode(source())
+        var object = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        object.removeValue(forKey: "web")
+        object.removeValue(forKey: "remoteAccess")
+
+        let decoded = try JSONDecoder().decode(
+            MonitoringSource.self,
+            from: JSONSerialization.data(withJSONObject: object)
+        )
+
+        XCTAssertNil(decoded.web)
+        XCTAssertNil(decoded.remoteAccess)
+    }
+
     func testSharedValidationRejectsInvalidPublicConfiguration() {
         var value = source(name: " ", endpoint: URL(string: "ftp://user:pass@example.test/path?q=1#fragment")!)
 
@@ -54,6 +69,111 @@ final class MonitoringSourceTests: XCTestCase {
                 source(authentication: .clientCertificate(identityID: ""))
             ),
             [.missingClientIdentity]
+        )
+    }
+
+    func testSharedValidationAcceptsWebAndRemoteActions() {
+        let value = source(
+            web: MonitoringWebConfiguration(
+                baseURL: URL(string: "http://icinga-web.internal/icingaweb2")!,
+                automaticSSHTunnel: SSHTunnelConfiguration(
+                    bastionHost: "bastion.example.test",
+                    username: "operator",
+                    preferredLocalPort: 8_080
+                )
+            ),
+            remoteAccess: RemoteAccessConfiguration(
+                ssh: RemoteLoginConfiguration(username: "deploy", port: 22),
+                rdp: RemoteLoginConfiguration(username: "admin", port: 3_389)
+            )
+        )
+
+        XCTAssertTrue(MonitoringSourceValidator.validateSharedFields(value).isEmpty)
+    }
+
+    func testSharedValidationRejectsUnsafeOrIncompleteNavigationConfiguration() {
+        let value = source(
+            web: MonitoringWebConfiguration(
+                baseURL: URL(string: "https://user:password@icinga-web.internal/icingaweb2?q=1")!,
+                automaticSSHTunnel: SSHTunnelConfiguration(
+                    bastionHost: " ",
+                    username: " ",
+                    port: 0,
+                    preferredLocalPort: 70_000
+                )
+            ),
+            remoteAccess: RemoteAccessConfiguration(
+                ssh: RemoteLoginConfiguration(port: 0),
+                rdp: RemoteLoginConfiguration(port: 70_000)
+            )
+        )
+
+        XCTAssertEqual(
+            Set(MonitoringSourceValidator.validateSharedFields(value)),
+            Set([
+                .invalidWebURL,
+                .emptyBastionHost,
+                .emptyBastionUsername,
+                .invalidRemotePort(0),
+                .invalidRemotePort(70_000),
+                .secureWebTunnelUnsupported,
+            ])
+        )
+    }
+
+    func testRemoteActionURLsEncodeHostUserAndPort() throws {
+        let monitoredIssue = MonitoringIssue(
+            sourceID: UUID(),
+            nativeID: "service",
+            kind: .service,
+            hostName: "db-01",
+            serviceName: "Disk",
+            displayName: "Disk",
+            severity: .critical,
+            summary: "Disk full",
+            isAcknowledged: false,
+            isInDowntime: false
+        )
+
+        XCTAssertEqual(
+            IssueNavigationURL.ssh(
+                for: monitoredIssue,
+                configuration: RemoteLoginConfiguration(username: "deploy", port: 2_222)
+            )?.absoluteString,
+            "ssh://deploy@db-01:2222"
+        )
+        XCTAssertEqual(
+            IssueNavigationURL.rdp(
+                for: monitoredIssue,
+                configuration: RemoteLoginConfiguration(username: "operator", port: 3_389)
+            )?.absoluteString,
+            "rdp://full%20address=s:db-01:3389&username=s:operator"
+        )
+    }
+
+    func testRDPActionURLDoesNotAllowMonitoringDataToInjectAttributes() throws {
+        let monitoredIssue = MonitoringIssue(
+            sourceID: UUID(),
+            nativeID: "host",
+            kind: .host,
+            hostName: "server&username=s:other",
+            serviceName: nil,
+            displayName: "Server",
+            severity: .critical,
+            summary: "DOWN",
+            isAcknowledged: false,
+            isInDowntime: false
+        )
+
+        XCTAssertEqual(
+            IssueNavigationURL.rdp(
+                for: monitoredIssue,
+                configuration: RemoteLoginConfiguration(
+                    username: "operator&gatewayhostname=s:evil",
+                    port: 3_389
+                )
+            )?.absoluteString,
+            "rdp://full%20address=s:server%26username%3Ds:other:3389&username=s:operator%26gatewayhostname%3Ds:evil"
         )
     }
 
@@ -133,14 +253,18 @@ final class MonitoringSourceTests: XCTestCase {
         name: String = "Production",
         endpoint: URL = URL(string: "https://icinga.example.test:5665/v1")!,
         authentication: AuthenticationConfiguration = .basic(username: "operator"),
-        serverTrust: ServerTrustConfiguration = .system
+        serverTrust: ServerTrustConfiguration = .system,
+        web: MonitoringWebConfiguration? = nil,
+        remoteAccess: RemoteAccessConfiguration? = nil
     ) -> MonitoringSource {
         MonitoringSource(
             name: name,
             providerID: Icinga2Provider.id,
             endpoint: endpoint,
             authentication: authentication,
-            serverTrust: serverTrust
+            serverTrust: serverTrust,
+            web: web,
+            remoteAccess: remoteAccess
         )
     }
 }

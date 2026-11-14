@@ -285,6 +285,76 @@ final class IssueLightModelTests: XCTestCase {
         }
     }
 
+    func testNavigationConfigurationPersistsAndBuildsIssueActions() async throws {
+        let harness = try await makeHarness(sourceCount: 1, script: SnapshotScript())
+        await harness.model.load()
+        harness.model.webURL = "http://icinga-web.internal/icingaweb2"
+        harness.model.automaticWebSSHTunnel = true
+        harness.model.webTunnelBastionHost = "bastion.example.test"
+        harness.model.webTunnelUsername = "operator"
+        harness.model.webTunnelPort = 2_222
+        harness.model.webTunnelPreferredLocalPort = "8080"
+        harness.model.sshActionEnabled = true
+        harness.model.sshUsername = "deploy"
+        harness.model.sshPort = 22
+        harness.model.rdpActionEnabled = true
+        harness.model.rdpUsername = "administrator"
+        harness.model.rdpPort = 3_389
+
+        await harness.model.save()
+
+        let storedSources = try await harness.store.load()
+        let persisted = try XCTUnwrap(storedSources.first)
+        XCTAssertEqual(persisted.web?.baseURL.absoluteString, "http://icinga-web.internal/icingaweb2")
+        XCTAssertEqual(persisted.web?.automaticSSHTunnel?.bastionHost, "bastion.example.test")
+        XCTAssertEqual(persisted.web?.automaticSSHTunnel?.preferredLocalPort, 8_080)
+        XCTAssertEqual(persisted.remoteAccess?.ssh, RemoteLoginConfiguration(username: "deploy", port: 22))
+        XCTAssertEqual(
+            persisted.remoteAccess?.rdp,
+            RemoteLoginConfiguration(username: "administrator", port: 3_389)
+        )
+
+        let issue = MonitoringIssue(
+            sourceID: persisted.id,
+            nativeID: "db-01!Disk",
+            kind: .service,
+            hostName: "db-01",
+            serviceName: "Disk",
+            displayName: "Disk",
+            severity: .critical,
+            summary: "CRITICAL",
+            isAcknowledged: false,
+            isInDowntime: false
+        )
+        XCTAssertEqual(
+            harness.model.webTarget(for: issue)?.url.absoluteString,
+            "http://icinga-web.internal/icingaweb2/monitoring/service/show?host=db-01&service=Disk"
+        )
+        XCTAssertEqual(harness.model.sshURL(for: issue)?.absoluteString, "ssh://deploy@db-01:22")
+        XCTAssertEqual(
+            harness.model.rdpURL(for: issue)?.absoluteString,
+            "rdp://full%20address=s:db-01:3389&username=s:administrator"
+        )
+    }
+
+    func testSecureAutomaticWebTunnelFailsValidationInsteadOfOpeningWrongCertificateHost() async throws {
+        let harness = try await makeHarness(sourceCount: 1, script: SnapshotScript())
+        await harness.model.load()
+        harness.model.webURL = "https://icinga-web.internal/icingaweb2"
+        harness.model.automaticWebSSHTunnel = true
+        harness.model.webTunnelBastionHost = "bastion.example.test"
+        harness.model.webTunnelUsername = "operator"
+
+        await harness.model.save()
+
+        XCTAssertEqual(
+            harness.model.activity,
+            .failure("Automatische SSH-Tunnel unterstützen nur HTTP-Webziele. HTTPS würde im Browser eine falsche Zertifikatsidentität erhalten.")
+        )
+        let storedSources = try await harness.store.load()
+        XCTAssertNil(storedSources.first?.web)
+    }
+
     func testSelectingSourceLoadsItsIndependentFormAndStoredPasswordState() async throws {
         let script = SnapshotScript()
         let harness = try await makeHarness(sourceCount: 2, script: script)
@@ -575,6 +645,10 @@ private struct TestProvider: MonitoringProvider {
         access: ProviderAccess
     ) async -> MonitoringActionResult {
         await script.perform(action, sourceID: source.id)
+    }
+
+    func webURL(for issue: MonitoringIssue, from source: MonitoringSource) -> URL? {
+        Icinga2Provider().webURL(for: issue, from: source)
     }
 }
 

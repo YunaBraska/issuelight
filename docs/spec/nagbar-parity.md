@@ -15,13 +15,15 @@ release deliberately smaller.
 | Host and service problem state | Done | Done | Provider-neutral model with deterministic severity and ordering. |
 | Multiple monitoring sources | Done | Done | Independent credentials, refresh, stale state, and failure reporting. |
 | Icinga 2 API | Done | Done | First fully supported provider and current compatibility baseline. |
-| Issue row details | Done | Mostly done | Show source when needed, host, service, state, state duration, check attempt, first output line, acknowledgement, and downtime. Add check age later as a stale-data signal instead of another timestamp column. |
+| Issue row details | Done | Mostly done | Always show source, host, service, state, state duration, check attempt, first output line, acknowledgement, and downtime. Add check age later as a stale-data signal instead of another timestamp column. |
 | Nagios CGI and Icinga Classic | Done | Planned | Add only after the shared Icinga read journey and provider contract are stable. |
 | Thruk and Checkmk | Done | Planned | Same provider rule. No provider-specific state in shared UI or persistence. |
 | Text search | Partial | Done | Keep search in the panel's first row and match display name, host, output, and source. |
-| State and property filters | Done | Partial | Add a few visible filters only when real workflows need them. Do not reproduce NagBar's large filter matrix. |
+| State and property filters | Done | Done | Persist the compact source, severity, and coverage filters. Do not reproduce NagBar's large filter matrix. |
 | Acknowledge, recheck, and downtime | Done | Done for Icinga 2 | Provider capabilities expose the supported commands. Acknowledgement and downtime require explicit input; every confirmed command refreshes its source. |
-| Open object in monitoring web UI | Done | Planned | Recommended as the smallest useful action before a large in-app detail surface. |
+| Open object in monitoring web UI | Done | Done for Icinga 2 | A row click opens the provider-built object URL. Each source owns its web base URL. Classic Monitoring and Icinga DB Web routes are supported. |
+| SSH and RDP target actions | Done | Done | Keep them optional per source and use the operating system's registered URL handlers. |
+| SSH port forwarding | Partial | Done for HTTP web targets | Try the direct route first, then own one loopback-only OpenSSH forward per source. HTTPS targets fail closed because rewriting the browser host would invalidate normal certificate identity checks. |
 | Native notifications | Done | Planned | Quiet defaults, per-source severity policy, deduplication, and recovery behavior. |
 | Audible alarms and status flashing | Done | Dismissed | They create noise and accessibility problems. Native notifications are the replacement. |
 | Configurable refresh interval | Done | Partial | IssueLight owns one conservative refresh loop. A small preset choice is reasonable only if measured deployments need it. |
@@ -36,10 +38,10 @@ release deliberately smaller.
 
 ## Current parity conclusion
 
-IssueLight covers NagBar's central Icinga 2 monitoring and operator-action
-journeys and improves multiple-source isolation, failure handling, credential
-storage, and TLS trust. It is not functionally equivalent to NagBar today
-because notifications, web deep links, target-login commands, and four legacy
+IssueLight covers NagBar's central Icinga 2 monitoring, navigation, filtering,
+remote-login, and operator-action journeys and improves multiple-source
+isolation, failure handling, credential storage, and TLS trust. It is not
+functionally equivalent to NagBar today because notifications and four legacy
 provider families are absent.
 
 That difference is intentional for the first release. Claiming full parity
@@ -49,12 +51,8 @@ before those capabilities exist would be inaccurate.
 
 1. Close the protected-key and signed-app verification gaps without weakening
    background security.
-2. Add an object-level "Open in Icinga Web" action using an explicit base URL
-   per source.
-3. Add quiet native notifications with deduplication and recovery semantics.
-4. Observe real filter needs. Prefer three compact filters for source, severity,
-   and coverage state over a second settings matrix.
-5. Add the second provider as one complete vertical slice. Use that evidence to
+2. Add quiet native notifications with deduplication and recovery semantics.
+3. Add the second provider as one complete vertical slice. Use that evidence to
    refine the existing provider boundary instead of introducing a plugin SDK.
 
 The existing visual hierarchy should remain. New actions belong in row context

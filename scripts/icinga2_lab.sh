@@ -19,10 +19,45 @@ set +a
 : "${ISSUELIGHT_ICINGA_FORBIDDEN_PASSWORD:?missing in .env.local}"
 : "${ISSUELIGHT_ICINGA_PKCS12_PASSWORD:?missing in .env.local}"
 : "${ISSUELIGHT_ICINGA_PORT:=5665}"
+: "${ISSUELIGHT_SSH_PORT:=2222}"
 : "${ISSUELIGHT_ICINGA_ARTIFACTS_DIR:?missing in .env.local}"
 
 compose() {
   docker compose --project-directory "$LAB_DIR" --env-file "$ENV_FILE" -f "$LAB_DIR/compose.yaml" "$@"
+}
+
+generate_ssh_fixture_identity() {
+  mkdir -p "$ISSUELIGHT_ICINGA_ARTIFACTS_DIR"
+  if [ ! -f "$ISSUELIGHT_ICINGA_ARTIFACTS_DIR/ssh-tunnel" ]; then
+    ssh-keygen \
+      -q \
+      -t ed25519 \
+      -N '' \
+      -C issuelight-ssh-tunnel-fixture \
+      -f "$ISSUELIGHT_ICINGA_ARTIFACTS_DIR/ssh-tunnel"
+  fi
+  chmod 600 "$ISSUELIGHT_ICINGA_ARTIFACTS_DIR/ssh-tunnel"
+  chmod 644 "$ISSUELIGHT_ICINGA_ARTIFACTS_DIR/ssh-tunnel.pub"
+}
+
+wait_for_ssh_fixture() {
+  attempt=0
+  while [ "$attempt" -lt 40 ]; do
+    if nc -z -G 1 127.0.0.1 "$ISSUELIGHT_SSH_PORT" 2>/dev/null; then
+      ssh-keyscan \
+        -p "$ISSUELIGHT_SSH_PORT" \
+        127.0.0.1 \
+        > "$ISSUELIGHT_ICINGA_ARTIFACTS_DIR/ssh-known-hosts" 2>/dev/null
+      chmod 600 "$ISSUELIGHT_ICINGA_ARTIFACTS_DIR/ssh-known-hosts"
+      return 0
+    fi
+    attempt=$((attempt + 1))
+    sleep 1
+  done
+
+  printf 'SSH tunnel fixture did not become ready.\n' >&2
+  compose logs --tail 100 ssh-gateway >&2
+  return 1
 }
 
 wait_for_api() {
@@ -196,6 +231,10 @@ verify_app_model_multi_source() {
   ISSUELIGHT_REQUIRE_LIVE_ICINGA=1 \
   ISSUELIGHT_ICINGA_BASIC_PASSWORD="$ISSUELIGHT_ICINGA_BASIC_PASSWORD" \
   ISSUELIGHT_LIVE_ICINGA_CA_PATH="$ISSUELIGHT_ICINGA_ARTIFACTS_DIR/ca.crt" \
+  ISSUELIGHT_REQUIRE_LIVE_SSH=1 \
+  ISSUELIGHT_LIVE_SSH_PORT="$ISSUELIGHT_SSH_PORT" \
+  ISSUELIGHT_LIVE_SSH_KEY_PATH="$ISSUELIGHT_ICINGA_ARTIFACTS_DIR/ssh-tunnel" \
+  ISSUELIGHT_LIVE_SSH_KNOWN_HOSTS_PATH="$ISSUELIGHT_ICINGA_ARTIFACTS_DIR/ssh-known-hosts" \
     xcrun xctest \
       "$live_model_derived_data/Build/Products/Debug/IssueLightModelTests.xctest"
   rm -rf "$live_model_derived_data"
@@ -276,8 +315,10 @@ CURL_CONFIG
 
 case "${1:-}" in
   start)
-    compose up -d
+    generate_ssh_fixture_identity
+    compose up -d --build
     wait_for_api
+    wait_for_ssh_fixture
     generate_server_identity
     generate_client_identity
     reschedule_fixture_checks

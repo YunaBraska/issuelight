@@ -8,21 +8,24 @@ import Darwin
 struct IssueLightApp: App {
     @StateObject private var model: IssueLightModel
     @StateObject private var languageSettings: AppLanguageSettings
+    @StateObject private var externalActions: ExternalActionCoordinator
 
     init() {
 #if DEBUG
         DebugReviewCredentialSeeder.runIfRequested()
 #endif
         let settings = AppLanguageSettings()
+        let issueModel = IssueLightModel(localizationLocale: settings.locale)
+        let actionCoordinator = ExternalActionCoordinator()
+        actionCoordinator.observeSources(issueModel)
         _languageSettings = StateObject(wrappedValue: settings)
-        _model = StateObject(
-            wrappedValue: IssueLightModel(localizationLocale: settings.locale)
-        )
+        _externalActions = StateObject(wrappedValue: actionCoordinator)
+        _model = StateObject(wrappedValue: issueModel)
     }
 
     var body: some Scene {
         MenuBarExtra {
-            StatusMenuView(model: model)
+            StatusMenuView(model: model, externalActions: externalActions)
                 .appLanguageEnvironment(languageSettings)
                 .onChange(of: languageSettings.selection) {
                     model.setLocalizationLocale(languageSettings.locale)

@@ -93,9 +93,14 @@ public protocol MonitoringProvider: Sendable {
         from source: MonitoringSource,
         access: ProviderAccess
     ) async -> MonitoringActionResult
+    func webURL(for issue: MonitoringIssue, from source: MonitoringSource) -> URL?
 }
 
 public extension MonitoringProvider {
+    func webURL(for issue: MonitoringIssue, from source: MonitoringSource) -> URL? {
+        nil
+    }
+
     func perform(
         _ action: MonitoringAction,
         on issue: MonitoringIssue,

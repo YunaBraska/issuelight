@@ -20,9 +20,12 @@ credentials, strict-by-default TLS, source-specific private CAs, optional
 exact server-certificate pinning, optional per-source certificate bypass, and a
 real containerized Icinga 2 compatibility lab are implemented. The menu-bar
 panel aggregates independently refreshed sources and exposes explicit Icinga 2
-recheck, acknowledgement, and fixed-downtime actions per issue. Notifications,
-web deep links, and additional providers remain outside the current release.
-The universal ZIP/DMG/SBOM workflow is ready for signing credentials.
+recheck, acknowledgement, and fixed-downtime actions per issue. Persistent
+panel filters, Icinga Web deep links, SSH/RDP launch actions, and an optional
+HTTP-over-SSH tunnel are available per source. Use an Icinga Web base URL ending
+in `/icingadb` for Icinga DB Web object links. Notifications and additional
+providers remain outside the current release. The universal ZIP/DMG/SBOM
+workflow is ready for signing credentials.
 
 ## Requirements
 
@@ -79,3 +82,8 @@ Run the complete local CI contract with `sh scripts/check.sh`. The real Icinga 2
 
 IssueLight is licensed under the Apache License 2.0. See [`LICENSE`](LICENSE)
 and [`NOTICE`](NOTICE).
+
+## Acknowledgements
+
+Thank you to [Volen Davidov and the original NagBar project](https://github.com/volendavidov/NagBar)
+for the idea and inspiration behind a native macOS monitoring client.

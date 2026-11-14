@@ -16,15 +16,15 @@ final class LandingPageScreenshotTests: XCTestCase {
         )
         let germanMenuData = try NativeViewRenderer.pngData(
             for: menuPanelView(language: .german),
-            size: CGSize(width: 430, height: 240)
+            size: CGSize(width: 720, height: 180)
         )
         let swedishMenuData = try NativeViewRenderer.pngData(
             for: menuPanelView(language: .swedish),
-            size: CGSize(width: 430, height: 240)
+            size: CGSize(width: 720, height: 180)
         )
         let arabicMenuData = try NativeViewRenderer.pngData(
             for: menuPanelView(language: .arabic),
-            size: CGSize(width: 430, height: 240)
+            size: CGSize(width: 720, height: 180)
         )
         let swedishSettingsData = try NativeViewRenderer.pngData(
             for: languageSettingsView(language: .swedish),
@@ -187,11 +187,17 @@ final class LandingPageScreenshotTests: XCTestCase {
                 actionableIssues: issues,
                 coveredIssues: [],
                 sourceNames: [productionID: "Production"],
+                filters: filterSettings(),
                 refreshState: .current,
                 hasPartialRefreshFailure: false,
                 supportedActions: { _ in [.recheck, .acknowledge, .scheduleDowntime] },
                 activeActionIssueIDs: [],
                 openSettings: {},
+                openIssue: { _ in },
+                openSSH: { _ in },
+                openRDP: { _ in },
+                hasSSH: { _ in true },
+                hasRDP: { _ in true },
                 performRecheck: { _ in },
                 requestAcknowledgement: { _ in },
                 requestDowntime: { _ in }
@@ -201,6 +207,11 @@ final class LandingPageScreenshotTests: XCTestCase {
         .background(.regularMaterial)
         .appLanguageEnvironment(settings)
         .environment(\.colorScheme, .light)
+    }
+
+    private func filterSettings() -> PanelFilterSettings {
+        let defaults = UserDefaults(suiteName: "LandingPageScreenshotTests.\(UUID().uuidString)")!
+        return PanelFilterSettings(defaults: defaults)
     }
 
     private func languageSettingsView(language: AppLanguage) -> some View {

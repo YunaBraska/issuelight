@@ -49,9 +49,11 @@ targets:
     sources:
       - Tests
       - Sources/AppLanguage.swift
+      - Sources/ExternalActionCoordinator.swift
       - Sources/LanguageSettingsView.swift
       - Sources/IssueLightModel.swift
       - Sources/IssueCountText.swift
+      - Sources/PanelFilterSettings.swift
       - Sources/SourceSetupView.swift
       - Sources/StatusMenuView.swift
       - path: Resources/Localizable.xcstrings
