@@ -731,7 +731,7 @@ private struct StatusPanelIssueRow: View {
             Text(verbatim: title)
                 .font(.caption.weight(.medium))
                 .lineLimit(1)
-                .frame(width: 154, alignment: .leading)
+                .frame(width: 204, alignment: .leading)
             Text(verbatim: issue.summary)
                 .font(.caption)
                 .foregroundStyle(.secondary)

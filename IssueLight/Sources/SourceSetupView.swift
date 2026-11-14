@@ -287,22 +287,32 @@ struct SourceSetupView: View {
                         Text("Web-URL")
                     }
 
-                    DisclosureGroup("SSH", isExpanded: $isShowingSSHOverrides) {
+                    SSHSettingsDisclosureRow(isExpanded: $isShowingSSHOverrides)
+                    if isShowingSSHOverrides {
                         TextField(
                             "Bastion",
                             text: $model.sshTunnelHost,
                             prompt: Text(verbatim: automaticSSHHost)
                         )
-                        TextField("Benutzername", text: $model.sshTunnelUsername)
+                        TextField(
+                            "Benutzername",
+                            text: $model.sshTunnelUsername,
+                            prompt: Text(verbatim: "OpenSSH")
+                        )
                             .textContentType(.username)
                         TextField("SSH-Port", text: $model.sshTunnelPort, prompt: Text(verbatim: "22"))
                         TextField(
                             "Bevorzugter lokaler Port",
-                            text: $model.sshTunnelPreferredLocalPort
+                            text: $model.sshTunnelPreferredLocalPort,
+                            prompt: Text(verbatim: "macOS")
                         )
                         LabeledContent("SSH-Schlüssel") {
                             HStack(spacing: 8) {
-                                if !model.sshTunnelIdentityFilePath.isEmpty {
+                                if model.sshTunnelIdentityFilePath.isEmpty {
+                                    Text(verbatim: "~/.ssh/config / SSH agent")
+                                        .foregroundStyle(.tertiary)
+                                        .lineLimit(1)
+                                } else {
                                     Text(URL(fileURLWithPath: model.sshTunnelIdentityFilePath).lastPathComponent)
                                         .foregroundStyle(.secondary)
                                         .lineLimit(1)
@@ -330,18 +340,22 @@ struct SourceSetupView: View {
                         }
                     }
 
-                    Toggle("Host im Terminal öffnen", isOn: $model.sshActionEnabled)
+                    Toggle("SSH für überwachten Host", isOn: $model.sshActionEnabled)
                     if model.sshActionEnabled {
-                        TextField("SSH-Benutzername", text: $model.sshUsername)
+                        TextField(
+                            "SSH-Benutzername",
+                            text: $model.sshUsername,
+                            prompt: Text(verbatim: "OpenSSH")
+                        )
                             .textContentType(.username)
-                        TextField("SSH-Port", value: $model.sshPort, format: .number)
+                        PortNumberField("SSH-Port", value: $model.sshPort)
                     }
 
-                    Toggle("Host über RDP öffnen", isOn: $model.rdpActionEnabled)
+                    Toggle("RDP für überwachten Host", isOn: $model.rdpActionEnabled)
                     if model.rdpActionEnabled {
                         TextField("RDP-Benutzername", text: $model.rdpUsername)
                             .textContentType(.username)
-                        TextField("RDP-Port", value: $model.rdpPort, format: .number)
+                        PortNumberField("RDP-Port", value: $model.rdpPort)
                     }
                 } header: {
                     Text("Navigation & Fernzugriff")
@@ -570,6 +584,51 @@ private struct SourceRow: View {
         case .failed(let message):
             return AppLocalization.string("Aktualisierung fehlgeschlagen, \(message)", locale: locale)
         }
+    }
+}
+
+struct SSHSettingsDisclosureRow: View {
+    @Binding var isExpanded: Bool
+
+    var body: some View {
+        Button {
+            isExpanded.toggle()
+        } label: {
+            HStack(spacing: 7) {
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .rotationEffect(.degrees(isExpanded ? 90 : 0))
+                    .accessibilityHidden(true)
+                Text(verbatim: "SSH")
+                Spacer()
+                Text(verbatim: "API · Web")
+                    .foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity, minHeight: 28, alignment: .leading)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text(verbatim: "SSH, API, Web"))
+        .accessibilityAddTraits(isExpanded ? .isSelected : [])
+        .accessibilityIdentifier("ssh-settings-disclosure")
+    }
+}
+
+struct PortNumberField: View {
+    static var format: IntegerFormatStyle<Int> {
+        .number.grouping(.never)
+    }
+
+    let title: LocalizedStringKey
+    @Binding var value: Int
+
+    init(_ title: LocalizedStringKey, value: Binding<Int>) {
+        self.title = title
+        _value = value
+    }
+
+    var body: some View {
+        TextField(title, value: $value, format: Self.format)
     }
 }
 

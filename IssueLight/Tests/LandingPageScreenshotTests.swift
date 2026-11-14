@@ -81,10 +81,6 @@ final class LandingPageScreenshotTests: XCTestCase {
             to: outputDirectory.appendingPathComponent("menu-panel-ar.png"),
             options: .atomic
         )
-        try sourceFailureMenuData.write(
-            to: outputDirectory.appendingPathComponent("menu-panel-source-failure.png"),
-            options: .atomic
-        )
         try swedishSettingsData.write(
             to: outputDirectory.appendingPathComponent("language-settings-sv.png"),
             options: .atomic
@@ -173,8 +169,8 @@ final class LandingPageScreenshotTests: XCTestCase {
                 sourceID: productionID,
                 id: "api-database",
                 host: "api-01",
-                service: "PostgreSQL",
-                name: "PostgreSQL",
+                service: "PostgreSQL replication primary",
+                name: "PostgreSQL replication primary",
                 severity: .critical,
                 summary: "CRITICAL: replication delay is 184 seconds"
             ),

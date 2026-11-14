@@ -26645,111 +26645,111 @@
 }
     }
   },
-  "Host über RDP öffnen": {
+  "RDP für überwachten Host": {
     "localizations": {
 "de": {
   "stringUnit": { "state": "translated",
-    "value": "Host über RDP öffnen"
+    "value": "RDP für überwachten Host"
   }
 },
 "en": {
   "stringUnit": { "state": "translated",
-    "value": "Open host with RDP"
+    "value": "RDP for monitored host"
   }
 },
 "sv": {
   "stringUnit": { "state": "translated",
-    "value": "Öppna värd med RDP"
+    "value": "RDP för övervakad värd"
   }
 },
 "es": {
   "stringUnit": { "state": "translated",
-    "value": "Abrir host con RDP"
+    "value": "RDP para el host monitorizado"
   }
 },
 "fr": {
   "stringUnit": { "state": "translated",
-    "value": "Ouvrir l’hôte via RDP"
+    "value": "RDP pour l’hôte surveillé"
   }
 },
 "pt": {
   "stringUnit": { "state": "translated",
-    "value": "Abrir host com RDP"
+    "value": "RDP para host monitorado"
   }
 },
 "ru": {
   "stringUnit": { "state": "translated",
-    "value": "Открыть хост через RDP"
+    "value": "RDP для отслеживаемого хоста"
   }
 },
 "tr": {
   "stringUnit": { "state": "translated",
-    "value": "Ana bilgisayarı RDP ile aç"
+    "value": "İzlenen ana bilgisayar için RDP"
   }
 },
 "id": {
   "stringUnit": { "state": "translated",
-    "value": "Buka host dengan RDP"
+    "value": "RDP untuk host yang dipantau"
   }
 },
 "vi": {
   "stringUnit": { "state": "translated",
-    "value": "Mở máy chủ bằng RDP"
+    "value": "RDP cho máy chủ được giám sát"
   }
 },
 "zh-Hans": {
   "stringUnit": { "state": "translated",
-    "value": "使用 RDP 打开主机"
+    "value": "用于受监控主机的 RDP"
   }
 },
 "ja": {
   "stringUnit": { "state": "translated",
-    "value": "RDPでホストを開く"
+    "value": "監視対象ホストへのRDP"
   }
 },
 "ar": {
   "stringUnit": { "state": "translated",
-    "value": "فتح المضيف عبر RDP"
+    "value": "RDP للمضيف المُراقَب"
   }
 },
 "hi": {
   "stringUnit": { "state": "translated",
-    "value": "RDP से होस्ट खोलें"
+    "value": "मॉनिटर किए गए होस्ट के लिए RDP"
   }
 },
 "bn": {
   "stringUnit": { "state": "translated",
-    "value": "RDP দিয়ে হোস্ট খুলুন"
+    "value": "পর্যবেক্ষণ করা হোস্টের জন্য RDP"
   }
 },
 "mr": {
   "stringUnit": { "state": "translated",
-    "value": "RDP सह होस्ट उघडा"
+    "value": "निरीक्षण केलेल्या होस्टसाठी RDP"
   }
 },
 "te": {
   "stringUnit": { "state": "translated",
-    "value": "RDPతో హోస్ట్‌ను తెరవండి"
+    "value": "పర్యవేక్షిత హోస్ట్ కోసం RDP"
   }
 },
 "ur": {
   "stringUnit": { "state": "translated",
-    "value": "RDP کے ذریعے ہوسٹ کھولیں"
+    "value": "زیر نگرانی ہوسٹ کے لیے RDP"
   }
 },
 "sw": {
   "stringUnit": { "state": "translated",
-    "value": "Fungua seva pangishi kupitia RDP"
+    "value": "RDP kwa seva pangishi inayofuatiliwa"
   }
 },
 "ha": {
   "stringUnit": { "state": "translated",
-    "value": "Buɗe mai masauki ta RDP"
+    "value": "RDP don na'urar da ake sa ido"
   }
 },
 "pcm": {
   "stringUnit": { "state": "translated",
-    "value": "Open host with RDP"
+    "value": "RDP for host wey dem dey monitor"
   }
 }
     }
@@ -27081,111 +27081,111 @@
 }
     }
   },
-  "Host im Terminal öffnen": {
+  "SSH für überwachten Host": {
     "localizations": {
 "de": {
   "stringUnit": { "state": "translated",
-    "value": "Host im Terminal öffnen"
+    "value": "SSH für überwachten Host"
   }
 },
 "en": {
   "stringUnit": { "state": "translated",
-    "value": "Open host in Terminal"
+    "value": "SSH for monitored host"
   }
 },
 "sv": {
   "stringUnit": { "state": "translated",
-    "value": "Öppna värd i Terminal"
+    "value": "SSH för övervakad värd"
   }
 },
 "es": {
   "stringUnit": { "state": "translated",
-    "value": "Abrir host en Terminal"
+    "value": "SSH para el host monitorizado"
   }
 },
 "fr": {
   "stringUnit": { "state": "translated",
-    "value": "Ouvrir l’hôte dans Terminal"
+    "value": "SSH pour l’hôte surveillé"
   }
 },
 "pt": {
   "stringUnit": { "state": "translated",
-    "value": "Abrir host no Terminal"
+    "value": "SSH para host monitorado"
   }
 },
 "ru": {
   "stringUnit": { "state": "translated",
-    "value": "Открыть хост в Терминале"
+    "value": "SSH для отслеживаемого хоста"
   }
 },
 "tr": {
   "stringUnit": { "state": "translated",
-    "value": "Ana bilgisayarı Terminal'de aç"
+    "value": "İzlenen ana bilgisayar için SSH"
   }
 },
 "id": {
   "stringUnit": { "state": "translated",
-    "value": "Buka host di Terminal"
+    "value": "SSH untuk host yang dipantau"
   }
 },
 "vi": {
   "stringUnit": { "state": "translated",
-    "value": "Mở máy chủ trong Terminal"
+    "value": "SSH cho máy chủ được giám sát"
   }
 },
 "zh-Hans": {
   "stringUnit": { "state": "translated",
-    "value": "在“终端”中打开主机"
+    "value": "用于受监控主机的 SSH"
   }
 },
 "ja": {
   "stringUnit": { "state": "translated",
-    "value": "ホストをターミナルで開く"
+    "value": "監視対象ホストへのSSH"
   }
 },
 "ar": {
   "stringUnit": { "state": "translated",
-    "value": "فتح المضيف في الوحدة الطرفية"
+    "value": "SSH للمضيف المُراقَب"
   }
 },
 "hi": {
   "stringUnit": { "state": "translated",
-    "value": "टर्मिनल में होस्ट खोलें"
+    "value": "मॉनिटर किए गए होस्ट के लिए SSH"
   }
 },
 "bn": {
   "stringUnit": { "state": "translated",
-    "value": "টার্মিনালে হোস্ট খুলুন"
+    "value": "পর্যবেক্ষণ করা হোস্টের জন্য SSH"
   }
 },
 "mr": {
   "stringUnit": { "state": "translated",
-    "value": "टर्मिनलमध्ये होस्ट उघडा"
+    "value": "निरीक्षण केलेल्या होस्टसाठी SSH"
   }
 },
 "te": {
   "stringUnit": { "state": "translated",
-    "value": "టెర్మినల్‌లో హోస్ట్‌ను తెరవండి"
+    "value": "పర్యవేక్షిత హోస్ట్ కోసం SSH"
   }
 },
 "ur": {
   "stringUnit": { "state": "translated",
-    "value": "ٹرمینل میں ہوسٹ کھولیں"
+    "value": "زیر نگرانی ہوسٹ کے لیے SSH"
   }
 },
 "sw": {
   "stringUnit": { "state": "translated",
-    "value": "Fungua seva pangishi kwenye Terminal"
+    "value": "SSH kwa seva pangishi inayofuatiliwa"
   }
 },
 "ha": {
   "stringUnit": { "state": "translated",
-    "value": "Buɗe mai masauki a Terminal"
+    "value": "SSH don na'urar da ake sa ido"
   }
 },
 "pcm": {
   "stringUnit": { "state": "translated",
-    "value": "Open host for Terminal"
+    "value": "SSH for host wey dem dey monitor"
   }
 }
     }

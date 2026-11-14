@@ -4,6 +4,37 @@ import XCTest
 
 @MainActor
 final class StatusMenuInteractionTests: XCTestCase {
+    func testSSHSettingsDisclosureRespondsAcrossTheEntireRow() {
+        var isExpanded = false
+        let view = SSHSettingsDisclosureRow(
+            isExpanded: Binding(
+                get: { isExpanded },
+                set: { isExpanded = $0 }
+            )
+        )
+        .environment(\.locale, Locale(identifier: "de_DE"))
+        .environment(\.colorScheme, .light)
+
+        NativeViewRenderer.click(
+            CGPoint(x: 496, y: 14),
+            in: view,
+            size: CGSize(width: 500, height: 28)
+        )
+
+        XCTAssertTrue(isExpanded)
+    }
+
+    func testPortNumberFormatNeverAddsLocaleGrouping() {
+        XCTAssertEqual(
+            PortNumberField.format.locale(Locale(identifier: "de_DE")).format(3_389),
+            "3389"
+        )
+        XCTAssertEqual(
+            PortNumberField.format.locale(Locale(identifier: "sv_SE")).format(22_222),
+            "22222"
+        )
+    }
+
     func testSettingsButtonRespondsToPointerClick() {
         var openedSettings = false
         let view = StatusMenuContent(
