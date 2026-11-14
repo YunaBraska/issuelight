@@ -5,10 +5,19 @@ import Security
 @MainActor
 final class IssueLightModel: ObservableObject {
     enum AuthenticationChoice: String, CaseIterable, Identifiable {
-        case basic = "Benutzername & Passwort"
-        case clientCertificate = "Client-Zertifikat"
+        case basic
+        case clientCertificate
 
         var id: String { rawValue }
+
+        func displayName(locale: Locale) -> String {
+            switch self {
+            case .basic:
+                return AppLocalization.string("Benutzername & Passwort", locale: locale)
+            case .clientCertificate:
+                return AppLocalization.string("Client-Zertifikat", locale: locale)
+            }
+        }
 
         var method: AuthenticationMethod {
             switch self {
@@ -21,12 +30,25 @@ final class IssueLightModel: ObservableObject {
     }
 
     enum ServerTrustChoice: String, CaseIterable, Identifiable {
-        case system = "macOS-Systemvertrauen"
-        case customCertificate = "Eigene CA"
-        case pinnedCertificate = "Serverzertifikat festlegen"
-        case disabled = "Prüfung deaktiviert"
+        case system
+        case customCertificate
+        case pinnedCertificate
+        case disabled
 
         var id: String { rawValue }
+
+        func displayName(locale: Locale) -> String {
+            switch self {
+            case .system:
+                return AppLocalization.string("macOS-Systemvertrauen", locale: locale)
+            case .customCertificate:
+                return AppLocalization.string("Eigene CA", locale: locale)
+            case .pinnedCertificate:
+                return AppLocalization.string("Serverzertifikat festlegen", locale: locale)
+            case .disabled:
+                return AppLocalization.string("Prüfung deaktiviert", locale: locale)
+            }
+        }
 
         var method: ServerTrustMethod {
             switch self {
@@ -101,6 +123,7 @@ final class IssueLightModel: ObservableObject {
     private var refreshLoopTask: Task<Void, Never>?
     private var refreshTasks: [UUID: Task<Void, Never>] = [:]
     private var connectionTestID: UUID?
+    private var localizationLocale: Locale
 
     var hasConfiguredSource: Bool {
         !sources.isEmpty
@@ -225,7 +248,7 @@ final class IssueLightModel: ObservableObject {
             if failures.count == 1 {
                 return .failed("\(failure.source.name): \(failure.message)")
             }
-            return .failed("\(failures.count) Quellen konnten nicht aktualisiert werden.")
+            return .failed(localized("\(failures.count) Quellen konnten nicht aktualisiert werden."))
         }
         if enabledSources.contains(where: { refreshStates[$0.id] == .refreshing }) {
             return .refreshing
@@ -253,21 +276,23 @@ final class IssueLightModel: ObservableObject {
     }
 
     var deletionMessage: String {
-        guard let selectedSource else { return "Die Quellenkonfiguration wird von diesem Mac entfernt." }
+        guard let selectedSource else {
+            return localized("Die Quellenkonfiguration wird von diesem Mac entfernt.")
+        }
         let credentialMessage: String
         switch selectedSource.authentication {
         case .basic:
-            credentialMessage = "Die Konfiguration und das zugehörige Basic-Passwort werden von diesem Mac entfernt."
+            credentialMessage = localized("Die Konfiguration und das zugehörige Basic-Passwort werden von diesem Mac entfernt.")
         case .clientCertificate:
-            credentialMessage = "Die Konfiguration wird entfernt. Das Client-Zertifikat bleibt im macOS-Schlüsselbund."
+            credentialMessage = localized("Die Konfiguration wird entfernt. Das Client-Zertifikat bleibt im macOS-Schlüsselbund.")
         }
         if case .customCertificate = selectedSource.serverTrust {
-            return "\(credentialMessage) Ein von IssueLight importiertes CA-Zertifikat wird nur entfernt, wenn keine andere Quelle es verwendet. Vorhandene fremde Zertifikate bleiben unberührt."
+            return localized("\(credentialMessage) Ein von IssueLight importiertes CA-Zertifikat wird nur entfernt, wenn keine andere Quelle es verwendet. Vorhandene fremde Zertifikate bleiben unberührt.")
         }
         return credentialMessage
     }
 
-    convenience init() {
+    convenience init(localizationLocale: Locale = .current) {
         let bundleIdentifier = Bundle.main.bundleIdentifier ?? "berlin.yuna.issuelight"
         let fileURL = try? SourceStore.defaultFileURL(bundleIdentifier: bundleIdentifier)
         let store = fileURL.map(SourceStore.init(fileURL:))
@@ -278,10 +303,11 @@ final class IssueLightModel: ObservableObject {
             passwordVault: KeychainPasswordVault(),
             identityCatalog: KeychainIdentityCatalog(),
             certificateCatalog: certificateCatalog,
-            startsAutomatically: true
+            startsAutomatically: true,
+            localizationLocale: localizationLocale
         )
         if store == nil {
-            activity = .failure("Der Speicherort für die Quellen konnte nicht geöffnet werden.")
+            activity = .failure(localized("Der Speicherort für die Quellen konnte nicht geöffnet werden."))
         }
     }
 
@@ -291,13 +317,15 @@ final class IssueLightModel: ObservableObject {
         passwordVault: KeychainPasswordVault,
         identityCatalog: KeychainIdentityCatalog,
         certificateCatalog: KeychainServerCertificateCatalog,
-        startsAutomatically: Bool
+        startsAutomatically: Bool,
+        localizationLocale: Locale = .current
     ) {
         self.sourceStore = sourceStore
         self.providerRegistry = providerRegistry
         self.passwordVault = passwordVault
         self.identityCatalog = identityCatalog
         self.certificateCatalog = certificateCatalog
+        self.localizationLocale = localizationLocale
         accessResolver = ProviderAccessResolver(
             passwordVault: passwordVault,
             identityCatalog: identityCatalog,
@@ -316,6 +344,15 @@ final class IssueLightModel: ObservableObject {
         refreshLoopTask?.cancel()
     }
 
+    func setLocalizationLocale(_ locale: Locale) {
+        localizationLocale = locale
+        objectWillChange.send()
+    }
+
+    private func localized(_ resource: LocalizedStringResource) -> String {
+        AppLocalization.string(resource, locale: localizationLocale)
+    }
+
     func start() async {
         guard !hasStarted else { return }
         hasStarted = true
@@ -330,7 +367,7 @@ final class IssueLightModel: ObservableObject {
 
     func load() async {
         guard let sourceStore else { return }
-        activity = .working("Gespeicherte Quellen werden geladen …")
+        activity = .working(localized("Gespeicherte Quellen werden geladen …"))
         do {
             sources = try await sourceStore.load()
             for source in sources where !source.isEnabled {
@@ -342,7 +379,7 @@ final class IssueLightModel: ObservableObject {
                 beginAddingSource()
             }
         } catch {
-            activity = .failure("Die gespeicherten Quellen konnten nicht geladen werden: \(error.localizedDescription)")
+            activity = .failure(localized("Die gespeicherten Quellen konnten nicht geladen werden: \(error.localizedDescription)"))
             return
         }
 
@@ -356,7 +393,7 @@ final class IssueLightModel: ObservableObject {
             }
         } catch {
             identities = []
-            let message = "Client-Zertifikate konnten nicht aus dem Schlüsselbund gelesen werden."
+            let message = localized("Client-Zertifikate konnten nicht aus dem Schlüsselbund gelesen werden.")
             identityLoadError = message
             if authenticationChoice == .clientCertificate {
                 activity = .failure(message)
@@ -365,7 +402,7 @@ final class IssueLightModel: ObservableObject {
             }
         }
         if !certificateCleanupSucceeded, case .idle = activity {
-            activity = .failure("Nicht mehr verwendete CA-Zertifikate konnten nicht aus dem Schlüsselbund entfernt werden.")
+            activity = .failure(localized("Nicht mehr verwendete CA-Zertifikate konnten nicht aus dem Schlüsselbund entfernt werden."))
         }
     }
 
@@ -373,7 +410,7 @@ final class IssueLightModel: ObservableObject {
         guard let source = sources.first(where: { $0.id == id }) else { return }
         connectionTestID = nil
         isTestingConnection = false
-        activity = .working("Quelle wird geladen …")
+        activity = .working(localized("Quelle wird geladen …"))
         selectedSourceID = source.id
         apply(source)
         password = ""
@@ -390,12 +427,12 @@ final class IssueLightModel: ObservableObject {
             guard selectedSourceID == source.id else { return }
             hasStoredBasicPassword = false
             activity = .failure(
-                "macOS gibt diesen Schlüsselbund-Eintrag nicht ohne Nachfrage frei. Gib das Passwort in der Quelle erneut ein."
+                localized("macOS gibt diesen Schlüsselbund-Eintrag nicht ohne Nachfrage frei. Gib das Passwort in der Quelle erneut ein.")
             )
         } catch {
             guard selectedSourceID == source.id else { return }
             hasStoredBasicPassword = false
-            activity = .failure("Das gespeicherte Passwort konnte nicht aus dem Schlüsselbund gelesen werden.")
+            activity = .failure(localized("Das gespeicherte Passwort konnte nicht aus dem Schlüsselbund gelesen werden."))
         }
 
         do {
@@ -408,14 +445,14 @@ final class IssueLightModel: ObservableObject {
             guard selectedSourceID == source.id else { return }
             selectedServerCertificate = descriptor
             if case .customCertificate = source.serverTrust, descriptor == nil {
-                activity = .failure("Das CA-Zertifikat ist nicht mehr im Schlüsselbund verfügbar.")
+                activity = .failure(localized("Das CA-Zertifikat ist nicht mehr im Schlüsselbund verfügbar."))
             } else if case .working = activity {
                 activity = .idle
             }
         } catch {
             guard selectedSourceID == source.id else { return }
             selectedServerCertificate = nil
-            activity = .failure("Das CA-Zertifikat konnte nicht aus dem Schlüsselbund gelesen werden.")
+            activity = .failure(localized("Das CA-Zertifikat konnte nicht aus dem Schlüsselbund gelesen werden."))
         }
     }
 
@@ -442,12 +479,12 @@ final class IssueLightModel: ObservableObject {
     func testConnection() async {
         guard let source = sourceFromForm() else { return }
         guard let provider = providerRegistry.provider(for: source.providerID) else {
-            activity = .failure("Der konfigurierte Monitoring-Typ ist nicht verfügbar.")
+            activity = .failure(localized("Der konfigurierte Monitoring-Typ ist nicht verfügbar."))
             return
         }
         connectionTestID = source.id
         isTestingConnection = true
-        activity = .working("Verbindung wird geprüft …")
+        activity = .working(localized("Verbindung wird geprüft …"))
 
         var allowsStoredPassword = true
         if case .basic = source.authentication {
@@ -457,7 +494,7 @@ final class IssueLightModel: ObservableObject {
             if password.isEmpty && !allowsStoredPassword {
                 connectionTestID = nil
                 isTestingConnection = false
-                activity = .failure("Gib ein Passwort ein.")
+                activity = .failure(localized("Gib ein Passwort ein."))
                 return
             }
         }
@@ -521,7 +558,7 @@ final class IssueLightModel: ObservableObject {
 
     func save() async {
         guard let source = sourceFromForm(), let sourceStore else { return }
-        activity = .working("Quelle wird gespeichert …")
+        activity = .working(localized("Quelle wird gespeichert …"))
         let previousSource = selectedSource
 
         do {
@@ -537,12 +574,12 @@ final class IssueLightModel: ObservableObject {
             switch source.authentication {
             case .basic:
                 guard let newScope else {
-                    activity = .failure("Die Zugangsdaten sind ungültig.")
+                    activity = .failure(localized("Die Zugangsdaten sind ungültig."))
                     return
                 }
                 if password.isEmpty {
                     guard previousPassword != nil else {
-                        activity = .failure("Gib ein Passwort ein.")
+                        activity = .failure(localized("Gib ein Passwort ein."))
                         return
                     }
                 } else {
@@ -610,27 +647,27 @@ final class IssueLightModel: ObservableObject {
                 }
             }
             activity = cleanupFailed
-                ? .failure("Quelle gespeichert, aber nicht mehr verwendete Schlüsselbund-Einträge konnten nicht vollständig entfernt werden.")
-                : .success("Quelle gespeichert. Geheimnisse bleiben im macOS-Schlüsselbund.")
+                ? .failure(localized("Quelle gespeichert, aber nicht mehr verwendete Schlüsselbund-Einträge konnten nicht vollständig entfernt werden."))
+                : .success(localized("Quelle gespeichert. Geheimnisse bleiben im macOS-Schlüsselbund."))
         } catch KeychainPasswordVaultError.interactionNotAllowed {
             activity = .failure(
-                "macOS gibt diesen Schlüsselbund-Eintrag nicht ohne Nachfrage frei. Entferne den alten IssueLight-Eintrag in der Schlüsselbundverwaltung und speichere die Quelle erneut."
+                localized("macOS gibt diesen Schlüsselbund-Eintrag nicht ohne Nachfrage frei. Entferne den alten IssueLight-Eintrag in der Schlüsselbundverwaltung und speichere die Quelle erneut.")
             )
         } catch {
-            activity = .failure("Die Quelle konnte nicht gespeichert werden: \(error.localizedDescription)")
+            activity = .failure(localized("Die Quelle konnte nicht gespeichert werden: \(error.localizedDescription)"))
         }
     }
 
     func deleteSource() async {
         guard let source = selectedSource, let sourceStore else { return }
-        activity = .working("Quelle wird entfernt …")
+        activity = .working(localized("Quelle wird entfernt …"))
         let removedIndex = sources.firstIndex(where: { $0.id == source.id }) ?? 0
 
         let persistedSources: [MonitoringSource]
         do {
             persistedSources = try await sourceStore.remove(id: source.id)
         } catch {
-            activity = .failure("Die Quelle konnte nicht entfernt werden: \(error.localizedDescription)")
+            activity = .failure(localized("Die Quelle konnte nicht entfernt werden: \(error.localizedDescription)"))
             return
         }
 
@@ -666,37 +703,37 @@ final class IssueLightModel: ObservableObject {
         }
 
         if cleanupFailed {
-            activity = .failure("Die Quelle wurde entfernt, aber nicht mehr verwendete Schlüsselbund-Einträge konnten nicht vollständig gelöscht werden.")
+            activity = .failure(localized("Die Quelle wurde entfernt, aber nicht mehr verwendete Schlüsselbund-Einträge konnten nicht vollständig gelöscht werden."))
         } else {
             let message: String
             switch source.authentication {
             case .basic:
-                message = "Quelle und gespeichertes Basic-Passwort wurden entfernt."
+                message = localized("Quelle und gespeichertes Basic-Passwort wurden entfernt.")
             case .clientCertificate:
-                message = "Quelle entfernt. Das Client-Zertifikat bleibt im macOS-Schlüsselbund."
+                message = localized("Quelle entfernt. Das Client-Zertifikat bleibt im macOS-Schlüsselbund.")
             }
             activity = .success(message)
         }
     }
 
     func importIdentity(at fileURL: URL, password: String) async -> Bool {
-        activity = .working("Zertifikat wird importiert …")
+        activity = .working(localized("Zertifikat wird importiert …"))
         do {
             let descriptor = try await identityCatalog.importPKCS12(at: fileURL, password: password)
             identities = try await identityCatalog.identities()
             identityLoadError = nil
             selectedIdentityID = descriptor.id
             authenticationChoice = .clientCertificate
-            activity = .success("„\(descriptor.displayName)“ wurde in den Schlüsselbund importiert.")
+            activity = .success(localized("„\(descriptor.displayName)“ wurde in den Schlüsselbund importiert."))
             return true
         } catch {
-            activity = .failure("Das PKCS#12-Zertifikat konnte nicht importiert werden. Datei oder Passwort ist ungültig.")
+            activity = .failure(localized("Das PKCS#12-Zertifikat konnte nicht importiert werden. Datei oder Passwort ist ungültig."))
             return false
         }
     }
 
     func importServerCertificate(at fileURL: URL) async -> Bool {
-        activity = .working("CA-Zertifikat wird importiert …")
+        activity = .working(localized("CA-Zertifikat wird importiert …"))
         do {
             let descriptor = try await certificateCatalog.importCertificate(at: fileURL)
             selectedServerCertificate = descriptor
@@ -705,32 +742,32 @@ final class IssueLightModel: ObservableObject {
                 retainingAdditionalIDs: [descriptor.id]
             )
             activity = cleanupSucceeded
-                ? .success("„\(descriptor.displayName)“ wird nur für diese Quellenkonfiguration als CA verwendet.")
-                : .failure("Das CA-Zertifikat wurde importiert, aber ein zuvor ungenutztes Zertifikat konnte nicht entfernt werden.")
+                ? .success(localized("„\(descriptor.displayName)“ wird nur für diese Quellenkonfiguration als CA verwendet."))
+                : .failure(localized("Das CA-Zertifikat wurde importiert, aber ein zuvor ungenutztes Zertifikat konnte nicht entfernt werden."))
             return true
         } catch KeychainServerCertificateCatalogError.multipleCertificatesNotSupported {
-            activity = .failure("Wähle eine Datei mit genau einem CA-Zertifikat.")
+            activity = .failure(localized("Wähle eine Datei mit genau einem CA-Zertifikat."))
             return false
         } catch {
-            activity = .failure("Das CA-Zertifikat konnte nicht importiert werden.")
+            activity = .failure(localized("Das CA-Zertifikat konnte nicht importiert werden."))
             return false
         }
     }
 
     func pinServerCertificate(at fileURL: URL) -> Bool {
-        activity = .working("Serverzertifikat wird geprüft …")
+        activity = .working(localized("Serverzertifikat wird geprüft …"))
         do {
             pinnedServerCertificateSHA256 = try ServerCertificateFingerprint.sha256(at: fileURL)
             serverTrustChoice = .pinnedCertificate
             activity = .success(
-                "Der SHA-256-Fingerprint wurde übernommen. Prüfe die Verbindung, bevor du die Quelle speicherst."
+                localized("Der SHA-256-Fingerprint wurde übernommen. Prüfe die Verbindung, bevor du die Quelle speicherst.")
             )
             return true
         } catch ServerCertificateFingerprintError.multipleCertificatesNotSupported {
-            activity = .failure("Wähle eine Datei mit genau einem Serverzertifikat.")
+            activity = .failure(localized("Wähle eine Datei mit genau einem Serverzertifikat."))
             return false
         } catch {
-            activity = .failure("Das Serverzertifikat konnte nicht gelesen werden.")
+            activity = .failure(localized("Das Serverzertifikat konnte nicht gelesen werden."))
             return false
         }
     }
@@ -751,7 +788,7 @@ final class IssueLightModel: ObservableObject {
     }
 
     func sourceName(for sourceID: UUID) -> String {
-        sources.first(where: { $0.id == sourceID })?.name ?? "Unbekannte Quelle"
+        sources.first(where: { $0.id == sourceID })?.name ?? localized("Unbekannte Quelle")
     }
 
     func providerName(for source: MonitoringSource) -> String {
@@ -778,7 +815,7 @@ final class IssueLightModel: ObservableObject {
 
     private func sourceFromForm() -> MonitoringSource? {
         guard let url = URL(string: endpoint.trimmingCharacters(in: .whitespacesAndNewlines)) else {
-            activity = .failure("Die Serveradresse ist keine gültige URL.")
+            activity = .failure(localized("Die Serveradresse ist keine gültige URL."))
             return nil
         }
 
@@ -828,7 +865,7 @@ final class IssueLightModel: ObservableObject {
             )
         }
         guard let provider = providerRegistry.provider(for: selectedProviderID) else {
-            activity = .failure("Der ausgewählte Monitoring-Typ ist nicht verfügbar.")
+            activity = .failure(localized("Der ausgewählte Monitoring-Typ ist nicht verfügbar."))
             return nil
         }
         let issues = provider.validate(source)
@@ -862,7 +899,7 @@ final class IssueLightModel: ObservableObject {
     private func performRefresh(source: MonitoringSource) async {
         guard !Task.isCancelled else { return }
         guard let provider = providerRegistry.provider(for: source.providerID) else {
-            refreshStates[source.id] = .failed("Der konfigurierte Monitoring-Typ ist nicht verfügbar.")
+            refreshStates[source.id] = .failed(localized("Der konfigurierte Monitoring-Typ ist nicht verfügbar."))
             return
         }
         let accessResolution = await accessResolver.resolve(source: source)
@@ -921,32 +958,32 @@ final class IssueLightModel: ObservableObject {
     }
 
     private func validationMessage(_ issues: [SourceValidationIssue]) -> String {
-        if issues.contains(.emptyName) { return "Gib der Quelle einen Namen." }
-        if issues.contains(.missingHost) { return "Die Serveradresse benötigt einen Hostnamen." }
-        if issues.contains(.emptyUsername) { return "Gib einen Benutzernamen ein." }
-        if issues.contains(.invalidUsername) { return "Der Benutzername darf keinen Doppelpunkt enthalten." }
-        if issues.contains(.missingClientIdentity) { return "Wähle ein Client-Zertifikat aus dem Schlüsselbund." }
-        if issues.contains(.missingServerCertificate) { return "Importiere ein CA-Zertifikat." }
-        if issues.contains(.invalidPinnedCertificate) { return "Wähle ein gültiges Serverzertifikat für den SHA-256-Pin aus." }
+        if issues.contains(.emptyName) { return localized("Gib der Quelle einen Namen.") }
+        if issues.contains(.missingHost) { return localized("Die Serveradresse benötigt einen Hostnamen.") }
+        if issues.contains(.emptyUsername) { return localized("Gib einen Benutzernamen ein.") }
+        if issues.contains(.invalidUsername) { return localized("Der Benutzername darf keinen Doppelpunkt enthalten.") }
+        if issues.contains(.missingClientIdentity) { return localized("Wähle ein Client-Zertifikat aus dem Schlüsselbund.") }
+        if issues.contains(.missingServerCertificate) { return localized("Importiere ein CA-Zertifikat.") }
+        if issues.contains(.invalidPinnedCertificate) { return localized("Wähle ein gültiges Serverzertifikat für den SHA-256-Pin aus.") }
         if issues.contains(where: {
             if case .unsupportedAuthentication = $0 { return true }
             return false
         }) {
-            return "Diese Authentifizierung wird vom ausgewählten Monitoring-Typ nicht unterstützt."
+            return localized("Diese Authentifizierung wird vom ausgewählten Monitoring-Typ nicht unterstützt.")
         }
         if issues.contains(where: {
             if case .unsupportedPath = $0 { return true }
             return false
         }) {
-            return "Verwende nur eine vom ausgewählten Monitoring-Typ unterstützte Serveradresse."
+            return localized("Verwende nur eine vom ausgewählten Monitoring-Typ unterstützte Serveradresse.")
         }
         if issues.contains(where: {
             if case .unsupportedScheme = $0 { return true }
             return false
         }) {
-            return "Der ausgewählte Monitoring-Typ akzeptiert diese Serveradresse nicht."
+            return localized("Der ausgewählte Monitoring-Typ akzeptiert diese Serveradresse nicht.")
         }
-        return "Die Quellenkonfiguration ist ungültig."
+        return localized("Die Quellenkonfiguration ist ungültig.")
     }
 
     private func synchronizeProviderCapabilities() {
@@ -965,44 +1002,44 @@ final class IssueLightModel: ObservableObject {
     private func accessMessage(for failure: ProviderAccessFailure) -> String {
         switch failure {
         case .passwordNotAvailable:
-            return "Das Passwort ist nicht mehr im Schlüsselbund verfügbar."
+            return localized("Das Passwort ist nicht mehr im Schlüsselbund verfügbar.")
         case .passwordAccessFailed:
-            return "macOS gibt das Passwort im Hintergrund nicht ohne Nachfrage frei. Öffne die Quelle und gib es erneut ein."
+            return localized("macOS gibt das Passwort im Hintergrund nicht ohne Nachfrage frei. Öffne die Quelle und gib es erneut ein.")
         case .clientIdentityNotAvailable:
-            return "Das Client-Zertifikat ist nicht mehr im Schlüsselbund verfügbar."
+            return localized("Das Client-Zertifikat ist nicht mehr im Schlüsselbund verfügbar.")
         case .clientIdentityAccessFailed:
-            return "Das Client-Zertifikat konnte nicht aus dem Schlüsselbund gelesen werden."
+            return localized("Das Client-Zertifikat konnte nicht aus dem Schlüsselbund gelesen werden.")
         case .serverCertificateNotAvailable:
-            return "Das CA-Zertifikat ist nicht mehr im Schlüsselbund verfügbar."
+            return localized("Das CA-Zertifikat ist nicht mehr im Schlüsselbund verfügbar.")
         case .serverCertificateAccessFailed:
-            return "Das CA-Zertifikat konnte nicht aus dem Schlüsselbund gelesen werden."
+            return localized("Das CA-Zertifikat konnte nicht aus dem Schlüsselbund gelesen werden.")
         }
     }
 
     private func message(for result: ConnectionTestResult) -> Activity {
         switch result {
         case .connected:
-            return .success("\(providerDisplayName) ist erreichbar. Host- und Servicezugriff funktionieren.")
+            return .success(localized("\(providerDisplayName) ist erreichbar. Host- und Servicezugriff funktionieren."))
         case .failed(.authentication):
-            return .failure("Die Anmeldung wurde abgelehnt. Prüfe Zugangsdaten oder API-Benutzer.")
+            return .failure(localized("Die Anmeldung wurde abgelehnt. Prüfe Zugangsdaten oder API-Benutzer."))
         case .failed(.authorization):
-            return .failure("Die Anmeldung funktioniert, aber Rechte für Hosts oder Services fehlen.")
+            return .failure(localized("Die Anmeldung funktioniert, aber Rechte für Hosts oder Services fehlen."))
         case .failed(.tls):
-            return .failure("Die TLS-Verbindung ist fehlgeschlagen. Prüfe Zertifikat und Servernamen.")
+            return .failure(localized("Die TLS-Verbindung ist fehlgeschlagen. Prüfe Zertifikat und Servernamen."))
         case .failed(.unreachable):
-            return .failure("Der Server ist nicht erreichbar.")
+            return .failure(localized("Der Server ist nicht erreichbar."))
         case .failed(.clientCertificateNotAvailable):
-            return .failure("Das ausgewählte Client-Zertifikat ist nicht mehr im Schlüsselbund verfügbar.")
+            return .failure(localized("Das ausgewählte Client-Zertifikat ist nicht mehr im Schlüsselbund verfügbar."))
         case .failed(.serverCertificateNotAvailable):
-            return .failure("Das ausgewählte CA-Zertifikat ist nicht mehr im Schlüsselbund verfügbar.")
+            return .failure(localized("Das ausgewählte CA-Zertifikat ist nicht mehr im Schlüsselbund verfügbar."))
         case .failed(.incompatibleResponse):
-            return .failure("Der Server antwortet, liefert aber keine kompatible Monitoring-Antwort.")
+            return .failure(localized("Der Server antwortet, liefert aber keine kompatible Monitoring-Antwort."))
         case .failed(.server(let code)), .failed(.http(let code)):
-            return .failure("Der Server antwortete mit HTTP \(code).")
+            return .failure(localized("Der Server antwortete mit HTTP \(code)."))
         case .failed(.cancelled):
-            return .failure("Der Verbindungstest wurde abgebrochen.")
+            return .failure(localized("Der Verbindungstest wurde abgebrochen."))
         case .failed(.unsupportedTrustConfiguration):
-            return .failure("Diese Zertifikatsoption wird von dieser Version noch nicht unterstützt.")
+            return .failure(localized("Diese Zertifikatsoption wird von dieser Version noch nicht unterstützt."))
         case .failed(.invalidConfiguration(let issues)):
             return .failure(validationMessage(issues))
         }
@@ -1011,27 +1048,27 @@ final class IssueLightModel: ObservableObject {
     private func refreshMessage(for failure: ConnectionFailure) -> String {
         switch failure {
         case .authentication:
-            return "Die Anmeldung wurde abgelehnt."
+            return localized("Die Anmeldung wurde abgelehnt.")
         case .authorization:
-            return "Die API-Rechte reichen nicht zum Lesen des Status."
+            return localized("Die API-Rechte reichen nicht zum Lesen des Status.")
         case .tls:
-            return "Die sichere Verbindung ist fehlgeschlagen."
+            return localized("Die sichere Verbindung ist fehlgeschlagen.")
         case .unreachable:
-            return "Der Server ist nicht erreichbar."
+            return localized("Der Server ist nicht erreichbar.")
         case .clientCertificateNotAvailable:
-            return "Das Client-Zertifikat ist nicht mehr verfügbar."
+            return localized("Das Client-Zertifikat ist nicht mehr verfügbar.")
         case .serverCertificateNotAvailable:
-            return "Das CA-Zertifikat ist nicht mehr verfügbar."
+            return localized("Das CA-Zertifikat ist nicht mehr verfügbar.")
         case .incompatibleResponse:
-            return "Der Server lieferte keine kompatiblen Monitoring-Daten."
+            return localized("Der Server lieferte keine kompatiblen Monitoring-Daten.")
         case .server(let statusCode), .http(let statusCode):
-            return "Der Server antwortete mit HTTP \(statusCode)."
+            return localized("Der Server antwortete mit HTTP \(statusCode).")
         case .unsupportedTrustConfiguration:
-            return "Diese Zertifikatsoption wird noch nicht unterstützt."
+            return localized("Diese Zertifikatsoption wird noch nicht unterstützt.")
         case .invalidConfiguration:
-            return "Die Quellenkonfiguration ist ungültig."
+            return localized("Die Quellenkonfiguration ist ungültig.")
         case .cancelled:
-            return "Die Aktualisierung wurde abgebrochen."
+            return localized("Die Aktualisierung wurde abgebrochen.")
         }
     }
 }

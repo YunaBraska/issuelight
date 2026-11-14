@@ -81,6 +81,10 @@ h1, h2, h3, p { text-wrap: pretty; }
 .principles h3 { margin: 32px 0 10px; font-size: 1.25rem; letter-spacing: -0.025em; }
 .principles p { margin: 0; color: var(--muted); }
 
+.language-section { border-top: 1px solid var(--line); }
+.language-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px; margin-top: 56px; align-items: start; }
+.language-states { grid-column: 1 / -1; }
+
 .security-section { display: grid; grid-template-columns: minmax(520px, 1.15fr) minmax(0, 0.85fr); align-items: center; gap: 76px; border-top: 1px solid var(--line); }
 .setup-shot { transform: rotate(-0.4deg); }
 .security-copy > p { margin-top: 22px; }
@@ -136,7 +140,8 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 .footer-links a:hover { color: var(--ink); }
 
 @media (max-width: 920px) {
-  .hero, .security-section, .evidence-layout, .closing-content { grid-template-columns: 1fr; }
+  .hero, .security-section, .evidence-layout, .closing-content { grid-template-columns: minmax(0, 1fr); }
+  .hero > *, .security-section > *, .evidence-layout > *, .closing-content > * { min-width: 0; }
   .hero { min-height: auto; }
   .evidence-note { grid-column: 1; }
   .closing-content { justify-items: start; }
@@ -144,13 +149,14 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 }
 
 @media (max-width: 700px) {
-  .shell { width: min(100% - 30px, 1180px); }
+  .shell { width: min(calc(100% - 30px), 1180px); }
   .header-content { min-height: auto; align-items: flex-start; flex-direction: column; padding-block: 14px; gap: 12px; }
   nav { gap: 14px; }
   .product-menu-panel { right: auto; left: 0; }
-  .hero { grid-template-columns: 1fr; gap: 40px; padding-block: 58px 70px; }
+  .hero { grid-template-columns: minmax(0, 1fr); gap: 40px; padding-block: 58px 70px; }
   .hero h1 { font-size: clamp(3rem, 17vw, 4.7rem); }
-  .principles, .scope-grid, .document-list, .privacy-grid { grid-template-columns: 1fr; }
+  .principles, .scope-grid, .document-list, .privacy-grid, .language-grid { grid-template-columns: 1fr; }
+  .language-states { grid-column: 1; }
   .principles article, .principles article + article { padding: 28px 0; border-right: 0; border-bottom: 1px solid var(--line); }
   .security-section { grid-template-columns: 1fr; gap: 52px; padding-block: 82px; }
   .check-list li { grid-template-columns: 1fr; gap: 5px; }

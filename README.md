@@ -30,7 +30,7 @@ remain open.
 ## Requirements
 
 - macOS 14 or newer
-- German user interface
+- System-default language or one of 21 built-in languages
 - Xcode 16 or newer
 - XcodeGen 2.45 or newer when changing `IssueLight/project.yml`
 - Docker with Compose for the optional real Icinga 2 integration matrix
@@ -71,6 +71,7 @@ Run the complete local CI contract with `sh scripts/check.sh`. The real Icinga 2
 - [`docs/spec/multiple-sources.md`](docs/spec/multiple-sources.md): multiple-source management and aggregation
 - [`docs/spec/release-lifecycle.md`](docs/spec/release-lifecycle.md): supported installation and update behavior
 - [`docs/spec/nagbar-parity.md`](docs/spec/nagbar-parity.md): retained NagBar journeys, deliberate simplifications, and open capability gaps
+- [`docs/adr/0007-runtime-language-selection.md`](docs/adr/0007-runtime-language-selection.md): in-app language selection and localization boundary
 - [`docs/adr/`](docs/adr/): lasting architecture decisions
 - [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md): local build and release-candidate verification
 - [`docs/site/`](docs/site/): GitHub Pages product site and reproducible app screenshots

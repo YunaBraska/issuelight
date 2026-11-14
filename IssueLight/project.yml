@@ -26,6 +26,8 @@ targets:
         MARKETING_VERSION: 0.1.0
         CURRENT_PROJECT_VERSION: 1
         SWIFT_VERSION: 5.0
+        SWIFT_EMIT_LOC_STRINGS: YES
+        LOCALIZATION_PREFERS_STRING_CATALOGS: YES
         CODE_SIGN_IDENTITY: "-"
         CODE_SIGN_STYLE: Manual
         DEVELOPMENT_TEAM: ""
@@ -46,10 +48,15 @@ targets:
     platform: macOS
     sources:
       - Tests
+      - Sources/AppLanguage.swift
+      - Sources/LanguageSettingsView.swift
       - Sources/IssueLightModel.swift
       - Sources/IssueCountText.swift
       - Sources/SourceSetupView.swift
+      - Sources/StatusMenuView.swift
       - Sources/StatusWindowView.swift
+      - path: Resources/Localizable.xcstrings
+        buildPhase: resources
     dependencies:
       - package: IssueLightCore
     settings:

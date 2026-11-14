@@ -29,6 +29,9 @@ default.
   IssueLight removes a certificate automatically only when the same app
   profile created it and no saved source references it.
 - Monitoring snapshots are held in memory and are not persisted by IssueLight.
+- The selected app-language identifier is stored in macOS preferences. System
+  Default stores no inferred language profile and follows the current macOS
+  app language.
 
 Removing a source removes its saved Basic password. Client identities and
 shared or externally managed certificates remain in Keychain because other

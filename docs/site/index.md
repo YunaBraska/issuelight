@@ -41,6 +41,28 @@ description: IssueLight keeps Icinga 2 problems in the macOS menu bar and stays 
   </div>
 </section>
 
+<section class="section shell language-section">
+  <div class="section-heading">
+    <p class="eyebrow"><span></span>Your language, without a restart</p>
+    <h2>System default or an explicit language.</h2>
+    <p>Choose one of 21 built-in languages from the menu or Settings. Arabic and Urdu switch the complete interface to a right-to-left layout.</p>
+  </div>
+  <div class="language-grid">
+    <figure class="app-window language-states">
+      <img src="{{ '/assets/screenshots/menu-item-states.png' | relative_url }}" alt="IssueLight menu bar item in setup, healthy and seven-problem states" width="1080" height="184">
+      <figcaption>The menu-bar signal stays compact in setup, healthy and attention states.</figcaption>
+    </figure>
+    <figure class="app-window">
+      <img src="{{ '/assets/screenshots/menu-panel-sv.png' | relative_url }}" alt="IssueLight status menu in Swedish" width="720" height="560">
+      <figcaption>Swedish menu panel</figcaption>
+    </figure>
+    <figure class="app-window">
+      <img src="{{ '/assets/screenshots/menu-panel-ar.png' | relative_url }}" alt="IssueLight status menu in Arabic with right-to-left layout" width="720" height="560">
+      <figcaption>Arabic right-to-left menu panel</figcaption>
+    </figure>
+  </div>
+</section>
+
 <section class="section shell security-section">
   <figure class="setup-shot app-window">
     <div class="window-bar"><span></span><span></span><span></span><strong>Source setup</strong></div>

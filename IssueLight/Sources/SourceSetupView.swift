@@ -9,6 +9,7 @@ struct SourceSetupView: View {
     }
 
     @ObservedObject var model: IssueLightModel
+    @Environment(\.locale) private var locale
     private let certificateContentTypes: [UTType] = [
         UTType(filenameExtension: "cer") ?? .data,
         UTType(filenameExtension: "crt") ?? .data,
@@ -54,7 +55,11 @@ struct SourceSetupView: View {
             .navigationSplitViewColumnWidth(min: 220, ideal: 250, max: 320)
         } detail: {
             editor
-                .navigationTitle(model.isCreatingSource ? "Neue Quelle" : model.name)
+                .navigationTitle(
+                    model.isCreatingSource
+                        ? AppLocalization.string("Neue Quelle", locale: locale)
+                        : model.name
+                )
         }
         .frame(minWidth: 780, minHeight: 600)
         .onDisappear {
@@ -121,7 +126,11 @@ struct SourceSetupView: View {
                     TextField("Server", text: $model.endpoint, prompt: Text("https://icinga.example:5665"))
                         .textContentType(.URL)
                 } header: {
-                    Text(model.isCreatingSource ? "Neue Quelle" : "Quelle")
+                    if model.isCreatingSource {
+                        Text("Neue Quelle")
+                    } else {
+                        Text("Quelle")
+                    }
                 } footer: {
                     Text("IssueLight prüft Hosts und Services über die reale API dieser Quelle.")
                 }
@@ -129,7 +138,7 @@ struct SourceSetupView: View {
                 Section("Authentifizierung") {
                     Picker("Methode", selection: $model.authenticationChoice) {
                         ForEach(model.authenticationChoices) { choice in
-                            Text(choice.rawValue).tag(choice)
+                            Text(verbatim: choice.displayName(locale: locale)).tag(choice)
                         }
                     }
                     .pickerStyle(.segmented)
@@ -141,8 +150,14 @@ struct SourceSetupView: View {
                             .textContentType(.password)
                         Text(
                             model.hasStoredBasicPassword
-                                ? "Leer lassen, um das vorhandene Passwort bei unveränderten Zugangsdaten beizubehalten."
-                                : "Das Passwort wird ausschließlich im macOS-Schlüsselbund gespeichert."
+                                ? AppLocalization.string(
+                                    "Leer lassen, um das vorhandene Passwort bei unveränderten Zugangsdaten beizubehalten.",
+                                    locale: locale
+                                )
+                                : AppLocalization.string(
+                                    "Das Passwort wird ausschließlich im macOS-Schlüsselbund gespeichert.",
+                                    locale: locale
+                                )
                         )
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -179,7 +194,7 @@ struct SourceSetupView: View {
                 Section {
                     Picker("Serververtrauen", selection: $model.serverTrustChoice) {
                         ForEach(model.serverTrustChoices) { choice in
-                            Text(choice.rawValue).tag(choice)
+                            Text(verbatim: choice.displayName(locale: locale)).tag(choice)
                         }
                     }
 
@@ -196,8 +211,8 @@ struct SourceSetupView: View {
                         }
                         Button(
                             model.selectedServerCertificate == nil
-                                ? "CA-Zertifikat importieren …"
-                                : "CA-Zertifikat ersetzen …"
+                                ? AppLocalization.string("CA-Zertifikat importieren …", locale: locale)
+                                : AppLocalization.string("CA-Zertifikat ersetzen …", locale: locale)
                         ) {
                             isChoosingServerCertificate = true
                         }
@@ -225,8 +240,8 @@ struct SourceSetupView: View {
                         }
                         Button(
                             model.pinnedServerCertificateSHA256.isEmpty
-                                ? "Serverzertifikat auswählen …"
-                                : "Serverzertifikat ersetzen …"
+                                ? AppLocalization.string("Serverzertifikat auswählen …", locale: locale)
+                                : AppLocalization.string("Serverzertifikat ersetzen …", locale: locale)
                         ) {
                             isChoosingPinnedServerCertificate = true
                         }
@@ -360,6 +375,7 @@ struct SourceSetupView: View {
 private struct SourceRow: View {
     let source: MonitoringSource
     @ObservedObject var model: IssueLightModel
+    @Environment(\.locale) private var locale
 
     var body: some View {
         HStack(spacing: 10) {
@@ -370,10 +386,16 @@ private struct SourceRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(source.name)
                     .lineLimit(1)
-                Text(source.isEnabled ? model.providerName(for: source) : "Pausiert")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
+                Group {
+                    if source.isEnabled {
+                        Text(verbatim: model.providerName(for: source))
+                    } else {
+                        Text("Pausiert")
+                    }
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
             }
         }
         .padding(.vertical, 2)
@@ -428,16 +450,16 @@ private struct SourceRow: View {
     private var statusLabel: String {
         switch model.sourceRefreshState(for: source.id) {
         case .notConfigured:
-            return "nicht konfiguriert"
+            return AppLocalization.string("nicht konfiguriert", locale: locale)
         case .disabled:
-            return "pausiert"
+            return AppLocalization.string("pausiert", locale: locale)
         case .refreshing:
-            return "wird aktualisiert"
+            return AppLocalization.string("wird aktualisiert", locale: locale)
         case .current:
             let count = model.snapshots[source.id]?.actionableIssues.count ?? 0
-            return IssueCountText.sourceStatus(count)
+            return IssueCountText.sourceStatus(count, locale: locale)
         case .failed(let message):
-            return "Aktualisierung fehlgeschlagen, \(message)"
+            return AppLocalization.string("Aktualisierung fehlgeschlagen, \(message)", locale: locale)
         }
     }
 }

@@ -27,6 +27,7 @@ Snapshot date: 2026-11-14.
 | Source setup UI | Native sidebar supports add, select, edit, disable, test, remove, private-CA import, exact server-certificate pinning, and explicit insecure trust with unsaved-change protection | Real success, validation failure, insecure warning, private-CA import, accepted exact pin, rejected mismatched pin, unrelated-CA TLS failure, saved-source, two-source keyboard navigation, long accessible labels, unsaved-change protection, persistent action-feedback states, and the installed dark-mode surface inspected locally |
 | Attention UI | Native menu and status window for setup, loading, healthy, problem, failure, stale, and all-paused states, with direct setup recovery and local issue search | Empty setup with its direct action, deterministic two-problem Icinga status, failure with retained stale data, explicit installed-app password-revocation and relaunch failures, accessible source error, recovery, and all-paused status inspected locally; an installed release build connected to the real lab, displayed two live issues, filtered them by keyboard search, and completed manual refresh |
 | Visible-status idle cost | Native production status window with 5,000 synthetic issues plus an installed release build connected to the real Icinga lab | Verified locally. The large view reported 0.0% CPU, 0.0 `top` power score, and 37 MB resident memory across five samples. The installed app reported 0.0% CPU, 0.0 power score, and 62 MB resident memory after live refresh and search activity |
+| Runtime localization | System Default plus 21 explicit languages in one String Catalog, persistent in-app selection, immediate locale changes, native language names, and right-to-left layout for Arabic and Urdu | Catalog completeness, placeholders, protected product terms, runtime English/Swedish/Arabic resolution, persistence, RTL selection, six native screenshots, and the 390-pixel landing-page layout are verified. Initial copy is marked machine-translated and still requires native-speaker review |
 | Release identity and manual update journey | Own asset-catalog icon, German bundle region, native About panel, installed version/build, and explicit link to the official release channel without an automatic network check | Universal bundle metadata, icon renditions, running menu, About panel, and isolated first-run source window inspected locally |
 | Real Icinga 2 integration | Isolated pinned official container lab covers HTTP rejection, missing and invalid authentication, permission denial, Basic auth, private CA, mTLS, exact pinning, rejected trust, real host/service problem payloads, stable initial checks, and two persisted app-model sources | Full live Core and installed-app matrix verified locally on 2026-11-14 |
 | OSS repository controls | Apache-2.0, provenance notice, contributor/security/privacy policies, private vulnerability reporting, secret scanning with push protection, SHA-pinned Actions, required CI and Swift CodeQL, and protected `main` | Verified in the public repository; the first 27-rule Swift scan completed with zero results and zero open alerts |
@@ -34,11 +35,12 @@ Snapshot date: 2026-11-14.
 
 The local package suite currently executes 91 tests. Eighty-three deterministic
 tests pass, while eight live Icinga tests are skipped unless the integration
-environment is configured. The app suite executes nineteen deterministic tests
+environment is configured. The app suite executes twenty-six deterministic tests
 and one live integration test, skipped outside the lab. It exercises
 multiple-source management and refresh isolation through persisted source,
-real Keychain, and real Icinga 2 boundaries. The full live matrix passed locally
-on 2026-11-14 without opening a Keychain authentication dialog.
+real Keychain, real Icinga 2, runtime localization, native screenshot, and
+catalog-integrity boundaries. The full live matrix passed locally on 2026-11-14
+without opening a Keychain authentication dialog.
 
 Source-only LLVM coverage for `IssueLightCore` is currently 86.8% of lines and
 79.9% of regions locally. CI enforces floors of 86.0% and 79.0% respectively so
@@ -60,6 +62,9 @@ requirement.
 - No IssueLight release has completed the credentialed GitHub distribution
   workflow. The first run must be reviewed before the pipeline can be treated
   as operational evidence.
+- The 21-language catalog is structurally complete and marked as machine
+  translated. Native-speaker review, including plural behavior and terminology,
+  remains required before the localized copy can be called release-reviewed.
 
 Do not describe IssueLight as production-ready until these blockers are closed
 or explicitly removed from the supported scope.

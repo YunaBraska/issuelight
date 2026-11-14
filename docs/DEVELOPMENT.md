@@ -39,8 +39,9 @@ scripts/generate_site_screenshots.sh
 ```
 
 The script builds the screenshot test in an isolated temporary Derived Data
-directory and updates `docs/site/assets/screenshots/`. Inspect both images
-before committing them.
+directory and updates `docs/site/assets/screenshots/`. Inspect the normal menu,
+German and Swedish panels, and the Arabic right-to-left variants before
+committing them.
 
 ## Coverage ratchet
 

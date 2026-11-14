@@ -441,7 +441,8 @@ final class IssueLightModelTests: XCTestCase {
             passwordVault: vault,
             identityCatalog: KeychainIdentityCatalog(),
             certificateCatalog: resolvedCertificateCatalog,
-            startsAutomatically: false
+            startsAutomatically: false,
+            localizationLocale: Locale(identifier: "de")
         )
         return ModelHarness(
             model: model,

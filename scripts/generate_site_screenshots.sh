@@ -30,5 +30,11 @@ ISSUELIGHT_SCREENSHOT_OUTPUT_DIR="$output_directory" \
 
 test -s "$output_directory/attention-overview.png"
 test -s "$output_directory/source-setup.png"
+test -s "$output_directory/menu-item-states.png"
+test -s "$output_directory/menu-panel-de.png"
+test -s "$output_directory/menu-panel-sv.png"
+test -s "$output_directory/menu-panel-ar.png"
+test -s "$output_directory/language-settings-sv.png"
+test -s "$output_directory/language-settings-ar.png"
 
 printf '%s\n' "Generated IssueLight site screenshots in $output_directory"

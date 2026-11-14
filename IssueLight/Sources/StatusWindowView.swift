@@ -156,15 +156,19 @@ struct StatusWindowContent: View {
                     )
                 }
                 if actionableIssues.isEmpty && coveredIssues.isEmpty {
-                    ContentUnavailableView(
-                        failedSources.isEmpty ? "Alles ruhig" : "Keine aktuellen Probleme",
-                        systemImage: "checkmark.circle",
-                        description: Text(
-                            failedSources.isEmpty
-                                ? "Keine Hosts oder Services benötigen Aufmerksamkeit."
-                                : "Die erreichbaren Quellen melden keine Probleme. Mindestens ein Stand ist veraltet."
+                    if failedSources.isEmpty {
+                        ContentUnavailableView(
+                            "Alles ruhig",
+                            systemImage: "checkmark.circle",
+                            description: Text("Keine Hosts oder Services benötigen Aufmerksamkeit.")
                         )
-                    )
+                    } else {
+                        ContentUnavailableView(
+                            "Keine aktuellen Probleme",
+                            systemImage: "checkmark.circle",
+                            description: Text("Die erreichbaren Quellen melden keine Probleme. Mindestens ein Stand ist veraltet.")
+                        )
+                    }
                 } else {
                     Group {
                         if filteredActionableIssues.isEmpty && filteredCoveredIssues.isEmpty {
@@ -234,7 +238,7 @@ struct MonitoringIssueSearch {
 }
 
 private struct MonitoringIssueSection: View {
-    let title: String
+    let title: LocalizedStringKey
     let issues: [MonitoringIssue]
     let sourceNames: [UUID: String]
 
@@ -264,6 +268,7 @@ private struct MonitoringIssueSection: View {
 private struct MonitoringIssueRow: View {
     let issue: MonitoringIssue
     let sourceName: String?
+    @Environment(\.locale) private var locale
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
@@ -333,31 +338,35 @@ private struct MonitoringIssueRow: View {
     private var severityText: String {
         switch issue.severity {
         case .critical:
-            return "Kritisch"
+            return AppLocalization.string("Kritisch", locale: locale)
         case .unknown:
-            return "Unbekannt"
+            return AppLocalization.string("Unbekannt", locale: locale)
         case .warning:
-            return "Warnung"
+            return AppLocalization.string("Warnung", locale: locale)
         }
     }
 
     private var coverageText: String {
         switch (issue.isAcknowledged, issue.isInDowntime) {
         case (true, true):
-            return "Quittiert · Wartungszeit"
+            return AppLocalization.string("Quittiert · Wartungszeit", locale: locale)
         case (true, false):
-            return "Quittiert"
+            return AppLocalization.string("Quittiert", locale: locale)
         case (false, true):
-            return "Wartungszeit"
+            return AppLocalization.string("Wartungszeit", locale: locale)
         case (false, false):
             return ""
         }
     }
 
     private var accessibilityLabel: String {
-        let context = issue.kind == .host ? "Host" : "Service"
+        let context = issue.kind == .host
+            ? AppLocalization.string("Host", locale: locale)
+            : AppLocalization.string("Service", locale: locale)
         let coverage = coverageText.isEmpty ? "" : ", \(coverageText)"
-        let source = sourceName.map { ", Quelle \($0)" } ?? ""
+        let source = sourceName.map {
+            AppLocalization.string(", Quelle \($0)", locale: locale)
+        } ?? ""
         return "\(context) \(title), \(severityText)\(coverage)\(source), \(issue.summary)"
     }
 }
