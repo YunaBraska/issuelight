@@ -2195,7 +2195,7 @@
           },
           "sv": {
             "stringUnit": { "state": "translated",
-              "value": "Den tysta menyraden gör inte ingenting.\nDen väntar på bevis.\nGe projektet en stjärna om den återhållsamheten känns användbar."
+              "value": "Den tysta menyraden är inte overksam.\nDen väntar på bevis.\nGe projektet en stjärna om den återhållsamheten känns användbar."
             }
           },
           "es": {
@@ -2485,7 +2485,7 @@
         },
         "en": {
           "stringUnit": { "state": "translated",
-            "value": "%@ A CA certificate imported from IssueLight is only removed if no other source is using it. Existing foreign certificates remain unaffected."
+            "value": "%@ A CA certificate imported by IssueLight is removed only when no other source uses it. Certificates added by other apps remain untouched."
           }
         },
         "es": {
@@ -2525,7 +2525,7 @@
         },
         "pcm": {
           "stringUnit": { "state": "translated",
-            "value": "%@ Ein von IssueLight importiertes CA-Zertifikat wird nur entfernt, wenn keine andere Quelle es verwendet. Vorhandene fremde Zertifikate bleiben unberührt."
+            "value": "%@ IssueLight go remove CA certificate wey e import only if no other source dey use am. Certificates wey other apps add no go change."
           }
         },
         "pt": {
@@ -3382,7 +3382,7 @@
         },
         "sv": {
           "stringUnit": { "state": "translated",
-            "value": "%lld Källor kunde inte uppdateras."
+            "value": "%lld källor kunde inte uppdateras."
           }
         },
         "sw": {
@@ -5150,7 +5150,7 @@
         },
         "sv": {
           "stringUnit": { "state": "translated",
-            "value": "Vid ett certifikatförnyelseblockeras anslutningen tills du har kontrollerat och valt det nya certifikatet här."
+            "value": "Vid en certifikatförnyelse blockeras anslutningen tills du har kontrollerat och valt det nya certifikatet här."
           }
         },
         "sw": {
@@ -7438,7 +7438,7 @@
         },
         "sv": {
           "stringUnit": { "state": "translated",
-            "value": "Lösenordet sparas enbart i nyckelringen macOS."
+            "value": "Lösenordet sparas endast i macOS-nyckelringen."
           }
         },
         "sw": {
@@ -8007,7 +8007,7 @@
         },
         "en": {
           "stringUnit": { "state": "translated",
-            "value": "The SHA-256 fingerprint has been adopted. Check the connection before saving the source."
+            "value": "The SHA-256 fingerprint has been saved. Test the connection before saving the source."
           }
         },
         "es": {
@@ -8062,7 +8062,7 @@
         },
         "sv": {
           "stringUnit": { "state": "translated",
-            "value": "SHA-256-fingeravtrycket har tagits över. Kontrollera anslutningen innan du sparar källan."
+            "value": "SHA-256-fingeravtrycket har sparats. Kontrollera anslutningen innan du sparar källan."
           }
         },
         "sw": {
@@ -9567,7 +9567,7 @@
         },
         "en": {
           "stringUnit": { "state": "translated",
-            "value": "The configuration and the associated basic password will be removed from this Mac."
+            "value": "The configuration and its Basic authentication password will be removed from this Mac."
           }
         },
         "es": {
@@ -9622,7 +9622,7 @@
         },
         "sv": {
           "stringUnit": { "state": "translated",
-            "value": "Konfigurationen och det tillhörande grundlösenordet tas bort från denna Mac."
+            "value": "Konfigurationen och det tillhörande Basic-lösenordet tas bort från denna Mac."
           }
         },
         "sw": {
@@ -9983,7 +9983,7 @@
         },
         "en": {
           "stringUnit": { "state": "translated",
-            "value": "The source was removed, but unused keychain entries could not be completely deleted."
+            "value": "The source was removed, but some unused keychain items could not be deleted."
           }
         },
         "es": {
@@ -10142,7 +10142,7 @@
         },
         "sv": {
           "stringUnit": { "state": "translated",
-            "value": "Källkonfigurationen är ogiltiga."
+            "value": "Källkonfigurationen är ogiltig."
           }
         },
         "sw": {
@@ -10350,7 +10350,7 @@
         },
         "sv": {
           "stringUnit": { "state": "translated",
-            "value": "Serveradressen kräver ett värdnamn."
+            "value": "Serveradressen behöver ett värdnamn."
           }
         },
         "sw": {
@@ -10454,7 +10454,7 @@
         },
         "sv": {
           "stringUnit": { "state": "translated",
-            "value": "Serveradressen är inte en giltig URL."
+            "value": "Serveradressen är ingen giltig URL."
           }
         },
         "sw": {
@@ -10711,7 +10711,7 @@
         },
         "en": {
           "stringUnit": { "state": "translated",
-            "value": "The reachable sources report no problems. At least one source is outdated."
+            "value": "The reachable sources report no problems. At least one status is stale."
           }
         },
         "es": {
@@ -10766,7 +10766,7 @@
         },
         "sv": {
           "stringUnit": { "state": "translated",
-            "value": "De tillgängliga källorna rapporterar inga problem. Minst en version är föråldrad."
+            "value": "De nåbara källorna rapporterar inga problem. Minst en status är inaktuell."
           }
         },
         "sw": {
@@ -13039,7 +13039,7 @@
         },
         "pcm": {
           "stringUnit": { "state": "translated",
-            "value": "IssueLight folgt der App-Sprache aus den macOS-Systemeinstellungen."
+            "value": "IssueLight dey follow di app language from macOS system settings."
           }
         },
         "pt": {
@@ -13143,7 +13143,7 @@
         },
         "pcm": {
           "stringUnit": { "state": "translated",
-            "value": "IssueLight fragt Hosts und Services bei der Quelle ab."
+            "value": "IssueLight dey ask di source for hosts and services."
           }
         },
         "pt": {
@@ -13207,7 +13207,7 @@
         },
         "en": {
           "stringUnit": { "state": "translated",
-            "value": "IssueLight checks hosts and services using the real API of this source."
+            "value": "IssueLight checks hosts and services through this source's actual API."
           }
         },
         "es": {
@@ -13247,7 +13247,7 @@
         },
         "pcm": {
           "stringUnit": { "state": "translated",
-            "value": "IssueLight prüft Hosts und Services über die reale API dieser Quelle."
+            "value": "IssueLight dey check hosts and services through di real API for dis source."
           }
         },
         "pt": {
@@ -13262,7 +13262,7 @@
         },
         "sv": {
           "stringUnit": { "state": "translated",
-            "value": "IssueLight kontrollerar hosts och tjänster via den faktiska API från denna källa."
+            "value": "IssueLight kontrollerar värdar och tjänster via det faktiska API:et för den här källan."
           }
         },
         "sw": {
@@ -13351,7 +13351,7 @@
         },
         "pcm": {
           "stringUnit": { "state": "translated",
-            "value": "IssueLight verwendet die gewählte Sprache unabhängig von macOS."
+            "value": "IssueLight dey use di language wey you choose, no matter wetin macOS use."
           }
         },
         "pt": {
@@ -13455,7 +13455,7 @@
         },
         "pcm": {
           "stringUnit": { "state": "translated",
-            "value": "IssueLight, alle Quellen pausiert"
+            "value": "IssueLight, all sources pause"
           }
         },
         "pt": {
@@ -13559,7 +13559,7 @@
         },
         "pcm": {
           "stringUnit": { "state": "translated",
-            "value": "IssueLight, keine Quelle konfiguriert"
+            "value": "IssueLight, no source configured"
           }
         },
         "pt": {
@@ -14772,7 +14772,7 @@
         },
         "en": {
           "stringUnit": { "state": "translated",
-            "value": "Leave blank to keep the existing password if access data has not changed."
+            "value": "Leave blank to keep the existing password when the credentials are unchanged."
           }
         },
         "es": {
@@ -15540,7 +15540,7 @@
         },
         "pcm": {
           "stringUnit": { "state": "translated",
-            "value": "PKCS#12 importieren …"
+            "value": "Import PKCS#12 …"
           }
         },
         "pt": {
@@ -15555,7 +15555,7 @@
         },
         "sv": {
           "stringUnit": { "state": "translated",
-            "value": "PKCS#12 importerar …"
+            "value": "Importera PKCS#12 …"
           }
         },
         "sw": {
@@ -15644,7 +15644,7 @@
         },
         "pcm": {
           "stringUnit": { "state": "translated",
-            "value": "PKCS#12-Passwort"
+            "value": "PKCS#12 password"
           }
         },
         "pt": {
@@ -16179,7 +16179,7 @@
         },
         "sv": {
           "stringUnit": { "state": "translated",
-            "value": "Kontroll inaktiverad"
+            "value": "Verifiering avstängd"
           }
         },
         "sw": {
@@ -16644,7 +16644,7 @@
         },
         "en": {
           "stringUnit": { "state": "translated",
-            "value": "Source saved, but no longer used keychain entries could not be completely removed."
+            "value": "Source saved, but some unused keychain items could not be removed."
           }
         },
         "es": {
@@ -17060,7 +17060,7 @@
         },
         "en": {
           "stringUnit": { "state": "translated",
-            "value": "Source and saved basic password were removed."
+            "value": "Source and saved Basic authentication password were removed."
           }
         },
         "es": {
@@ -19299,7 +19299,7 @@
         },
         "sv": {
           "stringUnit": { "state": "translated",
-            "value": "Status är föråldrad"
+            "value": "Statusen är inaktuell"
           }
         },
         "sw": {
@@ -19507,7 +19507,7 @@
         },
         "sv": {
           "stringUnit": { "state": "translated",
-            "value": "Status föråldrad"
+            "value": "Inaktuell status"
           }
         },
         "sw": {
@@ -20596,7 +20596,7 @@
         },
         "en": {
           "stringUnit": { "state": "translated",
-            "value": "Unsecure. Identity and server data may be intercepted or modified. This exception applies only to this source."
+            "value": "Insecure. Identity and server data may be intercepted or modified. This exception applies only to this source."
           }
         },
         "es": {
@@ -22577,7 +22577,7 @@
         },
         "en": {
           "stringUnit": { "state": "translated",
-            "value": "macOS does not release the password in the background without asking. Open the source and enter it again."
+            "value": "macOS cannot access the password in the background without prompting. Open the source and enter it again."
           }
         },
         "es": {
@@ -22632,7 +22632,7 @@
         },
         "sv": {
           "stringUnit": { "state": "translated",
-            "value": "macOS ger inte lösenordet i bakgrunden utan förfrågan. Öppna källan och skriv in det igen."
+            "value": "macOS lämnar inte ut lösenordet i bakgrunden utan att fråga. Öppna källan och ange det igen."
           }
         },
         "sw": {
@@ -22681,7 +22681,7 @@
         },
         "en": {
           "stringUnit": { "state": "translated",
-            "value": "macOS does not release this keychain entry without asking. Remove the old IssueLight entry in Keychain Access and save the source again."
+            "value": "macOS cannot access this keychain item without prompting. Remove the old IssueLight item in Keychain Access and save the source again."
           }
         },
         "es": {
@@ -22736,7 +22736,7 @@
         },
         "sv": {
           "stringUnit": { "state": "translated",
-            "value": "macOS ger denna nyckelringpost inte utan förfrågan. Ta bort den gamla IssueLight-posten i nyckelhanteraren och spara källan igen."
+            "value": "macOS lämnar inte ut den här nyckelringsposten utan att fråga. Ta bort den gamla IssueLight-posten i Nyckelhanterare och spara källan igen."
           }
         },
         "sw": {
@@ -22785,7 +22785,7 @@
         },
         "en": {
           "stringUnit": { "state": "translated",
-            "value": "macOS does not release this keychain entry without asking. Enter the password in the source again."
+            "value": "macOS cannot access this keychain item without prompting. Enter the password for the source again."
           }
         },
         "es": {
@@ -22840,7 +22840,7 @@
         },
         "sv": {
           "stringUnit": { "state": "translated",
-            "value": "macOS ger denna nyckelringpost inte utan förfrågan. Skriv in lösenordet i källan igen."
+            "value": "macOS lämnar inte ut den här nyckelringsposten utan att fråga. Ange lösenordet för källan igen."
           }
         },
         "sw": {
@@ -23048,7 +23048,7 @@
         },
         "sv": {
           "stringUnit": { "state": "translated",
-            "value": "macOS-systemtillit är standard. Egna CA och exakta servercertifikat gäller endast för denna källa. Fullständig inaktivering är avsedd för isolerade homelabs."
+            "value": "macOS-systemtillit används som standard. Egna CA och specifika servercertifikat gäller endast för den här källan. Fullständig avstängning är avsedd för isolerade hemnätverk."
           }
         },
         "sw": {
@@ -23152,7 +23152,7 @@
         },
         "sv": {
           "stringUnit": { "state": "translated",
-            "value": "integrerat"
+            "value": "inte konfigurerad"
           }
         },
         "sw": {
@@ -23464,7 +23464,7 @@
         },
         "sv": {
           "stringUnit": { "state": "translated",
-            "value": "Ändra avbryt"
+            "value": "Ignorera ändringar"
           }
         },
         "sw": {
@@ -24261,7 +24261,7 @@
 },
 "sv": {
   "stringUnit": { "state": "translated",
-    "value": "Välj…"
+    "value": "Välj …"
   }
 },
 "es": {
@@ -25896,7 +25896,7 @@
 },
 "sv": {
   "stringUnit": { "state": "translated",
-    "value": "Ange en giltig webb-URL utan inloggningsuppgifter, frågor eller fragment."
+    "value": "Ange en giltig webb-URL utan inloggningsuppgifter, frågeparametrar eller fragment."
   }
 },
 "es": {

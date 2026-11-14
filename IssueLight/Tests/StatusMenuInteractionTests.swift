@@ -54,7 +54,7 @@ final class StatusMenuInteractionTests: XCTestCase {
             serviceName: "Disk",
             displayName: "Disk",
             severity: .critical,
-            summary: "CRITICAL: disk full",
+            summary: "CRITICAL: the replication queue has exceeded its safe operating threshold for twelve minutes",
             stateChangedAt: Date(timeIntervalSinceNow: -180),
             checkAttempt: 3,
             maxCheckAttempts: 4,

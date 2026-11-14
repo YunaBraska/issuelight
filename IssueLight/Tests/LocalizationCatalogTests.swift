@@ -47,6 +47,12 @@ final class LocalizationCatalogTests: XCTestCase {
                         "Missing \(protectedTerm) in \(locale): \(key)"
                     )
                 }
+                for sourceLanguageTerm in sourceLanguageTerms {
+                    XCTAssertFalse(
+                        unit.value.contains(sourceLanguageTerm),
+                        "German source text leaked into \(locale): \(key)"
+                    )
+                }
                 XCTAssertFalse(
                     unit.value.range(of: #"(?:\b\w+\b)(?:\s+\1){8,}"#, options: .regularExpression) != nil,
                     "Suspicious repetition in \(locale): \(key)"
@@ -57,6 +63,15 @@ final class LocalizationCatalogTests: XCTestCase {
 
     private var protectedTerms: [String] {
         ["IssueLight", "macOS", "Icinga", "PKCS#12", "SHA-256", "HTTP", "TLS", "API"]
+    }
+
+    private var sourceLanguageTerms: [String] {
+        [
+            "Benutzername", "Einstellungen", "Passwort", "Quelle", "Quellen",
+            "Schlüsselbund", "Wartungszeit", "Zertifikat", "auswählen", "entfernt",
+            "folgt", "fragt", "gespeichert", "gewählte", "geprüft", "importieren",
+            "konfiguriert", "pausiert", "prüft", "verwendet",
+        ]
     }
 
     private func loadCatalog() throws -> [String: Any] {

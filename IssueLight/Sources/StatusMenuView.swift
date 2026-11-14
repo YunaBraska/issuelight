@@ -449,7 +449,6 @@ private struct StatusPanelIssueEntry: View {
                 )
             }
             .buttonStyle(.plain)
-            .help(AppLocalization.string("In Weboberfläche öffnen", locale: locale))
 
             if isPerformingAction {
                 ProgressView()
@@ -634,47 +633,41 @@ private struct StatusPanelIssueRow: View {
             Image(systemName: symbol)
                 .foregroundStyle(color)
                 .frame(width: 20)
-                .help(severityText)
             Text(verbatim: sourceName)
                 .font(.caption2.weight(.semibold))
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
                 .frame(width: 82, alignment: .leading)
-                .help(sourceName)
             Text(verbatim: title)
                 .font(.caption.weight(.medium))
                 .lineLimit(1)
                 .frame(width: 154, alignment: .leading)
-                .help(title)
             Text(verbatim: issue.summary)
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .help(issue.summary)
             if let durationText {
                 Text(verbatim: durationText)
                     .font(.caption2.monospacedDigit())
                     .foregroundStyle(.secondary)
                     .frame(width: 58, alignment: .trailing)
-                    .help(AppLocalization.string("Dauer", locale: locale))
             }
             if let attemptText {
                 Text(verbatim: attemptText)
                     .font(.caption2.monospacedDigit())
                     .foregroundStyle(.secondary)
                     .frame(width: 30, alignment: .trailing)
-                    .help(AppLocalization.string("Versuch", locale: locale))
             }
             if issue.isAcknowledged || issue.isInDowntime {
                 Image(systemName: issue.isInDowntime ? "calendar.badge.clock" : "checkmark.message")
                     .foregroundStyle(.secondary)
                     .frame(width: 18)
-                    .help(coverageText)
             }
         }
         .padding(.leading, 10)
         .contentShape(Rectangle())
+        .help(hoverText)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityText)
     }
@@ -742,6 +735,12 @@ private struct StatusPanelIssueRow: View {
         case (false, false):
             return ""
         }
+    }
+
+    private var hoverText: String {
+        [sourceName, title, issue.summary]
+            .filter { !$0.isEmpty }
+            .joined(separator: "\n")
     }
 
     private var accessibilityText: String {
