@@ -19,4 +19,6 @@ jobs:
     uses: YunaBraska/YunaBraska/.github/workflows/wc_swift_release.yml@29bd56f4cc120be2bdcab1b484c34fae14c51b35
     with:
       force: ${{ inputs.force }}
+      app_store_app_name: IssueLight
+      app_store_bundle_id: berlin.yuna.issuelight
     secrets: inherit

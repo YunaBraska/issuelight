@@ -3,6 +3,7 @@ import Combine
 import Darwin
 import Foundation
 import IssueLightCore
+import Network
 
 struct IssueWebTarget: Equatable {
     let sourceID: UUID
@@ -59,6 +60,12 @@ final class AutomaticConnectionCoordinator {
             return (directResult, .direct)
         }
 
+        guard AppDistribution.supportsSSHTunnels else {
+            apiProxyPorts[source.id] = nil
+            tunnelManager.stopSOCKS(sourceID: source.id)
+            return (directResult, .direct)
+        }
+
         if let proxyPort = apiProxyPorts[source.id] {
             let proxiedResult = await operation(access.routingThroughSOCKS(port: proxyPort))
             if !isUnreachable(proxiedResult) {
@@ -96,6 +103,10 @@ final class AutomaticConnectionCoordinator {
                 tunnelManager.stopSOCKS(sourceID: source.id)
             }
             return .direct
+        }
+
+        guard AppDistribution.supportsSSHTunnels else {
+            return .unavailable("The web interface is not reachable directly.")
         }
 
         let configuration = tunnelManager.resolvedConfiguration(for: source)
@@ -215,6 +226,112 @@ final class ExternalActionCoordinator: ObservableObject {
     }
 }
 
+#if ISSUELIGHT_APP_STORE
+@MainActor
+final class SSHTunnelManager {
+    enum StartError: Error, Equatable {
+        case message(String)
+    }
+
+    func start(
+        sourceID: UUID,
+        targetURL: URL,
+        configuration: SSHTunnelConfiguration
+    ) async -> Result<Int, StartError> {
+        .failure(.message("SSH tunnelling is unavailable in the App Store edition."))
+    }
+
+    func startSOCKS(
+        sourceID: UUID,
+        configuration: SSHTunnelConfiguration
+    ) async -> Result<Int, StartError> {
+        .failure(.message("SSH tunnelling is unavailable in the App Store edition."))
+    }
+
+    func reconcileSources(_: [MonitoringSource]) {}
+
+    func stopAll() {}
+
+    func stop(sourceID _: UUID) {}
+
+    func stopSOCKS(sourceID _: UUID) {}
+
+    func stopWeb(sourceID _: UUID) {}
+
+    func resolvedConfiguration(for source: MonitoringSource) -> SSHTunnelConfiguration {
+        SSHTunnelConfiguration(
+            bastionHost: source.endpoint.host ?? "",
+            username: ""
+        )
+    }
+}
+
+final class TCPReachabilityCompletion: @unchecked Sendable {
+    private let connection: NWConnection
+    private let continuation: CheckedContinuation<Bool, Never>
+    private let lock = NSLock()
+    private var completed = false
+
+    init(connection: NWConnection, continuation: CheckedContinuation<Bool, Never>) {
+        self.connection = connection
+        self.continuation = continuation
+    }
+
+    func complete(_ result: Bool) {
+        lock.lock()
+        guard !completed else {
+            lock.unlock()
+            return
+        }
+        completed = true
+        lock.unlock()
+        connection.cancel()
+        continuation.resume(returning: result)
+    }
+}
+
+enum TCPReachabilityProbe {
+    static func canConnect(
+        host: String,
+        port: Int,
+        timeout: Int = 2,
+        socksProxyPort: Int? = nil
+    ) async -> Bool {
+        guard socksProxyPort == nil,
+              !host.isEmpty,
+              (1...65_535).contains(port),
+              let endpointPort = NWEndpoint.Port(rawValue: UInt16(port)) else {
+            return false
+        }
+
+        return await withCheckedContinuation { continuation in
+            let connection = NWConnection(
+                host: NWEndpoint.Host(host),
+                port: endpointPort,
+                using: .tcp
+            )
+            let completion = TCPReachabilityCompletion(
+                connection: connection,
+                continuation: continuation
+            )
+            connection.stateUpdateHandler = { state in
+                switch state {
+                case .ready:
+                    completion.complete(true)
+                case .failed, .cancelled:
+                    completion.complete(false)
+                default:
+                    break
+                }
+            }
+            connection.start(queue: .global(qos: .utility))
+            DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + .seconds(timeout)) {
+                completion.complete(false)
+            }
+        }
+    }
+}
+#else
 @MainActor
 final class SSHTunnelManager {
     enum StartError: Error, Equatable {
@@ -581,3 +698,4 @@ enum LocalPortAllocator {
         return didRead ? Int(in_port_t(bigEndian: address.sin_port)) : nil
     }
 }
+#endif

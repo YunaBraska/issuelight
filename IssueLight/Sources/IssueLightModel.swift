@@ -277,7 +277,9 @@ final class IssueLightModel: ObservableObject {
         return IssueWebTarget(
             sourceID: source.id,
             url: url,
-            automaticSSHTunnel: resolvedSSHTunnelConfiguration(for: source)
+            automaticSSHTunnel: AppDistribution.supportsSSHTunnels
+                ? resolvedSSHTunnelConfiguration(for: source)
+                : nil
         )
     }
 
@@ -299,7 +301,8 @@ final class IssueLightModel: ObservableObject {
     }
 
     func sshURL(for issue: MonitoringIssue) -> URL? {
-        guard let source = sources.first(where: { $0.id == issue.sourceID }),
+        guard AppDistribution.supportsRemoteAccess,
+              let source = sources.first(where: { $0.id == issue.sourceID }),
               let configuration = source.remoteAccess?.ssh else {
             return nil
         }
@@ -307,7 +310,8 @@ final class IssueLightModel: ObservableObject {
     }
 
     func rdpURL(for issue: MonitoringIssue) -> URL? {
-        guard let source = sources.first(where: { $0.id == issue.sourceID }),
+        guard AppDistribution.supportsRemoteAccess,
+              let source = sources.first(where: { $0.id == issue.sourceID }),
               let configuration = source.remoteAccess?.rdp else {
             return nil
         }
@@ -1097,9 +1101,11 @@ final class IssueLightModel: ObservableObject {
                 serverTrust = .system
             }
             existingSource.serverTrust = serverTrust
-            existingSource.sshTunnel = sshTunnelOverrides()
+            existingSource.sshTunnel = AppDistribution.supportsSSHTunnels ? sshTunnelOverrides() : nil
             existingSource.web = webConfiguration
-            existingSource.remoteAccess = navigationRemoteAccessConfiguration()
+            existingSource.remoteAccess = AppDistribution.supportsRemoteAccess
+                ? navigationRemoteAccessConfiguration()
+                : nil
             source = existingSource
         } else {
             source = MonitoringSource(
@@ -1110,9 +1116,11 @@ final class IssueLightModel: ObservableObject {
                 isEnabled: isSourceEnabled,
                 authentication: authentication,
                 serverTrust: serverTrust,
-                sshTunnel: sshTunnelOverrides(),
+                sshTunnel: AppDistribution.supportsSSHTunnels ? sshTunnelOverrides() : nil,
                 web: webConfiguration,
-                remoteAccess: navigationRemoteAccessConfiguration()
+                remoteAccess: AppDistribution.supportsRemoteAccess
+                    ? navigationRemoteAccessConfiguration()
+                    : nil
             )
         }
         guard let provider = providerRegistry.provider(for: selectedProviderID) else {

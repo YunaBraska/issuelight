@@ -19,6 +19,8 @@ IssueLight is a release candidate, not a published production release.
   right-to-left layout for Arabic and Urdu.
 - Universal ZIP and DMG packaging, SPDX SBOM, checksums, signing, notarization,
   and GitHub release automation that fails closed when credentials are absent.
+- Sandboxed App Store package automation for direct Icinga connections. The
+  Store edition deliberately excludes SSH tunnels and remote-client launchers.
 
 ## Evidence
 
@@ -35,9 +37,9 @@ IssueLight is a release candidate, not a published production release.
 - Run the installed-app protected-private-key case described in
   `docs/DEVELOPMENT.md`. Background refresh must fail without authentication UI
   and retain the previous snapshot.
-- Add the repository signing and notarization secrets, run the release
-  workflow, then verify stapling, Gatekeeper assessment, and installation on a
-  clean macOS account.
+- Add the repository signing, notarization, and App Store signing secrets, run
+  the release workflow, then verify direct stapling, Gatekeeper assessment,
+  Store package upload, and installation on clean macOS accounts.
 
 Native notifications and providers other than Icinga 2 are not part of this
 release.

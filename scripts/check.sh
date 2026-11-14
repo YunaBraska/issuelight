@@ -121,6 +121,20 @@ if scripts/package_release.sh \
     exit 1
 fi
 
+ISSUELIGHT_APP_STORE_ALLOW_UNSIGNED=true \
+ISSUELIGHT_APP_STORE_DIST_DIRECTORY="$check_work_directory/AppStore" \
+sh scripts/package-app-store.sh "$release_version" 1
+store_app="$check_work_directory/AppStore/IssueLight.app"
+test -d "$store_app"
+codesign --verify --deep --strict "$store_app"
+store_entitlements=$(codesign -d --entitlements :- "$store_app" 2>/dev/null)
+printf '%s\n' "$store_entitlements" | plutil -extract 'com\.apple\.security\.app-sandbox' raw - | grep -Fx true >/dev/null
+printf '%s\n' "$store_entitlements" | plutil -extract 'com\.apple\.security\.network\.client' raw - | grep -Fx true >/dev/null
+if printf '%s\n' "$store_entitlements" | plutil -extract 'com\.apple\.security\.network\.server' raw - >/dev/null 2>&1; then
+    echo "App Store package requested an incoming-network entitlement." >&2
+    exit 1
+fi
+
 if git ls-files | grep -E '(^|/)(\.env\.local|[^/]+\.(p12|pfx|key))$' >/dev/null; then
     echo "A tracked file can contain release credentials." >&2
     exit 1

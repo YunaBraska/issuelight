@@ -10,7 +10,10 @@ notarized release.
 
 The first release supports German plus 20 explicitly selectable translations,
 including Swedish, and manual updates. It does not perform automatic update
-checks or install executable code.
+checks or install executable code. The direct release includes optional SSH
+tunnels and remote-client launchers. The sandboxed App Store edition supports
+direct Icinga connections but deliberately excludes those external-tool
+features.
 
 ## Requirements
 
@@ -29,6 +32,9 @@ checks or install executable code.
   revision.
 - `REL-006` Release notes MUST identify the supported macOS version plus
   compatibility changes and security fixes relevant to updating users.
+- `REL-007` The App Store package MUST use the App Sandbox, only the minimum
+  outgoing-network and user-selected-file entitlements, and no executable
+  OpenSSH or netcat path.
 
 ## Acceptance evidence
 
@@ -38,3 +44,4 @@ checks or install executable code.
 | REL-002..003 | running menu-bar app | Menu, Settings About tab, browser handoff, and network observation |
 | REL-004..005 | release entrypoint and published GitHub release | Signature, notarization, stapling, Gatekeeper, archive, SBOM, and checksum verification |
 | REL-006 | published release notes | Human review against the release diff and supported-platform declaration |
+| REL-007 | App Store package | Entitlement, binary-path, signature, and installer checks before upload |

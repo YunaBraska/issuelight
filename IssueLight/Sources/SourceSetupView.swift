@@ -287,8 +287,10 @@ struct SourceSetupView: View {
                         Text("Web-URL")
                     }
 
-                    SSHSettingsDisclosureRow(isExpanded: $isShowingSSHOverrides)
-                    if isShowingSSHOverrides {
+                    if AppDistribution.supportsSSHTunnels {
+                        SSHSettingsDisclosureRow(isExpanded: $isShowingSSHOverrides)
+                    }
+                    if AppDistribution.supportsSSHTunnels && isShowingSSHOverrides {
                         TextField(
                             "Bastion",
                             text: $model.sshTunnelHost,
@@ -340,8 +342,10 @@ struct SourceSetupView: View {
                         }
                     }
 
-                    Toggle("SSH für überwachten Host", isOn: $model.sshActionEnabled)
-                    if model.sshActionEnabled {
+                    if AppDistribution.supportsRemoteAccess {
+                        Toggle("SSH für überwachten Host", isOn: $model.sshActionEnabled)
+                    }
+                    if AppDistribution.supportsRemoteAccess && model.sshActionEnabled {
                         TextField(
                             "SSH-Benutzername",
                             text: $model.sshUsername,
@@ -351,14 +355,20 @@ struct SourceSetupView: View {
                         PortNumberField("SSH-Port", value: $model.sshPort)
                     }
 
-                    Toggle("RDP für überwachten Host", isOn: $model.rdpActionEnabled)
-                    if model.rdpActionEnabled {
+                    if AppDistribution.supportsRemoteAccess {
+                        Toggle("RDP für überwachten Host", isOn: $model.rdpActionEnabled)
+                    }
+                    if AppDistribution.supportsRemoteAccess && model.rdpActionEnabled {
                         TextField("RDP-Benutzername", text: $model.rdpUsername)
                             .textContentType(.username)
                         PortNumberField("RDP-Port", value: $model.rdpPort)
                     }
                 } header: {
-                    Text("Navigation & Fernzugriff")
+                    Text(AppDistribution.supportsRemoteAccess ? "Navigation & Fernzugriff" : "Navigation")
+                } footer: {
+                    if !AppDistribution.supportsSSHTunnels {
+                        Text("Die App-Store-Ausgabe verbindet sich direkt mit Icinga. SSH-Tunnel sowie SSH- und RDP-Startaktionen stehen in der direkten GitHub-Ausgabe bereit.")
+                    }
                 }
 
             }

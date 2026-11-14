@@ -127,9 +127,19 @@ secrets before dispatching it:
 - `MACOS_NOTARY_KEY`
 - `MACOS_NOTARY_KEY_ID`
 - `MACOS_NOTARY_ISSUER_ID`
+- `MACOS_APP_STORE_APPLICATION_CERTIFICATE`
+- `MACOS_APP_STORE_INSTALLER_CERTIFICATE`
+- `MACOS_APP_STORE_CERTIFICATE_PASSWORD`
+- `MACOS_APP_STORE_PROFILE`
 
 GitHub secrets are write-only. Values stored in another repository cannot be
 copied out by a workflow or maintainer command.
+
+The same App Store Connect API key used for notarization authorizes the Store
+upload. The four `MACOS_APP_STORE_*` secrets are the Apple Distribution
+application and installer certificates, their export password, and the
+provisioning profile for `berlin.yuna.issuelight`. The stable workflow fails
+before publication when any of them is absent or mismatched.
 
 For a local release, store notarization credentials once in the login Keychain
 with `xcrun notarytool store-credentials`. Do not put the Apple ID password or

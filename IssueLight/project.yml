@@ -49,6 +49,7 @@ targets:
     sources:
       - Tests
       - Sources/AppLanguage.swift
+      - Sources/AppDistribution.swift
       - Sources/ExternalActionCoordinator.swift
       - Sources/LanguageSettingsView.swift
       - Sources/IssueLightModel.swift
