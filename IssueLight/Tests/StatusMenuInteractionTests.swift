@@ -44,7 +44,7 @@ final class StatusMenuInteractionTests: XCTestCase {
         XCTAssertTrue(openedSettings)
     }
 
-    func testCompactRowAndQuickActionsRespondToDirectPointerClicks() {
+    func testCompactPanelUsesOnlyContentHeightAndQuickActionsRespondToDirectPointerClicks() {
         let sourceID = UUID()
         let issue = MonitoringIssue(
             sourceID: sourceID,
@@ -94,11 +94,16 @@ final class StatusMenuInteractionTests: XCTestCase {
         .environment(\.locale, Locale(identifier: "de_DE"))
         .environment(\.colorScheme, .light)
 
-        NativeViewRenderer.click(CGPoint(x: 300, y: 109), in: view, size: CGSize(width: 720, height: 180))
-        NativeViewRenderer.click(CGPoint(x: 644, y: 109), in: view, size: CGSize(width: 720, height: 180))
-        NativeViewRenderer.click(CGPoint(x: 672, y: 109), in: view, size: CGSize(width: 720, height: 180))
-        NativeViewRenderer.click(CGPoint(x: 700, y: 109), in: view, size: CGSize(width: 720, height: 180))
+        let fittedSize = NativeViewRenderer.fittingSize(
+            for: view,
+            maximumSize: CGSize(width: 720, height: 520)
+        )
+        NativeViewRenderer.click(CGPoint(x: 300, y: 19), in: view, size: fittedSize)
+        NativeViewRenderer.click(CGPoint(x: 644, y: 19), in: view, size: fittedSize)
+        NativeViewRenderer.click(CGPoint(x: 672, y: 19), in: view, size: fittedSize)
+        NativeViewRenderer.click(CGPoint(x: 700, y: 19), in: view, size: fittedSize)
 
+        XCTAssertEqual(fittedSize.height, 88, accuracy: 1)
         XCTAssertEqual(opened, 1)
         XCTAssertEqual(rechecked, 1)
         XCTAssertEqual(acknowledged, 1)

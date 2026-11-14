@@ -226,6 +226,10 @@ struct StatusMenuContent: View {
         if actionableIssues.isEmpty && coveredIssues.isEmpty {
             return 200
         }
+        let visibleIssueCount = filteredActionableIssues.count + filteredCoveredIssues.count
+        if visibleIssueCount == 0 {
+            return 200
+        }
         let failureHeight: CGFloat
         if case .failed = refreshState {
             failureHeight = 30
@@ -235,13 +239,10 @@ struct StatusMenuContent: View {
         let actionErrorHeight: CGFloat = actionError == nil ? 0 : 44
         return min(
             520,
-            max(
-                180,
-                52
-                    + CGFloat(filteredActionableIssues.count + filteredCoveredIssues.count) * 40
-                    + failureHeight
-                    + actionErrorHeight
-            )
+            49
+                + CGFloat(visibleIssueCount) * 39
+                + failureHeight
+                + actionErrorHeight
         )
     }
 

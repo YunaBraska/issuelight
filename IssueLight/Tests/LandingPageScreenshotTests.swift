@@ -16,15 +16,15 @@ final class LandingPageScreenshotTests: XCTestCase {
         )
         let germanMenuData = try NativeViewRenderer.pngData(
             for: menuPanelView(language: .german),
-            size: CGSize(width: 720, height: 180)
+            size: CGSize(width: 720, height: 127)
         )
         let swedishMenuData = try NativeViewRenderer.pngData(
             for: menuPanelView(language: .swedish),
-            size: CGSize(width: 720, height: 180)
+            size: CGSize(width: 720, height: 127)
         )
         let arabicMenuData = try NativeViewRenderer.pngData(
             for: menuPanelView(language: .arabic),
-            size: CGSize(width: 720, height: 180)
+            size: CGSize(width: 720, height: 127)
         )
         let swedishSettingsData = try NativeViewRenderer.pngData(
             for: languageSettingsView(language: .swedish),
