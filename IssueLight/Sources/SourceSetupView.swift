@@ -22,6 +22,7 @@ struct SourceSetupView: View {
     @State private var isChoosingServerCertificate = false
     @State private var isChoosingPinnedServerCertificate = false
     @State private var isChoosingSSHIdentity = false
+    @State private var isShowingSSHOverrides = false
     @State private var isConfirmingDeletion = false
     @State private var isConfirmingDiscard = false
     @State private var pendingNavigation: PendingNavigation?
@@ -264,6 +265,16 @@ struct SourceSetupView: View {
 
                 Section {
                     LabeledContent {
+                        connectionStatus(model.selectedConnectionStatus.api)
+                    } label: {
+                        Text(verbatim: "API")
+                    }
+                    LabeledContent {
+                        connectionStatus(model.selectedConnectionStatus.web)
+                    } label: {
+                        Text(verbatim: "Web")
+                    }
+                    LabeledContent {
                         TextField(
                             text: $model.webURL,
                             prompt: Text(verbatim: model.automaticWebBaseURL?.absoluteString ?? "https://monitoring.example/web")
@@ -276,25 +287,27 @@ struct SourceSetupView: View {
                         Text("Web-URL")
                     }
 
-                    Toggle("Automatischer SSH-Tunnel", isOn: $model.automaticWebSSHTunnel)
-                        .disabled(model.webURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                    if model.automaticWebSSHTunnel {
-                        TextField("Bastion", text: $model.webTunnelBastionHost, prompt: Text("bastion.example"))
-                        TextField("Benutzername", text: $model.webTunnelUsername)
+                    DisclosureGroup("SSH", isExpanded: $isShowingSSHOverrides) {
+                        TextField(
+                            "Bastion",
+                            text: $model.sshTunnelHost,
+                            prompt: Text(verbatim: automaticSSHHost)
+                        )
+                        TextField("Benutzername", text: $model.sshTunnelUsername)
                             .textContentType(.username)
-                        TextField("SSH-Port", value: $model.webTunnelPort, format: .number)
+                        TextField("SSH-Port", text: $model.sshTunnelPort, prompt: Text(verbatim: "22"))
                         TextField(
                             "Bevorzugter lokaler Port",
-                            text: $model.webTunnelPreferredLocalPort
+                            text: $model.sshTunnelPreferredLocalPort
                         )
                         LabeledContent("SSH-Schlüssel") {
                             HStack(spacing: 8) {
-                                if !model.webTunnelIdentityFilePath.isEmpty {
-                                    Text(URL(fileURLWithPath: model.webTunnelIdentityFilePath).lastPathComponent)
+                                if !model.sshTunnelIdentityFilePath.isEmpty {
+                                    Text(URL(fileURLWithPath: model.sshTunnelIdentityFilePath).lastPathComponent)
                                         .foregroundStyle(.secondary)
                                         .lineLimit(1)
                                     Button {
-                                        model.webTunnelIdentityFilePath = ""
+                                        model.sshTunnelIdentityFilePath = ""
                                     } label: {
                                         Image(systemName: "xmark.circle.fill")
                                     }
@@ -310,21 +323,21 @@ struct SourceSetupView: View {
                                     allowsMultipleSelection: false
                                 ) { result in
                                     if case .success(let urls) = result, let url = urls.first {
-                                        model.webTunnelIdentityFilePath = url.path
+                                        model.sshTunnelIdentityFilePath = url.path
                                     }
                                 }
                             }
                         }
                     }
 
-                    Toggle("SSH-Aktion", isOn: $model.sshActionEnabled)
+                    Toggle("Host im Terminal öffnen", isOn: $model.sshActionEnabled)
                     if model.sshActionEnabled {
                         TextField("SSH-Benutzername", text: $model.sshUsername)
                             .textContentType(.username)
                         TextField("SSH-Port", value: $model.sshPort, format: .number)
                     }
 
-                    Toggle("RDP-Aktion", isOn: $model.rdpActionEnabled)
+                    Toggle("Host über RDP öffnen", isOn: $model.rdpActionEnabled)
                     if model.rdpActionEnabled {
                         TextField("RDP-Benutzername", text: $model.rdpUsername)
                             .textContentType(.username)
@@ -332,8 +345,6 @@ struct SourceSetupView: View {
                     }
                 } header: {
                     Text("Navigation & Fernzugriff")
-                } footer: {
-                    Text("Ein Klick auf ein Problem öffnet die Monitoring-Weboberfläche. SSH und RDP erscheinen im Kontextmenü. Der automatische Tunnel greift nur bei nicht erreichbaren HTTP-Zielen und beendet sich mit IssueLight.")
                 }
 
             }
@@ -397,6 +408,37 @@ struct SourceSetupView: View {
             Label(message, systemImage: "exclamationmark.circle.fill")
                 .foregroundStyle(.red)
         }
+    }
+
+    @ViewBuilder
+    private func connectionStatus(_ state: IssueLightModel.ConnectionEndpointState) -> some View {
+        switch state {
+        case .notTested:
+            Text(verbatim: "—")
+                .foregroundStyle(.secondary)
+        case .checking:
+            ProgressView()
+                .controlSize(.small)
+                .accessibilityLabel(Text("Verbindung wird geprüft …"))
+        case .direct:
+            Label("Direkt", systemImage: "checkmark.circle.fill")
+                .foregroundStyle(.green)
+        case .ssh:
+            Label("SSH", systemImage: "checkmark.circle.fill")
+                .foregroundStyle(.green)
+        case .failed(let message):
+            Label(message, systemImage: "exclamationmark.circle.fill")
+                .foregroundStyle(.red)
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .frame(maxWidth: 260, alignment: .trailing)
+                .help(message)
+        }
+    }
+
+    private var automaticSSHHost: String {
+        URL(string: model.endpoint.trimmingCharacters(in: .whitespacesAndNewlines))?.host
+            ?? "api.example"
     }
 
     private var isWorking: Bool {

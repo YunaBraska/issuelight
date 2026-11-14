@@ -121,6 +121,7 @@ public struct MonitoringSource: Codable, Equatable, Identifiable, Sendable {
     public var isEnabled: Bool
     public var authentication: AuthenticationConfiguration
     public var serverTrust: ServerTrustConfiguration
+    public var sshTunnel: SSHTunnelConfiguration?
     public var web: MonitoringWebConfiguration?
     public var remoteAccess: RemoteAccessConfiguration?
 
@@ -132,6 +133,7 @@ public struct MonitoringSource: Codable, Equatable, Identifiable, Sendable {
         isEnabled: Bool = true,
         authentication: AuthenticationConfiguration,
         serverTrust: ServerTrustConfiguration = .system,
+        sshTunnel: SSHTunnelConfiguration? = nil,
         web: MonitoringWebConfiguration? = nil,
         remoteAccess: RemoteAccessConfiguration? = nil
     ) {
@@ -142,6 +144,7 @@ public struct MonitoringSource: Codable, Equatable, Identifiable, Sendable {
         self.isEnabled = isEnabled
         self.authentication = authentication
         self.serverTrust = serverTrust
+        self.sshTunnel = sshTunnel
         self.web = web
         self.remoteAccess = remoteAccess
     }
@@ -191,9 +194,6 @@ public enum SourceValidationIssue: Error, Equatable, Hashable, Sendable {
     case unsupportedPath(String)
     case invalidWebURL
     case invalidRemotePort(Int)
-    case emptyBastionHost
-    case emptyBastionUsername
-    case secureWebTunnelUnsupported
 }
 
 public enum MonitoringSourceValidator {
@@ -259,22 +259,14 @@ public enum MonitoringSourceValidator {
                 || webComponents?.fragment != nil {
                 issues.append(.invalidWebURL)
             }
-            if let tunnel = web.automaticSSHTunnel {
-                if tunnel.bastionHost.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    issues.append(.emptyBastionHost)
-                }
-                if tunnel.username.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    issues.append(.emptyBastionUsername)
-                }
-                if !Self.isValidPort(tunnel.port) {
-                    issues.append(.invalidRemotePort(tunnel.port))
-                }
-                if let localPort = tunnel.preferredLocalPort, !Self.isValidPort(localPort) {
-                    issues.append(.invalidRemotePort(localPort))
-                }
-                if webScheme == "https" {
-                    issues.append(.secureWebTunnelUnsupported)
-                }
+        }
+
+        if let tunnel = source.sshTunnel ?? source.web?.automaticSSHTunnel {
+            if !Self.isValidPort(tunnel.port) {
+                issues.append(.invalidRemotePort(tunnel.port))
+            }
+            if let localPort = tunnel.preferredLocalPort, !Self.isValidPort(localPort) {
+                issues.append(.invalidRemotePort(localPort))
             }
         }
 

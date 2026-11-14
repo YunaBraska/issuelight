@@ -65,7 +65,7 @@ wait_for_api() {
   attempt=0
   while [ "$attempt" -lt 40 ]; do
     status=$(
-      curl --silent --insecure --output /dev/null --write-out '%{http_code}' \
+      curl --silent --insecure --max-time 3 --output /dev/null --write-out '%{http_code}' \
         --config - "https://localhost:$ISSUELIGHT_ICINGA_PORT/v1/objects/hosts?attrs=name&limit=1" <<CURL_CONFIG || true
 user = "issuelight-basic:$ISSUELIGHT_ICINGA_BASIC_PASSWORD"
 CURL_CONFIG
@@ -86,7 +86,7 @@ wait_for_web() {
   attempt=0
   while [ "$attempt" -lt 40 ]; do
     response_code=$(
-      curl --silent --output /dev/null --write-out '%{http_code}' \
+      curl --silent --max-time 3 --output /dev/null --write-out '%{http_code}' \
         "http://localhost:$ISSUELIGHT_ICINGAWEB_PORT/icingaweb2/icingadb/hosts" || true
     )
     if [ "$response_code" = "200" ]; then
@@ -248,6 +248,7 @@ verify_app_model_multi_source() {
     -derivedDataPath "$live_model_derived_data" \
     CODE_SIGNING_ALLOWED=NO
   ISSUELIGHT_LIVE_ICINGA_URL="https://localhost:$ISSUELIGHT_ICINGA_PORT" \
+  ISSUELIGHT_LIVE_ICINGA_SSH_URL="https://icinga2:5665" \
   ISSUELIGHT_REQUIRE_LIVE_ICINGA=1 \
   ISSUELIGHT_ICINGA_BASIC_PASSWORD="$ISSUELIGHT_ICINGA_BASIC_PASSWORD" \
   ISSUELIGHT_LIVE_ICINGA_CA_PATH="$ISSUELIGHT_ICINGA_ARTIFACTS_DIR/ca.crt" \

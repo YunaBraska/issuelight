@@ -23,7 +23,7 @@ release deliberately smaller.
 | Acknowledge, recheck, and downtime | Done | Done for Icinga 2 | Provider capabilities expose the supported commands. Acknowledgement and downtime require explicit input; every confirmed command refreshes its source. |
 | Open object in monitoring web UI | Done | Done for Icinga 2 | A row click opens the provider-built object URL. The API host supplies the default Icinga Web address, while each source may override it. Classic Monitoring and Icinga DB Web routes are supported. |
 | SSH and RDP target actions | Done | Done | Keep them optional per source and use the operating system's registered URL handlers. |
-| SSH port forwarding | Partial | Done for HTTP web targets | Try the direct route first, then own one loopback-only OpenSSH forward per source. HTTPS targets fail closed because rewriting the browser host would invalidate normal certificate identity checks. |
+| SSH port forwarding | Partial | Done for API and reachability checks, plus HTTP web targets | Try direct first, then reuse one source-owned OpenSSH SOCKS5 session. API TLS keeps its original hostname. External-browser HTTPS remains direct-only because rewriting the hostname would invalidate certificate identity checks. |
 | Native notifications | Done | Planned | Quiet defaults, per-source severity policy, deduplication, and recovery behavior. |
 | Audible alarms and status flashing | Done | Dismissed | They create noise and accessibility problems. Native notifications are the replacement. |
 | Configurable refresh interval | Done | Partial | IssueLight owns one conservative refresh loop. A small preset choice is reasonable only if measured deployments need it. |

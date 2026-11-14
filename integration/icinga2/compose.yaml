@@ -73,6 +73,12 @@ services:
 
   icingaweb2:
     image: icinga/icingaweb2:2.14.0@sha256:4c82252e44e989e2fb0bdacc90ec1fa6a9d31f56985c895dce33cfdd0074c6c9
+    command:
+      - bash
+      - -eo
+      - pipefail
+      - -c
+      - rm -f /var/run/apache2/apache2.pid; . /etc/apache2/envvars; exec apache2 -DFOREGROUND
     environment:
       icingaweb.enabledModules: icingadb
       icingaweb.authentication.autologin.backend: external

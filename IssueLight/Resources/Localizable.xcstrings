@@ -24356,115 +24356,6 @@
 }
     }
   },
-  "Automatisch": {
-    "localizations": {
-"de": {
-  "stringUnit": { "state": "translated",
-    "value": "Automatisch"
-  }
-},
-"en": {
-  "stringUnit": { "state": "translated",
-    "value": "Automatic"
-  }
-},
-"sv": {
-  "stringUnit": { "state": "translated",
-    "value": "Automatisk"
-  }
-},
-"es": {
-  "stringUnit": { "state": "translated",
-    "value": "Automático"
-  }
-},
-"fr": {
-  "stringUnit": { "state": "translated",
-    "value": "Automatique"
-  }
-},
-"pt": {
-  "stringUnit": { "state": "translated",
-    "value": "Automático"
-  }
-},
-"ru": {
-  "stringUnit": { "state": "translated",
-    "value": "Автоматический"
-  }
-},
-"tr": {
-  "stringUnit": { "state": "translated",
-    "value": "Otomatik"
-  }
-},
-"id": {
-  "stringUnit": { "state": "translated",
-    "value": "Otomatis"
-  }
-},
-"vi": {
-  "stringUnit": { "state": "translated",
-    "value": "Tự động"
-  }
-},
-"zh-Hans": {
-  "stringUnit": { "state": "translated",
-    "value": "自动"
-  }
-},
-"ja": {
-  "stringUnit": { "state": "translated",
-    "value": "自動"
-  }
-},
-"ar": {
-  "stringUnit": { "state": "translated",
-    "value": "تلقائي"
-  }
-},
-"hi": {
-  "stringUnit": { "state": "translated",
-    "value": "ऑटोमैटिक"
-  }
-},
-"bn": {
-  "stringUnit": { "state": "translated",
-    "value": "স্বয়ংক্রিয়"
-  }
-},
-"mr": {
-  "stringUnit": { "state": "translated",
-    "value": "स्वयंचलित"
-  }
-},
-"te": {
-  "stringUnit": { "state": "translated",
-    "value": "ఆటోమేటిక్"
-  }
-},
-"ur": {
-  "stringUnit": { "state": "translated",
-    "value": "خودکار"
-  }
-},
-"sw": {
-  "stringUnit": { "state": "translated",
-    "value": "Otomatiki"
-  }
-},
-"ha": {
-  "stringUnit": { "state": "translated",
-    "value": "Atomatik"
-  }
-},
-"pcm": {
-  "stringUnit": { "state": "translated",
-    "value": "Automatic"
-  }
-}
-    }
-  },
   "Automatische SSH-Tunnel für HTTPS-Webseiten sind wegen der Zertifikatsprüfung nicht verfügbar. Verwende direkten Zugriff oder eine HTTP-Verbindung innerhalb des Tunnels.": {
     "localizations": {
 "de": {
@@ -24574,220 +24465,111 @@
 }
     }
   },
-  "Automatische SSH-Tunnel unterstützen nur HTTP-Webziele. HTTPS würde im Browser eine falsche Zertifikatsidentität erhalten.": {
+  "Direkt": {
     "localizations": {
 "de": {
   "stringUnit": { "state": "translated",
-    "value": "Automatische SSH-Tunnel unterstützen nur HTTP-Webziele. HTTPS würde im Browser eine falsche Zertifikatsidentität erhalten."
+    "value": "Direkt"
   }
 },
 "en": {
   "stringUnit": { "state": "translated",
-    "value": "Automatic SSH tunnels only support HTTP web destinations. HTTPS would receive an incorrect certificate identity in the browser."
+    "value": "Direct"
   }
 },
 "sv": {
   "stringUnit": { "state": "translated",
-    "value": "Automatiska SSH-tunnlar stöder endast HTTP-webbdestinationer. HTTPS skulle få en felaktig certifikatidentitet i webbläsaren."
+    "value": "Direkt"
   }
 },
 "es": {
   "stringUnit": { "state": "translated",
-    "value": "Los túneles SSH automáticos solo admiten destinos web HTTP. HTTPS recibiría una identidad de certificado incorrecta en el navegador."
+    "value": "Directo"
   }
 },
 "fr": {
   "stringUnit": { "state": "translated",
-    "value": "Les tunnels SSH automatiques prennent uniquement en charge les destinations web HTTP. Le navigateur recevrait une identité de certificat incorrecte pour les destinations HTTPS."
+    "value": "Direct"
   }
 },
 "pt": {
   "stringUnit": { "state": "translated",
-    "value": "Os túneis SSH automáticos suportam apenas destinos web HTTP. O HTTPS receberia uma identidade de certificado incorreta no navegador."
+    "value": "Direto"
   }
 },
 "ru": {
   "stringUnit": { "state": "translated",
-    "value": "Автоматические SSH-туннели поддерживают только веб-адреса HTTP. HTTPS получит неверную идентификацию сертификата в браузере."
+    "value": "Напрямую"
   }
 },
 "tr": {
   "stringUnit": { "state": "translated",
-    "value": "Otomatik SSH tünelleri yalnızca HTTP web hedeflerini destekler. HTTPS, tarayıcıda yanlış bir sertifika kimliği alacaktır."
+    "value": "Doğrudan"
   }
 },
 "id": {
   "stringUnit": { "state": "translated",
-    "value": "Terowongan SSH otomatis hanya mendukung tujuan web HTTP. HTTPS akan menerima identitas sertifikat yang salah di browser."
+    "value": "Langsung"
   }
 },
 "vi": {
   "stringUnit": { "state": "translated",
-    "value": "Đường hầm SSH tự động chỉ hỗ trợ các đích đến web HTTP. HTTPS sẽ nhận được danh tính chứng chỉ không chính xác trong trình duyệt."
+    "value": "Trực tiếp"
   }
 },
 "zh-Hans": {
   "stringUnit": { "state": "translated",
-    "value": "自动 SSH 隧道仅支持 HTTP 网站目标。 HTTPS 网站会在浏览器中收到错误的证书标识。"
+    "value": "直接"
   }
 },
 "ja": {
   "stringUnit": { "state": "translated",
-    "value": "自動SSHトンネルはHTTP Webサイトのみをサポートします。 HTTPSでは、ブラウザで誤った証明書IDが返されます。"
+    "value": "直接"
   }
 },
 "ar": {
   "stringUnit": { "state": "translated",
-    "value": "تدعم أنفاق SSH التلقائية وجهات HTTP فقط. سيتلقى HTTPS هوية شهادة غير صحيحة في المتصفح."
+    "value": "مباشر"
   }
 },
 "hi": {
   "stringUnit": { "state": "translated",
-    "value": "ऑटोमैटिक SSH टनल सिर्फ़ HTTP वेब डेस्टिनेशन को सपोर्ट करते हैं।HTTPS को ब्राउज़र में गलत सर्टिफ़िकेट आइडेंटिटी मिलेगी।"
+    "value": "सीधा"
   }
 },
 "bn": {
   "stringUnit": { "state": "translated",
-    "value": "স্বয়ংক্রিয় SSH টানেল শুধুমাত্র HTTP ওয়েব গন্তব্য সমর্থন করে।ব্রাউজারে HTTPS একটি ভুল সার্টিফিকেট পরিচয় পাবে।"
+    "value": "সরাসরি"
   }
 },
 "mr": {
   "stringUnit": { "state": "translated",
-    "value": "स्वयंचलित SSH टनेल्स फक्त HTTP वेब डेस्टिनेशन्सना सपोर्ट करतात. HTTPS ला ब्राउझरमध्ये चुकीची प्रमाणपत्र ओळख मिळेल."
+    "value": "थेट"
   }
 },
 "te": {
   "stringUnit": { "state": "translated",
-    "value": "ఆటోమేటిక్ SSH టన్నెల్స్ కేవలం HTTP వెబ్ గమ్యస్థానాలకు మాత్రమే మద్దతు ఇస్తాయి. బ్రౌజర్‌లో HTTPS తప్పు సర్టిఫికేట్ గుర్తింపును అందుకుంటుంది."
+    "value": "నేరుగా"
   }
 },
 "ur": {
   "stringUnit": { "state": "translated",
-    "value": "خودکار SSH سرنگیں صرف HTTP ویب منزلوں کو سپورٹ کرتی ہیں۔HTTPS کو براؤزر میں ایک غلط سرٹیفکیٹ کی شناخت ملے گی۔"
+    "value": "براہ راست"
   }
 },
 "sw": {
   "stringUnit": { "state": "translated",
-    "value": "Vituo vya SSH otomatiki huunga mkono maeneo ya wavuti ya HTTP pekee. HTTPS ingepokea utambulisho usio sahihi wa cheti kwenye kivinjari."
+    "value": "Moja kwa moja"
   }
 },
 "ha": {
   "stringUnit": { "state": "translated",
-    "value": "Ramin SSH ta atomatik yana goyan bayan wuraren yanar gizo na HTTP kawai. HTTPS zai sami shaidar takardar shaida mara daidai a cikin mai bincike."
+    "value": "Kai tsaye"
   }
 },
 "pcm": {
   "stringUnit": { "state": "translated",
-    "value": "Automatic SSH tunnel support only HTTP web target. HTTPS go get wrong certificate identity for browser."
-  }
-}
-    }
-  },
-  "Automatischer SSH-Tunnel": {
-    "localizations": {
-"de": {
-  "stringUnit": { "state": "translated",
-    "value": "Automatischer SSH-Tunnel"
-  }
-},
-"en": {
-  "stringUnit": { "state": "translated",
-    "value": "Automatic SSH tunnel"
-  }
-},
-"sv": {
-  "stringUnit": { "state": "translated",
-    "value": "Automatisk SSH-tunnel"
-  }
-},
-"es": {
-  "stringUnit": { "state": "translated",
-    "value": "Túnel SSH automático"
-  }
-},
-"fr": {
-  "stringUnit": { "state": "translated",
-    "value": "Tunnel SSH automatique"
-  }
-},
-"pt": {
-  "stringUnit": { "state": "translated",
-    "value": "Túnel SSH automático"
-  }
-},
-"ru": {
-  "stringUnit": { "state": "translated",
-    "value": "Автоматический SSH-туннель"
-  }
-},
-"tr": {
-  "stringUnit": { "state": "translated",
-    "value": "Otomatik SSH tüneli"
-  }
-},
-"id": {
-  "stringUnit": { "state": "translated",
-    "value": "Terowongan SSH otomatis"
-  }
-},
-"vi": {
-  "stringUnit": { "state": "translated",
-    "value": "Đường hầm SSH tự động"
-  }
-},
-"zh-Hans": {
-  "stringUnit": { "state": "translated",
-    "value": "自动 SSH 隧道"
-  }
-},
-"ja": {
-  "stringUnit": { "state": "translated",
-    "value": "自動SSHトンネル"
-  }
-},
-"ar": {
-  "stringUnit": { "state": "translated",
-    "value": "نفق SSH تلقائي"
-  }
-},
-"hi": {
-  "stringUnit": { "state": "translated",
-    "value": "ऑटोमैटिक SSH टनल"
-  }
-},
-"bn": {
-  "stringUnit": { "state": "translated",
-    "value": "স্বয়ংক্রিয় SSH টানেল"
-  }
-},
-"mr": {
-  "stringUnit": { "state": "translated",
-    "value": "स्वयंचलित SSH टनेल"
-  }
-},
-"te": {
-  "stringUnit": { "state": "translated",
-    "value": "ఆటోమేటిక్ SSH టన్నెల్"
-  }
-},
-"ur": {
-  "stringUnit": { "state": "translated",
-    "value": "خودکار SSH سرنگ"
-  }
-},
-"sw": {
-  "stringUnit": { "state": "translated",
-    "value": "Handaki ya SSH otomatiki"
-  }
-},
-"ha": {
-  "stringUnit": { "state": "translated",
-    "value": "Ramin SSH ta atomatik"
-  }
-},
-"pcm": {
-  "stringUnit": { "state": "translated",
-    "value": "Automatic SSH tunnel"
+    "value": "Direct"
   }
 }
     }
@@ -25224,115 +25006,6 @@
 "pcm": {
   "stringUnit": { "state": "translated",
     "value": "DOWN"
-  }
-}
-    }
-  },
-  "Ein Klick auf ein Problem öffnet die Monitoring-Weboberfläche. SSH und RDP erscheinen im Kontextmenü. Der automatische Tunnel greift nur bei nicht erreichbaren HTTP-Zielen und beendet sich mit IssueLight.": {
-    "localizations": {
-"de": {
-  "stringUnit": { "state": "translated",
-    "value": "Ein Klick auf ein Problem öffnet die Monitoring-Weboberfläche. SSH und RDP erscheinen im Kontextmenü. Der automatische Tunnel greift nur bei nicht erreichbaren HTTP-Zielen und beendet sich mit IssueLight."
-  }
-},
-"en": {
-  "stringUnit": { "state": "translated",
-    "value": "Clicking an issue opens the monitoring web interface. SSH and RDP appear in the context menu. The automatic tunnel only works for unreachable HTTP destinations and terminates with IssueLight."
-  }
-},
-"sv": {
-  "stringUnit": { "state": "translated",
-    "value": "Om du klickar på ett problem öppnas övervakningswebbgränssnittet. SSH och RDP visas i snabbmenyn. Den automatiska tunneln fungerar endast för oåtkomliga HTTP-destinationer och avslutas med IssueLight."
-  }
-},
-"es": {
-  "stringUnit": { "state": "translated",
-    "value": "Al hacer clic en un problema, se abre la interfaz web de monitorización. SSH y RDP aparecen en el menú contextual. El túnel automático solo funciona para destinos HTTP inaccesibles y finaliza con IssueLight."
-  }
-},
-"fr": {
-  "stringUnit": { "state": "translated",
-    "value": "Cliquer sur un problème ouvre l’interface web de surveillance. Les options SSH et RDP apparaissent dans le menu contextuel. Le tunnel automatique fonctionne uniquement pour les destinations HTTP inaccessibles et se termine avec IssueLight."
-  }
-},
-"pt": {
-  "stringUnit": { "state": "translated",
-    "value": "Clicar em um problema abre a interface web de monitoramento. SSH e RDP aparecem no menu de contexto. O túnel automático funciona apenas para destinos HTTP inacessíveis e é encerrado com o IssueLight."
-  }
-},
-"ru": {
-  "stringUnit": { "state": "translated",
-    "value": "Нажатие на проблему открывает веб-интерфейс мониторинга. SSH и RDP отображаются в контекстном меню. Автоматический туннель работает только для недоступных HTTP-адресов и завершается с IssueLight."
-  }
-},
-"tr": {
-  "stringUnit": { "state": "translated",
-    "value": "Bir soruna tıklamak, izleme web arayüzünü açar. Bağlam menüsünde SSH ve RDP görünür. Otomatik tünel yalnızca ulaşılamayan HTTP hedefleri için çalışır ve IssueLight ile sonlanır."
-  }
-},
-"id": {
-  "stringUnit": { "state": "translated",
-    "value": "Mengklik masalah akan membuka antarmuka web pemantauan. SSH dan RDP muncul di menu konteks. Terowongan otomatis hanya berfungsi untuk tujuan HTTP yang tidak dapat dijangkau dan berakhir dengan IssueLight."
-  }
-},
-"vi": {
-  "stringUnit": { "state": "translated",
-    "value": "Nhấp vào một sự cố sẽ mở giao diện web giám sát. SSH và RDP xuất hiện trong menu ngữ cảnh. Đường hầm tự động chỉ hoạt động đối với các đích đến HTTP không thể truy cập và kết thúc với IssueLight."
-  }
-},
-"zh-Hans": {
-  "stringUnit": { "state": "translated",
-    "value": "单击问题将打开监控 Web 界面。 SSH 和 RDP 将显示在上下文菜单中。 自动隧道仅适用于无法访问的 HTTP 目标，并在 IssueLight 处终止。"
-  }
-},
-"ja": {
-  "stringUnit": { "state": "translated",
-    "value": "問題をクリックすると、監視Webインターフェースが開きます。 コンテキストメニューにSSHとRDPが表示されます。 自動トンネルは到達不能なHTTP宛先に対してのみ機能し、IssueLightで終了します。"
-  }
-},
-"ar": {
-  "stringUnit": { "state": "translated",
-    "value": "يؤدي النقر على مشكلة إلى فتح واجهة الويب الخاصة بالمراقبة. يظهر SSH وRDP في قائمة السياق. يعمل النفق التلقائي فقط مع وجهات HTTP غير القابلة للوصول وينتهي مع IssueLight."
-  }
-},
-"hi": {
-  "stringUnit": { "state": "translated",
-    "value": "किसी इश्यू पर क्लिक करने से मॉनिटरिंग वेब इंटरफ़ेस खुल जाता है।SSH और RDP कॉन्टेक्स्ट मेन्यू में दिखाई देते हैं।ऑटोमैटिक टनल सिर्फ़ उन HTTP डेस्टिनेशन के लिए काम करता है जहाँ पहुँचा नहीं जा सकता और IssueLight के साथ खत्म होता है।"
-  }
-},
-"bn": {
-  "stringUnit": { "state": "translated",
-    "value": "একটি ইস্যুতে ক্লিক করলে মনিটরিং ওয়েব ইন্টারফেস খোলে।কনটেক্সট মেনুতে SSH এবং RDP দেখা যায়।স্বয়ংক্রিয় টানেলটি শুধুমাত্র অপ্রাপ্য HTTP গন্তব্যের জন্য কাজ করে এবং IssueLight-এর মাধ্যমে টার্মিনেট হয়।"
-  }
-},
-"mr": {
-  "stringUnit": { "state": "translated",
-    "value": "एखाद्या समस्येवर क्लिक केल्यावर मॉनिटरिंग वेब इंटरफेस उघडतो. संदर्भ मेनूमध्ये SSH आणि RDP दिसतात. स्वयंचलित टनेल फक्त पोहोचण्यायोग्य नसलेल्या HTTP डेस्टिनेशन्ससाठी काम करतो आणि IssueLightसह समाप्त होतो."
-  }
-},
-"te": {
-  "stringUnit": { "state": "translated",
-    "value": "ఒక సమస్యపై క్లిక్ చేయడం వలన పర్యవేక్షణ వెబ్ ఇంటర్‌ఫేస్ తెరుచుకుంటుంది. కాంటెక్స్ట్ మెనూలో SSH మరియు RDP కనిపిస్తాయి. ఆటోమేటిక్ టన్నెల్ చేరుకోలేని HTTP గమ్యస్థానాలకు మాత్రమే పనిచేస్తుంది మరియు IssueLightతో ముగుస్తుంది."
-  }
-},
-"ur": {
-  "stringUnit": { "state": "translated",
-    "value": "مسئلہ پر کلک کرنے سے مانیٹرنگ ویب انٹرفیس کھل جاتا ہے۔SSH اور RDP سیاق و سباق کے مینو میں ظاہر ہوتے ہیں۔خودکار سرنگ صرف ناقابل رسائی HTTP منزلوں کے لیے کام کرتی ہے اور IssueLight کے ساتھ ختم ہو جاتی ہے۔"
-  }
-},
-"sw": {
-  "stringUnit": { "state": "translated",
-    "value": "Kubofya tatizo hufungua kiolesura cha wavuti cha ufuatiliaji. SSH na RDP huonekana kwenye menyu ya muktadha. Handaki otomatiki hufanya kazi tu kwa maeneo ya HTTP yasiyofikika na huisha na IssueLight."
-  }
-},
-"ha": {
-  "stringUnit": { "state": "translated",
-    "value": "Danna matsala yana buɗe hanyar haɗin yanar gizo na sa ido. SSH da RDP suna bayyana a cikin menu na mahallin. Ramin atomatik yana aiki ne kawai ga wuraren HTTP da ba za a iya isa ba kuma yana ƙarewa da IssueLight."
-  }
-},
-"pcm": {
-  "stringUnit": { "state": "translated",
-    "value": "Click problem to open the monitoring web interface. SSH and RDP dey for context menu. Automatic tunnel works only for HTTP targets wey no reachable and e stops with IssueLight."
   }
 }
     }
@@ -26972,111 +26645,111 @@
 }
     }
   },
-  "RDP-Aktion": {
+  "Host über RDP öffnen": {
     "localizations": {
 "de": {
   "stringUnit": { "state": "translated",
-    "value": "RDP-Aktion"
+    "value": "Host über RDP öffnen"
   }
 },
 "en": {
   "stringUnit": { "state": "translated",
-    "value": "RDP Action"
+    "value": "Open host with RDP"
   }
 },
 "sv": {
   "stringUnit": { "state": "translated",
-    "value": "RDP-åtgärd"
+    "value": "Öppna värd med RDP"
   }
 },
 "es": {
   "stringUnit": { "state": "translated",
-    "value": "Acción RDP"
+    "value": "Abrir host con RDP"
   }
 },
 "fr": {
   "stringUnit": { "state": "translated",
-    "value": "Action RDP"
+    "value": "Ouvrir l’hôte via RDP"
   }
 },
 "pt": {
   "stringUnit": { "state": "translated",
-    "value": "Ação RDP"
+    "value": "Abrir host com RDP"
   }
 },
 "ru": {
   "stringUnit": { "state": "translated",
-    "value": "Действие RDP"
+    "value": "Открыть хост через RDP"
   }
 },
 "tr": {
   "stringUnit": { "state": "translated",
-    "value": "RDP İşlemi"
+    "value": "Ana bilgisayarı RDP ile aç"
   }
 },
 "id": {
   "stringUnit": { "state": "translated",
-    "value": "Aksi RDP"
+    "value": "Buka host dengan RDP"
   }
 },
 "vi": {
   "stringUnit": { "state": "translated",
-    "value": "Hành động RDP"
+    "value": "Mở máy chủ bằng RDP"
   }
 },
 "zh-Hans": {
   "stringUnit": { "state": "translated",
-    "value": "RDP 操作"
+    "value": "使用 RDP 打开主机"
   }
 },
 "ja": {
   "stringUnit": { "state": "translated",
-    "value": "RDPアクション"
+    "value": "RDPでホストを開く"
   }
 },
 "ar": {
   "stringUnit": { "state": "translated",
-    "value": "إجراء RDP"
+    "value": "فتح المضيف عبر RDP"
   }
 },
 "hi": {
   "stringUnit": { "state": "translated",
-    "value": "RDP एक्शन"
+    "value": "RDP से होस्ट खोलें"
   }
 },
 "bn": {
   "stringUnit": { "state": "translated",
-    "value": "RDP অ্যাকশন"
+    "value": "RDP দিয়ে হোস্ট খুলুন"
   }
 },
 "mr": {
   "stringUnit": { "state": "translated",
-    "value": "RDP कृती"
+    "value": "RDP सह होस्ट उघडा"
   }
 },
 "te": {
   "stringUnit": { "state": "translated",
-    "value": "RDP చర్య"
+    "value": "RDPతో హోస్ట్‌ను తెరవండి"
   }
 },
 "ur": {
   "stringUnit": { "state": "translated",
-    "value": "RDP ایکشن"
+    "value": "RDP کے ذریعے ہوسٹ کھولیں"
   }
 },
 "sw": {
   "stringUnit": { "state": "translated",
-    "value": "Kitendo cha RDP"
+    "value": "Fungua seva pangishi kupitia RDP"
   }
 },
 "ha": {
   "stringUnit": { "state": "translated",
-    "value": "Aikin RDP"
+    "value": "Buɗe mai masauki ta RDP"
   }
 },
 "pcm": {
   "stringUnit": { "state": "translated",
-    "value": "RDP action"
+    "value": "Open host with RDP"
   }
 }
     }
@@ -27408,111 +27081,111 @@
 }
     }
   },
-  "SSH-Aktion": {
+  "Host im Terminal öffnen": {
     "localizations": {
 "de": {
   "stringUnit": { "state": "translated",
-    "value": "SSH-Aktion"
+    "value": "Host im Terminal öffnen"
   }
 },
 "en": {
   "stringUnit": { "state": "translated",
-    "value": "SSH Action"
+    "value": "Open host in Terminal"
   }
 },
 "sv": {
   "stringUnit": { "state": "translated",
-    "value": "SSH-åtgärd"
+    "value": "Öppna värd i Terminal"
   }
 },
 "es": {
   "stringUnit": { "state": "translated",
-    "value": "Acción SSH"
+    "value": "Abrir host en Terminal"
   }
 },
 "fr": {
   "stringUnit": { "state": "translated",
-    "value": "Action SSH"
+    "value": "Ouvrir l’hôte dans Terminal"
   }
 },
 "pt": {
   "stringUnit": { "state": "translated",
-    "value": "Ação SSH"
+    "value": "Abrir host no Terminal"
   }
 },
 "ru": {
   "stringUnit": { "state": "translated",
-    "value": "Действие SSH"
+    "value": "Открыть хост в Терминале"
   }
 },
 "tr": {
   "stringUnit": { "state": "translated",
-    "value": "SSH İşlemi"
+    "value": "Ana bilgisayarı Terminal'de aç"
   }
 },
 "id": {
   "stringUnit": { "state": "translated",
-    "value": "Aksi SSH"
+    "value": "Buka host di Terminal"
   }
 },
 "vi": {
   "stringUnit": { "state": "translated",
-    "value": "Hành động SSH"
+    "value": "Mở máy chủ trong Terminal"
   }
 },
 "zh-Hans": {
   "stringUnit": { "state": "translated",
-    "value": "SSH 操作"
+    "value": "在“终端”中打开主机"
   }
 },
 "ja": {
   "stringUnit": { "state": "translated",
-    "value": "SSHアクション"
+    "value": "ホストをターミナルで開く"
   }
 },
 "ar": {
   "stringUnit": { "state": "translated",
-    "value": "إجراء SSH"
+    "value": "فتح المضيف في الوحدة الطرفية"
   }
 },
 "hi": {
   "stringUnit": { "state": "translated",
-    "value": "SSH एक्शन"
+    "value": "टर्मिनल में होस्ट खोलें"
   }
 },
 "bn": {
   "stringUnit": { "state": "translated",
-    "value": "SSH অ্যাকশন"
+    "value": "টার্মিনালে হোস্ট খুলুন"
   }
 },
 "mr": {
   "stringUnit": { "state": "translated",
-    "value": "SSH कृती"
+    "value": "टर्मिनलमध्ये होस्ट उघडा"
   }
 },
 "te": {
   "stringUnit": { "state": "translated",
-    "value": "SSH చర్య"
+    "value": "టెర్మినల్‌లో హోస్ట్‌ను తెరవండి"
   }
 },
 "ur": {
   "stringUnit": { "state": "translated",
-    "value": "SSH ایکشن"
+    "value": "ٹرمینل میں ہوسٹ کھولیں"
   }
 },
 "sw": {
   "stringUnit": { "state": "translated",
-    "value": "Kitendo cha SSH"
+    "value": "Fungua seva pangishi kwenye Terminal"
   }
 },
 "ha": {
   "stringUnit": { "state": "translated",
-    "value": "Aikin SSH"
+    "value": "Buɗe mai masauki a Terminal"
   }
 },
 "pcm": {
   "stringUnit": { "state": "translated",
-    "value": "SSH action"
+    "value": "Open host for Terminal"
   }
 }
     }

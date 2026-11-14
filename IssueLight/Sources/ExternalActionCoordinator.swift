@@ -10,6 +10,124 @@ struct IssueWebTarget: Equatable {
     let automaticSSHTunnel: SSHTunnelConfiguration?
 }
 
+enum AutomaticConnectionPath: Equatable {
+    case direct
+    case ssh
+    case unavailable(String)
+}
+
+@MainActor
+final class AutomaticConnectionCoordinator {
+    private let tunnelManager: SSHTunnelManager
+    private let canConnect: (String, Int, Int?) async -> Bool
+    private var apiProxyPorts: [UUID: Int] = [:]
+
+    init(
+        tunnelManager: SSHTunnelManager? = nil,
+        canConnect: @escaping (String, Int, Int?) async -> Bool = { host, port, proxyPort in
+            await TCPReachabilityProbe.canConnect(
+                host: host,
+                port: port,
+                socksProxyPort: proxyPort
+            )
+        }
+    ) {
+        self.tunnelManager = tunnelManager ?? SSHTunnelManager()
+        self.canConnect = canConnect
+    }
+
+    func performUsingBestAPIPath<Result>(
+        source: MonitoringSource,
+        access: ProviderAccess,
+        rediscoverDirect: Bool = false,
+        operation: (ProviderAccess) async -> Result,
+        isUnreachable: (Result) -> Bool
+    ) async -> (Result, AutomaticConnectionPath) {
+        if !rediscoverDirect, let proxyPort = apiProxyPorts[source.id] {
+            let proxiedResult = await operation(access.routingThroughSOCKS(port: proxyPort))
+            if !isUnreachable(proxiedResult) {
+                return (proxiedResult, .ssh)
+            }
+            apiProxyPorts[source.id] = nil
+            tunnelManager.stopSOCKS(sourceID: source.id)
+        }
+
+        let directResult = await operation(access)
+        guard isUnreachable(directResult) else {
+            apiProxyPorts[source.id] = nil
+            tunnelManager.stopSOCKS(sourceID: source.id)
+            return (directResult, .direct)
+        }
+
+        if let proxyPort = apiProxyPorts[source.id] {
+            let proxiedResult = await operation(access.routingThroughSOCKS(port: proxyPort))
+            if !isUnreachable(proxiedResult) {
+                return (proxiedResult, .ssh)
+            }
+            apiProxyPorts[source.id] = nil
+            tunnelManager.stopSOCKS(sourceID: source.id)
+        }
+
+        let configuration = tunnelManager.resolvedConfiguration(for: source)
+        guard !configuration.bastionHost.isEmpty else {
+            return (directResult, .unavailable("The API host cannot be used as an SSH destination."))
+        }
+        switch await tunnelManager.startSOCKS(sourceID: source.id, configuration: configuration) {
+        case .success(let proxyPort):
+            let proxiedResult = await operation(access.routingThroughSOCKS(port: proxyPort))
+            guard !isUnreachable(proxiedResult) else {
+                tunnelManager.stopSOCKS(sourceID: source.id)
+                return (proxiedResult, .unavailable("SSH connected, but the API is not reachable through it."))
+            }
+            apiProxyPorts[source.id] = proxyPort
+            return (proxiedResult, .ssh)
+        case .failure(.message(let message)):
+            return (directResult, .unavailable(message))
+        }
+    }
+
+    func checkWeb(source: MonitoringSource, url: URL) async -> AutomaticConnectionPath {
+        guard let host = url.host else {
+            return .unavailable("The web URL has no host.")
+        }
+        let port = url.port ?? (url.scheme?.lowercased() == "https" ? 443 : 80)
+        if await canConnect(host, port, nil) {
+            if apiProxyPorts[source.id] == nil {
+                tunnelManager.stopSOCKS(sourceID: source.id)
+            }
+            return .direct
+        }
+
+        let configuration = tunnelManager.resolvedConfiguration(for: source)
+        guard !configuration.bastionHost.isEmpty else {
+            return .unavailable("The API host cannot be used as an SSH destination.")
+        }
+        switch await tunnelManager.startSOCKS(sourceID: source.id, configuration: configuration) {
+        case .success(let proxyPort):
+            if await canConnect(host, port, proxyPort) {
+                return .ssh
+            }
+            if apiProxyPorts[source.id] == nil {
+                tunnelManager.stopSOCKS(sourceID: source.id)
+            }
+            return .unavailable("SSH connected, but the web interface is not reachable through it.")
+        case .failure(.message(let message)):
+            return .unavailable(message)
+        }
+    }
+
+    func reconcileSources(_ sources: [MonitoringSource]) {
+        tunnelManager.reconcileSources(sources)
+        let sourceIDs = Set(sources.filter(\.isEnabled).map(\.id))
+        apiProxyPorts = apiProxyPorts.filter { sourceIDs.contains($0.key) }
+    }
+
+    func stop(sourceID: UUID) {
+        apiProxyPorts[sourceID] = nil
+        tunnelManager.stop(sourceID: sourceID)
+    }
+}
+
 enum ExternalActionError: Error, Equatable {
     case applicationUnavailable
     case tunnelCouldNotStart(String)
@@ -28,11 +146,12 @@ final class ExternalActionCoordinator: ObservableObject {
         openURL: @escaping (URL) -> Bool = { NSWorkspace.shared.open($0) },
         canConnect: @escaping (String, Int) async -> Bool = {
             await TCPReachabilityProbe.canConnect(host: $0, port: $1)
-        }
+        },
+        tunnelManager: SSHTunnelManager? = nil
     ) {
         self.openURL = openURL
         self.canConnect = canConnect
-        tunnelManager = SSHTunnelManager()
+        self.tunnelManager = tunnelManager ?? SSHTunnelManager()
         terminationObserver = NotificationCenter.default.addObserver(
             forName: NSApplication.willTerminateNotification,
             object: nil,
@@ -50,7 +169,7 @@ final class ExternalActionCoordinator: ObservableObject {
         }
         let directPort = target.url.port ?? (target.url.scheme?.lowercased() == "https" ? 443 : 80)
         if await canConnect(target.url.host ?? "", directPort) {
-            tunnelManager.stop(sourceID: target.sourceID)
+            tunnelManager.stopWeb(sourceID: target.sourceID)
             return openURL(target.url) ? .success(target.url) : .failure(.applicationUnavailable)
         }
 
@@ -67,7 +186,7 @@ final class ExternalActionCoordinator: ObservableObject {
             components?.host = "127.0.0.1"
             components?.port = localPort
             guard let tunneledURL = components?.url, openURL(tunneledURL) else {
-                tunnelManager.stop(sourceID: target.sourceID)
+                tunnelManager.stopWeb(sourceID: target.sourceID)
                 return .failure(.applicationUnavailable)
             }
             return .success(tunneledURL)
@@ -118,26 +237,64 @@ final class SSHTunnelManager {
                 "-o", "ExitOnForwardFailure=yes",
                 "-o", "ConnectTimeout=5",
                 "-L", "127.0.0.1:\(localPort):\(remoteHost):\(remotePort)",
-                "-p", String(configuration.port),
             ]
+            if configuration.port != 22 {
+                values.append(contentsOf: ["-p", String(configuration.port)])
+            }
             if let identityFilePath = configuration.identityFilePath,
                !identityFilePath.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 values.append(contentsOf: ["-i", identityFilePath, "-o", "IdentitiesOnly=yes"])
             }
-            values.append(contentsOf: ["-l", configuration.username, "--", configuration.bastionHost])
+            if !configuration.username.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                values.append(contentsOf: ["-l", configuration.username])
+            }
+            values.append(contentsOf: ["--", configuration.bastionHost])
             arguments = values
         }
+
+        init(socksPort: Int, configuration: SSHTunnelConfiguration) {
+            var values = [
+                "-N",
+                "-T",
+                "-o", "BatchMode=yes",
+                "-o", "ExitOnForwardFailure=yes",
+                "-o", "ConnectTimeout=5",
+                "-D", "127.0.0.1:\(socksPort)",
+            ]
+            if configuration.port != 22 {
+                values.append(contentsOf: ["-p", String(configuration.port)])
+            }
+            if let identityFilePath = configuration.identityFilePath,
+               !identityFilePath.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                values.append(contentsOf: ["-i", identityFilePath, "-o", "IdentitiesOnly=yes"])
+            }
+            if !configuration.username.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                values.append(contentsOf: ["-l", configuration.username])
+            }
+            values.append(contentsOf: ["--", configuration.bastionHost])
+            arguments = values
+        }
+    }
+
+    private enum Purpose: Hashable {
+        case web
+        case proxy
+    }
+
+    private struct TunnelKey: Hashable {
+        let sourceID: UUID
+        let purpose: Purpose
     }
 
     private struct ActiveTunnel {
         let process: Process
         let localPort: Int
-        let targetHost: String
-        let targetPort: Int
+        let targetHost: String?
+        let targetPort: Int?
         let configuration: SSHTunnelConfiguration
     }
 
-    private var activeTunnels: [UUID: ActiveTunnel] = [:]
+    private var activeTunnels: [TunnelKey: ActiveTunnel] = [:]
     private let executableURL: URL
     private let additionalArguments: [String]
 
@@ -158,15 +315,16 @@ final class SSHTunnelManager {
             return .failure(.message("The web target has no host."))
         }
         let targetPort = targetURL.port ?? 80
-        if let active = activeTunnels[sourceID],
+        let key = TunnelKey(sourceID: sourceID, purpose: .web)
+        if let active = activeTunnels[key],
            active.process.isRunning,
            active.targetHost == targetHost,
            active.targetPort == targetPort,
            active.configuration == configuration {
-            return await awaitReadiness(sourceID: sourceID, active: active)
+            return await awaitReadiness(key: key, active: active)
         }
 
-        stop(sourceID: sourceID)
+        stop(key: key)
         guard let localPort = LocalPortAllocator.availablePort(preferred: configuration.preferredLocalPort) else {
             return .failure(.message("No local port is available."))
         }
@@ -195,54 +353,128 @@ final class SSHTunnelManager {
             targetPort: targetPort,
             configuration: configuration
         )
-        activeTunnels[sourceID] = active
-        return await awaitReadiness(sourceID: sourceID, active: active, standardError: standardError)
+        activeTunnels[key] = active
+        return await awaitReadiness(key: key, active: active, standardError: standardError)
+    }
+
+    func startSOCKS(
+        sourceID: UUID,
+        configuration: SSHTunnelConfiguration
+    ) async -> Result<Int, StartError> {
+        let key = TunnelKey(sourceID: sourceID, purpose: .proxy)
+        if let active = activeTunnels[key],
+           active.process.isRunning,
+           active.configuration == configuration {
+            return await awaitReadiness(key: key, active: active)
+        }
+
+        stop(key: key)
+        guard let localPort = LocalPortAllocator.availablePort(preferred: configuration.preferredLocalPort) else {
+            return .failure(.message("No local port is available."))
+        }
+
+        let process = Process()
+        let standardError = Pipe()
+        process.executableURL = executableURL
+        process.arguments = additionalArguments + Command(
+            socksPort: localPort,
+            configuration: configuration
+        ).arguments
+        process.standardInput = FileHandle.nullDevice
+        process.standardOutput = FileHandle.nullDevice
+        process.standardError = standardError
+        do {
+            try process.run()
+        } catch {
+            return .failure(.message(error.localizedDescription))
+        }
+        let active = ActiveTunnel(
+            process: process,
+            localPort: localPort,
+            targetHost: nil,
+            targetPort: nil,
+            configuration: configuration
+        )
+        activeTunnels[key] = active
+        return await awaitReadiness(key: key, active: active, standardError: standardError)
     }
 
     func reconcileSources(_ sources: [MonitoringSource]) {
         let sourceByID = Dictionary(uniqueKeysWithValues: sources.map { ($0.id, $0) })
-        for (sourceID, active) in Array(activeTunnels) {
-            guard let source = sourceByID[sourceID],
-                  source.isEnabled,
-                  let web = source.web,
-                  web.baseURL.scheme?.lowercased() == "http",
-                  let tunnel = web.automaticSSHTunnel else {
-                stop(sourceID: sourceID)
+        for (key, active) in Array(activeTunnels) {
+            guard let source = sourceByID[key.sourceID], source.isEnabled else {
+                stop(key: key)
                 continue
             }
-            let targetPort = web.baseURL.port ?? (web.baseURL.scheme?.lowercased() == "https" ? 443 : 80)
-            if web.baseURL.host != active.targetHost
-                || targetPort != active.targetPort
-                || tunnel != active.configuration {
-                stop(sourceID: sourceID)
+            let tunnel = resolvedConfiguration(for: source)
+            if tunnel != active.configuration {
+                stop(key: key)
+                continue
+            }
+            if key.purpose == .web {
+                guard let web = source.web,
+                      web.baseURL.scheme?.lowercased() == "http" else {
+                    stop(key: key)
+                    continue
+                }
+                let targetPort = web.baseURL.port ?? 80
+                if web.baseURL.host != active.targetHost || targetPort != active.targetPort {
+                    stop(key: key)
+                }
             }
         }
     }
 
     func stopAll() {
-        for sourceID in Array(activeTunnels.keys) {
-            stop(sourceID: sourceID)
+        for key in Array(activeTunnels.keys) {
+            stop(key: key)
         }
     }
 
     func stop(sourceID: UUID) {
-        guard let active = activeTunnels.removeValue(forKey: sourceID) else { return }
+        for key in activeTunnels.keys.filter({ $0.sourceID == sourceID }) {
+            stop(key: key)
+        }
+    }
+
+    func stopSOCKS(sourceID: UUID) {
+        stop(key: TunnelKey(sourceID: sourceID, purpose: .proxy))
+    }
+
+    func stopWeb(sourceID: UUID) {
+        stop(key: TunnelKey(sourceID: sourceID, purpose: .web))
+    }
+
+    func resolvedConfiguration(for source: MonitoringSource) -> SSHTunnelConfiguration {
+        let overrides = source.sshTunnel ?? source.web?.automaticSSHTunnel
+        let configuredHost = overrides?.bastionHost.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return SSHTunnelConfiguration(
+            bastionHost: configuredHost.isEmpty ? source.endpoint.host ?? "" : configuredHost,
+            username: overrides?.username ?? "",
+            port: overrides?.port ?? 22,
+            identityFilePath: overrides?.identityFilePath,
+            preferredLocalPort: overrides?.preferredLocalPort
+        )
+    }
+
+    private func stop(key: TunnelKey) {
+        guard let active = activeTunnels.removeValue(forKey: key) else { return }
         if active.process.isRunning {
             active.process.terminate()
         }
     }
 
     private func awaitReadiness(
-        sourceID: UUID,
+        key: TunnelKey,
         active: ActiveTunnel,
         standardError: Pipe? = nil
     ) async -> Result<Int, StartError> {
         for _ in 0..<50 {
-            guard activeTunnels[sourceID]?.process === active.process else {
+            guard activeTunnels[key]?.process === active.process else {
                 return .failure(.message("SSH tunnel was replaced before it became ready."))
             }
             if !active.process.isRunning {
-                activeTunnels.removeValue(forKey: sourceID)
+                activeTunnels.removeValue(forKey: key)
                 let data = standardError?.fileHandleForReading.readDataToEndOfFile() ?? Data()
                 let message = String(decoding: data, as: UTF8.self)
                     .trimmingCharacters(in: .whitespacesAndNewlines)
@@ -254,20 +486,33 @@ final class SSHTunnelManager {
             try? await Task.sleep(for: .milliseconds(100))
         }
 
-        if activeTunnels[sourceID]?.process === active.process {
-            stop(sourceID: sourceID)
+        if activeTunnels[key]?.process === active.process {
+            stop(key: key)
         }
         return .failure(.message("SSH did not open the local port within five seconds."))
     }
 }
 
 enum TCPReachabilityProbe {
-    static func canConnect(host: String, port: Int, timeout: Int = 2) async -> Bool {
+    static func canConnect(
+        host: String,
+        port: Int,
+        timeout: Int = 2,
+        socksProxyPort: Int? = nil
+    ) async -> Bool {
         guard !host.isEmpty, (1...65_535).contains(port) else { return false }
         return await Task.detached {
             let process = Process()
             process.executableURL = URL(fileURLWithPath: "/usr/bin/nc")
-            process.arguments = ["-z", "-G", String(timeout), host, String(port)]
+            var arguments = ["-z", "-G", String(timeout)]
+            if let socksProxyPort {
+                arguments.append(contentsOf: [
+                    "-X", "5",
+                    "-x", "127.0.0.1:\(socksProxyPort)",
+                ])
+            }
+            arguments.append(contentsOf: [host, String(port)])
+            process.arguments = arguments
             process.standardInput = FileHandle.nullDevice
             process.standardOutput = FileHandle.nullDevice
             process.standardError = FileHandle.nullDevice

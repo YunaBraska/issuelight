@@ -6,16 +6,37 @@ public enum ProviderCredential: @unchecked Sendable {
     case clientIdentity(SecIdentity)
 }
 
+public struct ProviderSOCKSProxy: Equatable, Sendable {
+    public let host: String
+    public let port: Int
+
+    public init(host: String = "127.0.0.1", port: Int) {
+        self.host = host
+        self.port = port
+    }
+}
+
 public struct ProviderAccess: @unchecked Sendable {
     public let credential: ProviderCredential
     public let trustedServerCertificate: SecCertificate?
+    public let socksProxy: ProviderSOCKSProxy?
 
     public init(
         credential: ProviderCredential,
-        trustedServerCertificate: SecCertificate? = nil
+        trustedServerCertificate: SecCertificate? = nil,
+        socksProxy: ProviderSOCKSProxy? = nil
     ) {
         self.credential = credential
         self.trustedServerCertificate = trustedServerCertificate
+        self.socksProxy = socksProxy
+    }
+
+    public func routingThroughSOCKS(host: String = "127.0.0.1", port: Int) -> ProviderAccess {
+        ProviderAccess(
+            credential: credential,
+            trustedServerCertificate: trustedServerCertificate,
+            socksProxy: ProviderSOCKSProxy(host: host, port: port)
+        )
     }
 }
 

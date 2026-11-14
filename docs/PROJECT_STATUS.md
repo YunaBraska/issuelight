@@ -13,8 +13,8 @@ IssueLight is a release candidate, not a published production release.
   API. Acknowledgement and downtime require an author and comment.
 - Compact single-line issue rows with source names, persistent source/severity/
   coverage filters, direct quick actions, and Icinga Web row navigation.
-- Optional SSH and RDP launch actions plus direct-first HTTP-over-SSH web
-  forwarding with loopback binding and app-owned cleanup.
+- Optional SSH and RDP host actions plus direct-first, source-wide SSH fallback
+  for API and web reachability with app-owned cleanup.
 - System Default plus 21 selectable app languages, including Swedish and
   right-to-left layout for Arabic and Urdu.
 - Universal ZIP and DMG packaging, SPDX SBOM, checksums, signing, notarization,

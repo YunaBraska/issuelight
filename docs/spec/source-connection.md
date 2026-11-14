@@ -15,10 +15,9 @@ This specification owns source identity, endpoint validation, authentication,
 server trust, connection testing, and the boundary between the host app and a
 monitoring provider.
 
-The first increment includes Icinga 2, HTTP Basic authentication, X.509 client
+The current increment includes Icinga 2, HTTP Basic authentication, X.509 client
 certificate authentication, macOS Keychain storage, and source-specific TLS
-policy. It does not yet own monitoring-state presentation, notifications, or
-notifications.
+policy. It does not own monitoring-state presentation or notifications.
 
 ## Decisions
 
@@ -40,13 +39,23 @@ notifications.
   exception to system trust.
 - The app stores only public source configuration. Its Keychain items remain
   the authority for passwords and client identities.
-- A source may additionally store a monitoring-web base URL and optional SSH
-  and RDP launch settings. These are provider-neutral public configuration.
-- An automatic web tunnel tries the direct route first and then runs system
-  OpenSSH with non-interactive authentication. It binds only to `127.0.0.1`,
-  stops with the app, and supports HTTP web targets only. HTTPS tunneling fails
-  closed because replacing the browser hostname would break certificate
-  identity verification.
+- A source may store a monitoring-web base URL, source-wide SSH overrides, and
+  optional SSH and RDP host actions. These are provider-neutral public
+  configuration.
+- API and web reachability are evaluated independently. A user-initiated test
+  checks the direct route first. Only a reachability failure may start
+  non-interactive system OpenSSH. TLS, authentication, authorization, and
+  response failures do not. Background work reuses the successful route to
+  avoid repeating a 15-second direct timeout every minute.
+- One source-owned SOCKS5 session may serve both API and web checks. API
+  requests retain their original URL, server name, and trust policy through
+  the proxy. Local ports are runtime state and are never persisted.
+- Empty SSH overrides use the API host, the user's OpenSSH configuration,
+  default user and port selection, and SSH agent. A selected identity file or
+  preferred local port overrides only that value.
+- External-browser HTTPS deep links are opened only when directly reachable.
+  Replacing their hostname with loopback would break certificate identity
+  verification. HTTP deep links may use the owned loopback forward.
 
 ## Requirements
 
@@ -117,6 +126,14 @@ notifications.
   failure, incompatible response, server failure, and cancellation.
 - `CONN-003` Icinga 2 success MUST be established through a successful real API
   request. A local canned response is not production success.
+- `CONN-004` A user-initiated test MUST report API and web reachability
+  independently as direct, SSH, or failed.
+- `CONN-005` A user-initiated test MUST try direct access first and MUST attempt
+  SSH only after a reachability failure. It MUST NOT hide TLS, authentication,
+  authorization, server, or incompatible-response failures behind SSH retries.
+- `CONN-006` Background refresh and monitoring actions MUST reuse the route
+  selected by the user-initiated connection test. They MUST retry route
+  selection when that route becomes unreachable.
 
 ### Navigation
 
@@ -124,8 +141,10 @@ notifications.
   An explicit source-owned base URL overrides the provider default. Icinga 2
   defaults to `/icingaweb2` on the API host without the API port. A base ending
   in `/icingadb` selects Icinga DB Web routes.
-- `NAV-002` A row click MUST open the web object directly unless an enabled
-  tunnel is needed because the target host and port are unreachable.
+- `NAV-002` A row click MUST open the web object directly when reachable. An
+  unreachable HTTP target MAY use the source-owned loopback forward. An
+  unreachable HTTPS target MUST fail closed until the original browser host can
+  be preserved.
 - `NAV-003` An automatic tunnel MUST use `/usr/bin/ssh`, non-interactive
   authentication, loopback binding, a configured preferred port or a free
   fallback, and the user's OpenSSH configuration and agent unless an identity
@@ -156,5 +175,5 @@ notifications.
 | AUTH-002, AUTH-004 | Keychain identity catalog and connection test | Real PKCS#12 import, persistent-reference resolution, accepted and rejected live Icinga mTLS, and exact cleanup |
 | AUTH-003, AUTH-005 | source setup journey | Password availability uses only non-secret ownership metadata; a real foreign legacy Keychain item is rejected without reading its secret; background password and exact-identity reads use a non-interactive authentication context; broad identity searches silently skip protected items; missing identities fail explicitly; installed protected-private-key denial still needs running-app evidence |
 | TLS-001..006 | connection test and source lifecycle | Default, source-specific private CA, exact leaf pinning, and unchecked trust implemented; the live matrix accepts the configured CA and exact leaf, rejects an unrelated CA, mismatched leaf, and exact leaf under the wrong hostname; Apple trust evaluation preserves certificate validity policy; authority changes reset custom trust; real Keychain tests cover ownership-aware CA cleanup after the final source reference; pin replacement remains an explicit user action |
-| CONN-001..003 | connection test | Real containerized Icinga 2 Basic and mTLS success, distinct 401 and 403 failures, plus unit and running-UI cancellation evidence |
-| NAV-001..005 | issue row and source settings | Core tests cover classic and Icinga DB Web host/service links plus escaped SSH/RDP URLs; app tests cover persisted navigation settings, direct opening without a probe, row clicks, and source-owned cleanup; a real OpenSSH integration test verifies the forwarded HTTP response and closes the owned port |
+| CONN-001..006 | connection test | Real containerized Icinga 2 Basic and mTLS success, distinct 401 and 403 failures, unit coverage for direct-first routing and independent settings status, plus running-UI cancellation evidence |
+| NAV-001..005 | issue row and source settings | Core tests cover classic and Icinga DB Web host/service links plus escaped SSH/RDP URLs; app tests cover source-wide SSH persistence, safe OpenSSH commands, direct opening, row clicks, and source-owned cleanup; real OpenSSH integration tests verify HTTP forwarding and an Icinga API request through SOCKS5 before closing owned ports |

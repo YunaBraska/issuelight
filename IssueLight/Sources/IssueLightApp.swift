@@ -15,8 +15,13 @@ struct IssueLightApp: App {
         DebugReviewCredentialSeeder.runIfRequested()
 #endif
         let settings = AppLanguageSettings()
-        let issueModel = IssueLightModel(localizationLocale: settings.locale)
-        let actionCoordinator = ExternalActionCoordinator()
+        let tunnelManager = SSHTunnelManager()
+        let connectionCoordinator = AutomaticConnectionCoordinator(tunnelManager: tunnelManager)
+        let issueModel = IssueLightModel(
+            localizationLocale: settings.locale,
+            connectionCoordinator: connectionCoordinator
+        )
+        let actionCoordinator = ExternalActionCoordinator(tunnelManager: tunnelManager)
         actionCoordinator.observeSources(issueModel)
         _languageSettings = StateObject(wrappedValue: settings)
         _externalActions = StateObject(wrappedValue: actionCoordinator)

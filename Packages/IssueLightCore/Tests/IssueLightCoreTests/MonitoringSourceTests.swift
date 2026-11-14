@@ -15,6 +15,7 @@ final class MonitoringSourceTests: XCTestCase {
     func testOlderStoredSourceDecodesWithoutNavigationConfiguration() throws {
         let encoded = try JSONEncoder().encode(source())
         var object = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        object.removeValue(forKey: "sshTunnel")
         object.removeValue(forKey: "web")
         object.removeValue(forKey: "remoteAccess")
 
@@ -23,6 +24,7 @@ final class MonitoringSourceTests: XCTestCase {
             from: JSONSerialization.data(withJSONObject: object)
         )
 
+        XCTAssertNil(decoded.sshTunnel)
         XCTAssertNil(decoded.web)
         XCTAssertNil(decoded.remoteAccess)
     }
@@ -91,7 +93,7 @@ final class MonitoringSourceTests: XCTestCase {
         XCTAssertTrue(MonitoringSourceValidator.validateSharedFields(value).isEmpty)
     }
 
-    func testSharedValidationRejectsUnsafeOrIncompleteNavigationConfiguration() {
+    func testSharedValidationUsesOpenSSHDefaultsAndRejectsInvalidPorts() {
         let value = source(
             web: MonitoringWebConfiguration(
                 baseURL: URL(string: "https://user:password@icinga-web.internal/icingaweb2?q=1")!,
@@ -112,13 +114,26 @@ final class MonitoringSourceTests: XCTestCase {
             Set(MonitoringSourceValidator.validateSharedFields(value)),
             Set([
                 .invalidWebURL,
-                .emptyBastionHost,
-                .emptyBastionUsername,
                 .invalidRemotePort(0),
                 .invalidRemotePort(70_000),
-                .secureWebTunnelUnsupported,
             ])
         )
+    }
+
+    func testSharedValidationAcceptsSourceWideSSHOverridesForHTTPSAPIAndWeb() {
+        let value = source(
+            sshTunnel: SSHTunnelConfiguration(
+                bastionHost: "bastion.example.test",
+                username: "operator",
+                port: 2_222,
+                preferredLocalPort: 8_080
+            ),
+            web: MonitoringWebConfiguration(
+                baseURL: URL(string: "https://icinga-web.internal/icingaweb2")!
+            )
+        )
+
+        XCTAssertTrue(MonitoringSourceValidator.validateSharedFields(value).isEmpty)
     }
 
     func testRemoteActionURLsEncodeHostUserAndPort() throws {
@@ -254,6 +269,7 @@ final class MonitoringSourceTests: XCTestCase {
         endpoint: URL = URL(string: "https://icinga.example.test:5665/v1")!,
         authentication: AuthenticationConfiguration = .basic(username: "operator"),
         serverTrust: ServerTrustConfiguration = .system,
+        sshTunnel: SSHTunnelConfiguration? = nil,
         web: MonitoringWebConfiguration? = nil,
         remoteAccess: RemoteAccessConfiguration? = nil
     ) -> MonitoringSource {
@@ -263,6 +279,7 @@ final class MonitoringSourceTests: XCTestCase {
             endpoint: endpoint,
             authentication: authentication,
             serverTrust: serverTrust,
+            sshTunnel: sshTunnel,
             web: web,
             remoteAccess: remoteAccess
         )

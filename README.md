@@ -21,8 +21,9 @@ exact server-certificate pinning, optional per-source certificate bypass, and a
 real containerized Icinga 2 compatibility lab are implemented. The menu-bar
 panel aggregates independently refreshed sources and exposes explicit Icinga 2
 recheck, acknowledgement, and fixed-downtime actions per issue. Persistent
-panel filters, Icinga Web deep links, SSH/RDP launch actions, and an optional
-HTTP-over-SSH tunnel are available per source. Without an override, Icinga Web
+panel filters, Icinga Web deep links, SSH/RDP host actions, and automatic
+direct-first SSH fallback for API and reachability checks are available per
+source. Without an override, Icinga Web
 is inferred as `/icingaweb2` on the API host. Use a custom base URL ending in
 `/icingadb` for Icinga DB Web object links. Notifications and additional
 providers remain outside the current release. The universal ZIP/DMG/SBOM

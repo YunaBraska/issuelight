@@ -1,11 +1,11 @@
 import Foundation
+import Network
 
 public struct Icinga2Provider: MonitoringProvider {
     public static let id = ProviderID(rawValue: "icinga2")
 
-    private let connectionTester: Icinga2ConnectionTester
-    private let snapshotLoader: Icinga2SnapshotLoader
     private let configuration: URLSessionConfiguration
+    private let now: @Sendable () -> Date
 
     public let descriptor = ProviderDescriptor(
         id: Icinga2Provider.id,
@@ -18,15 +18,13 @@ public struct Icinga2Provider: MonitoringProvider {
     )
 
     public init() {
-        configuration = .default
-        connectionTester = Icinga2ConnectionTester()
-        snapshotLoader = Icinga2SnapshotLoader()
+        configuration = .ephemeral
+        now = { Date() }
     }
 
     init(configuration: URLSessionConfiguration, now: @escaping @Sendable () -> Date = { Date() }) {
         self.configuration = configuration
-        connectionTester = Icinga2ConnectionTester(configuration: configuration)
-        snapshotLoader = Icinga2SnapshotLoader(configuration: configuration, now: now)
+        self.now = now
     }
 
     public func validate(_ source: MonitoringSource) -> [SourceValidationIssue] {
@@ -110,6 +108,7 @@ public struct Icinga2Provider: MonitoringProvider {
         to source: MonitoringSource,
         access: ProviderAccess
     ) async -> ConnectionTestResult {
+        let connectionTester = Icinga2ConnectionTester(configuration: sessionConfiguration(for: access))
         switch (source.authentication, access.credential) {
         case (.basic, .password(let password)):
             return await connectionTester.test(
@@ -134,6 +133,10 @@ public struct Icinga2Provider: MonitoringProvider {
         from source: MonitoringSource,
         access: ProviderAccess
     ) async -> SnapshotLoadResult {
+        let snapshotLoader = Icinga2SnapshotLoader(
+            configuration: sessionConfiguration(for: access),
+            now: now
+        )
         switch (source.authentication, access.credential) {
         case (.basic, .password(let password)):
             return await snapshotLoader.load(
@@ -172,14 +175,14 @@ public struct Icinga2Provider: MonitoringProvider {
                     source: source,
                     password: password,
                     trustedServerCertificate: access.trustedServerCertificate,
-                    configuration: configuration
+                    configuration: sessionConfiguration(for: access)
                 )
             case (.clientCertificate, .clientIdentity(let identity)):
                 transport = try Icinga2Transport.clientIdentity(
                     source: source,
                     identity: identity,
                     trustedServerCertificate: access.trustedServerCertificate,
-                    configuration: configuration
+                    configuration: sessionConfiguration(for: access)
                 )
             case (.basic, .clientIdentity):
                 return .failed(.authentication)
@@ -206,6 +209,23 @@ public struct Icinga2Provider: MonitoringProvider {
             return .rejected(rejected.status)
         }
         return .completed
+    }
+
+    private func sessionConfiguration(for access: ProviderAccess) -> URLSessionConfiguration {
+        let value = configuration.copy() as! URLSessionConfiguration
+        guard let proxy = access.socksProxy else { return value }
+        if #available(macOS 14.0, *) {
+            guard (1...65_535).contains(proxy.port),
+                  let port = NWEndpoint.Port(rawValue: UInt16(proxy.port)) else {
+                return value
+            }
+            let endpoint = NWEndpoint.hostPort(
+                host: NWEndpoint.Host(proxy.host),
+                port: port
+            )
+            value.proxyConfigurations = [ProxyConfiguration(socksv5Proxy: endpoint)]
+        }
+        return value
     }
 }
 

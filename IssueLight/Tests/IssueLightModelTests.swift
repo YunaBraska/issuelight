@@ -289,11 +289,10 @@ final class IssueLightModelTests: XCTestCase {
         let harness = try await makeHarness(sourceCount: 1, script: SnapshotScript())
         await harness.model.load()
         harness.model.webURL = "http://icinga-web.internal/icingaweb2"
-        harness.model.automaticWebSSHTunnel = true
-        harness.model.webTunnelBastionHost = "bastion.example.test"
-        harness.model.webTunnelUsername = "operator"
-        harness.model.webTunnelPort = 2_222
-        harness.model.webTunnelPreferredLocalPort = "8080"
+        harness.model.sshTunnelHost = "bastion.example.test"
+        harness.model.sshTunnelUsername = "operator"
+        harness.model.sshTunnelPort = "2222"
+        harness.model.sshTunnelPreferredLocalPort = "8080"
         harness.model.sshActionEnabled = true
         harness.model.sshUsername = "deploy"
         harness.model.sshPort = 22
@@ -306,8 +305,10 @@ final class IssueLightModelTests: XCTestCase {
         let storedSources = try await harness.store.load()
         let persisted = try XCTUnwrap(storedSources.first)
         XCTAssertEqual(persisted.web?.baseURL.absoluteString, "http://icinga-web.internal/icingaweb2")
-        XCTAssertEqual(persisted.web?.automaticSSHTunnel?.bastionHost, "bastion.example.test")
-        XCTAssertEqual(persisted.web?.automaticSSHTunnel?.preferredLocalPort, 8_080)
+        XCTAssertEqual(persisted.sshTunnel?.bastionHost, "bastion.example.test")
+        XCTAssertEqual(persisted.sshTunnel?.port, 2_222)
+        XCTAssertEqual(persisted.sshTunnel?.preferredLocalPort, 8_080)
+        XCTAssertNil(persisted.web?.automaticSSHTunnel)
         XCTAssertEqual(persisted.remoteAccess?.ssh, RemoteLoginConfiguration(username: "deploy", port: 22))
         XCTAssertEqual(
             persisted.remoteAccess?.rdp,
@@ -337,22 +338,70 @@ final class IssueLightModelTests: XCTestCase {
         )
     }
 
-    func testSecureAutomaticWebTunnelFailsValidationInsteadOfOpeningWrongCertificateHost() async throws {
+    func testHTTPSWebAndAPIShareSourceWideSSHOverrides() async throws {
         let harness = try await makeHarness(sourceCount: 1, script: SnapshotScript())
         await harness.model.load()
         harness.model.webURL = "https://icinga-web.internal/icingaweb2"
-        harness.model.automaticWebSSHTunnel = true
-        harness.model.webTunnelBastionHost = "bastion.example.test"
-        harness.model.webTunnelUsername = "operator"
+        harness.model.sshTunnelHost = "bastion.example.test"
+        harness.model.sshTunnelUsername = "operator"
 
         await harness.model.save()
 
+        let storedSources = try await harness.store.load()
+        XCTAssertEqual(
+            storedSources.first?.web?.baseURL.absoluteString,
+            "https://icinga-web.internal/icingaweb2"
+        )
+        XCTAssertEqual(storedSources.first?.sshTunnel?.bastionHost, "bastion.example.test")
+    }
+
+    func testConnectionTestReportsIndependentDirectAPIAndWebReachability() async throws {
+        let coordinator = AutomaticConnectionCoordinator { _, _, _ in true }
+        let harness = try await makeHarness(
+            sourceCount: 1,
+            script: SnapshotScript(),
+            connectionCoordinator: coordinator
+        )
+        await harness.model.load()
+
+        await harness.model.testConnection()
+
+        XCTAssertEqual(harness.model.selectedConnectionStatus.api, .direct)
+        XCTAssertEqual(harness.model.selectedConnectionStatus.web, .direct)
         XCTAssertEqual(
             harness.model.activity,
-            .failure("Automatische SSH-Tunnel unterstützen nur HTTP-Webziele. HTTPS würde im Browser eine falsche Zertifikatsidentität erhalten.")
+            .success("Model Test ist erreichbar. Host- und Servicezugriff funktionieren.")
         )
-        let storedSources = try await harness.store.load()
-        XCTAssertNil(storedSources.first?.web)
+    }
+
+    func testCancellingConnectionTestClearsCheckingStatesWithoutTestingWeb() async throws {
+        var didTestWeb = false
+        let coordinator = AutomaticConnectionCoordinator { _, _, _ in
+            didTestWeb = true
+            return true
+        }
+        let script = SnapshotScript()
+        let harness = try await makeHarness(
+            sourceCount: 1,
+            script: script,
+            connectionCoordinator: coordinator
+        )
+        await harness.model.load()
+        let sourceID = try XCTUnwrap(harness.model.selectedSourceID)
+        await script.waitForConnectionCancellation(for: sourceID)
+        let task = Task { await harness.model.testConnection() }
+        try await waitForConnectionTests(1, sourceID: sourceID, script: script)
+
+        task.cancel()
+        await task.value
+
+        XCTAssertFalse(harness.model.isTestingConnection)
+        XCTAssertEqual(harness.model.selectedConnectionStatus, .init())
+        XCTAssertFalse(didTestWeb)
+        XCTAssertEqual(
+            harness.model.activity,
+            .failure("Der Verbindungstest wurde abgebrochen.")
+        )
     }
 
     func testSelectingSourceLoadsItsIndependentFormAndStoredPasswordState() async throws {
@@ -496,7 +545,8 @@ final class IssueLightModelTests: XCTestCase {
         script: SnapshotScript,
         disabledIndexes: Set<Int> = [],
         serverTrust: ServerTrustConfiguration = .system,
-        certificateCatalog: KeychainServerCertificateCatalog? = nil
+        certificateCatalog: KeychainServerCertificateCatalog? = nil,
+        connectionCoordinator: AutomaticConnectionCoordinator? = nil
     ) async throws -> ModelHarness {
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("IssueLightModelTests-\(UUID().uuidString)", isDirectory: true)
@@ -532,6 +582,7 @@ final class IssueLightModelTests: XCTestCase {
             passwordVault: vault,
             identityCatalog: KeychainIdentityCatalog(),
             certificateCatalog: resolvedCertificateCatalog,
+            connectionCoordinator: connectionCoordinator,
             startsAutomatically: false,
             localizationLocale: Locale(identifier: "de")
         )
@@ -596,6 +647,20 @@ final class IssueLightModelTests: XCTestCase {
         }
         throw ModelTestError.timeout
     }
+
+    private func waitForConnectionTests(
+        _ expected: Int,
+        sourceID: UUID,
+        script: SnapshotScript
+    ) async throws {
+        for _ in 0..<200 {
+            if await script.connectionTests(for: sourceID) >= expected {
+                return
+            }
+            try await Task.sleep(nanoseconds: 5_000_000)
+        }
+        throw ModelTestError.timeout
+    }
 }
 
 private struct ModelHarness {
@@ -628,7 +693,7 @@ private struct TestProvider: MonitoringProvider {
         to source: MonitoringSource,
         access: ProviderAccess
     ) async -> ConnectionTestResult {
-        .connected
+        await script.testConnection(sourceID: source.id)
     }
 
     func loadSnapshot(
@@ -650,6 +715,10 @@ private struct TestProvider: MonitoringProvider {
     func webURL(for issue: MonitoringIssue, from source: MonitoringSource) -> URL? {
         Icinga2Provider().webURL(for: issue, from: source)
     }
+
+    func defaultWebBaseURL(for source: MonitoringSource) -> URL? {
+        URL(string: "https://\(source.endpoint.host ?? "monitoring.example.test")/icingaweb2")
+    }
 }
 
 private actor SnapshotScript {
@@ -663,6 +732,27 @@ private actor SnapshotScript {
     private var cancellationCounts: [UUID: Int] = [:]
     private var actionResults: [UUID: [MonitoringActionResult]] = [:]
     private var performedActions: [UUID: [MonitoringAction]] = [:]
+    private var connectionCancellationSourceIDs: Set<UUID> = []
+    private var connectionTestCounts: [UUID: Int] = [:]
+
+    func waitForConnectionCancellation(for sourceID: UUID) {
+        connectionCancellationSourceIDs.insert(sourceID)
+    }
+
+    func testConnection(sourceID: UUID) async -> ConnectionTestResult {
+        connectionTestCounts[sourceID, default: 0] += 1
+        guard connectionCancellationSourceIDs.contains(sourceID) else {
+            return .connected
+        }
+        while !Task.isCancelled {
+            try? await Task.sleep(nanoseconds: 5_000_000)
+        }
+        return .failed(.cancelled)
+    }
+
+    func connectionTests(for sourceID: UUID) -> Int {
+        connectionTestCounts[sourceID, default: 0]
+    }
 
     func enqueue(_ behavior: Behavior, for sourceID: UUID) {
         behaviors[sourceID, default: []].append(behavior)

@@ -90,6 +90,19 @@ final class IssueLightModel: ObservableObject {
         let message: String
     }
 
+    enum ConnectionEndpointState: Equatable {
+        case notTested
+        case checking
+        case direct
+        case ssh
+        case failed(String)
+    }
+
+    struct ConnectionStatus: Equatable {
+        var api: ConnectionEndpointState = .notTested
+        var web: ConnectionEndpointState = .notTested
+    }
+
     @Published var name = ""
     @Published var endpoint = ""
     @Published var isSourceEnabled = true
@@ -110,12 +123,11 @@ final class IssueLightModel: ObservableObject {
     @Published private(set) var selectedServerCertificate: ServerCertificateDescriptor?
     @Published private(set) var pinnedServerCertificateSHA256 = ""
     @Published var webURL = ""
-    @Published var automaticWebSSHTunnel = false
-    @Published var webTunnelBastionHost = ""
-    @Published var webTunnelUsername = ""
-    @Published var webTunnelPort = 22
-    @Published var webTunnelIdentityFilePath = ""
-    @Published var webTunnelPreferredLocalPort = ""
+    @Published var sshTunnelHost = ""
+    @Published var sshTunnelUsername = ""
+    @Published var sshTunnelPort = ""
+    @Published var sshTunnelIdentityFilePath = ""
+    @Published var sshTunnelPreferredLocalPort = ""
     @Published var sshActionEnabled = false
     @Published var sshUsername = ""
     @Published var sshPort = 22
@@ -131,6 +143,7 @@ final class IssueLightModel: ObservableObject {
     @Published private(set) var refreshStates: [UUID: RefreshState] = [:]
     @Published private(set) var activeActionIssueIDs: Set<String> = []
     @Published private(set) var actionError: ActionError?
+    @Published private(set) var connectionStatuses: [UUID: ConnectionStatus] = [:]
 
     private var sourceID = UUID()
     private let sourceStore: SourceStore?
@@ -139,10 +152,12 @@ final class IssueLightModel: ObservableObject {
     private let identityCatalog: KeychainIdentityCatalog
     private let certificateCatalog: KeychainServerCertificateCatalog
     private let accessResolver: ProviderAccessResolver
+    private let connectionCoordinator: AutomaticConnectionCoordinator
     private var hasStarted = false
     private var refreshLoopTask: Task<Void, Never>?
     private var refreshTasks: [UUID: Task<Void, Never>] = [:]
     private var connectionTestID: UUID?
+    private var connectionStatusSources: [UUID: MonitoringSource] = [:]
     private var localizationLocale: Locale
 
     var hasConfiguredSource: Bool {
@@ -156,6 +171,10 @@ final class IssueLightModel: ObservableObject {
     var selectedSource: MonitoringSource? {
         guard let selectedSourceID else { return nil }
         return sources.first(where: { $0.id == selectedSourceID })
+    }
+
+    var selectedConnectionStatus: ConnectionStatus {
+        connectionStatuses[sourceID] ?? ConnectionStatus()
     }
 
     var isCreatingSource: Bool {
@@ -199,12 +218,16 @@ final class IssueLightModel: ObservableObject {
             || authentication != selectedSource.authentication
             || serverTrust != selectedSource.serverTrust
             || webURL != (selectedSource.web?.baseURL.absoluteString ?? "")
-            || automaticWebSSHTunnel != (selectedSource.web?.automaticSSHTunnel != nil)
-            || webTunnelBastionHost != (selectedSource.web?.automaticSSHTunnel?.bastionHost ?? "")
-            || webTunnelUsername != (selectedSource.web?.automaticSSHTunnel?.username ?? "")
-            || webTunnelPort != (selectedSource.web?.automaticSSHTunnel?.port ?? 22)
-            || webTunnelIdentityFilePath != (selectedSource.web?.automaticSSHTunnel?.identityFilePath ?? "")
-            || webTunnelPreferredLocalPort != selectedSource.web?.automaticSSHTunnel?.preferredLocalPort.map(String.init) ?? ""
+            || sshTunnelHost != ((selectedSource.sshTunnel ?? selectedSource.web?.automaticSSHTunnel)?.bastionHost ?? "")
+            || sshTunnelUsername != ((selectedSource.sshTunnel ?? selectedSource.web?.automaticSSHTunnel)?.username ?? "")
+            || sshTunnelPort != (
+                ((selectedSource.sshTunnel ?? selectedSource.web?.automaticSSHTunnel)?.port).map(String.init) ?? ""
+            )
+            || sshTunnelIdentityFilePath != ((selectedSource.sshTunnel ?? selectedSource.web?.automaticSSHTunnel)?.identityFilePath ?? "")
+            || sshTunnelPreferredLocalPort != (
+                (selectedSource.sshTunnel ?? selectedSource.web?.automaticSSHTunnel)?
+                    .preferredLocalPort.map(String.init) ?? ""
+            )
             || sshActionEnabled != (selectedSource.remoteAccess?.ssh != nil)
             || sshUsername != (selectedSource.remoteAccess?.ssh?.username ?? "")
             || sshPort != (selectedSource.remoteAccess?.ssh?.port ?? 22)
@@ -254,7 +277,7 @@ final class IssueLightModel: ObservableObject {
         return IssueWebTarget(
             sourceID: source.id,
             url: url,
-            automaticSSHTunnel: source.web?.automaticSSHTunnel
+            automaticSSHTunnel: resolvedSSHTunnelConfiguration(for: source)
         )
     }
 
@@ -343,7 +366,23 @@ final class IssueLightModel: ObservableObject {
             return
         }
 
-        let result = await provider.perform(action, on: issue, from: source, access: access)
+        let (result, path) = await connectionCoordinator.performUsingBestAPIPath(
+            source: source,
+            access: access,
+            operation: { routedAccess in
+                await provider.perform(
+                    action,
+                    on: issue,
+                    from: source,
+                    access: routedAccess
+                )
+            },
+            isUnreachable: { result in
+                result == .failed(.unreachable)
+            }
+        )
+        updateAPIConnectionStatus(for: source.id, result: result, path: path)
+        connectionStatusSources[source.id] = source
         switch result {
         case .completed:
             if let refreshTask = refresh(sourceID: source.id) {
@@ -438,7 +477,10 @@ final class IssueLightModel: ObservableObject {
         return credentialMessage
     }
 
-    convenience init(localizationLocale: Locale = .current) {
+    convenience init(
+        localizationLocale: Locale = .current,
+        connectionCoordinator: AutomaticConnectionCoordinator? = nil
+    ) {
         let bundleIdentifier = Bundle.main.bundleIdentifier ?? "berlin.yuna.issuelight"
         let fileURL = try? SourceStore.defaultFileURL(bundleIdentifier: bundleIdentifier)
         let store = fileURL.map(SourceStore.init(fileURL:))
@@ -449,6 +491,7 @@ final class IssueLightModel: ObservableObject {
             passwordVault: KeychainPasswordVault(),
             identityCatalog: KeychainIdentityCatalog(),
             certificateCatalog: certificateCatalog,
+            connectionCoordinator: connectionCoordinator,
             startsAutomatically: true,
             localizationLocale: localizationLocale
         )
@@ -463,6 +506,7 @@ final class IssueLightModel: ObservableObject {
         passwordVault: KeychainPasswordVault,
         identityCatalog: KeychainIdentityCatalog,
         certificateCatalog: KeychainServerCertificateCatalog,
+        connectionCoordinator: AutomaticConnectionCoordinator? = nil,
         startsAutomatically: Bool,
         localizationLocale: Locale = .current
     ) {
@@ -471,6 +515,7 @@ final class IssueLightModel: ObservableObject {
         self.passwordVault = passwordVault
         self.identityCatalog = identityCatalog
         self.certificateCatalog = certificateCatalog
+        self.connectionCoordinator = connectionCoordinator ?? AutomaticConnectionCoordinator()
         self.localizationLocale = localizationLocale
         accessResolver = ProviderAccessResolver(
             passwordVault: passwordVault,
@@ -516,6 +561,7 @@ final class IssueLightModel: ObservableObject {
         activity = .working(localized("Gespeicherte Quellen werden geladen …"))
         do {
             sources = try await sourceStore.load()
+            connectionCoordinator.reconcileSources(sources)
             hasLoadedSources = true
             for source in sources where !source.isEnabled {
                 refreshStates[source.id] = .disabled
@@ -632,6 +678,7 @@ final class IssueLightModel: ObservableObject {
         }
         connectionTestID = source.id
         isTestingConnection = true
+        connectionStatuses[source.id] = ConnectionStatus(api: .checking, web: .checking)
         activity = .working(localized("Verbindung wird geprüft …"))
 
         var allowsStoredPassword = true
@@ -640,9 +687,14 @@ final class IssueLightModel: ObservableObject {
             let selectedScope = try? basicCredentialScope(for: selectedSource)
             allowsStoredPassword = requestedScope != nil && requestedScope == selectedScope
             if password.isEmpty && !allowsStoredPassword {
+                await testWebConnection(for: source, provider: provider)
+                guard connectionTestID == source.id else { return }
                 connectionTestID = nil
                 isTestingConnection = false
-                activity = .failure(localized("Gib ein Passwort ein."))
+                let message = localized("Gib ein Passwort ein.")
+                connectionStatuses[source.id]?.api = .failed(message)
+                connectionStatusSources[source.id] = source
+                activity = .failure(message)
                 return
             }
         }
@@ -658,14 +710,41 @@ final class IssueLightModel: ObservableObject {
         case .resolved(let resolvedAccess):
             access = resolvedAccess
         case .failed(let failure):
+            await testWebConnection(for: source, provider: provider)
+            guard connectionTestID == source.id else { return }
             connectionTestID = nil
             isTestingConnection = false
-            activity = .failure(accessMessage(for: failure))
+            let message = accessMessage(for: failure)
+            connectionStatuses[source.id]?.api = .failed(message)
+            connectionStatusSources[source.id] = source
+            activity = .failure(message)
             return
         }
-        let result = await provider.testConnection(to: source, access: access)
+        let (result, path) = await connectionCoordinator.performUsingBestAPIPath(
+            source: source,
+            access: access,
+            rediscoverDirect: true,
+            operation: { routedAccess in
+                await provider.testConnection(to: source, access: routedAccess)
+            },
+            isUnreachable: { result in
+                result == .failed(.unreachable)
+            }
+        )
 
         guard connectionTestID == source.id else { return }
+        if result == .failed(.cancelled) || Task.isCancelled {
+            connectionStatuses[source.id] = ConnectionStatus()
+            connectionStatusSources[source.id] = nil
+            connectionTestID = nil
+            isTestingConnection = false
+            activity = message(for: .failed(.cancelled))
+            return
+        }
+        updateAPIConnectionStatus(for: source.id, result: result, path: path)
+        await testWebConnection(for: source, provider: provider)
+        guard connectionTestID == source.id else { return }
+        connectionStatusSources[source.id] = source
         connectionTestID = nil
         isTestingConnection = false
         activity = message(for: result)
@@ -758,13 +837,20 @@ final class IssueLightModel: ObservableObject {
                     || $0.endpoint != source.endpoint
                     || $0.authentication != source.authentication
                     || $0.serverTrust != source.serverTrust
+                    || $0.sshTunnel != source.sshTunnel
+                    || $0.web != source.web
             } ?? true
             refreshTasks[source.id]?.cancel()
             refreshTasks[source.id] = nil
             if connectionChanged {
                 snapshots[source.id] = nil
+                if connectionStatusSources[source.id] != source {
+                    connectionStatuses[source.id] = nil
+                    connectionStatusSources[source.id] = nil
+                }
             }
             sources = persistedSources
+            connectionCoordinator.reconcileSources(sources)
             selectedSourceID = source.id
             sourceID = source.id
             password = ""
@@ -824,7 +910,11 @@ final class IssueLightModel: ObservableObject {
         refreshTasks[source.id] = nil
         snapshots[source.id] = nil
         refreshStates[source.id] = nil
+        connectionStatuses[source.id] = nil
+        connectionStatusSources[source.id] = nil
+        connectionCoordinator.stop(sourceID: source.id)
         sources = persistedSources
+        connectionCoordinator.reconcileSources(sources)
         if !hasEnabledSource {
             refreshLoopTask?.cancel()
             refreshLoopTask = nil
@@ -1007,6 +1097,7 @@ final class IssueLightModel: ObservableObject {
                 serverTrust = .system
             }
             existingSource.serverTrust = serverTrust
+            existingSource.sshTunnel = sshTunnelOverrides()
             existingSource.web = webConfiguration
             existingSource.remoteAccess = navigationRemoteAccessConfiguration()
             source = existingSource
@@ -1019,6 +1110,7 @@ final class IssueLightModel: ObservableObject {
                 isEnabled: isSourceEnabled,
                 authentication: authentication,
                 serverTrust: serverTrust,
+                sshTunnel: sshTunnelOverrides(),
                 web: webConfiguration,
                 remoteAccess: navigationRemoteAccessConfiguration()
             )
@@ -1058,7 +1150,10 @@ final class IssueLightModel: ObservableObject {
     private func performRefresh(source: MonitoringSource) async {
         guard !Task.isCancelled else { return }
         guard let provider = providerRegistry.provider(for: source.providerID) else {
-            refreshStates[source.id] = .failed(localized("Der konfigurierte Monitoring-Typ ist nicht verfügbar."))
+            let message = localized("Der konfigurierte Monitoring-Typ ist nicht verfügbar.")
+            refreshStates[source.id] = .failed(message)
+            connectionStatuses[source.id, default: ConnectionStatus()].api = .failed(message)
+            connectionStatusSources[source.id] = source
             return
         }
         let accessResolution = await accessResolver.resolve(source: source)
@@ -1068,12 +1163,26 @@ final class IssueLightModel: ObservableObject {
         case .resolved(let resolvedAccess):
             access = resolvedAccess
         case .failed(let failure):
-            refreshStates[source.id] = .failed(accessMessage(for: failure))
+            let message = accessMessage(for: failure)
+            refreshStates[source.id] = .failed(message)
+            connectionStatuses[source.id, default: ConnectionStatus()].api = .failed(message)
+            connectionStatusSources[source.id] = source
             return
         }
-        let result = await provider.loadSnapshot(from: source, access: access)
+        let (result, path) = await connectionCoordinator.performUsingBestAPIPath(
+            source: source,
+            access: access,
+            operation: { routedAccess in
+                await provider.loadSnapshot(from: source, access: routedAccess)
+            },
+            isUnreachable: { result in
+                result == .failed(.unreachable)
+            }
+        )
 
         guard !Task.isCancelled else { return }
+        updateAPIConnectionStatus(for: source.id, result: result, path: path)
+        connectionStatusSources[source.id] = source
         switch result {
         case .loaded(let loadedSnapshot):
             snapshots[source.id] = loadedSnapshot
@@ -1115,12 +1224,12 @@ final class IssueLightModel: ObservableObject {
             serverTrustChoice = .disabled
         }
         webURL = source.web?.baseURL.absoluteString ?? ""
-        automaticWebSSHTunnel = source.web?.automaticSSHTunnel != nil
-        webTunnelBastionHost = source.web?.automaticSSHTunnel?.bastionHost ?? ""
-        webTunnelUsername = source.web?.automaticSSHTunnel?.username ?? ""
-        webTunnelPort = source.web?.automaticSSHTunnel?.port ?? 22
-        webTunnelIdentityFilePath = source.web?.automaticSSHTunnel?.identityFilePath ?? ""
-        webTunnelPreferredLocalPort = source.web?.automaticSSHTunnel?.preferredLocalPort.map(String.init) ?? ""
+        let tunnel = source.sshTunnel ?? source.web?.automaticSSHTunnel
+        sshTunnelHost = tunnel?.bastionHost ?? ""
+        sshTunnelUsername = tunnel?.username ?? ""
+        sshTunnelPort = tunnel.map { String($0.port) } ?? ""
+        sshTunnelIdentityFilePath = tunnel?.identityFilePath ?? ""
+        sshTunnelPreferredLocalPort = tunnel?.preferredLocalPort.map(String.init) ?? ""
         sshActionEnabled = source.remoteAccess?.ssh != nil
         sshUsername = source.remoteAccess?.ssh?.username ?? ""
         sshPort = source.remoteAccess?.ssh?.port ?? 22
@@ -1138,9 +1247,6 @@ final class IssueLightModel: ObservableObject {
         if issues.contains(.missingServerCertificate) { return localized("Importiere ein CA-Zertifikat.") }
         if issues.contains(.invalidPinnedCertificate) { return localized("Wähle ein gültiges Serverzertifikat für den SHA-256-Pin aus.") }
         if issues.contains(.invalidWebURL) { return localized("Gib eine gültige Web-URL ohne Zugangsdaten, Abfrage oder Fragment ein.") }
-        if issues.contains(.emptyBastionHost) { return localized("Gib den Hostnamen des SSH-Bastionsservers ein.") }
-        if issues.contains(.emptyBastionUsername) { return localized("Gib den SSH-Benutzernamen für den Bastionsserver ein.") }
-        if issues.contains(.secureWebTunnelUnsupported) { return localized("Automatische SSH-Tunnel unterstützen nur HTTP-Webziele. HTTPS würde im Browser eine falsche Zertifikatsidentität erhalten.") }
         if issues.contains(where: {
             if case .invalidRemotePort = $0 { return true }
             return false
@@ -1183,12 +1289,11 @@ final class IssueLightModel: ObservableObject {
 
     private var hasNavigationInput: Bool {
         !webURL.isEmpty
-            || automaticWebSSHTunnel
-            || !webTunnelBastionHost.isEmpty
-            || !webTunnelUsername.isEmpty
-            || webTunnelPort != 22
-            || !webTunnelIdentityFilePath.isEmpty
-            || !webTunnelPreferredLocalPort.isEmpty
+            || !sshTunnelHost.isEmpty
+            || !sshTunnelUsername.isEmpty
+            || !sshTunnelPort.isEmpty
+            || !sshTunnelIdentityFilePath.isEmpty
+            || !sshTunnelPreferredLocalPort.isEmpty
             || sshActionEnabled
             || !sshUsername.isEmpty
             || sshPort != 22
@@ -1200,19 +1305,38 @@ final class IssueLightModel: ObservableObject {
     private func navigationWebConfiguration() -> MonitoringWebConfiguration? {
         let value = webURL.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !value.isEmpty, let url = URL(string: value) else { return nil }
-        let preferredPort = webTunnelPreferredLocalPort.isEmpty
+        return MonitoringWebConfiguration(baseURL: url)
+    }
+
+    private func resolvedSSHTunnelConfiguration(for source: MonitoringSource) -> SSHTunnelConfiguration {
+        let overrides = source.sshTunnel ?? source.web?.automaticSSHTunnel
+        let configuredHost = overrides?.bastionHost.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return SSHTunnelConfiguration(
+            bastionHost: configuredHost.isEmpty ? source.endpoint.host ?? "" : configuredHost,
+            username: overrides?.username ?? "",
+            port: overrides?.port ?? 22,
+            identityFilePath: overrides?.identityFilePath,
+            preferredLocalPort: overrides?.preferredLocalPort
+        )
+    }
+
+    private func sshTunnelOverrides() -> SSHTunnelConfiguration? {
+        let preferredPort = sshTunnelPreferredLocalPort.isEmpty
             ? nil
-            : Int(webTunnelPreferredLocalPort)
-        let tunnel = automaticWebSSHTunnel
-            ? SSHTunnelConfiguration(
-                bastionHost: webTunnelBastionHost.trimmingCharacters(in: .whitespacesAndNewlines),
-                username: webTunnelUsername.trimmingCharacters(in: .whitespacesAndNewlines),
-                port: webTunnelPort,
-                identityFilePath: webTunnelIdentityFilePath.isEmpty ? nil : webTunnelIdentityFilePath,
-                preferredLocalPort: preferredPort ?? (webTunnelPreferredLocalPort.isEmpty ? nil : 0)
-            )
-            : nil
-        return MonitoringWebConfiguration(baseURL: url, automaticSSHTunnel: tunnel)
+            : Int(sshTunnelPreferredLocalPort)
+        let hasOverrides = !sshTunnelHost.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            || !sshTunnelUsername.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            || !sshTunnelPort.isEmpty
+            || !sshTunnelIdentityFilePath.isEmpty
+            || !sshTunnelPreferredLocalPort.isEmpty
+        guard hasOverrides else { return nil }
+        return SSHTunnelConfiguration(
+            bastionHost: sshTunnelHost.trimmingCharacters(in: .whitespacesAndNewlines),
+            username: sshTunnelUsername.trimmingCharacters(in: .whitespacesAndNewlines),
+            port: Int(sshTunnelPort) ?? (sshTunnelPort.isEmpty ? 22 : 0),
+            identityFilePath: sshTunnelIdentityFilePath.isEmpty ? nil : sshTunnelIdentityFilePath,
+            preferredLocalPort: preferredPort ?? (sshTunnelPreferredLocalPort.isEmpty ? nil : 0)
+        )
     }
 
     private func navigationRemoteAccessConfiguration() -> RemoteAccessConfiguration? {
@@ -1234,18 +1358,88 @@ final class IssueLightModel: ObservableObject {
 
     private func resetNavigationForm() {
         webURL = ""
-        automaticWebSSHTunnel = false
-        webTunnelBastionHost = ""
-        webTunnelUsername = ""
-        webTunnelPort = 22
-        webTunnelIdentityFilePath = ""
-        webTunnelPreferredLocalPort = ""
+        sshTunnelHost = ""
+        sshTunnelUsername = ""
+        sshTunnelPort = ""
+        sshTunnelIdentityFilePath = ""
+        sshTunnelPreferredLocalPort = ""
         sshActionEnabled = false
         sshUsername = ""
         sshPort = 22
         rdpActionEnabled = false
         rdpUsername = ""
         rdpPort = 3_389
+    }
+
+    private func testWebConnection(
+        for source: MonitoringSource,
+        provider: any MonitoringProvider
+    ) async {
+        guard let url = source.web?.baseURL ?? provider.defaultWebBaseURL(for: source) else {
+            connectionStatuses[source.id]?.web = .failed(
+                localized("Konfiguriere zuerst die Web-URL dieser Quelle.")
+            )
+            return
+        }
+        let path = await connectionCoordinator.checkWeb(source: source, url: url)
+        guard connectionTestID == source.id else { return }
+        connectionStatuses[source.id]?.web = connectionState(for: path)
+    }
+
+    private func updateAPIConnectionStatus(
+        for sourceID: UUID,
+        result: ConnectionTestResult,
+        path: AutomaticConnectionPath
+    ) {
+        switch result {
+        case .connected:
+            connectionStatuses[sourceID, default: ConnectionStatus()].api = connectionState(for: path)
+        case .failed(.cancelled):
+            break
+        case .failed(let failure):
+            connectionStatuses[sourceID, default: ConnectionStatus()].api = .failed(refreshMessage(for: failure))
+        }
+    }
+
+    private func updateAPIConnectionStatus(
+        for sourceID: UUID,
+        result: SnapshotLoadResult,
+        path: AutomaticConnectionPath
+    ) {
+        switch result {
+        case .loaded:
+            connectionStatuses[sourceID, default: ConnectionStatus()].api = connectionState(for: path)
+        case .failed(.cancelled):
+            break
+        case .failed(let failure):
+            connectionStatuses[sourceID, default: ConnectionStatus()].api = .failed(refreshMessage(for: failure))
+        }
+    }
+
+    private func updateAPIConnectionStatus(
+        for sourceID: UUID,
+        result: MonitoringActionResult,
+        path: AutomaticConnectionPath
+    ) {
+        switch result {
+        case .completed, .rejected:
+            connectionStatuses[sourceID, default: ConnectionStatus()].api = connectionState(for: path)
+        case .failed(.cancelled):
+            break
+        case .failed(let failure):
+            connectionStatuses[sourceID, default: ConnectionStatus()].api = .failed(refreshMessage(for: failure))
+        }
+    }
+
+    private func connectionState(for path: AutomaticConnectionPath) -> ConnectionEndpointState {
+        switch path {
+        case .direct:
+            return .direct
+        case .ssh:
+            return .ssh
+        case .unavailable:
+            return .failed(localized("Der Server ist nicht erreichbar."))
+        }
     }
 
     private func accessMessage(for failure: ProviderAccessFailure) -> String {
