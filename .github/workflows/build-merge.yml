@@ -1,0 +1,20 @@
+name: "🔄 CD · Snapshot"
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: issuelight-merge-${{ github.sha }}
+  cancel-in-progress: false
+
+jobs:
+  snapshot:
+    uses: YunaBraska/YunaBraska/.github/workflows/wc_swift_snapshot.yml@29bd56f4cc120be2bdcab1b484c34fae14c51b35
+    with:
+      ref: ${{ github.sha }}
