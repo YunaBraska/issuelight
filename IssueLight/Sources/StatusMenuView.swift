@@ -70,6 +70,9 @@ struct StatusMenuView: View {
                 openSettings()
                 NSApp.activate()
             },
+            quitApplication: {
+                NSApp.terminate(nil)
+            },
             openIssue: { issue in
                 Task {
                     guard let target = model.webTarget(for: issue) else {
@@ -147,6 +150,7 @@ struct StatusMenuContent: View {
     let supportedActions: (MonitoringIssue) -> Set<MonitoringActionKind>
     let activeActionIssueIDs: Set<String>
     let openSettings: () -> Void
+    let quitApplication: () -> Void
     let openIssue: (MonitoringIssue) -> Void
     let openSSH: (MonitoringIssue) -> Void
     let openRDP: (MonitoringIssue) -> Void
@@ -187,6 +191,17 @@ struct StatusMenuContent: View {
                 .help(AppLocalization.string("Einstellungen …", locale: locale))
                 .accessibilityLabel(AppLocalization.string("Einstellungen …", locale: locale))
                 .accessibilityIdentifier("open-settings")
+                Button(action: quitApplication) {
+                    Image(systemName: "power")
+                        .frame(width: 28, height: 28)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.borderless)
+                .labelStyle(.iconOnly)
+                .keyboardShortcut("q", modifiers: .command)
+                .help(AppLocalization.string("IssueLight beenden", locale: locale))
+                .accessibilityLabel(AppLocalization.string("IssueLight beenden", locale: locale))
+                .accessibilityIdentifier("quit-application")
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 10)

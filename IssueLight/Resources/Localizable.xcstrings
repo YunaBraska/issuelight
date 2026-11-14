@@ -11633,6 +11633,110 @@
         }
       }
     },
+    "IssueLight beenden": {
+      "localizations": {
+        "ar": {
+          "stringUnit": { "state": "translated",
+            "value": "إنهاء IssueLight"
+          }
+        },
+        "bn": {
+          "stringUnit": { "state": "translated",
+            "value": "IssueLight বন্ধ করুন"
+          }
+        },
+        "en": {
+          "stringUnit": { "state": "translated",
+            "value": "Quit IssueLight"
+          }
+        },
+        "es": {
+          "stringUnit": { "state": "translated",
+            "value": "Salir de IssueLight"
+          }
+        },
+        "fr": {
+          "stringUnit": { "state": "translated",
+            "value": "Quitter IssueLight"
+          }
+        },
+        "ha": {
+          "stringUnit": { "state": "translated",
+            "value": "Rufe IssueLight"
+          }
+        },
+        "hi": {
+          "stringUnit": { "state": "translated",
+            "value": "IssueLight बंद करें"
+          }
+        },
+        "id": {
+          "stringUnit": { "state": "translated",
+            "value": "Keluar dari IssueLight"
+          }
+        },
+        "ja": {
+          "stringUnit": { "state": "translated",
+            "value": "IssueLightを終了"
+          }
+        },
+        "mr": {
+          "stringUnit": { "state": "translated",
+            "value": "IssueLight बंद करा"
+          }
+        },
+        "pcm": {
+          "stringUnit": { "state": "translated",
+            "value": "Close IssueLight"
+          }
+        },
+        "pt": {
+          "stringUnit": { "state": "translated",
+            "value": "Sair do IssueLight"
+          }
+        },
+        "ru": {
+          "stringUnit": { "state": "translated",
+            "value": "Выйти из IssueLight"
+          }
+        },
+        "sv": {
+          "stringUnit": { "state": "translated",
+            "value": "Avsluta IssueLight"
+          }
+        },
+        "sw": {
+          "stringUnit": { "state": "translated",
+            "value": "Funga IssueLight"
+          }
+        },
+        "te": {
+          "stringUnit": { "state": "translated",
+            "value": "IssueLight నుండి నిష్క్రమించండి"
+          }
+        },
+        "tr": {
+          "stringUnit": { "state": "translated",
+            "value": "IssueLight’tan Çık"
+          }
+        },
+        "ur": {
+          "stringUnit": { "state": "translated",
+            "value": "IssueLight بند کریں"
+          }
+        },
+        "vi": {
+          "stringUnit": { "state": "translated",
+            "value": "Thoát IssueLight"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": { "state": "translated",
+            "value": "退出 IssueLight"
+          }
+        }
+      }
+    },
     "Füge deine erste Monitoring-Quelle hinzu.": {
       "localizations": {
         "ar": {
