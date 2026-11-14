@@ -1,3 +1,5 @@
+name: issuelight-icinga2
+
 services:
   icinga2:
     image: icinga/icinga2:2.16@sha256:2748b8d8166435f3419de68b704d5eac7671e74d97f7dea6ffa1f04738c74902
@@ -13,6 +15,8 @@ services:
     volumes:
       - icinga-data:/data
       - ./api-users.conf:/data/etc/icinga2/conf.d/api-users.conf:ro
+      - ./disabled-default-objects.conf:/data/etc/icinga2/conf.d/hosts.conf:ro
+      - ./disabled-default-objects.conf:/data/etc/icinga2/conf.d/services.conf:ro
       - ./objects.conf:/data/etc/icinga2/conf.d/issuelight-test-objects.conf:ro
     healthcheck:
       test: ["CMD", "icinga2", "daemon", "-C"]
@@ -20,6 +24,21 @@ services:
       timeout: 5s
       retries: 20
       start_period: 10s
+    restart: "no"
+
+  ssh-gateway:
+    build:
+      context: ./ssh-gateway
+    ports:
+      - "127.0.0.1:${ISSUELIGHT_SSH_PORT:-2222}:22"
+    volumes:
+      - ${ISSUELIGHT_ICINGA_ARTIFACTS_DIR:?set in .env.local}/ssh-tunnel.pub:/run/issuelight/authorized_key:ro
+    healthcheck:
+      test: ["CMD", "nc", "-z", "127.0.0.1", "22"]
+      interval: 2s
+      timeout: 2s
+      retries: 20
+      start_period: 2s
     restart: "no"
 
 volumes:

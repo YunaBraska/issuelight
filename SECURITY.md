@@ -20,8 +20,15 @@ is offered before a maintained release exists.
 
 - Source configuration must not contain passwords, private keys, or PKCS#12
   import passwords.
-- Passwords and client identities are resolved through macOS Keychain.
+- Passwords, client identities, and source-specific CA references are resolved
+  through macOS Keychain.
+- Automatic CA cleanup is limited to certificates marked as created by the
+  same app profile and no longer referenced by a source. Shared and externally
+  managed certificates remain untouched.
 - Server certificate verification is enabled by default. Disabling it is a
   source-specific, visible exception.
+- Exact server-certificate pinning stores only a public leaf fingerprint,
+  applies trust to that source, and retains hostname and validity checks.
 - Diagnostics and test fixtures must not contain private hostnames, URLs,
-  tokens, certificates, or monitoring payloads from real systems.
+  tokens, private keys, production certificates, or monitoring payloads from
+  real systems. Public certificates generated solely for tests are allowed.

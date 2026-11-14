@@ -1,22 +1,67 @@
 import Foundation
+import Security
+
+public enum ProviderCredential: @unchecked Sendable {
+    case password(String)
+    case clientIdentity(SecIdentity)
+}
+
+public struct ProviderAccess: @unchecked Sendable {
+    public let credential: ProviderCredential
+    public let trustedServerCertificate: SecCertificate?
+
+    public init(
+        credential: ProviderCredential,
+        trustedServerCertificate: SecCertificate? = nil
+    ) {
+        self.credential = credential
+        self.trustedServerCertificate = trustedServerCertificate
+    }
+}
 
 public struct ProviderCapabilities: Equatable, Sendable {
     public let authenticationMethods: Set<AuthenticationMethod>
     public let serverTrustMethods: Set<ServerTrustMethod>
-    public let supportsAcknowledgement: Bool
-    public let supportsDowntime: Bool
+    public let actions: Set<MonitoringActionKind>
 
     public init(
         authenticationMethods: Set<AuthenticationMethod>,
         serverTrustMethods: Set<ServerTrustMethod>,
-        supportsAcknowledgement: Bool,
-        supportsDowntime: Bool
+        actions: Set<MonitoringActionKind> = []
     ) {
         self.authenticationMethods = authenticationMethods
         self.serverTrustMethods = serverTrustMethods
-        self.supportsAcknowledgement = supportsAcknowledgement
-        self.supportsDowntime = supportsDowntime
+        self.actions = actions
     }
+}
+
+public enum MonitoringActionKind: String, Hashable, Sendable {
+    case recheck
+    case acknowledge
+    case scheduleDowntime
+}
+
+public enum MonitoringAction: Equatable, Sendable {
+    case recheck
+    case acknowledge(author: String, comment: String)
+    case scheduleDowntime(author: String, comment: String, start: Date, end: Date)
+
+    public var kind: MonitoringActionKind {
+        switch self {
+        case .recheck:
+            return .recheck
+        case .acknowledge:
+            return .acknowledge
+        case .scheduleDowntime:
+            return .scheduleDowntime
+        }
+    }
+}
+
+public enum MonitoringActionResult: Equatable, Sendable {
+    case completed
+    case rejected(String)
+    case failed(ConnectionFailure)
 }
 
 public struct ProviderDescriptor: Equatable, Sendable {
@@ -34,6 +79,36 @@ public struct ProviderDescriptor: Equatable, Sendable {
 public protocol MonitoringProvider: Sendable {
     var descriptor: ProviderDescriptor { get }
     func validate(_ source: MonitoringSource) -> [SourceValidationIssue]
+    func testConnection(
+        to source: MonitoringSource,
+        access: ProviderAccess
+    ) async -> ConnectionTestResult
+    func loadSnapshot(
+        from source: MonitoringSource,
+        access: ProviderAccess
+    ) async -> SnapshotLoadResult
+    func perform(
+        _ action: MonitoringAction,
+        on issue: MonitoringIssue,
+        from source: MonitoringSource,
+        access: ProviderAccess
+    ) async -> MonitoringActionResult
+    func webURL(for issue: MonitoringIssue, from source: MonitoringSource) -> URL?
+}
+
+public extension MonitoringProvider {
+    func webURL(for issue: MonitoringIssue, from source: MonitoringSource) -> URL? {
+        nil
+    }
+
+    func perform(
+        _ action: MonitoringAction,
+        on issue: MonitoringIssue,
+        from source: MonitoringSource,
+        access: ProviderAccess
+    ) async -> MonitoringActionResult {
+        .rejected("This provider does not support the requested action.")
+    }
 }
 
 public enum ProviderRegistryError: Error, Equatable {
@@ -42,6 +117,10 @@ public enum ProviderRegistryError: Error, Equatable {
 
 public struct ProviderRegistry: Sendable {
     private let providers: [ProviderID: any MonitoringProvider]
+
+    private init(indexedProviders: [ProviderID: any MonitoringProvider]) {
+        providers = indexedProviders
+    }
 
     public init(_ providers: [any MonitoringProvider]) throws {
         var indexed: [ProviderID: any MonitoringProvider] = [:]
@@ -66,6 +145,7 @@ public struct ProviderRegistry: Sendable {
     }
 
     public static func builtIn() -> ProviderRegistry {
-        try! ProviderRegistry([Icinga2Provider()])
+        let provider = Icinga2Provider()
+        return ProviderRegistry(indexedProviders: [provider.descriptor.id: provider])
     }
 }

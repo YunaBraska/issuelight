@@ -58,6 +58,61 @@ public enum ServerTrustMethod: String, Codable, CaseIterable, Sendable {
     case disabled
 }
 
+public struct RemoteLoginConfiguration: Codable, Equatable, Sendable {
+    public var username: String
+    public var port: Int
+
+    public init(username: String = "", port: Int) {
+        self.username = username
+        self.port = port
+    }
+}
+
+public struct RemoteAccessConfiguration: Codable, Equatable, Sendable {
+    public var ssh: RemoteLoginConfiguration?
+    public var rdp: RemoteLoginConfiguration?
+
+    public init(
+        ssh: RemoteLoginConfiguration? = nil,
+        rdp: RemoteLoginConfiguration? = nil
+    ) {
+        self.ssh = ssh
+        self.rdp = rdp
+    }
+}
+
+public struct SSHTunnelConfiguration: Codable, Equatable, Sendable {
+    public var bastionHost: String
+    public var username: String
+    public var port: Int
+    public var identityFilePath: String?
+    public var preferredLocalPort: Int?
+
+    public init(
+        bastionHost: String,
+        username: String,
+        port: Int = 22,
+        identityFilePath: String? = nil,
+        preferredLocalPort: Int? = nil
+    ) {
+        self.bastionHost = bastionHost
+        self.username = username
+        self.port = port
+        self.identityFilePath = identityFilePath
+        self.preferredLocalPort = preferredLocalPort
+    }
+}
+
+public struct MonitoringWebConfiguration: Codable, Equatable, Sendable {
+    public var baseURL: URL
+    public var automaticSSHTunnel: SSHTunnelConfiguration?
+
+    public init(baseURL: URL, automaticSSHTunnel: SSHTunnelConfiguration? = nil) {
+        self.baseURL = baseURL
+        self.automaticSSHTunnel = automaticSSHTunnel
+    }
+}
+
 public struct MonitoringSource: Codable, Equatable, Identifiable, Sendable {
     public let id: UUID
     public var name: String
@@ -66,6 +121,8 @@ public struct MonitoringSource: Codable, Equatable, Identifiable, Sendable {
     public var isEnabled: Bool
     public var authentication: AuthenticationConfiguration
     public var serverTrust: ServerTrustConfiguration
+    public var web: MonitoringWebConfiguration?
+    public var remoteAccess: RemoteAccessConfiguration?
 
     public init(
         id: UUID = UUID(),
@@ -74,7 +131,9 @@ public struct MonitoringSource: Codable, Equatable, Identifiable, Sendable {
         endpoint: URL,
         isEnabled: Bool = true,
         authentication: AuthenticationConfiguration,
-        serverTrust: ServerTrustConfiguration = .system
+        serverTrust: ServerTrustConfiguration = .system,
+        web: MonitoringWebConfiguration? = nil,
+        remoteAccess: RemoteAccessConfiguration? = nil
     ) {
         self.id = id
         self.name = name
@@ -83,6 +142,16 @@ public struct MonitoringSource: Codable, Equatable, Identifiable, Sendable {
         self.isEnabled = isEnabled
         self.authentication = authentication
         self.serverTrust = serverTrust
+        self.web = web
+        self.remoteAccess = remoteAccess
+    }
+
+    /// The persistent Keychain reference for source-specific CA trust, when configured.
+    public var customServerCertificateID: String? {
+        guard case .customCertificate(let certificateID) = serverTrust else {
+            return nil
+        }
+        return certificateID
     }
 
     @discardableResult
@@ -116,8 +185,15 @@ public enum SourceValidationIssue: Error, Equatable, Hashable, Sendable {
     case emptyUsername
     case invalidUsername
     case missingClientIdentity
+    case missingServerCertificate
+    case invalidPinnedCertificate
     case unsupportedAuthentication(AuthenticationMethod)
     case unsupportedPath(String)
+    case invalidWebURL
+    case invalidRemotePort(Int)
+    case emptyBastionHost
+    case emptyBastionUsername
+    case secureWebTunnelUnsupported
 }
 
 public enum MonitoringSourceValidator {
@@ -163,7 +239,57 @@ public enum MonitoringSourceValidator {
             }
         }
 
+        if case .customCertificate(let certificateID) = source.serverTrust,
+           certificateID.isEmpty {
+            issues.append(.missingServerCertificate)
+        }
+        if case .pinnedCertificate(let sha256) = source.serverTrust,
+           ServerCertificateFingerprint.normalizedSHA256(sha256) == nil {
+            issues.append(.invalidPinnedCertificate)
+        }
+
+        if let web = source.web {
+            let webComponents = URLComponents(url: web.baseURL, resolvingAgainstBaseURL: false)
+            let webScheme = webComponents?.scheme?.lowercased()
+            if !["http", "https"].contains(webScheme)
+                || webComponents?.host?.isEmpty != false
+                || webComponents?.user != nil
+                || webComponents?.password != nil
+                || webComponents?.query != nil
+                || webComponents?.fragment != nil {
+                issues.append(.invalidWebURL)
+            }
+            if let tunnel = web.automaticSSHTunnel {
+                if tunnel.bastionHost.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    issues.append(.emptyBastionHost)
+                }
+                if tunnel.username.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    issues.append(.emptyBastionUsername)
+                }
+                if !Self.isValidPort(tunnel.port) {
+                    issues.append(.invalidRemotePort(tunnel.port))
+                }
+                if let localPort = tunnel.preferredLocalPort, !Self.isValidPort(localPort) {
+                    issues.append(.invalidRemotePort(localPort))
+                }
+                if webScheme == "https" {
+                    issues.append(.secureWebTunnelUnsupported)
+                }
+            }
+        }
+
+        if let ssh = source.remoteAccess?.ssh, !Self.isValidPort(ssh.port) {
+            issues.append(.invalidRemotePort(ssh.port))
+        }
+        if let rdp = source.remoteAccess?.rdp, !Self.isValidPort(rdp.port) {
+            issues.append(.invalidRemotePort(rdp.port))
+        }
+
         return issues
+    }
+
+    private static func isValidPort(_ port: Int) -> Bool {
+        (1...65_535).contains(port)
     }
 }
 

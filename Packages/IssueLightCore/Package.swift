@@ -12,7 +12,11 @@ let package = Package(
     ],
     targets: [
         .target(name: "IssueLightCore"),
-        .testTarget(name: "IssueLightCoreTests", dependencies: ["IssueLightCore"]),
+        .testTarget(
+            name: "IssueLightCoreTests",
+            dependencies: ["IssueLightCore"],
+            resources: [.copy("Fixtures")]
+        ),
     ],
     swiftLanguageModes: [.v5]
 )

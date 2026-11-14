@@ -1,0 +1,22 @@
+# yuna-release: true
+name: 🏷️ CD · Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      force:
+        description: Release unchanged source.
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  release:
+    uses: YunaBraska/YunaBraska/.github/workflows/wc_swift_release.yml@29bd56f4cc120be2bdcab1b484c34fae14c51b35
+    with:
+      force: ${{ inputs.force }}
+    secrets: inherit

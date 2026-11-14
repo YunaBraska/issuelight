@@ -2,6 +2,49 @@ import XCTest
 @testable import IssueLightCore
 
 final class SourceStoreTests: XCTestCase {
+    func testDefaultFileURLUsesBundleSpecificApplicationSupportLocation() throws {
+        let bundleIdentifier = "berlin.yuna.issuelight.store-tests.\(UUID().uuidString)"
+
+        let fileURL = try SourceStore.defaultFileURL(bundleIdentifier: bundleIdentifier)
+
+        XCTAssertEqual(fileURL.lastPathComponent, "sources.json")
+        XCTAssertEqual(fileURL.deletingLastPathComponent().lastPathComponent, bundleIdentifier)
+        XCTAssertTrue(fileURL.path.contains("Application Support"))
+    }
+
+    func testStoreRejectsMalformedPersistedJSON() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let fileURL = directory.appendingPathComponent("sources.json")
+        try Data("not JSON".utf8).write(to: fileURL)
+        let store = SourceStore(fileURL: fileURL)
+
+        do {
+            _ = try await store.load()
+            XCTFail("Expected malformed source persistence rejection")
+        } catch {
+            XCTAssertTrue(error is DecodingError)
+        }
+    }
+
+    func testStoreRejectsDuplicateIdentifiersWhenLoadingExistingData() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let fileURL = directory.appendingPathComponent("sources.json")
+        let source = makeSource()
+        try JSONEncoder().encode([source, source]).write(to: fileURL)
+        let store = SourceStore(fileURL: fileURL)
+
+        do {
+            _ = try await store.load()
+            XCTFail("Expected duplicate source rejection")
+        } catch {
+            XCTAssertEqual(error as? SourceStoreError, .duplicateSourceID(source.id))
+        }
+    }
+
     func testStorePersistsAndUpdatesPublicSourceConfiguration() async throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
         defer { try? FileManager.default.removeItem(at: directory) }
@@ -22,6 +65,8 @@ final class SourceStoreTests: XCTestCase {
         let rawJSON = try String(contentsOf: fileURL, encoding: .utf8)
         XCTAssertFalse(rawJSON.localizedCaseInsensitiveContains("password"))
         XCTAssertFalse(rawJSON.localizedCaseInsensitiveContains("privateKey"))
+        let attributes = try FileManager.default.attributesOfItem(atPath: fileURL.path)
+        XCTAssertEqual(attributes[.posixPermissions] as? Int, 0o600)
 
         let removed = try await store.remove(id: source.id)
         XCTAssertEqual(removed, [])
