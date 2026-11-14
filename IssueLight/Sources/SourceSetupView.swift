@@ -273,14 +273,7 @@ struct SourceSetupView: View {
                         .labelsHidden()
                         .textContentType(.URL)
                     } label: {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Web-URL")
-                            if model.webURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                                Label("Automatisch", systemImage: "sparkles")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
+                        Text("Web-URL")
                     }
 
                     Toggle("Automatischer SSH-Tunnel", isOn: $model.automaticWebSSHTunnel)
@@ -292,8 +285,7 @@ struct SourceSetupView: View {
                         TextField("SSH-Port", value: $model.webTunnelPort, format: .number)
                         TextField(
                             "Bevorzugter lokaler Port",
-                            text: $model.webTunnelPreferredLocalPort,
-                            prompt: Text("Automatisch")
+                            text: $model.webTunnelPreferredLocalPort
                         )
                         LabeledContent("SSH-Schlüssel") {
                             HStack(spacing: 8) {

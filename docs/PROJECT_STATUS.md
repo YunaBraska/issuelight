@@ -24,9 +24,9 @@ IssueLight is a release candidate, not a published production release.
 
 - `sh scripts/check.sh` runs package, app, localization, screenshot, coverage,
   packaging, and repository checks.
-- `sh scripts/icinga2_lab.sh verify` runs the real containerized Icinga 2 matrix
-  for Basic authentication, mTLS, private CA trust, certificate pinning, and
-  expected failures.
+- `sh scripts/icinga2_lab.sh verify` runs the real containerized Icinga 2 and
+  Icinga Web matrix for Basic authentication, mTLS, private CA trust,
+  certificate pinning, object deep links, and expected failures.
 - Screenshot tests render the production SwiftUI views used by the product
   page.
 

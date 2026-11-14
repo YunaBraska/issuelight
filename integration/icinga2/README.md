@@ -1,7 +1,7 @@
 # Icinga 2 Integration Lab
 
-This lab runs the real official Icinga 2 image. It is external-system test
-infrastructure, not a production fake server.
+This lab runs the real official Icinga 2, Icinga DB, and Icinga Web images. It
+is external-system test infrastructure, not a production fake server.
 
 The image is pinned to the multi-platform Icinga 2.16 digest. The lab exposes
 only `127.0.0.1:5665`, uses Icinga's generated private CA, and provides:
@@ -10,7 +10,14 @@ only `127.0.0.1:5665`, uses Icinga's generated private CA, and provides:
 - a least-privilege X.509 client-certificate API user;
 - an authenticated user without object permissions;
 - healthy and failing host/service objects;
+- a working Icinga Web interface with real Icinga DB data and object links;
 - generated CA and PKCS#12 artifacts outside the repository.
+
+Icinga Web is exposed only on `127.0.0.1:8080`. Open
+`http://localhost:8080/icingaweb2/icingadb/hosts` for manual review. The
+loopback-only test gateway supplies the isolated `icingaadmin` identity so the
+fixture needs no browser password. Never reuse that gateway configuration for
+a deployed Icinga Web instance.
 
 The same Compose project includes an isolated OpenSSH gateway on
 `127.0.0.1:2222`. Its key-only account may forward only to the fixture's local
@@ -55,4 +62,5 @@ does not silently alter server trust.
 
 The matrix intentionally treats plain HTTP and no authentication as negative
 tests because the Icinga 2 API requires HTTPS and authentication. It also proves
-that the lab's private CA is rejected without an explicit trust decision.
+that the lab's private CA is rejected without an explicit trust decision. Host
+and service deep links are verified against the real Icinga Web interface.

@@ -1,6 +1,30 @@
 name: issuelight-icinga2
 
 services:
+  database:
+    image: mariadb:11.4@sha256:5e73baf8179b29f115101bb102763a47a017361f3e9792daccba6646c3ab1532
+    environment:
+      MARIADB_ROOT_PASSWORD: issuelight-lab-root
+    volumes:
+      - database-data:/var/lib/mysql
+      - ./database-init.sql:/docker-entrypoint-initdb.d/10-issuelight.sql:ro
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+      start_period: 10s
+    restart: "no"
+
+  redis:
+    image: redis:7.4-alpine@sha256:7f7d30b7fdd09467bac58198a1f166dd69789d348d4fe859cccb20e0cf287fbe
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+    restart: "no"
+
   icinga2:
     image: icinga/icinga2:2.16@sha256:2748b8d8166435f3419de68b704d5eac7671e74d97f7dea6ffa1f04738c74902
     hostname: issuelight-icinga
@@ -17,12 +41,88 @@ services:
       - ./api-users.conf:/data/etc/icinga2/conf.d/api-users.conf:ro
       - ./disabled-default-objects.conf:/data/etc/icinga2/conf.d/hosts.conf:ro
       - ./disabled-default-objects.conf:/data/etc/icinga2/conf.d/services.conf:ro
+      - ./icingadb.conf:/data/etc/icinga2/features-enabled/icingadb.conf:ro
       - ./objects.conf:/data/etc/icinga2/conf.d/issuelight-test-objects.conf:ro
+    depends_on:
+      redis:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "icinga2", "daemon", "-C"]
       interval: 5s
       timeout: 5s
       retries: 20
+      start_period: 10s
+    restart: "no"
+
+  icingadb:
+    image: icinga/icingadb:1.5.1@sha256:d123e9603d6f38760554d6b27ac191f24cf05a842c2ab7e71dfeacfbeb50a48c
+    environment:
+      ICINGADB_DATABASE_HOST: database
+      ICINGADB_DATABASE_PORT: 3306
+      ICINGADB_DATABASE_DATABASE: icingadb
+      ICINGADB_DATABASE_USER: icingadb
+      ICINGADB_DATABASE_PASSWORD: issuelight-lab-db
+      ICINGADB_REDIS_HOST: redis
+      ICINGADB_REDIS_PORT: 6379
+    depends_on:
+      database:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: "no"
+
+  icingaweb2:
+    image: icinga/icingaweb2:2.14.0@sha256:4c82252e44e989e2fb0bdacc90ec1fa6a9d31f56985c895dce33cfdd0074c6c9
+    environment:
+      icingaweb.enabledModules: icingadb
+      icingaweb.authentication.autologin.backend: external
+      icingaweb.config.global.config_backend: db
+      icingaweb.config.global.config_resource: icingaweb_db
+      icingaweb.config.logging.log: php
+      icingaweb.groups.icingaweb2.backend: db
+      icingaweb.groups.icingaweb2.resource: icingaweb_db
+      icingaweb.modules.icingadb.config.icingadb.resource: icingadb
+      icingaweb.modules.icingadb.redis.redis1.host: redis
+      icingaweb.modules.icingadb.redis.redis1.port: 6379
+      icingaweb.resources.icingaweb_db.type: db
+      icingaweb.resources.icingaweb_db.db: mysql
+      icingaweb.resources.icingaweb_db.host: database
+      icingaweb.resources.icingaweb_db.dbname: icingaweb2
+      icingaweb.resources.icingaweb_db.username: icingaweb2
+      icingaweb.resources.icingaweb_db.password: issuelight-lab-db
+      icingaweb.resources.icingaweb_db.charset: utf8mb4
+      icingaweb.resources.icingadb.type: db
+      icingaweb.resources.icingadb.db: mysql
+      icingaweb.resources.icingadb.host: database
+      icingaweb.resources.icingadb.dbname: icingadb
+      icingaweb.resources.icingadb.username: icingadb
+      icingaweb.resources.icingadb.password: issuelight-lab-db
+      icingaweb.resources.icingadb.charset: utf8mb4
+      icingaweb.roles.Administrators.users: icingaadmin
+      icingaweb.roles.Administrators.permissions: "*"
+    depends_on:
+      database:
+        condition: service_healthy
+      icingadb:
+        condition: service_started
+    volumes:
+      - icingaweb-data:/data
+    restart: "no"
+
+  web-gateway:
+    image: nginx:1.27-alpine@sha256:65645c7bb6a0661892a8b03b89d0743208a18dd2f3f17a54ef4b76fb8e2f2a10
+    ports:
+      - "127.0.0.1:${ISSUELIGHT_ICINGAWEB_PORT:-8080}:8080"
+    volumes:
+      - ./icingaweb-nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      icingaweb2:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "http://127.0.0.1:8080/icingaweb2/icingadb/hosts"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
       start_period: 10s
     restart: "no"
 
@@ -42,4 +142,6 @@ services:
     restart: "no"
 
 volumes:
+  database-data:
   icinga-data:
+  icingaweb-data:

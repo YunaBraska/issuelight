@@ -19,6 +19,7 @@ set +a
 : "${ISSUELIGHT_ICINGA_FORBIDDEN_PASSWORD:?missing in .env.local}"
 : "${ISSUELIGHT_ICINGA_PKCS12_PASSWORD:?missing in .env.local}"
 : "${ISSUELIGHT_ICINGA_PORT:=5665}"
+: "${ISSUELIGHT_ICINGAWEB_PORT:=8080}"
 : "${ISSUELIGHT_SSH_PORT:=2222}"
 : "${ISSUELIGHT_ICINGA_ARTIFACTS_DIR:?missing in .env.local}"
 
@@ -78,6 +79,25 @@ CURL_CONFIG
 
   printf 'Icinga 2 API did not become ready.\n' >&2
   compose logs --tail 100 icinga2 >&2
+  return 1
+}
+
+wait_for_web() {
+  attempt=0
+  while [ "$attempt" -lt 40 ]; do
+    response_code=$(
+      curl --silent --output /dev/null --write-out '%{http_code}' \
+        "http://localhost:$ISSUELIGHT_ICINGAWEB_PORT/icingaweb2/icingadb/hosts" || true
+    )
+    if [ "$response_code" = "200" ]; then
+      return 0
+    fi
+    attempt=$((attempt + 1))
+    sleep 1
+  done
+
+  printf 'Icinga Web did not become ready.\n' >&2
+  compose logs --tail 100 icingaweb2 icingadb web-gateway >&2
   return 1
 }
 
@@ -261,8 +281,22 @@ expect_status() {
   printf '%s: HTTP %s\n' "$label" "$actual"
 }
 
+expect_body_contains() {
+  expected=$1
+  body=$2
+  label=$3
+
+  if ! printf '%s' "$body" | grep -F "$expected" >/dev/null; then
+    printf '%s: expected real fixture output was missing.\n' "$label" >&2
+    return 1
+  fi
+
+  printf '%s: verified\n' "$label"
+}
+
 verify_matrix() {
   wait_for_api
+  wait_for_web
 
   if curl --silent --output /dev/null \
     "http://localhost:$ISSUELIGHT_ICINGA_PORT/v1/objects/hosts?attrs=name&limit=1" 2>/dev/null; then
@@ -307,6 +341,20 @@ CURL_CONFIG
     "https://localhost:$ISSUELIGHT_ICINGA_PORT/v1/objects/hosts?attrs=name&limit=1")
   expect_status 200 "$mtls" "client certificate"
 
+  web_host=$(curl --fail --silent --show-error \
+    "http://localhost:$ISSUELIGHT_ICINGAWEB_PORT/icingaweb2/icingadb/host?name=down-host")
+  expect_body_contains \
+    "Host intentionally down for IssueLight integration tests" \
+    "$web_host" \
+    "Icinga Web host deep link"
+
+  web_service=$(curl --fail --silent --show-error \
+    "http://localhost:$ISSUELIGHT_ICINGAWEB_PORT/icingaweb2/icingadb/service?host.name=down-host&name=cascaded-service")
+  expect_body_contains \
+    "Service hidden behind a down host" \
+    "$web_service" \
+    "Icinga Web service deep link"
+
   verify_swift_mtls
   verify_app_model_multi_source
 
@@ -323,7 +371,9 @@ case "${1:-}" in
     generate_client_identity
     reschedule_fixture_checks
     wait_for_fixture
+    wait_for_web
     printf 'Icinga 2 lab is ready on https://localhost:%s.\n' "$ISSUELIGHT_ICINGA_PORT"
+    printf 'Icinga Web is ready on http://localhost:%s/icingaweb2/icingadb/hosts.\n' "$ISSUELIGHT_ICINGAWEB_PORT"
     ;;
   verify)
     verify_matrix

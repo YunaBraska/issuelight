@@ -29,6 +29,7 @@ set +a
 
 : "${ISSUELIGHT_ICINGA_BASIC_PASSWORD:?missing in .env.local}"
 : "${ISSUELIGHT_ICINGA_PORT:=5665}"
+: "${ISSUELIGHT_ICINGAWEB_PORT:=8080}"
 
 "$repository_root/scripts/icinga2_lab.sh" start
 
@@ -68,7 +69,7 @@ xcrun swiftc \
     "$repository_root/Packages/IssueLightCore/Sources/IssueLightCore/SourceStore.swift" \
     "$repository_root/scripts/seed_review_source.swift" \
     -o "$review_seed_binary"
-"$review_seed_binary" "$review_sources_file" "$ISSUELIGHT_ICINGA_PORT"
+"$review_seed_binary" "$review_sources_file" "$ISSUELIGHT_ICINGA_PORT" "$ISSUELIGHT_ICINGAWEB_PORT"
 
 credential_label="IssueLight Basic credential $review_source_id"
 security delete-internet-password \
@@ -81,3 +82,4 @@ open -a "$review_app"
 
 printf 'Review app opened: %s\n' "$review_app"
 printf 'Review source: https://localhost:%s with real Icinga 2 fixture data\n' "$ISSUELIGHT_ICINGA_PORT"
+printf 'Icinga Web: http://localhost:%s/icingaweb2/icingadb\n' "$ISSUELIGHT_ICINGAWEB_PORT"

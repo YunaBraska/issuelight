@@ -486,7 +486,6 @@ private struct StatusPanelIssueEntry: View {
         }
         .overlay(alignment: .bottom) { Divider().padding(.leading, 34) }
         .contextMenu {
-            Button(AppLocalization.string("In Weboberfläche öffnen", locale: locale), systemImage: "safari", action: openIssue)
             if let openSSH {
                 Button("SSH", systemImage: "terminal", action: openSSH)
             }
