@@ -1967,7 +1967,7 @@
         "localizations": {
           "de": {
             "stringUnit": { "state": "translated",
-              "value": "Alerts multiply. Attention does not.\nIssueLight sorts the signal before it reaches you.\nA star helps. Coffee keeps the beacon lit."
+              "value": "Warnungen vermehren sich. Aufmerksamkeit nicht.\nIssueLight sortiert das Signal, bevor es dich erreicht.\nEin Stern hilft. Kaffee hält das Licht am Leuchten."
             }
           },
           "en": {
@@ -2076,7 +2076,7 @@
         "localizations": {
           "de": {
             "stringUnit": { "state": "translated",
-              "value": "Green is a temporary agreement between distributed systems.\nIssueLight watches the fine print.\nStar it if it saved a minute. Fuel it if it saved the night."
+              "value": "Grün ist eine vorübergehende Einigung verteilter Systeme.\nIssueLight liest das Kleingedruckte.\nEin Stern für die gesparte Minute. Kaffee für die gerettete Nacht."
             }
           },
           "en": {
@@ -2185,7 +2185,7 @@
         "localizations": {
           "de": {
             "stringUnit": { "state": "translated",
-              "value": "The quiet menu bar is not doing nothing.\nIt is waiting for evidence.\nStar the repository if that restraint feels useful."
+              "value": "Die ruhige Menüleiste ist nicht untätig.\nSie wartet auf Beweise.\nGib dem Repository einen Stern, wenn dir diese Zurückhaltung gefällt."
             }
           },
           "en": {
@@ -2294,7 +2294,7 @@
         "localizations": {
           "de": {
             "stringUnit": { "state": "translated",
-              "value": "Monitoring should interrupt you only when it has something useful to say.\nIssueLight keeps the noise down and the problems visible.\nCoffee is optional. Reliable alerts are not."
+              "value": "Monitoring sollte dich nur unterbrechen, wenn es etwas Nützliches zu sagen hat.\nIssueLight reduziert den Lärm und hält Probleme sichtbar.\nKaffee ist optional. Verlässliche Warnungen nicht."
             }
           },
           "en": {
