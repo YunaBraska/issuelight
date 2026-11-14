@@ -18,7 +18,7 @@ description: IssueLight keeps Icinga 2 problems in the macOS menu bar and stays 
   <figure class="hero-shot app-window">
     <div class="window-bar"><span></span><span></span><span></span><strong>Menu bar status</strong></div>
     <img src="{{ '/assets/screenshots/menu-panel-de.png' | relative_url }}" alt="IssueLight menu panel with critical and warning Icinga issues" width="860" height="480">
-    <figcaption>Problems, actions, refresh, and one path to Settings. Nothing else competes for attention.</figcaption>
+    <figcaption>Search, problems, contextual actions, and one path to Settings. Nothing else competes for attention.</figcaption>
   </figure>
 </section>
 

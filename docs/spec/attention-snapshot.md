@@ -18,7 +18,8 @@ provider confirms the command.
 
 - `SNAP-001` A monitoring issue MUST identify its source, object kind, host,
   optional service, provider-native object name, severity, summary,
-  acknowledgement state, and downtime state.
+  acknowledgement state, and downtime state. State-change time and check
+  attempt MUST be preserved when the provider supplies them.
 - `SNAP-002` Provider-native payloads MUST be decoded at the adapter boundary.
   Shared UI and persistence MUST NOT depend on Icinga attribute names.
 - `SNAP-003` A snapshot MUST include its observation time and all current
@@ -38,8 +39,8 @@ provider confirms the command.
 - `REF-003` A configured source SHOULD refresh every 60 seconds. This default
   limits idle API traffic to one host query and one service query per minute
   while keeping a menu-bar signal operationally useful.
-- `REF-004` A manual refresh MUST start immediately rather than wait for the
-  passive interval.
+- `REF-004` A provider-confirmed operator action MUST refresh its affected
+  source immediately rather than wait for the passive interval.
 - `REF-005` A failed refresh MUST remain distinguishable from a healthy empty
   snapshot. If a previous snapshot exists, the UI MUST retain it as stale and
   show the failure.
@@ -52,14 +53,15 @@ provider confirms the command.
 - `MENU-002` During the first refresh, the menu MUST expose progress without
   presenting the source as healthy.
 - `MENU-003` A successful empty snapshot MUST state that no issue needs
-  attention and show when the source was last checked.
+  attention without repeating menu-bar counts or refresh controls.
 - `MENU-004` A problem snapshot MUST group actionable issues before
   acknowledged or downtime-covered issues and MUST expose host/service context
   without relying on color alone.
-- `MENU-005` A refresh failure MUST expose a short cause and a retry action.
-- `MENU-006` When the issue list is large, the menu panel MUST let a person
-  find an issue by its host, service, summary, or source without performing
-  network or storage work.
+- `MENU-005` A refresh failure MUST expose a short cause while automatic
+  refresh continues to own retry timing.
+- `MENU-006` The first row of the menu panel MUST let a person find an issue by
+  its host, service, summary, or source without performing network or storage
+  work.
 
 ## Acceptance evidence
 

@@ -23,23 +23,29 @@ final class IssueCountTextTests: XCTestCase {
 
     func testMenuBarCountsMatchNagBarSeverityOrderAndOmitZeros() {
         let sourceID = UUID()
-        let severities: [MonitoringSeverity] = [.warning, .critical, .unknown, .critical]
-        let issues = severities.enumerated().map { index, severity in
+        let fixtures: [(MonitoringObjectKind, MonitoringSeverity)] = [
+            (.service, .warning),
+            (.service, .critical),
+            (.service, .unknown),
+            (.host, .critical),
+            (.host, .warning),
+        ]
+        let issues = fixtures.enumerated().map { index, fixture in
             MonitoringIssue(
                 sourceID: sourceID,
                 nativeID: "issue-\(index)",
-                kind: .host,
+                kind: fixture.0,
                 hostName: "host-\(index)",
-                serviceName: nil,
+                serviceName: fixture.0 == .service ? "service-\(index)" : nil,
                 displayName: "Host \(index)",
-                severity: severity,
+                severity: fixture.1,
                 summary: "Fixture",
                 isAcknowledged: false,
                 isInDowntime: false
             )
         }
 
-        XCTAssertEqual(MenuBarIssueCounts(issues: issues).compactText, "C:2 W:1 U:1")
+        XCTAssertEqual(MenuBarIssueCounts(issues: issues).compactText, "C:1 W:1 U:1 D:2")
         XCTAssertEqual(MenuBarIssueCounts(issues: []).compactText, "")
     }
 }

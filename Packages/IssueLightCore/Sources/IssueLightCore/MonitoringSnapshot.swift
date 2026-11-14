@@ -24,6 +24,9 @@ public struct MonitoringIssue: Equatable, Identifiable, Sendable {
     public let displayName: String
     public let severity: MonitoringSeverity
     public let summary: String
+    public let stateChangedAt: Date?
+    public let checkAttempt: Int?
+    public let maxCheckAttempts: Int?
     public let isAcknowledged: Bool
     public let isInDowntime: Bool
 
@@ -44,6 +47,9 @@ public struct MonitoringIssue: Equatable, Identifiable, Sendable {
         displayName: String,
         severity: MonitoringSeverity,
         summary: String,
+        stateChangedAt: Date? = nil,
+        checkAttempt: Int? = nil,
+        maxCheckAttempts: Int? = nil,
         isAcknowledged: Bool,
         isInDowntime: Bool
     ) {
@@ -55,6 +61,9 @@ public struct MonitoringIssue: Equatable, Identifiable, Sendable {
         self.displayName = displayName
         self.severity = severity
         self.summary = summary
+        self.stateChangedAt = stateChangedAt
+        self.checkAttempt = checkAttempt
+        self.maxCheckAttempts = maxCheckAttempts
         self.isAcknowledged = isAcknowledged
         self.isInDowntime = isInDowntime
     }
@@ -115,6 +124,9 @@ struct Icinga2SnapshotDecoder {
                 displayName: result.attrs.displayName,
                 severity: .critical,
                 summary: summary(from: result.attrs.lastCheckResult?.output, fallback: result.attrs.displayName),
+                stateChangedAt: date(from: result.attrs.lastStateChange),
+                checkAttempt: positiveInteger(from: result.attrs.checkAttempt),
+                maxCheckAttempts: positiveInteger(from: result.attrs.maxCheckAttempts),
                 isAcknowledged: result.attrs.acknowledgement > 0,
                 isInDowntime: result.attrs.downtimeDepth > 0
             )
@@ -149,6 +161,9 @@ struct Icinga2SnapshotDecoder {
                 displayName: result.attrs.displayName,
                 severity: severity,
                 summary: summary(from: result.attrs.lastCheckResult?.output, fallback: result.attrs.displayName),
+                stateChangedAt: date(from: result.attrs.lastStateChange),
+                checkAttempt: positiveInteger(from: result.attrs.checkAttempt),
+                maxCheckAttempts: positiveInteger(from: result.attrs.maxCheckAttempts),
                 isAcknowledged: result.attrs.acknowledgement > 0,
                 isInDowntime: result.attrs.downtimeDepth > 0
             )
@@ -187,6 +202,16 @@ struct Icinga2SnapshotDecoder {
         guard let firstLine, !firstLine.isEmpty else { return fallback }
         return firstLine
     }
+
+    private func date(from timestamp: Double?) -> Date? {
+        guard let timestamp, timestamp > 0 else { return nil }
+        return Date(timeIntervalSince1970: timestamp)
+    }
+
+    private func positiveInteger(from value: Double?) -> Int? {
+        guard let value, value > 0 else { return nil }
+        return Int(value)
+    }
 }
 
 private struct IcingaEnvelope: Decodable {
@@ -201,19 +226,25 @@ private struct IcingaResult: Decodable {
 
 private struct IcingaAttributes: Decodable {
     let acknowledgement: Double
+    let checkAttempt: Double?
     let displayName: String
     let downtimeDepth: Double
     let hostName: String?
     let lastCheckResult: IcingaCheckResult?
+    let lastStateChange: Double?
+    let maxCheckAttempts: Double?
     let name: String
     let state: Double
 
     private enum CodingKeys: String, CodingKey {
         case acknowledgement
+        case checkAttempt = "check_attempt"
         case displayName = "display_name"
         case downtimeDepth = "downtime_depth"
         case hostName = "host_name"
         case lastCheckResult = "last_check_result"
+        case lastStateChange = "last_state_change"
+        case maxCheckAttempts = "max_check_attempts"
         case name
         case state
     }

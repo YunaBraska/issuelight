@@ -40,11 +40,8 @@ final class StatusMenuPerformanceTests: XCTestCase {
             sourceNames: fixture.sourceNames,
             refreshState: .current,
             hasPartialRefreshFailure: false,
-            latestSuccessfulRefresh: Date(timeIntervalSince1970: 1_794_574_720),
-            menuBarSymbol: "exclamationmark.octagon.fill",
             supportedActions: { _ in [.recheck, .acknowledge, .scheduleDowntime] },
             activeActionIssueIDs: [],
-            refresh: {},
             performRecheck: { _ in },
             requestAcknowledgement: { _ in },
             requestDowntime: { _ in }
@@ -89,6 +86,9 @@ final class StatusMenuPerformanceTests: XCTestCase {
                 summary: index == 4_217
                     ? "CRITICAL: needle-target has failed"
                     : "\(severity == .warning ? "WARNING" : "CRITICAL"): deterministic volume fixture \(index)",
+                stateChangedAt: Date(timeIntervalSince1970: 1_794_574_720 - Double(index % 86_400)),
+                checkAttempt: index % 4 + 1,
+                maxCheckAttempts: 4,
                 isAcknowledged: false,
                 isInDowntime: false
             )

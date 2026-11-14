@@ -23,11 +23,13 @@ struct MenuBarIssueCounts: Equatable {
     let critical: Int
     let warning: Int
     let unknown: Int
+    let down: Int
 
     init(issues: [MonitoringIssue]) {
-        critical = issues.filter { $0.severity == .critical }.count
-        warning = issues.filter { $0.severity == .warning }.count
-        unknown = issues.filter { $0.severity == .unknown }.count
+        critical = issues.filter { $0.kind == .service && $0.severity == .critical }.count
+        warning = issues.filter { $0.kind == .service && $0.severity == .warning }.count
+        unknown = issues.filter { $0.kind == .service && $0.severity == .unknown }.count
+        down = issues.filter { $0.kind == .host }.count
     }
 
     var compactText: String {
@@ -35,6 +37,7 @@ struct MenuBarIssueCounts: Equatable {
             critical > 0 ? "C:\(critical)" : nil,
             warning > 0 ? "W:\(warning)" : nil,
             unknown > 0 ? "U:\(unknown)" : nil,
+            down > 0 ? "D:\(down)" : nil,
         ]
         .compactMap { $0 }
         .joined(separator: " ")
@@ -56,11 +59,8 @@ struct StatusMenuView: View {
             sourceNames: Dictionary(uniqueKeysWithValues: model.sources.map { ($0.id, $0.name) }),
             refreshState: model.refreshState,
             hasPartialRefreshFailure: model.hasPartialRefreshFailure,
-            latestSuccessfulRefresh: model.latestSuccessfulRefresh,
-            menuBarSymbol: model.menuBarSymbol,
             supportedActions: model.supportedActions,
             activeActionIssueIDs: model.activeActionIssueIDs,
-            refresh: { model.refresh() },
             performRecheck: { issue in
                 Task { await model.perform(.recheck, on: issue) }
             },
@@ -106,11 +106,8 @@ struct StatusMenuContent: View {
     let sourceNames: [UUID: String]
     let refreshState: IssueLightModel.RefreshState
     let hasPartialRefreshFailure: Bool
-    let latestSuccessfulRefresh: Date?
-    let menuBarSymbol: String
     let supportedActions: (MonitoringIssue) -> Set<MonitoringActionKind>
     let activeActionIssueIDs: Set<String>
-    let refresh: () -> Void
     let performRecheck: (MonitoringIssue) -> Void
     let requestAcknowledgement: (MonitoringIssue) -> Void
     let requestDowntime: (MonitoringIssue) -> Void
@@ -120,23 +117,19 @@ struct StatusMenuContent: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack(alignment: .top, spacing: 12) {
-                VStack(alignment: .leading, spacing: 5) {
-                    summary
-                }
-                    .frame(maxWidth: .infinity, alignment: .leading)
+            HStack(spacing: 9) {
+                Image(systemName: "magnifyingglass")
+                    .foregroundStyle(.secondary)
+                TextField(
+                    AppLocalization.string("Probleme durchsuchen", locale: locale),
+                    text: $searchText
+                )
+                .textFieldStyle(.plain)
+                .accessibilityIdentifier("issue-search")
+                .disabled(!hasActiveSnapshot || actionableIssues.isEmpty && coveredIssues.isEmpty)
                 if refreshState == .refreshing {
                     ProgressView()
                         .controlSize(.small)
-                }
-                if hasConfiguredSource {
-                    Button(action: refresh) {
-                        Image(systemName: "arrow.clockwise")
-                    }
-                    .buttonStyle(.borderless)
-                    .keyboardShortcut("r")
-                    .disabled(!hasEnabledSource)
-                    .help(AppLocalization.string("Jetzt aktualisieren", locale: locale))
                 }
                 SettingsLink {
                     Image(systemName: "gearshape")
@@ -144,23 +137,24 @@ struct StatusMenuContent: View {
                 .labelStyle(.iconOnly)
                 .help(AppLocalization.string("Einstellungen …", locale: locale))
             }
-            .padding(14)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
 
             Divider()
 
-            if showsSearch {
-                HStack(spacing: 8) {
-                    Image(systemName: "magnifyingglass")
-                        .foregroundStyle(.secondary)
-                    TextField(
-                        AppLocalization.string("Probleme durchsuchen", locale: locale),
-                        text: $searchText
-                    )
-                    .textFieldStyle(.plain)
-                    .accessibilityIdentifier("issue-search")
-                }
+            if hasActiveSnapshot, case .failed(let message) = refreshState {
+                Label(
+                    hasPartialRefreshFailure
+                        ? AppLocalization.string("Aktualisierung teilweise fehlgeschlagen", locale: locale)
+                        : AppLocalization.string("Status ist veraltet", locale: locale),
+                    systemImage: "wifi.exclamationmark"
+                )
+                .font(.caption.weight(.medium))
+                .foregroundStyle(.orange)
+                .help(message)
                 .padding(.horizontal, 12)
-                .padding(.vertical, 9)
+                .padding(.vertical, 7)
+                .frame(maxWidth: .infinity, alignment: .leading)
                 Divider()
             }
 
@@ -175,26 +169,27 @@ struct StatusMenuContent: View {
             return 260
         }
         if actionableIssues.isEmpty && coveredIssues.isEmpty {
-            return 280
+            return 240
         }
-        let searchHeight: CGFloat = showsSearch ? 40 : 0
         let coveredSummaryHeight: CGFloat = filteredCoveredIssues.isEmpty ? 0 : 38
         let actionHeight: CGFloat = expandedIssueID == nil ? 0 : 42
+        let failureHeight: CGFloat
+        if case .failed = refreshState {
+            failureHeight = 30
+        } else {
+            failureHeight = 0
+        }
         return min(
             520,
             max(
                 240,
-                128
-                    + CGFloat(filteredActionableIssues.count + filteredCoveredIssues.count) * 62
-                    + searchHeight
+                52
+                    + CGFloat(filteredActionableIssues.count + filteredCoveredIssues.count) * 76
                     + coveredSummaryHeight
                     + actionHeight
+                    + failureHeight
             )
         )
-    }
-
-    private var showsSearch: Bool {
-        actionableIssues.count + coveredIssues.count > 8
     }
 
     private var filteredActionableIssues: [MonitoringIssue] {
@@ -271,77 +266,6 @@ struct StatusMenuContent: View {
                 AppLocalization.string("Status wird geladen", locale: locale),
                 systemImage: "arrow.clockwise",
                 description: Text(verbatim: AppLocalization.string("IssueLight fragt Hosts und Services bei der Quelle ab.", locale: locale))
-            )
-        }
-    }
-
-    @ViewBuilder
-    private var summary: some View {
-        if !hasConfiguredSource {
-            Label(
-                AppLocalization.string("Keine Quelle konfiguriert", locale: locale),
-                systemImage: "exclamationmark.triangle"
-            )
-        } else if !hasEnabledSource {
-            Label(
-                AppLocalization.string("Alle Quellen pausiert", locale: locale),
-                systemImage: "pause.circle"
-            )
-        } else if !actionableIssues.isEmpty {
-            Label(
-                IssueCountText.attention(actionableIssues.count, locale: locale),
-                systemImage: menuBarSymbol
-            )
-            lastSuccessfulRefresh
-            if case .failed(let message) = refreshState {
-                if hasPartialRefreshFailure {
-                    Label(
-                        AppLocalization.string("Aktualisierung teilweise fehlgeschlagen", locale: locale),
-                        systemImage: "wifi.exclamationmark"
-                    )
-                        .help(message)
-                } else {
-                    Label(
-                        AppLocalization.string("Status ist veraltet", locale: locale),
-                        systemImage: "wifi.exclamationmark"
-                    )
-                        .help(message)
-                }
-            }
-        } else if case .failed(let message) = refreshState {
-            if hasPartialRefreshFailure {
-                Label(
-                    AppLocalization.string("Aktualisierung teilweise fehlgeschlagen", locale: locale),
-                    systemImage: "wifi.exclamationmark"
-                )
-                    .help(message)
-            } else {
-                Label(
-                    AppLocalization.string("Aktualisierung fehlgeschlagen", locale: locale),
-                    systemImage: "wifi.exclamationmark"
-                )
-                    .help(message)
-            }
-            lastSuccessfulRefresh
-        } else if refreshState == .refreshing, !hasActiveSnapshot {
-            Label(
-                AppLocalization.string("Status wird geladen …", locale: locale),
-                systemImage: "arrow.clockwise"
-            )
-        } else if actionableIssues.isEmpty {
-            Label(IssueCountText.attention(0, locale: locale), systemImage: "checkmark.circle")
-            lastSuccessfulRefresh
-        }
-    }
-
-    @ViewBuilder
-    private var lastSuccessfulRefresh: some View {
-        if let latestSuccessfulRefresh {
-            Text(
-                verbatim: AppLocalization.string(
-                    "Zuletzt geprüft: \(latestSuccessfulRefresh.formatted(Date.FormatStyle(date: .omitted, time: .shortened).locale(locale)))",
-                    locale: locale
-                )
             )
         }
     }
@@ -439,6 +363,12 @@ private struct StatusPanelIssueEntry: View {
             Divider()
                 .padding(.leading, 44)
         }
+        .background(issue.presentationColor.opacity(isExpanded ? 0.16 : 0.09))
+        .overlay(alignment: .leading) {
+            Rectangle()
+                .fill(issue.presentationColor)
+                .frame(width: 3)
+        }
         .disabled(isPerformingAction)
     }
 }
@@ -532,6 +462,18 @@ private struct StatusPanelIssueRow: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
+                if durationText != nil || attemptText != nil {
+                    HStack(spacing: 10) {
+                        if let durationText {
+                            Label(durationText, systemImage: "clock")
+                        }
+                        if let attemptText {
+                            Label(attemptText, systemImage: "repeat")
+                        }
+                    }
+                    .font(.caption2.monospacedDigit())
+                    .foregroundStyle(.secondary)
+                }
                 if issue.isAcknowledged || issue.isInDowntime {
                     Text(verbatim: coverageText)
                         .font(.caption2.weight(.medium))
@@ -546,7 +488,7 @@ private struct StatusPanelIssueRow: View {
             Spacer(minLength: 8)
             Text(verbatim: severityText)
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(color)
+                .foregroundStyle(.primary)
             Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
                 .font(.caption2.weight(.semibold))
                 .foregroundStyle(.secondary)
@@ -562,6 +504,9 @@ private struct StatusPanelIssueRow: View {
     }
 
     private var symbol: String {
+        if issue.kind == .host {
+            return "network.slash"
+        }
         switch issue.severity {
         case .critical: return "exclamationmark.octagon.fill"
         case .unknown: return "questionmark.diamond.fill"
@@ -570,19 +515,40 @@ private struct StatusPanelIssueRow: View {
     }
 
     private var color: Color {
-        switch issue.severity {
-        case .critical: return .red
-        case .unknown: return .purple
-        case .warning: return .orange
-        }
+        issue.presentationColor
     }
 
     private var severityText: String {
+        if issue.kind == .host {
+            return "DOWN"
+        }
         switch issue.severity {
         case .critical: return AppLocalization.string("Kritisch", locale: locale)
         case .unknown: return AppLocalization.string("Unbekannt", locale: locale)
         case .warning: return AppLocalization.string("Warnung", locale: locale)
         }
+    }
+
+    private var durationText: String? {
+        guard let stateChangedAt = issue.stateChangedAt else { return nil }
+        let interval = max(0, Date.now.timeIntervalSince(stateChangedAt))
+        let formatter = DateComponentsFormatter()
+        formatter.allowedUnits = [.day, .hour, .minute, .second]
+        formatter.unitsStyle = .abbreviated
+        formatter.maximumUnitCount = 2
+        formatter.zeroFormattingBehavior = .dropAll
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.locale = locale
+        formatter.calendar = calendar
+        return formatter.string(from: interval)
+    }
+
+    private var attemptText: String? {
+        guard let checkAttempt = issue.checkAttempt,
+              let maxCheckAttempts = issue.maxCheckAttempts else {
+            return nil
+        }
+        return "\(checkAttempt)/\(maxCheckAttempts)"
     }
 
     private var coverageText: String {
@@ -595,6 +561,16 @@ private struct StatusPanelIssueRow: View {
             return AppLocalization.string("Wartungszeit", locale: locale)
         case (false, false):
             return ""
+        }
+    }
+}
+
+private extension MonitoringIssue {
+    var presentationColor: Color {
+        switch severity {
+        case .critical: return .red
+        case .unknown: return .purple
+        case .warning: return .orange
         }
     }
 }

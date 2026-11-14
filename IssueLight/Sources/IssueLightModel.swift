@@ -281,10 +281,6 @@ final class IssueLightModel: ObservableObject {
             .sorted(by: issueOrder)
     }
 
-    var latestSuccessfulRefresh: Date? {
-        activeSnapshots.map(\.observedAt).max()
-    }
-
     var hasActiveSnapshot: Bool {
         !activeSnapshots.isEmpty
     }

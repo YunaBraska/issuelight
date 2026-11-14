@@ -15,9 +15,10 @@ release deliberately smaller.
 | Host and service problem state | Done | Done | Provider-neutral model with deterministic severity and ordering. |
 | Multiple monitoring sources | Done | Done | Independent credentials, refresh, stale state, and failure reporting. |
 | Icinga 2 API | Done | Done | First fully supported provider and current compatibility baseline. |
+| Issue row details | Done | Mostly done | Show source when needed, host, service, state, state duration, check attempt, first output line, acknowledgement, and downtime. Add check age later as a stale-data signal instead of another timestamp column. |
 | Nagios CGI and Icinga Classic | Done | Planned | Add only after the shared Icinga read journey and provider contract are stable. |
 | Thruk and Checkmk | Done | Planned | Same provider rule. No provider-specific state in shared UI or persistence. |
-| Text search | Partial | Done | Search display name, host, output, and source without a settings screen. |
+| Text search | Partial | Done | Keep search in the panel's first row and match display name, host, output, and source. |
 | State and property filters | Done | Partial | Add a few visible filters only when real workflows need them. Do not reproduce NagBar's large filter matrix. |
 | Acknowledge, recheck, and downtime | Done | Done for Icinga 2 | Provider capabilities expose the supported commands. Acknowledgement and downtime require explicit input; every confirmed command refreshes its source. |
 | Open object in monitoring web UI | Done | Planned | Recommended as the smallest useful action before a large in-app detail surface. |

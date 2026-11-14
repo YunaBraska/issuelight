@@ -140,9 +140,9 @@ final class LandingPageScreenshotTests: XCTestCase {
                             sourceID: UUID(),
                             id: "menu-\(index)",
                             host: "host",
-                            service: nil,
-                            name: "host",
-                            severity: index.isMultiple(of: 3) ? .warning : .critical,
+                            service: index < 5 ? "Health" : nil,
+                            name: index < 5 ? "Health" : "host",
+                            severity: [.critical, .critical, .warning, .warning, .unknown, .critical, .critical][index],
                             summary: "fixture"
                         )
                     }
@@ -189,11 +189,8 @@ final class LandingPageScreenshotTests: XCTestCase {
                 sourceNames: [productionID: "Production"],
                 refreshState: .current,
                 hasPartialRefreshFailure: false,
-                latestSuccessfulRefresh: Date(timeIntervalSince1970: 1_794_574_720),
-                menuBarSymbol: "exclamationmark.octagon.fill",
                 supportedActions: { _ in [.recheck, .acknowledge, .scheduleDowntime] },
                 activeActionIssueIDs: [],
-                refresh: {},
                 performRecheck: { _ in },
                 requestAcknowledgement: { _ in },
                 requestDowntime: { _ in }
@@ -264,6 +261,9 @@ final class LandingPageScreenshotTests: XCTestCase {
             displayName: name,
             severity: severity,
             summary: summary,
+            stateChangedAt: Date.now.addingTimeInterval(-7_384),
+            checkAttempt: severity == .warning ? 2 : 4,
+            maxCheckAttempts: severity == .warning ? 3 : 4,
             isAcknowledged: false,
             isInDowntime: false
         )

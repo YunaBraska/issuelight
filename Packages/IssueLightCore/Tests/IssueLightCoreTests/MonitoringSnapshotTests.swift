@@ -7,10 +7,10 @@ final class MonitoringSnapshotTests: XCTestCase {
         let sourceID = UUID(uuidString: "11111111-1111-1111-1111-111111111111")!
         let observedAt = Date(timeIntervalSince1970: 1_800_000_000)
         let hostData = Data(
-            #"{"results":[{"attrs":{"acknowledgement":0,"display_name":"Database 1","downtime_depth":0,"last_check_result":{"output":"Host unreachable\nsecond line"},"name":"db-1","state":1},"name":"db-1","type":"Host"}]}"#.utf8
+            #"{"results":[{"attrs":{"acknowledgement":0,"check_attempt":3,"display_name":"Database 1","downtime_depth":0,"last_check_result":{"output":"Host unreachable\nsecond line"},"last_state_change":1799992800,"max_check_attempts":3,"name":"db-1","state":1},"name":"db-1","type":"Host"}]}"#.utf8
         )
         let serviceData = Data(
-            #"{"results":[{"attrs":{"acknowledgement":1,"display_name":"Disk /","downtime_depth":0,"host_name":"db-1","last_check_result":{"output":"DISK WARNING - 82% used"},"name":"disk-root","state":1},"name":"db-1!disk-root","type":"Service"},{"attrs":{"acknowledgement":0,"display_name":"Replication","downtime_depth":2,"host_name":"db-1","last_check_result":{"output":"UNKNOWN - no sample"},"name":"replication","state":3},"name":"db-1!replication","type":"Service"}]}"#.utf8
+            #"{"results":[{"attrs":{"acknowledgement":1,"check_attempt":2,"display_name":"Disk /","downtime_depth":0,"host_name":"db-1","last_check_result":{"output":"DISK WARNING - 82% used"},"last_state_change":1799996400,"max_check_attempts":4,"name":"disk-root","state":1},"name":"db-1!disk-root","type":"Service"},{"attrs":{"acknowledgement":0,"display_name":"Replication","downtime_depth":2,"host_name":"db-1","last_check_result":{"output":"UNKNOWN - no sample"},"name":"replication","state":3},"name":"db-1!replication","type":"Service"}]}"#.utf8
         )
 
         let snapshot = try Icinga2SnapshotDecoder().decode(
@@ -34,10 +34,18 @@ final class MonitoringSnapshotTests: XCTestCase {
                 displayName: "Database 1",
                 severity: .critical,
                 summary: "Host unreachable",
+                stateChangedAt: Date(timeIntervalSince1970: 1_799_992_800),
+                checkAttempt: 3,
+                maxCheckAttempts: 3,
                 isAcknowledged: false,
                 isInDowntime: false
             )
         )
+        let diskIssue = try XCTUnwrap(snapshot.issues.first { $0.nativeID == "db-1!disk-root" })
+        XCTAssertEqual(diskIssue.checkAttempt, 2)
+        XCTAssertEqual(diskIssue.maxCheckAttempts, 4)
+        let replicationIssue = try XCTUnwrap(snapshot.issues.first { $0.nativeID == "db-1!replication" })
+        XCTAssertEqual(replicationIssue.stateChangedAt, nil)
         XCTAssertTrue(snapshot.issues[0].requiresAttention)
         XCTAssertFalse(snapshot.issues[1].requiresAttention)
         XCTAssertFalse(snapshot.issues[2].requiresAttention)

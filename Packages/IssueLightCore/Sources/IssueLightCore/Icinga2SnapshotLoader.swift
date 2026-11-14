@@ -98,9 +98,12 @@ public final class Icinga2SnapshotLoader: @unchecked Sendable {
 
     private static let hostAttributes = [
         "acknowledgement",
+        "check_attempt",
         "display_name",
         "downtime_depth",
         "last_check_result",
+        "last_state_change",
+        "max_check_attempts",
         "name",
         "state",
     ]
