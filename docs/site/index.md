@@ -66,7 +66,7 @@ description: IssueLight keeps Icinga 2 problems in the macOS menu bar and stays 
 <section class="section shell security-section">
   <figure class="setup-shot app-window">
     <div class="window-bar"><span></span><span></span><span></span><strong>Source setup</strong></div>
-    <img src="{{ '/assets/screenshots/source-setup.png' | relative_url }}" alt="IssueLight source setup with Icinga 2 endpoint, Basic authentication and strict macOS system trust" width="1840" height="1360">
+    <img src="{{ '/assets/screenshots/source-setup.png' | relative_url }}" alt="IssueLight source setup with Icinga 2 endpoint, Basic authentication and strict macOS system trust" width="1640" height="1200">
   </figure>
   <div class="security-copy">
     <p class="eyebrow"><span></span>Secure by default</p>

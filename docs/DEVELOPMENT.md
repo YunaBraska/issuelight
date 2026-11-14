@@ -30,10 +30,13 @@ configuration.
 
 ## Protected mTLS acceptance
 
-Use a separate macOS review account and the lab identity. In Keychain Access,
-open the imported identity's private key and set Access Control to require
-confirmation without adding IssueLight to the always-allowed applications.
-Install the stable signed app, configure the mTLS source, and run these checks:
+Use a separate macOS review profile when one is available. For this acceptance
+case only, open the lab identity's private key in Keychain Access, require
+confirmation, and do not choose **Always Allow**. This preserves the prompt so
+the approve and deny paths remain repeatable. It is not a recommendation for
+normal use; a user may choose **Always Allow** to add the signed app to that
+item's trusted-app list. Install the stable signed app, configure the mTLS
+source, and run these checks:
 
 1. Start **Test Connection** and approve the macOS prompt. The test must pass.
 2. Leave Settings and wait for background refresh. No prompt may appear. The

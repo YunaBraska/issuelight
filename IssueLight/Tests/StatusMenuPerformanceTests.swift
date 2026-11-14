@@ -42,6 +42,7 @@ final class StatusMenuPerformanceTests: XCTestCase {
             hasPartialRefreshFailure: false,
             supportedActions: { _ in [.recheck, .acknowledge, .scheduleDowntime] },
             activeActionIssueIDs: [],
+            openSettings: {},
             performRecheck: { _ in },
             requestAcknowledgement: { _ in },
             requestDowntime: { _ in }

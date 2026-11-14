@@ -8,7 +8,7 @@ final class LandingPageScreenshotTests: XCTestCase {
     func testLandingPageScreenshotsRenderFromProductionViews() throws {
         let sourceData = try NativeViewRenderer.pngData(
             for: sourceSetupView,
-            size: CGSize(width: 920, height: 680)
+            size: CGSize(width: 820, height: 600)
         )
         let menuItemData = try NativeViewRenderer.pngData(
             for: menuItemStatesView,
@@ -191,6 +191,7 @@ final class LandingPageScreenshotTests: XCTestCase {
                 hasPartialRefreshFailure: false,
                 supportedActions: { _ in [.recheck, .acknowledge, .scheduleDowntime] },
                 activeActionIssueIDs: [],
+                openSettings: {},
                 performRecheck: { _ in },
                 requestAcknowledgement: { _ in },
                 requestDowntime: { _ in }

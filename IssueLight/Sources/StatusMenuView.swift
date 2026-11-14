@@ -46,6 +46,7 @@ struct MenuBarIssueCounts: Equatable {
 
 struct StatusMenuView: View {
     @ObservedObject var model: IssueLightModel
+    @Environment(\.openSettings) private var openSettings
     @State private var pendingAction: PendingIssueAction?
     @Environment(\.locale) private var locale
 
@@ -61,6 +62,10 @@ struct StatusMenuView: View {
             hasPartialRefreshFailure: model.hasPartialRefreshFailure,
             supportedActions: model.supportedActions,
             activeActionIssueIDs: model.activeActionIssueIDs,
+            openSettings: {
+                openSettings()
+                NSApp.activate()
+            },
             performRecheck: { issue in
                 Task { await model.perform(.recheck, on: issue) }
             },
@@ -108,6 +113,7 @@ struct StatusMenuContent: View {
     let hasPartialRefreshFailure: Bool
     let supportedActions: (MonitoringIssue) -> Set<MonitoringActionKind>
     let activeActionIssueIDs: Set<String>
+    let openSettings: () -> Void
     let performRecheck: (MonitoringIssue) -> Void
     let requestAcknowledgement: (MonitoringIssue) -> Void
     let requestDowntime: (MonitoringIssue) -> Void
@@ -131,11 +137,16 @@ struct StatusMenuContent: View {
                     ProgressView()
                         .controlSize(.small)
                 }
-                SettingsLink {
+                Button(action: openSettings) {
                     Image(systemName: "gearshape")
+                        .frame(width: 28, height: 28)
+                        .contentShape(Rectangle())
                 }
+                .buttonStyle(.borderless)
                 .labelStyle(.iconOnly)
                 .help(AppLocalization.string("Einstellungen …", locale: locale))
+                .accessibilityLabel(AppLocalization.string("Einstellungen …", locale: locale))
+                .accessibilityIdentifier("open-settings")
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 10)
@@ -336,7 +347,7 @@ private struct StatusPanelIssueEntry: View {
                     Button(action: performRecheck) {
                         Label(
                             AppLocalization.string("Erneut prüfen", locale: locale),
-                            systemImage: "arrow.clockwise"
+                            systemImage: "play.circle"
                         )
                     }
                     .disabled(!actions.contains(.recheck))

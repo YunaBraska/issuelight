@@ -55,8 +55,8 @@ struct IssueLightSettingsView: View {
                 }
                 .tag(Tab.about)
         }
-        .padding(20)
-        .frame(width: 920, height: 680)
+        .padding(16)
+        .frame(width: 820, height: 600)
     }
 }
 
@@ -108,12 +108,19 @@ struct LanguageSettingsView: View {
 }
 
 struct AboutSettingsView: View {
+    private static let messages: [LocalizedStringResource] = [
+        "Alerts multiply. Attention does not.\nIssueLight sorts the signal before it reaches you.\nA star helps. Coffee keeps the beacon lit.",
+        "Green is a temporary agreement between distributed systems.\nIssueLight watches the fine print.\nStar it if it saved a minute. Fuel it if it saved the night.",
+        "The quiet menu bar is not doing nothing.\nIt is waiting for evidence.\nStar the repository if that restraint feels useful.",
+        "Monitoring should interrupt you only when it has something useful to say.\nIssueLight keeps the noise down and the problems visible.\nCoffee is optional. Reliable alerts are not.",
+    ]
+
     @Environment(\.locale) private var locale
     let icon: NSImage
     let version: String
     let build: String
     let copyrightText: String
-    private let messageKey: LocalizedStringResource
+    @State private var messageIndex: Int
 
     private let repositoryURL = URL(string: "https://github.com/YunaBraska/issuelight")!
     private let releasesURL = URL(string: "https://github.com/YunaBraska/issuelight/releases")!
@@ -138,69 +145,60 @@ struct AboutSettingsView: View {
         self.copyrightText = copyrightText
             ?? Bundle.main.object(forInfoDictionaryKey: "NSHumanReadableCopyright") as? String
             ?? "Copyright © 2026 Yuna Morgenstern and IssueLight contributors."
-        let messages: [LocalizedStringResource] = [
-            "Alerts multiply. Attention does not.\nIssueLight sorts the signal before it reaches you.\nA star helps. Coffee keeps the beacon lit.",
-            "Green is a temporary agreement between distributed systems.\nIssueLight watches the fine print.\nStar it if it saved a minute. Fuel it if it saved the night.",
-            "The quiet menu bar is not doing nothing.\nIt is waiting for evidence.\nStar the repository if that restraint feels useful.",
-            "Monitoring should interrupt you only when it has something useful to say.\nIssueLight keeps the noise down and the problems visible.\nCoffee is optional. Reliable alerts are not.",
-        ]
-        self.messageKey = messages[messageIndex.map { abs($0) % messages.count } ?? Int.random(in: messages.indices)]
+        _messageIndex = State(
+            initialValue: messageIndex.map { abs($0) % Self.messages.count }
+                ?? Int.random(in: Self.messages.indices)
+        )
     }
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                HStack(spacing: 18) {
+            VStack(alignment: .leading, spacing: 18) {
+                HStack(spacing: 16) {
                     Image(nsImage: icon)
                         .resizable()
                         .interpolation(.high)
-                        .frame(width: 88, height: 88)
+                        .frame(width: 72, height: 72)
                         .accessibilityHidden(true)
 
-                    VStack(alignment: .leading, spacing: 5) {
+                    VStack(alignment: .leading, spacing: 4) {
                         Text(verbatim: "IssueLight")
-                            .font(.title.bold())
+                            .font(.title2.bold())
                         Text(verbatim: "\(AppLocalization.string("Version", locale: locale)) \(version) (\(build))")
-                            .font(.callout)
-                            .foregroundStyle(.secondary)
-                        Text(verbatim: "Yuna Morgenstern")
-                            .font(.callout)
-                        Text(verbatim: "Apache License 2.0")
                             .font(.caption)
                             .foregroundStyle(.secondary)
-                        Text(verbatim: AppLocalization.string("Monitoring without the noise.", locale: locale))
-                            .font(.callout.weight(.medium))
+                        Text(verbatim: "Yuna Morgenstern · Apache License 2.0")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
                 }
 
-                Text(verbatim: AppLocalization.string(messageKey, locale: locale))
+                Text(verbatim: AppLocalization.string(Self.messages[messageIndex], locale: locale))
                     .font(.callout)
                     .foregroundStyle(.secondary)
-                    .padding(14)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.vertical, 2)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(.quaternary, in: RoundedRectangle(cornerRadius: 12))
 
                 Divider()
 
-                settingsLinks
-
-                Divider()
-
-                supportLinks
+                links
 
                 Text(verbatim: copyrightText)
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .textSelection(.enabled)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(4)
+            .frame(maxWidth: 620, alignment: .leading)
+            .frame(maxWidth: .infinity, alignment: .center)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
         }
         .accessibilityIdentifier("about-settings")
     }
 
-    private var settingsLinks: some View {
-        LazyVGrid(columns: linkColumns, alignment: .leading, spacing: 10) {
+    private var links: some View {
+        LazyVGrid(columns: linkColumns, alignment: .leading, spacing: 12) {
             aboutLink("GitHub", systemImage: "chevron.left.forwardslash.chevron.right", destination: repositoryURL)
             aboutLink(
                 AppLocalization.string("Veröffentlichungen anzeigen …", locale: locale),
@@ -217,11 +215,6 @@ struct AboutSettingsView: View {
                 systemImage: "exclamationmark.bubble",
                 destination: issuesURL
             )
-        }
-    }
-
-    private var supportLinks: some View {
-        LazyVGrid(columns: linkColumns, alignment: .leading, spacing: 10) {
             aboutLink("GitHub Sponsors", systemImage: "heart", destination: sponsorsURL)
             aboutLink("Buy Me a Coffee", systemImage: "cup.and.saucer", destination: coffeeURL)
             aboutLink("Ko-fi", systemImage: "mug", destination: koFiURL)
@@ -237,8 +230,9 @@ struct AboutSettingsView: View {
                 Image(systemName: systemImage)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, 3)
         }
-        .buttonStyle(.bordered)
+        .buttonStyle(.link)
     }
 
     private var linkColumns: [GridItem] {

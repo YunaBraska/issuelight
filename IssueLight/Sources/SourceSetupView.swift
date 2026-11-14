@@ -61,7 +61,7 @@ struct SourceSetupView: View {
                         : model.name
                 )
         }
-        .frame(minWidth: 780, minHeight: 600)
+        .frame(minWidth: 700, minHeight: 500)
         .onDisappear {
             connectionTask?.cancel()
             Task { _ = await model.cleanupUnreferencedManagedServerCertificates() }
