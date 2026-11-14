@@ -61,6 +61,63 @@ final class LocalizationCatalogTests: XCTestCase {
         }
     }
 
+    func testCatalogContainsEveryStaticSourceKey() throws {
+        let temporaryDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("IssueLightLocalization-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(
+            at: temporaryDirectory,
+            withIntermediateDirectories: true
+        )
+        defer { try? FileManager.default.removeItem(at: temporaryDirectory) }
+
+        let sourceDirectory = catalogURL
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .appendingPathComponent("Sources", isDirectory: true)
+        let sourceFiles = try FileManager.default.contentsOfDirectory(
+            at: sourceDirectory,
+            includingPropertiesForKeys: nil
+        )
+        .filter { $0.pathExtension == "swift" }
+        .map(\.path)
+        .sorted()
+
+        let process = Process()
+        let diagnostics = Pipe()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/xcrun")
+        process.arguments = [
+            "xcstringstool", "extract",
+            "--SwiftUI",
+            "--modern-localizable-strings",
+            "--legacy-localizable-strings",
+            "--output-format", "xcstrings",
+            "--output-directory", temporaryDirectory.path,
+        ] + sourceFiles
+        process.standardError = diagnostics
+        try process.run()
+        process.waitUntilExit()
+        let diagnosticText = String(
+            decoding: diagnostics.fileHandleForReading.readDataToEndOfFile(),
+            as: UTF8.self
+        )
+        XCTAssertEqual(process.terminationStatus, 0, diagnosticText)
+
+        let extractedData = try Data(
+            contentsOf: temporaryDirectory.appendingPathComponent("Localizable.xcstrings")
+        )
+        let extractedCatalog = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: extractedData) as? [String: Any]
+        )
+        let extractedStrings = try XCTUnwrap(extractedCatalog["strings"] as? [String: Any])
+        let catalogStrings = try XCTUnwrap(loadCatalog()["strings"] as? [String: Any])
+        let missingKeys = Set(extractedStrings.keys)
+            .subtracting(catalogStrings.keys)
+            .filter { !$0.isEmpty && !$0.contains("%arg") }
+            .sorted()
+
+        XCTAssertTrue(missingKeys.isEmpty, "Missing source keys: \(missingKeys)")
+    }
+
     private var protectedTerms: [String] {
         ["IssueLight", "macOS", "Icinga", "PKCS#12", "SHA-256", "HTTP", "TLS", "API"]
     }

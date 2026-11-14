@@ -26318,6 +26318,224 @@
 }
     }
   },
+  "Die App-Store-Ausgabe verbindet sich direkt mit Icinga. SSH-Tunnel sowie SSH- und RDP-Startaktionen stehen in der direkten GitHub-Ausgabe bereit.": {
+    "localizations": {
+"de": {
+  "stringUnit": { "state": "translated",
+    "value": "Die App-Store-Ausgabe verbindet sich direkt mit Icinga. SSH-Tunnel sowie SSH- und RDP-Startaktionen stehen in der direkten GitHub-Ausgabe bereit."
+  }
+},
+"en": {
+  "stringUnit": { "state": "translated",
+    "value": "The App Store edition connects directly to Icinga. SSH tunnels and SSH/RDP launch actions are available in the direct GitHub edition."
+  }
+},
+"sv": {
+  "stringUnit": { "state": "translated",
+    "value": "App Store-versionen ansluter direkt till Icinga. SSH-tunnlar samt startåtgärder för SSH och RDP finns i den direkta GitHub-versionen."
+  }
+},
+"es": {
+  "stringUnit": { "state": "translated",
+    "value": "La edición de App Store se conecta directamente a Icinga. Los túneles SSH y las acciones para iniciar SSH y RDP están disponibles en la edición directa de GitHub."
+  }
+},
+"fr": {
+  "stringUnit": { "state": "translated",
+    "value": "L’édition App Store se connecte directement à Icinga. Les tunnels SSH et les actions de lancement SSH/RDP sont disponibles dans l’édition directe de GitHub."
+  }
+},
+"pt": {
+  "stringUnit": { "state": "translated",
+    "value": "A edição da App Store liga-se diretamente ao Icinga. Os túneis SSH e as ações para iniciar SSH/RDP estão disponíveis na edição direta do GitHub."
+  }
+},
+"ru": {
+  "stringUnit": { "state": "translated",
+    "value": "Версия из App Store подключается к Icinga напрямую. SSH-туннели и действия запуска SSH/RDP доступны в версии, загружаемой напрямую с GitHub."
+  }
+},
+"tr": {
+  "stringUnit": { "state": "translated",
+    "value": "App Store sürümü Icinga'ya doğrudan bağlanır. SSH tünelleri ile SSH/RDP başlatma eylemleri doğrudan GitHub sürümünde kullanılabilir."
+  }
+},
+"id": {
+  "stringUnit": { "state": "translated",
+    "value": "Edisi App Store terhubung langsung ke Icinga. Tunnel SSH dan tindakan untuk membuka SSH/RDP tersedia di edisi GitHub langsung."
+  }
+},
+"vi": {
+  "stringUnit": { "state": "translated",
+    "value": "Phiên bản App Store kết nối trực tiếp với Icinga. Đường hầm SSH và thao tác mở SSH/RDP có trong phiên bản tải trực tiếp từ GitHub."
+  }
+},
+"zh-Hans": {
+  "stringUnit": { "state": "translated",
+    "value": "App Store 版本直接连接 Icinga。SSH 隧道和 SSH/RDP 启动操作可在 GitHub 直装版本中使用。"
+  }
+},
+"ja": {
+  "stringUnit": { "state": "translated",
+    "value": "App Store版はIcingaに直接接続します。SSHトンネルとSSH/RDPの起動操作は、GitHubから直接配布する版で利用できます。"
+  }
+},
+"ar": {
+  "stringUnit": { "state": "translated",
+    "value": "يتصل إصدار App Store مباشرةً بـ Icinga. تتوفر أنفاق SSH وإجراءات تشغيل SSH/RDP في إصدار GitHub المباشر."
+  }
+},
+"hi": {
+  "stringUnit": { "state": "translated",
+    "value": "App Store संस्करण सीधे Icinga से जुड़ता है। SSH टनल और SSH/RDP आरंभ करने की क्रियाएँ सीधे GitHub संस्करण में उपलब्ध हैं।"
+  }
+},
+"bn": {
+  "stringUnit": { "state": "translated",
+    "value": "App Store সংস্করণ সরাসরি Icinga-এর সাথে সংযোগ করে। SSH টানেল এবং SSH/RDP চালুর অ্যাকশন সরাসরি GitHub সংস্করণে পাওয়া যায়।"
+  }
+},
+"mr": {
+  "stringUnit": { "state": "translated",
+    "value": "App Store आवृत्ती थेट Icinga शी जोडते. SSH टनेल आणि SSH/RDP सुरू करण्याच्या क्रिया थेट GitHub आवृत्तीत उपलब्ध आहेत."
+  }
+},
+"te": {
+  "stringUnit": { "state": "translated",
+    "value": "App Store ఎడిషన్ నేరుగా Icingaకు కనెక్ట్ అవుతుంది. SSH టన్నెల్‌లు మరియు SSH/RDP ప్రారంభ చర్యలు నేరుగా GitHub ఎడిషన్‌లో అందుబాటులో ఉంటాయి."
+  }
+},
+"ur": {
+  "stringUnit": { "state": "translated",
+    "value": "App Store ایڈیشن براہ راست Icinga سے جڑتا ہے۔ SSH ٹنل اور SSH/RDP شروع کرنے کی کارروائیاں براہ راست GitHub ایڈیشن میں دستیاب ہیں۔"
+  }
+},
+"sw": {
+  "stringUnit": { "state": "translated",
+    "value": "Toleo la App Store huunganishwa moja kwa moja na Icinga. Vichuguu vya SSH na vitendo vya kuanzisha SSH/RDP vinapatikana katika toleo la moja kwa moja la GitHub."
+  }
+},
+"ha": {
+  "stringUnit": { "state": "translated",
+    "value": "Sigar App Store tana haɗuwa kai tsaye da Icinga. Ana samun ramukan SSH da ayyukan ƙaddamar da SSH/RDP a sigar GitHub ta kai tsaye."
+  }
+},
+"pcm": {
+  "stringUnit": { "state": "translated",
+    "value": "Di App Store version dey connect direct to Icinga. SSH tunnels and actions to open SSH/RDP dey available for di direct GitHub version."
+  }
+}
+    }
+  },
+  "Navigation": {
+    "localizations": {
+"de": {
+  "stringUnit": { "state": "translated",
+    "value": "Navigation"
+  }
+},
+"en": {
+  "stringUnit": { "state": "translated",
+    "value": "Navigation"
+  }
+},
+"sv": {
+  "stringUnit": { "state": "translated",
+    "value": "Navigering"
+  }
+},
+"es": {
+  "stringUnit": { "state": "translated",
+    "value": "Navegación"
+  }
+},
+"fr": {
+  "stringUnit": { "state": "translated",
+    "value": "Navigation"
+  }
+},
+"pt": {
+  "stringUnit": { "state": "translated",
+    "value": "Navegação"
+  }
+},
+"ru": {
+  "stringUnit": { "state": "translated",
+    "value": "Навигация"
+  }
+},
+"tr": {
+  "stringUnit": { "state": "translated",
+    "value": "Navigasyon"
+  }
+},
+"id": {
+  "stringUnit": { "state": "translated",
+    "value": "Navigasi"
+  }
+},
+"vi": {
+  "stringUnit": { "state": "translated",
+    "value": "Điều hướng"
+  }
+},
+"zh-Hans": {
+  "stringUnit": { "state": "translated",
+    "value": "导航"
+  }
+},
+"ja": {
+  "stringUnit": { "state": "translated",
+    "value": "ナビゲーション"
+  }
+},
+"ar": {
+  "stringUnit": { "state": "translated",
+    "value": "التنقل"
+  }
+},
+"hi": {
+  "stringUnit": { "state": "translated",
+    "value": "नेविगेशन"
+  }
+},
+"bn": {
+  "stringUnit": { "state": "translated",
+    "value": "নেভিগেশন"
+  }
+},
+"mr": {
+  "stringUnit": { "state": "translated",
+    "value": "नेव्हिगेशन"
+  }
+},
+"te": {
+  "stringUnit": { "state": "translated",
+    "value": "నావిగేషన్"
+  }
+},
+"ur": {
+  "stringUnit": { "state": "translated",
+    "value": "نیویگیشن"
+  }
+},
+"sw": {
+  "stringUnit": { "state": "translated",
+    "value": "Usogezaji"
+  }
+},
+"ha": {
+  "stringUnit": { "state": "translated",
+    "value": "Kewayawa"
+  }
+},
+"pcm": {
+  "stringUnit": { "state": "translated",
+    "value": "Navigation"
+  }
+}
+    }
+  },
   "Navigation & Fernzugriff": {
     "localizations": {
 "de": {

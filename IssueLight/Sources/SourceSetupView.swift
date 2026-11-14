@@ -364,7 +364,11 @@ struct SourceSetupView: View {
                         PortNumberField("RDP-Port", value: $model.rdpPort)
                     }
                 } header: {
-                    Text(AppDistribution.supportsRemoteAccess ? "Navigation & Fernzugriff" : "Navigation")
+                    if AppDistribution.supportsRemoteAccess {
+                        Text("Navigation & Fernzugriff")
+                    } else {
+                        Text("Navigation")
+                    }
                 } footer: {
                     if !AppDistribution.supportsSSHTunnels {
                         Text("Die App-Store-Ausgabe verbindet sich direkt mit Icinga. SSH-Tunnel sowie SSH- und RDP-Startaktionen stehen in der direkten GitHub-Ausgabe bereit.")

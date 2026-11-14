@@ -960,6 +960,12 @@ final class IssueLightModel: ObservableObject {
     }
 
     func importIdentity(at fileURL: URL, password: String) async -> Bool {
+        let hasSecurityScopedAccess = fileURL.startAccessingSecurityScopedResource()
+        defer {
+            if hasSecurityScopedAccess {
+                fileURL.stopAccessingSecurityScopedResource()
+            }
+        }
         activity = .working(localized("Zertifikat wird importiert …"))
         do {
             let descriptor = try await identityCatalog.importPKCS12(at: fileURL, password: password)
@@ -976,6 +982,12 @@ final class IssueLightModel: ObservableObject {
     }
 
     func importServerCertificate(at fileURL: URL) async -> Bool {
+        let hasSecurityScopedAccess = fileURL.startAccessingSecurityScopedResource()
+        defer {
+            if hasSecurityScopedAccess {
+                fileURL.stopAccessingSecurityScopedResource()
+            }
+        }
         activity = .working(localized("CA-Zertifikat wird importiert …"))
         do {
             let descriptor = try await certificateCatalog.importCertificate(at: fileURL)
@@ -998,6 +1010,12 @@ final class IssueLightModel: ObservableObject {
     }
 
     func pinServerCertificate(at fileURL: URL) -> Bool {
+        let hasSecurityScopedAccess = fileURL.startAccessingSecurityScopedResource()
+        defer {
+            if hasSecurityScopedAccess {
+                fileURL.stopAccessingSecurityScopedResource()
+            }
+        }
         activity = .working(localized("Serverzertifikat wird geprüft …"))
         do {
             pinnedServerCertificateSHA256 = try ServerCertificateFingerprint.sha256(at: fileURL)
