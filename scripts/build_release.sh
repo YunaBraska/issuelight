@@ -2,6 +2,16 @@
 
 set -eu
 
+script_directory=$(CDPATH='' cd "$(dirname "$0")" && pwd -P)
+repository_root=$(CDPATH='' cd "$script_directory/.." && pwd -P)
+environment_file="$repository_root/.env.local"
+
+if [ -f "$environment_file" ]; then
+    set -a
+    . "$environment_file"
+    set +a
+fi
+
 usage() {
     echo "Usage: $0 OUTPUT_DIRECTORY REVISION" >&2
     echo "Requires APPLE_TEAM_ID, APPLE_SIGNING_IDENTITY, and NOTARY_KEYCHAIN_PROFILE." >&2
@@ -38,8 +48,6 @@ case "$APPLE_SIGNING_IDENTITY" in
     *) echo "APPLE_SIGNING_IDENTITY must name a Developer ID Application identity." >&2; exit 65 ;;
 esac
 
-script_directory=$(CDPATH='' cd "$(dirname "$0")" && pwd -P)
-repository_root=$(CDPATH='' cd "$script_directory/.." && pwd -P)
 test "$revision" = "$(git -C "$repository_root" rev-parse HEAD)" || {
     echo "REVISION does not match the checked-out commit." >&2
     exit 65
