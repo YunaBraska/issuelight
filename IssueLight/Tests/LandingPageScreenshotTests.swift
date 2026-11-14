@@ -20,23 +20,27 @@ final class LandingPageScreenshotTests: XCTestCase {
         )
         let germanMenuData = try NativeViewRenderer.pngData(
             for: menuPanelView(language: .german),
-            size: CGSize(width: 360, height: 230)
+            size: CGSize(width: 430, height: 240)
         )
         let swedishMenuData = try NativeViewRenderer.pngData(
             for: menuPanelView(language: .swedish),
-            size: CGSize(width: 360, height: 230)
+            size: CGSize(width: 430, height: 240)
         )
         let arabicMenuData = try NativeViewRenderer.pngData(
             for: menuPanelView(language: .arabic),
-            size: CGSize(width: 360, height: 230)
+            size: CGSize(width: 430, height: 240)
         )
         let swedishSettingsData = try NativeViewRenderer.pngData(
             for: languageSettingsView(language: .swedish),
-            size: CGSize(width: 520, height: 230)
+            size: CGSize(width: 660, height: 470)
         )
         let arabicSettingsData = try NativeViewRenderer.pngData(
             for: languageSettingsView(language: .arabic),
-            size: CGSize(width: 520, height: 230)
+            size: CGSize(width: 660, height: 470)
+        )
+        let aboutSettingsData = try NativeViewRenderer.pngData(
+            for: aboutSettingsView,
+            size: CGSize(width: 660, height: 470)
         )
 
         XCTAssertGreaterThan(statusData.count, 50_000)
@@ -47,6 +51,7 @@ final class LandingPageScreenshotTests: XCTestCase {
         XCTAssertGreaterThan(arabicMenuData.count, 15_000)
         XCTAssertGreaterThan(swedishSettingsData.count, 8_000)
         XCTAssertGreaterThan(arabicSettingsData.count, 8_000)
+        XCTAssertGreaterThan(aboutSettingsData.count, 20_000)
 
         guard let outputPath = ProcessInfo.processInfo.environment["ISSUELIGHT_SCREENSHOT_OUTPUT_DIR"] else {
             return
@@ -86,6 +91,10 @@ final class LandingPageScreenshotTests: XCTestCase {
         )
         try arabicSettingsData.write(
             to: outputDirectory.appendingPathComponent("language-settings-ar.png"),
+            options: .atomic
+        )
+        try aboutSettingsData.write(
+            to: outputDirectory.appendingPathComponent("settings-about.png"),
             options: .atomic
         )
     }
@@ -202,7 +211,23 @@ final class LandingPageScreenshotTests: XCTestCase {
 
     private func menuItem(title: String, symbol: String, count: Int) -> some View {
         VStack(spacing: 6) {
-            StatusMenuLabel(symbol: symbol, issueCount: count, accessibilityText: title)
+            StatusMenuLabel(
+                symbol: symbol,
+                counts: MenuBarIssueCounts(
+                    issues: (0..<count).map { index in
+                        issue(
+                            sourceID: UUID(),
+                            id: "menu-\(index)",
+                            host: "host",
+                            service: nil,
+                            name: "host",
+                            severity: index.isMultiple(of: 3) ? .warning : .critical,
+                            summary: "fixture"
+                        )
+                    }
+                ),
+                accessibilityText: title
+            )
                 .font(.system(size: 14))
             Text(verbatim: title)
                 .font(.caption)
@@ -249,12 +274,9 @@ final class LandingPageScreenshotTests: XCTestCase {
                 showStatus: {},
                 refresh: {},
                 openSources: {},
-                showAbout: {},
                 quit: {}
             )
         }
-        .buttonStyle(.plain)
-        .padding(12)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(.regularMaterial)
         .appLanguageEnvironment(settings)
@@ -263,9 +285,25 @@ final class LandingPageScreenshotTests: XCTestCase {
 
     private func languageSettingsView(language: AppLanguage) -> some View {
         let settings = AppLanguageSettings(selection: language)
-        return LanguageSettingsView(languageSettings: settings)
+        return IssueLightSettingsView(languageSettings: settings)
             .appLanguageEnvironment(settings)
             .environment(\.colorScheme, .light)
+    }
+
+    private var aboutSettingsView: some View {
+        let resources = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .appendingPathComponent("Resources/Assets.xcassets/AppIcon.appiconset/IssueLight-256.png")
+        return AboutSettingsView(
+            icon: NSImage(contentsOf: resources)!,
+            version: "0.1.0",
+            build: "1",
+            copyrightText: "Copyright © 2026 Yuna Morgenstern and IssueLight contributors."
+        )
+        .frame(width: 620, height: 430)
+        .environment(\.locale, Locale(identifier: "de"))
+        .environment(\.colorScheme, .light)
     }
 
     private func issue(

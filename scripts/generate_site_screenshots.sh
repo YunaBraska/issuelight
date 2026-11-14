@@ -36,5 +36,6 @@ test -s "$output_directory/menu-panel-sv.png"
 test -s "$output_directory/menu-panel-ar.png"
 test -s "$output_directory/language-settings-sv.png"
 test -s "$output_directory/language-settings-ar.png"
+test -s "$output_directory/settings-about.png"
 
 printf '%s\n' "Generated IssueLight site screenshots in $output_directory"

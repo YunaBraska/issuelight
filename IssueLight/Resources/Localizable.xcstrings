@@ -1,6 +1,78 @@
 {
   "sourceLanguage": "de",
   "strings": {
+    "Datenschutz": {
+      "localizations": {
+        "ar": { "stringUnit": { "state": "machine_translated", "value": "الخصوصية" } },
+        "bn": { "stringUnit": { "state": "machine_translated", "value": "গোপনীয়তা" } },
+        "en": { "stringUnit": { "state": "machine_translated", "value": "Privacy" } },
+        "es": { "stringUnit": { "state": "machine_translated", "value": "Privacidad" } },
+        "fr": { "stringUnit": { "state": "machine_translated", "value": "Confidentialité" } },
+        "ha": { "stringUnit": { "state": "machine_translated", "value": "Sirri" } },
+        "hi": { "stringUnit": { "state": "machine_translated", "value": "गोपनीयता" } },
+        "id": { "stringUnit": { "state": "machine_translated", "value": "Privasi" } },
+        "ja": { "stringUnit": { "state": "machine_translated", "value": "プライバシー" } },
+        "mr": { "stringUnit": { "state": "machine_translated", "value": "गोपनीयता" } },
+        "pcm": { "stringUnit": { "state": "machine_translated", "value": "Privacy" } },
+        "pt": { "stringUnit": { "state": "machine_translated", "value": "Privacidade" } },
+        "ru": { "stringUnit": { "state": "machine_translated", "value": "Конфиденциальность" } },
+        "sv": { "stringUnit": { "state": "machine_translated", "value": "Integritet" } },
+        "sw": { "stringUnit": { "state": "machine_translated", "value": "Faragha" } },
+        "te": { "stringUnit": { "state": "machine_translated", "value": "గోప్యత" } },
+        "tr": { "stringUnit": { "state": "machine_translated", "value": "Gizlilik" } },
+        "ur": { "stringUnit": { "state": "machine_translated", "value": "رازداری" } },
+        "vi": { "stringUnit": { "state": "machine_translated", "value": "Quyền riêng tư" } },
+        "zh-Hans": { "stringUnit": { "state": "machine_translated", "value": "隐私" } }
+      }
+    },
+    "Problem melden …": {
+      "localizations": {
+        "ar": { "stringUnit": { "state": "machine_translated", "value": "الإبلاغ عن مشكلة …" } },
+        "bn": { "stringUnit": { "state": "machine_translated", "value": "সমস্যা জানান …" } },
+        "en": { "stringUnit": { "state": "machine_translated", "value": "Report a problem …" } },
+        "es": { "stringUnit": { "state": "machine_translated", "value": "Informar de un problema …" } },
+        "fr": { "stringUnit": { "state": "machine_translated", "value": "Signaler un problème …" } },
+        "ha": { "stringUnit": { "state": "machine_translated", "value": "Ba da rahoton matsala …" } },
+        "hi": { "stringUnit": { "state": "machine_translated", "value": "समस्या की रिपोर्ट करें …" } },
+        "id": { "stringUnit": { "state": "machine_translated", "value": "Laporkan masalah …" } },
+        "ja": { "stringUnit": { "state": "machine_translated", "value": "問題を報告…" } },
+        "mr": { "stringUnit": { "state": "machine_translated", "value": "समस्या नोंदवा…" } },
+        "pcm": { "stringUnit": { "state": "machine_translated", "value": "Report problem …" } },
+        "pt": { "stringUnit": { "state": "machine_translated", "value": "Relatar um problema …" } },
+        "ru": { "stringUnit": { "state": "machine_translated", "value": "Сообщить о проблеме …" } },
+        "sv": { "stringUnit": { "state": "machine_translated", "value": "Rapportera ett problem …" } },
+        "sw": { "stringUnit": { "state": "machine_translated", "value": "Ripoti tatizo …" } },
+        "te": { "stringUnit": { "state": "machine_translated", "value": "సమస్యను నివేదించండి …" } },
+        "tr": { "stringUnit": { "state": "machine_translated", "value": "Sorun bildir …" } },
+        "ur": { "stringUnit": { "state": "machine_translated", "value": "مسئلہ رپورٹ کریں …" } },
+        "vi": { "stringUnit": { "state": "machine_translated", "value": "Báo cáo sự cố …" } },
+        "zh-Hans": { "stringUnit": { "state": "machine_translated", "value": "报告问题 …" } }
+      }
+    },
+    "Version": {
+      "localizations": {
+        "ar": { "stringUnit": { "state": "machine_translated", "value": "الإصدار" } },
+        "bn": { "stringUnit": { "state": "machine_translated", "value": "সংস্করণ" } },
+        "en": { "stringUnit": { "state": "machine_translated", "value": "Version" } },
+        "es": { "stringUnit": { "state": "machine_translated", "value": "Versión" } },
+        "fr": { "stringUnit": { "state": "machine_translated", "value": "Version" } },
+        "ha": { "stringUnit": { "state": "machine_translated", "value": "Sigar" } },
+        "hi": { "stringUnit": { "state": "machine_translated", "value": "संस्करण" } },
+        "id": { "stringUnit": { "state": "machine_translated", "value": "Versi" } },
+        "ja": { "stringUnit": { "state": "machine_translated", "value": "バージョン" } },
+        "mr": { "stringUnit": { "state": "machine_translated", "value": "आवृत्ती" } },
+        "pcm": { "stringUnit": { "state": "machine_translated", "value": "Version" } },
+        "pt": { "stringUnit": { "state": "machine_translated", "value": "Versão" } },
+        "ru": { "stringUnit": { "state": "machine_translated", "value": "Версия" } },
+        "sv": { "stringUnit": { "state": "machine_translated", "value": "Version" } },
+        "sw": { "stringUnit": { "state": "machine_translated", "value": "Toleo" } },
+        "te": { "stringUnit": { "state": "machine_translated", "value": "వెర్షన్" } },
+        "tr": { "stringUnit": { "state": "machine_translated", "value": "Sürüm" } },
+        "ur": { "stringUnit": { "state": "machine_translated", "value": "ورژن" } },
+        "vi": { "stringUnit": { "state": "machine_translated", "value": "Phiên bản" } },
+        "zh-Hans": { "stringUnit": { "state": "machine_translated", "value": "版本" } }
+      }
+    },
     "%@ Ein von IssueLight importiertes CA-Zertifikat wird nur entfernt, wenn keine andere Quelle es verwendet. Vorhandene fremde Zertifikate bleiben unberührt.": {
       "localizations": {
         "ar": {

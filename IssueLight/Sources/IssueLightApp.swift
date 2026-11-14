@@ -1,4 +1,8 @@
 import SwiftUI
+import IssueLightCore
+#if DEBUG
+import Darwin
+#endif
 
 @main
 struct IssueLightApp: App {
@@ -6,6 +10,9 @@ struct IssueLightApp: App {
     @StateObject private var languageSettings: AppLanguageSettings
 
     init() {
+#if DEBUG
+        DebugReviewCredentialSeeder.runIfRequested()
+#endif
         let settings = AppLanguageSettings()
         _languageSettings = StateObject(wrappedValue: settings)
         _model = StateObject(
@@ -23,12 +30,18 @@ struct IssueLightApp: App {
         }
         .defaultSize(width: 920, height: 680)
         .windowResizability(.contentMinSize)
+        .commands {
+            CommandGroup(replacing: .appInfo) {}
+        }
 
         Window("IssueLight", id: "status") {
             StatusWindowView(model: model)
                 .appLanguageEnvironment(languageSettings)
         }
         .defaultSize(width: 760, height: 560)
+        .commands {
+            CommandGroup(replacing: .appInfo) {}
+        }
 
         MenuBarExtra {
             StatusMenuView(model: model, languageSettings: languageSettings)
@@ -39,18 +52,21 @@ struct IssueLightApp: App {
         } label: {
             StatusMenuLabel(
                 symbol: model.menuBarSymbol,
-                issueCount: model.actionableIssues.count,
+                counts: MenuBarIssueCounts(issues: model.actionableIssues),
                 accessibilityText: menuBarAccessibilityLabel
             )
         }
-        .menuBarExtraStyle(.menu)
+        .menuBarExtraStyle(.window)
 
         Settings {
-            LanguageSettingsView(languageSettings: languageSettings)
+            IssueLightSettingsView(languageSettings: languageSettings)
                 .appLanguageEnvironment(languageSettings)
                 .onChange(of: languageSettings.selection) {
                     model.setLocalizationLocale(languageSettings.locale)
                 }
+        }
+        .commands {
+            CommandGroup(replacing: .appInfo) {}
         }
     }
 
@@ -81,3 +97,43 @@ struct IssueLightApp: App {
         return AppLocalization.string("IssueLight. \(attention)", locale: languageSettings.locale)
     }
 }
+
+#if DEBUG
+private enum DebugReviewCredentialSeeder {
+    static func runIfRequested() {
+        let arguments = CommandLine.arguments
+        guard arguments.count == 3, arguments[1] == "--seed-review-password" else {
+            return
+        }
+        guard let endpoint = URL(string: arguments[2]),
+              let password = readLine(),
+              !password.isEmpty else {
+            fputs("IssueLight review credential input is invalid.\n", stderr)
+            exit(2)
+        }
+
+        let source = MonitoringSource(
+            id: UUID(uuidString: "11111111-1111-4111-8111-111111111111")!,
+            name: "Lokales Icinga 2 Review-Lab",
+            providerID: Icinga2Provider.id,
+            endpoint: endpoint,
+            authentication: .basic(username: "issuelight-basic"),
+            serverTrust: .disabled
+        )
+        let semaphore = DispatchSemaphore(value: 0)
+        var status: Int32 = 1
+        Task.detached {
+            defer { semaphore.signal() }
+            do {
+                let scope = try BasicCredentialScope(source: source)
+                try await KeychainPasswordVault().store(password, for: scope)
+                status = 0
+            } catch {
+                fputs("IssueLight review credential could not be stored.\n", stderr)
+            }
+        }
+        semaphore.wait()
+        exit(status)
+    }
+}
+#endif
