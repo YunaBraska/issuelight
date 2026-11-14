@@ -4,11 +4,7 @@ import XCTest
 
 @MainActor
 final class StatusMenuInteractionTests: XCTestCase {
-    func testSettingsButtonRespondsToPointerClick() throws {
-        try XCTSkipIf(
-            ProcessInfo.processInfo.environment["CI"] == "true",
-            "Pointer interaction requires an active macOS WindowServer."
-        )
+    func testSettingsButtonRespondsToPointerClick() {
         var openedSettings = false
         let view = StatusMenuContent(
             hasConfiguredSource: false,

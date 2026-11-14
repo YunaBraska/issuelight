@@ -49,12 +49,18 @@ if scripts/check_coverage.sh "$coverage_json" 100 100 >/dev/null 2>&1; then
 fi
 
 derived_data_path="$check_work_directory/DerivedData"
+set --
+if [ "${GITHUB_ACTIONS:-}" = true ]; then
+    # Hosted macOS runners have no interactive WindowServer for pointer events.
+    set -- -skip-testing:IssueLightModelTests/StatusMenuInteractionTests
+fi
 xcodebuild test \
     -project IssueLight/IssueLight.xcodeproj \
     -scheme IssueLight \
     -configuration Debug \
     -destination 'platform=macOS' \
     -derivedDataPath "$derived_data_path" \
+    "$@" \
     CODE_SIGNING_ALLOWED=NO
 
 release_version=$(xcodebuild \
