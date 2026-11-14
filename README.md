@@ -19,13 +19,11 @@ provider boundary so future providers do not leak into shared UI or storage.
 IssueLight is under active development. Source setup, macOS Keychain-backed
 credentials, strict-by-default TLS, source-specific private CAs, optional
 exact server-certificate pinning, optional per-source certificate bypass, and a
-real containerized Icinga 2 compatibility lab are implemented. The first
-attention-first host and service view now
-aggregates independently refreshed, enabled sources. The first supported
-release is intentionally read-only. Notifications and remote actions remain
-outside that release scope. The universal ZIP/DMG/SBOM release path is verified
-locally; credentialed signing, accepted notarization, and end-user distribution
-remain open.
+real containerized Icinga 2 compatibility lab are implemented. The menu-bar
+panel aggregates independently refreshed sources and exposes explicit Icinga 2
+recheck, acknowledgement, and fixed-downtime actions per issue. Notifications,
+web deep links, and additional providers remain outside the current release.
+The universal ZIP/DMG/SBOM workflow is ready for signing credentials.
 
 ## Requirements
 
@@ -65,12 +63,11 @@ Run the complete local CI contract with `sh scripts/check.sh`. The real Icinga 2
 ## Project documentation
 
 - [`docs/PROJECT_STATUS.md`](docs/PROJECT_STATUS.md): implemented behavior and current release blockers
-- [`docs/roadmap.md`](docs/roadmap.md): vertical delivery order
 - [`docs/spec/source-connection.md`](docs/spec/source-connection.md): accepted source and security behavior
 - [`docs/spec/attention-snapshot.md`](docs/spec/attention-snapshot.md): attention and refresh behavior
 - [`docs/spec/multiple-sources.md`](docs/spec/multiple-sources.md): multiple-source management and aggregation
 - [`docs/spec/release-lifecycle.md`](docs/spec/release-lifecycle.md): supported installation and update behavior
-- [`docs/spec/nagbar-parity.md`](docs/spec/nagbar-parity.md): retained NagBar journeys, deliberate simplifications, and open capability gaps
+- [`docs/spec/nagbar-parity.md`](docs/spec/nagbar-parity.md): retained NagBar journeys and deliberate simplifications
 - [`docs/adr/0007-runtime-language-selection.md`](docs/adr/0007-runtime-language-selection.md): in-app language selection and localization boundary
 - [`docs/adr/`](docs/adr/): lasting architecture decisions
 - [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md): local build and release-candidate verification

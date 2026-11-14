@@ -28,6 +28,24 @@ Use a stable Apple Development identity and the fixed bundle identifier
 Keep team identifiers and certificate fingerprints outside Git in ignored local
 configuration.
 
+## Protected mTLS acceptance
+
+Use a separate macOS review account and the lab identity. In Keychain Access,
+open the imported identity's private key and set Access Control to require
+confirmation without adding IssueLight to the always-allowed applications.
+Install the stable signed app, configure the mTLS source, and run these checks:
+
+1. Start **Test Connection** and approve the macOS prompt. The test must pass.
+2. Leave Settings and wait for background refresh. No prompt may appear. The
+   previous snapshot must remain visible as stale with an explicit credential
+   failure.
+3. Start **Test Connection** again and deny the prompt. The test must fail
+   explicitly. Approving a subsequent attempt must recover the source.
+
+Do not enter a login-Keychain password into a test command or the repository.
+Automated identity and CA tests use isolated temporary Keychains and must not
+display authentication UI.
+
 ## Product-site screenshots
 
 The landing-page screenshots are rendered from the production SwiftUI views

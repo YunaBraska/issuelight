@@ -6,10 +6,12 @@ contains no analytics, advertising, crash-reporting SDK, or telemetry.
 
 ## Data sent over the network
 
-IssueLight sends read-only Icinga 2 host and service requests only to a
-configured source and to same-origin redirects. Requests may contain the API
-username and password or use a selected client identity. The configured TLS
-policy applies independently to each source.
+IssueLight reads Icinga 2 host and service state from configured sources and
+can send an operator-initiated recheck, acknowledgement, or fixed downtime to
+the selected object. Action requests include the entered author and comment.
+Requests may contain the API username and password or use a selected client
+identity. The configured TLS policy applies independently to each source and
+credentials are not forwarded to another origin.
 
 Network traffic can still be visible to the configured server and to network
 infrastructure such as DNS resolvers, proxies, and VPNs. Disabling certificate

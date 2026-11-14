@@ -2,11 +2,9 @@ import XCTest
 @testable import IssueLightCore
 
 final class KeychainIdentityCatalogTests: XCTestCase {
-    override func setUpWithError() throws {
-        try requireUnlockedDefaultKeychain()
-    }
-
     func testGeneratedPKCS12IdentityCanBeListedResolvedAndRemoved() async throws {
+        let keychain = try TemporaryTestKeychain()
+        addTeardownBlock { try? keychain.delete() }
         let temporaryDirectory = FileManager.default.temporaryDirectory
             .appendingPathComponent("issuelight-identity-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: temporaryDirectory, withIntermediateDirectories: true)
@@ -37,7 +35,7 @@ final class KeychainIdentityCatalogTests: XCTestCase {
             "-passout", "pass:\(password)",
         ])
 
-        let catalog = KeychainIdentityCatalog()
+        let catalog = KeychainIdentityCatalog(accessContext: keychain.context)
         let descriptor = try await catalog.importPKCS12(at: identityURL, password: password)
         let resolvedIdentity = try await catalog.identity(id: descriptor.id)
         let identity = try XCTUnwrap(resolvedIdentity)
@@ -70,10 +68,12 @@ final class KeychainIdentityCatalogTests: XCTestCase {
     }
 
     func testMalformedPKCS12DoesNotCreateAnIdentity() async throws {
+        let keychain = try TemporaryTestKeychain()
+        addTeardownBlock { try? keychain.delete() }
         let fileURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".p12")
         try Data("not a certificate".utf8).write(to: fileURL)
         defer { try? FileManager.default.removeItem(at: fileURL) }
-        let catalog = KeychainIdentityCatalog()
+        let catalog = KeychainIdentityCatalog(accessContext: keychain.context)
 
         do {
             _ = try await catalog.importPKCS12(at: fileURL, password: "temporary")

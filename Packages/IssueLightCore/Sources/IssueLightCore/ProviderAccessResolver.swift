@@ -33,7 +33,8 @@ public struct ProviderAccessResolver: Sendable {
     public func resolve(
         source: MonitoringSource,
         passwordOverride: String? = nil,
-        allowsStoredPassword: Bool = true
+        allowsStoredPassword: Bool = true,
+        keychainInteraction: KeychainInteraction = .fail
     ) async -> ProviderAccessResolution {
         let trustedServerCertificate: SecCertificate?
         switch source.serverTrust {
@@ -78,7 +79,10 @@ public struct ProviderAccessResolver: Sendable {
             )
         case .clientCertificate(let identityID):
             do {
-                guard let identity = try await identityCatalog.identity(id: identityID) else {
+                guard let identity = try await identityCatalog.identity(
+                    id: identityID,
+                    interaction: keychainInteraction
+                ) else {
                     return .failed(.clientIdentityNotAvailable)
                 }
                 return .resolved(

@@ -28,7 +28,6 @@ ISSUELIGHT_SCREENSHOT_OUTPUT_DIR="$output_directory" \
     -XCTest IssueLightModelTests.LandingPageScreenshotTests/testLandingPageScreenshotsRenderFromProductionViews \
     "$test_bundle"
 
-test -s "$output_directory/attention-overview.png"
 test -s "$output_directory/source-setup.png"
 test -s "$output_directory/menu-item-states.png"
 test -s "$output_directory/menu-panel-de.png"

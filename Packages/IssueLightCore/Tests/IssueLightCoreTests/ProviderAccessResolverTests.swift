@@ -140,7 +140,6 @@ final class ProviderAccessResolverTests: XCTestCase {
     }
 
     func testResolverCombinesStoredPasswordAndCustomServerCertificate() async throws {
-        try requireUnlockedDefaultKeychain()
         let fileURL = try XCTUnwrap(
             Bundle.module.url(
                 forResource: "issuelight-test-root",
@@ -148,9 +147,7 @@ final class ProviderAccessResolverTests: XCTestCase {
                 subdirectory: "Fixtures"
             )
         )
-        let certificateCatalog = KeychainServerCertificateCatalog(
-            ownershipScope: "berlin.yuna.issuelight.provider-tests.\(UUID().uuidString)"
-        )
+        let certificateCatalog = certificateCatalog()
         let certificateDescriptor = try await certificateCatalog.importCertificate(at: fileURL)
         let source = MonitoringSource(
             name: "Private CA",
@@ -237,12 +234,13 @@ final class ProviderAccessResolverTests: XCTestCase {
     }
 
     private func identityCatalog() -> KeychainIdentityCatalog {
-        KeychainIdentityCatalog()
+        KeychainIdentityCatalog(accessContext: testKeychain.context)
     }
 
     private func certificateCatalog() -> KeychainServerCertificateCatalog {
         KeychainServerCertificateCatalog(
-            ownershipScope: "berlin.yuna.issuelight.provider-tests.\(UUID().uuidString)"
+            ownershipScope: "berlin.yuna.issuelight.provider-tests.\(UUID().uuidString)",
+            accessContext: testKeychain.context
         )
     }
 }

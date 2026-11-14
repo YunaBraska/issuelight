@@ -21,30 +21,8 @@ struct IssueLightApp: App {
     }
 
     var body: some Scene {
-        Window(
-            AppLocalization.string("Quellen", locale: languageSettings.locale),
-            id: "sources"
-        ) {
-            SourceSetupView(model: model)
-                .appLanguageEnvironment(languageSettings)
-        }
-        .defaultSize(width: 920, height: 680)
-        .windowResizability(.contentMinSize)
-        .commands {
-            CommandGroup(replacing: .appInfo) {}
-        }
-
-        Window("IssueLight", id: "status") {
-            StatusWindowView(model: model)
-                .appLanguageEnvironment(languageSettings)
-        }
-        .defaultSize(width: 760, height: 560)
-        .commands {
-            CommandGroup(replacing: .appInfo) {}
-        }
-
         MenuBarExtra {
-            StatusMenuView(model: model, languageSettings: languageSettings)
+            StatusMenuView(model: model)
                 .appLanguageEnvironment(languageSettings)
                 .onChange(of: languageSettings.selection) {
                     model.setLocalizationLocale(languageSettings.locale)
@@ -59,7 +37,7 @@ struct IssueLightApp: App {
         .menuBarExtraStyle(.window)
 
         Settings {
-            IssueLightSettingsView(languageSettings: languageSettings)
+            IssueLightSettingsView(model: model, languageSettings: languageSettings)
                 .appLanguageEnvironment(languageSettings)
                 .onChange(of: languageSettings.selection) {
                     model.setLocalizationLocale(languageSettings.locale)
@@ -114,7 +92,7 @@ private enum DebugReviewCredentialSeeder {
 
         let source = MonitoringSource(
             id: UUID(uuidString: "11111111-1111-4111-8111-111111111111")!,
-            name: "Lokales Icinga 2 Review-Lab",
+            name: "Local Icinga 2 Review Lab",
             providerID: Icinga2Provider.id,
             endpoint: endpoint,
             authentication: .basic(username: "issuelight-basic"),

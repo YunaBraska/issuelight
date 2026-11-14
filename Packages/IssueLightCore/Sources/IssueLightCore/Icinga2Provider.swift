@@ -5,6 +5,7 @@ public struct Icinga2Provider: MonitoringProvider {
 
     private let connectionTester: Icinga2ConnectionTester
     private let snapshotLoader: Icinga2SnapshotLoader
+    private let configuration: URLSessionConfiguration
 
     public let descriptor = ProviderDescriptor(
         id: Icinga2Provider.id,
@@ -12,17 +13,18 @@ public struct Icinga2Provider: MonitoringProvider {
         capabilities: ProviderCapabilities(
             authenticationMethods: [.basic, .clientCertificate],
             serverTrustMethods: [.system, .customCertificate, .pinnedCertificate, .disabled],
-            supportsAcknowledgement: false,
-            supportsDowntime: false
+            actions: [.recheck, .acknowledge, .scheduleDowntime]
         )
     )
 
     public init() {
+        configuration = .default
         connectionTester = Icinga2ConnectionTester()
         snapshotLoader = Icinga2SnapshotLoader()
     }
 
     init(configuration: URLSessionConfiguration, now: @escaping @Sendable () -> Date = { Date() }) {
+        self.configuration = configuration
         connectionTester = Icinga2ConnectionTester(configuration: configuration)
         snapshotLoader = Icinga2SnapshotLoader(configuration: configuration, now: now)
     }
@@ -31,16 +33,8 @@ public struct Icinga2Provider: MonitoringProvider {
         var issues = MonitoringSourceValidator.validateSharedFields(source)
         let components = URLComponents(url: source.endpoint, resolvingAgainstBaseURL: false)
 
-        if components?.scheme?.lowercased() != "https",
-           !issues.contains(where: { issue in
-               if case .unsupportedScheme = issue { return true }
-               return false
-           }) {
-            issues.append(.unsupportedScheme(components?.scheme?.lowercased()))
-        }
-
-        if !descriptor.capabilities.authenticationMethods.contains(source.authentication.method) {
-            issues.append(.unsupportedAuthentication(source.authentication.method))
+        if components?.scheme?.lowercased() == "http" {
+            issues.append(.unsupportedScheme("http"))
         }
 
         let path = components?.percentEncodedPath ?? ""
@@ -111,6 +105,69 @@ public struct Icinga2Provider: MonitoringProvider {
             return .failed(.clientCertificateNotAvailable)
         }
     }
+
+    public func perform(
+        _ action: MonitoringAction,
+        on issue: MonitoringIssue,
+        from source: MonitoringSource,
+        access: ProviderAccess
+    ) async -> MonitoringActionResult {
+        guard issue.sourceID == source.id else {
+            return .rejected("The issue does not belong to this source.")
+        }
+
+        do {
+            let transport: Icinga2Transport
+            switch (source.authentication, access.credential) {
+            case (.basic, .password(let password)):
+                transport = try Icinga2Transport.basic(
+                    source: source,
+                    password: password,
+                    trustedServerCertificate: access.trustedServerCertificate,
+                    configuration: configuration
+                )
+            case (.clientCertificate, .clientIdentity(let identity)):
+                transport = try Icinga2Transport.clientIdentity(
+                    source: source,
+                    identity: identity,
+                    trustedServerCertificate: access.trustedServerCertificate,
+                    configuration: configuration
+                )
+            case (.basic, .clientIdentity):
+                return .failed(.authentication)
+            case (.clientCertificate, .password):
+                return .failed(.clientCertificateNotAvailable)
+            }
+            defer { transport.close() }
+            let request = try transport.actionRequest(action, issue: issue)
+            let data = try await transport.data(for: request)
+            return try Self.decodeActionResponse(data)
+        } catch let Icinga2TransportError.failure(failure) {
+            return .failed(failure)
+        } catch {
+            return .failed(.incompatibleResponse)
+        }
+    }
+
+    private static func decodeActionResponse(_ data: Data) throws -> MonitoringActionResult {
+        let envelope = try JSONDecoder().decode(IcingaActionEnvelope.self, from: data)
+        guard !envelope.results.isEmpty else {
+            return .rejected("Icinga did not report an affected object.")
+        }
+        if let rejected = envelope.results.first(where: { $0.code < 200 || $0.code >= 300 }) {
+            return .rejected(rejected.status)
+        }
+        return .completed
+    }
+}
+
+private struct IcingaActionEnvelope: Decodable {
+    let results: [IcingaActionResult]
+}
+
+private struct IcingaActionResult: Decodable {
+    let code: Int
+    let status: String
 }
 
 public enum Icinga2ProviderError: Error, Equatable {

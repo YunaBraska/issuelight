@@ -106,6 +106,64 @@ final class Icinga2Transport {
         return request
     }
 
+    func actionRequest(_ action: MonitoringAction, issue: MonitoringIssue) throws -> URLRequest {
+        let actionName: String
+        var body: [String: Any] = [
+            "type": issue.kind == .host ? "Host" : "Service",
+            "filter": try Self.filter(for: issue),
+        ]
+        switch action {
+        case .recheck:
+            actionName = "reschedule-check"
+            body["force"] = true
+        case .acknowledge(let author, let comment):
+            guard !author.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                  !comment.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                throw Icinga2TransportError.failure(.incompatibleResponse)
+            }
+            actionName = "acknowledge-problem"
+            body["author"] = author
+            body["comment"] = comment
+            body["notify"] = true
+            body["persistent"] = false
+            body["sticky"] = true
+        case .scheduleDowntime(let author, let comment, let start, let end):
+            guard !author.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                  !comment.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                  end > start else {
+                throw Icinga2TransportError.failure(.incompatibleResponse)
+            }
+            actionName = "schedule-downtime"
+            body["author"] = author
+            body["comment"] = comment
+            body["start_time"] = start.timeIntervalSince1970
+            body["end_time"] = end.timeIntervalSince1970
+            body["fixed"] = true
+        }
+
+        var components = URLComponents(
+            url: try Icinga2Provider().statusURL(for: source),
+            resolvingAgainstBaseURL: false
+        )
+        components?.path = "/v1/actions/\(actionName)"
+        components?.query = nil
+        guard let url = components?.url else {
+            throw Icinga2TransportError.failure(.incompatibleResponse)
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.timeoutInterval = 15
+        request.httpBody = try JSONSerialization.data(withJSONObject: body, options: [.sortedKeys])
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("IssueLight", forHTTPHeaderField: "User-Agent")
+        if case .basic(let username, let password) = credential {
+            let token = Data("\(username):\(password)".utf8).base64EncodedString()
+            request.setValue("Basic \(token)", forHTTPHeaderField: "Authorization")
+        }
+        return request
+    }
+
     func data(for request: URLRequest) async throws -> Data {
         do {
             let (data, response) = try await session.data(for: request)
@@ -188,6 +246,20 @@ final class Icinga2Transport {
         default:
             return .unreachable
         }
+    }
+
+    private static func filter(for issue: MonitoringIssue) throws -> String {
+        let host = try jsonString(issue.hostName)
+        guard issue.kind == .service, let serviceName = issue.serviceName else {
+            return "host.name==\(host)"
+        }
+        return "host.name==\(host) && service.name==\(try jsonString(serviceName))"
+    }
+
+    private static func jsonString(_ value: String) throws -> String {
+        let data = try JSONSerialization.data(withJSONObject: [value], options: [.withoutEscapingSlashes])
+        let encoded = String(decoding: data, as: UTF8.self)
+        return String(encoded.dropFirst().dropLast())
     }
 }
 

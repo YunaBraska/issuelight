@@ -15,8 +15,8 @@ replacement reduce more operator risk than they introduce.
 ## Decision
 
 The first supported releases use manual updates from the repository's official
-GitHub Releases page. The menu exposes that page directly and the native About
-panel exposes the installed version and build.
+GitHub Releases page. The Settings About tab links to that page and shows the
+installed version and build.
 
 IssueLight does not contact GitHub automatically, download executable code, or
 replace itself. A publishable release contains the notarized universal app

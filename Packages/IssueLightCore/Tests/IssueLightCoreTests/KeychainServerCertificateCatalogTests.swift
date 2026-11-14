@@ -3,8 +3,15 @@ import XCTest
 @testable import IssueLightCore
 
 final class KeychainServerCertificateCatalogTests: XCTestCase {
+    private var testKeychain: TemporaryTestKeychain!
+
     override func setUpWithError() throws {
-        try requireUnlockedDefaultKeychain()
+        testKeychain = try TemporaryTestKeychain()
+    }
+
+    override func tearDownWithError() throws {
+        try testKeychain.delete()
+        testKeychain = nil
     }
 
     func testCertificateImportResolvesStableKeychainReferenceAndDeletesExactItem() async throws {
@@ -15,9 +22,7 @@ final class KeychainServerCertificateCatalogTests: XCTestCase {
                 subdirectory: "Fixtures"
             )
         )
-        let catalog = KeychainServerCertificateCatalog(
-            ownershipScope: "berlin.yuna.issuelight.catalog-tests.\(UUID().uuidString)"
-        )
+        let catalog = certificateCatalog()
         let descriptor = try await catalog.importCertificate(at: fileURL)
         addTeardownBlock {
             try? await catalog.deleteCertificate(id: descriptor.id)
@@ -54,9 +59,7 @@ final class KeychainServerCertificateCatalogTests: XCTestCase {
                 subdirectory: "Fixtures"
             )
         )
-        let catalog = KeychainServerCertificateCatalog(
-            ownershipScope: "berlin.yuna.issuelight.catalog-tests.\(UUID().uuidString)"
-        )
+        let catalog = certificateCatalog()
         let descriptor = try await catalog.importCertificate(at: fileURL)
         addTeardownBlock {
             try? await catalog.deleteCertificate(id: descriptor.id)
@@ -67,7 +70,7 @@ final class KeychainServerCertificateCatalogTests: XCTestCase {
             kSecValuePersistentRef as String: reference,
         ]
         let attributes: [String: Any] = [
-            kSecAttrLabel as String: "Extern verwaltete Test-CA",
+            kSecAttrLabel as String: "Externally managed test CA",
         ]
         XCTAssertEqual(
             SecItemUpdate(query as CFDictionary, attributes as CFDictionary),
@@ -91,12 +94,8 @@ final class KeychainServerCertificateCatalogTests: XCTestCase {
                 subdirectory: "Fixtures"
             )
         )
-        let ownerCatalog = KeychainServerCertificateCatalog(
-            ownershipScope: "berlin.yuna.issuelight.owner-tests.\(UUID().uuidString)"
-        )
-        let otherCatalog = KeychainServerCertificateCatalog(
-            ownershipScope: "berlin.yuna.issuelight.other-tests.\(UUID().uuidString)"
-        )
+        let ownerCatalog = certificateCatalog(scope: "owner")
+        let otherCatalog = certificateCatalog(scope: "other")
         let descriptor = try await ownerCatalog.importCertificate(at: fileURL)
         addTeardownBlock {
             try? await ownerCatalog.deleteCertificate(id: descriptor.id)
@@ -121,9 +120,7 @@ final class KeychainServerCertificateCatalogTests: XCTestCase {
     }
 
     func testInvalidPersistentReferenceAndMalformedCertificateAreRejected() async throws {
-        let catalog = KeychainServerCertificateCatalog(
-            ownershipScope: "berlin.yuna.issuelight.catalog-tests.\(UUID().uuidString)"
-        )
+        let catalog = certificateCatalog()
         do {
             _ = try await catalog.certificate(id: "not base64")
             XCTFail("Expected invalid reference rejection")
@@ -154,9 +151,7 @@ final class KeychainServerCertificateCatalogTests: XCTestCase {
             .appendingPathComponent("IssueLightOversizedCertificate-\(UUID().uuidString).crt")
         try Data(repeating: 0, count: 1_048_577).write(to: fileURL)
         defer { try? FileManager.default.removeItem(at: fileURL) }
-        let catalog = KeychainServerCertificateCatalog(
-            ownershipScope: "berlin.yuna.issuelight.catalog-tests.\(UUID().uuidString)"
-        )
+        let catalog = certificateCatalog()
 
         do {
             _ = try await catalog.importCertificate(at: fileURL)
@@ -167,5 +162,12 @@ final class KeychainServerCertificateCatalogTests: XCTestCase {
                 .certificateFileTooLarge
             )
         }
+    }
+
+    private func certificateCatalog(scope: String = UUID().uuidString) -> KeychainServerCertificateCatalog {
+        KeychainServerCertificateCatalog(
+            ownershipScope: "berlin.yuna.issuelight.catalog-tests.\(scope)",
+            accessContext: testKeychain.context
+        )
     }
 }

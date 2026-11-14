@@ -13,12 +13,12 @@ description: IssueLight keeps Icinga 2 problems in the macOS menu bar and stays 
       <a class="button" href="{{ '/install.html' | relative_url }}">Build IssueLight</a>
       <a class="button secondary" href="{{ site.repository }}">View the source</a>
     </div>
-    <p class="release-note"><span>Open-source preview</span> macOS 14+ · Read-only by design</p>
+    <p class="release-note"><span>Open-source preview</span> macOS 14+ · Icinga 2 first</p>
   </div>
   <figure class="hero-shot app-window">
-    <div class="window-bar"><span></span><span></span><span></span><strong>Attention</strong></div>
-    <img src="{{ '/assets/screenshots/attention-overview.png' | relative_url }}" alt="IssueLight status window ordering critical, warning and unknown Icinga issues from two monitoring sources" width="1520" height="1120">
-    <figcaption>One view for actionable and already-covered issues. No green wall of reassurance.</figcaption>
+    <div class="window-bar"><span></span><span></span><span></span><strong>Menu bar status</strong></div>
+    <img src="{{ '/assets/screenshots/menu-panel-de.png' | relative_url }}" alt="IssueLight menu panel with critical and warning Icinga issues" width="860" height="480">
+    <figcaption>Problems, actions, refresh, and one path to Settings. Nothing else competes for attention.</figcaption>
   </figure>
 </section>
 
@@ -45,7 +45,7 @@ description: IssueLight keeps Icinga 2 problems in the macOS menu bar and stays 
   <div class="section-heading">
     <p class="eyebrow"><span></span>Your language, without a restart</p>
     <h2>System default or an explicit language.</h2>
-    <p>Choose one of 21 built-in languages from the menu or Settings. Arabic and Urdu switch the complete interface to a right-to-left layout.</p>
+    <p>Choose one of 21 built-in languages in Settings. Arabic and Urdu switch the complete interface to a right-to-left layout.</p>
   </div>
   <div class="language-grid">
     <figure class="app-window language-states">
@@ -53,11 +53,11 @@ description: IssueLight keeps Icinga 2 problems in the macOS menu bar and stays 
       <figcaption>The menu-bar signal stays compact in setup, healthy and attention states.</figcaption>
     </figure>
     <figure class="app-window">
-      <img src="{{ '/assets/screenshots/menu-panel-sv.png' | relative_url }}" alt="IssueLight status menu in Swedish" width="720" height="560">
+      <img src="{{ '/assets/screenshots/menu-panel-sv.png' | relative_url }}" alt="IssueLight status menu in Swedish" width="860" height="480">
       <figcaption>Swedish menu panel</figcaption>
     </figure>
     <figure class="app-window">
-      <img src="{{ '/assets/screenshots/menu-panel-ar.png' | relative_url }}" alt="IssueLight status menu in Arabic with right-to-left layout" width="720" height="560">
+      <img src="{{ '/assets/screenshots/menu-panel-ar.png' | relative_url }}" alt="IssueLight status menu in Arabic with right-to-left layout" width="860" height="480">
       <figcaption>Arabic right-to-left menu panel</figcaption>
     </figure>
   </div>
@@ -108,8 +108,8 @@ description: IssueLight keeps Icinga 2 problems in the macOS menu bar and stays 
     <p>The first supported provider is Icinga 2. Provider-specific transport, authentication and decoding stop at a small core boundary, so another backend can be added without turning the UI or saved sources into Icinga-shaped state.</p>
   </div>
   <div class="scope-grid">
-    <div><strong>Available now</strong><p>Multiple sources, manual and background refresh, attention ordering, search, strict TLS options, Keychain credentials and stale-state retention.</p></div>
-    <div><strong>Deliberately absent</strong><p>Remote acknowledgements, downtime changes and notifications are not part of the first read-only release scope.</p></div>
+    <div><strong>Available now</strong><p>Multiple sources, refresh, attention ordering, strict TLS options, Keychain credentials, recheck, acknowledgement, fixed downtime and stale-state retention.</p></div>
+    <div><strong>Deliberately absent</strong><p>Notifications, web deep links and additional monitoring providers remain outside the current release.</p></div>
     <div><strong>Release status</strong><p>The code is public and the release path is tested. A notarized public binary is not available yet, so this page does not pretend otherwise.</p></div>
   </div>
 </section>

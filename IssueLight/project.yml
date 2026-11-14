@@ -54,7 +54,6 @@ targets:
       - Sources/IssueCountText.swift
       - Sources/SourceSetupView.swift
       - Sources/StatusMenuView.swift
-      - Sources/StatusWindowView.swift
       - path: Resources/Localizable.xcstrings
         buildPhase: resources
     dependencies:

@@ -19,7 +19,7 @@ release deliberately smaller.
 | Thruk and Checkmk | Done | Planned | Same provider rule. No provider-specific state in shared UI or persistence. |
 | Text search | Partial | Done | Search display name, host, output, and source without a settings screen. |
 | State and property filters | Done | Partial | Add a few visible filters only when real workflows need them. Do not reproduce NagBar's large filter matrix. |
-| Acknowledge, recheck, and downtime | Done | Planned | Add through explicit provider capabilities with confirmation, precise errors, and safe retries. |
+| Acknowledge, recheck, and downtime | Done | Done for Icinga 2 | Provider capabilities expose the supported commands. Acknowledgement and downtime require explicit input; every confirmed command refreshes its source. |
 | Open object in monitoring web UI | Done | Planned | Recommended as the smallest useful action before a large in-app detail surface. |
 | Native notifications | Done | Planned | Quiet defaults, per-source severity policy, deduplication, and recovery behavior. |
 | Audible alarms and status flashing | Done | Dismissed | They create noise and accessibility problems. Native notifications are the replacement. |
@@ -35,10 +35,11 @@ release deliberately smaller.
 
 ## Current parity conclusion
 
-IssueLight covers NagBar's read-only Icinga 2 monitoring journey and improves
-multiple-source isolation, failure handling, credential storage, and TLS trust.
-It is not functionally equivalent to NagBar today because remote actions,
-notifications, and four legacy provider families are absent.
+IssueLight covers NagBar's central Icinga 2 monitoring and operator-action
+journeys and improves multiple-source isolation, failure handling, credential
+storage, and TLS trust. It is not functionally equivalent to NagBar today
+because notifications, web deep links, target-login commands, and four legacy
+provider families are absent.
 
 That difference is intentional for the first release. Claiming full parity
 before those capabilities exist would be inaccurate.
@@ -47,14 +48,12 @@ before those capabilities exist would be inaccurate.
 
 1. Close the protected-key and signed-app verification gaps without weakening
    background security.
-2. Add an object-level "In Icinga Web öffnen" action using an explicit base URL
+2. Add an object-level "Open in Icinga Web" action using an explicit base URL
    per source.
-3. Add acknowledge, recheck, and downtime as contextual actions. Keep them out
-   of the primary list until an issue is selected.
-4. Add quiet native notifications with deduplication and recovery semantics.
-5. Observe real filter needs. Prefer three compact filters for source, severity,
+3. Add quiet native notifications with deduplication and recovery semantics.
+4. Observe real filter needs. Prefer three compact filters for source, severity,
    and coverage state over a second settings matrix.
-6. Add the second provider as one complete vertical slice. Use that evidence to
+5. Add the second provider as one complete vertical slice. Use that evidence to
    refine the existing provider boundary instead of introducing a plugin SDK.
 
 The existing visual hierarchy should remain. New actions belong in row context

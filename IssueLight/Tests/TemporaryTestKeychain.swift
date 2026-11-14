@@ -3,20 +3,7 @@ import Security
 import XCTest
 @testable import IssueLightCore
 
-func requireUnlockedDefaultKeychain() throws {
-    var keychain: SecKeychain?
-    let copyStatus = SecKeychainCopyDefault(&keychain)
-    guard copyStatus == errSecSuccess, let keychain else {
-        throw XCTSkip("The default login Keychain is unavailable")
-    }
-    var status: SecKeychainStatus = 0
-    let statusResult = SecKeychainGetStatus(keychain, &status)
-    guard statusResult == errSecSuccess, status & UInt32(kSecUnlockStateStatus) != 0 else {
-        throw XCTSkip("The default login Keychain is locked")
-    }
-}
-
-final class TemporaryTestKeychain {
+final class TemporaryTestKeychain: @unchecked Sendable {
     let reference: SecKeychain
     let context: KeychainAccessContext
     let fileURL: URL

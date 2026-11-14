@@ -86,6 +86,12 @@ final class IssueLightModel: ObservableObject {
         var id: UUID { source.id }
     }
 
+    struct ActionFeedback: Identifiable, Equatable {
+        let id = UUID()
+        let succeeded: Bool
+        let message: String
+    }
+
     @Published var name = ""
     @Published var endpoint = ""
     @Published var isSourceEnabled = true
@@ -111,6 +117,8 @@ final class IssueLightModel: ObservableObject {
     @Published private(set) var selectedSourceID: UUID?
     @Published private(set) var snapshots: [UUID: MonitoringSnapshot] = [:]
     @Published private(set) var refreshStates: [UUID: RefreshState] = [:]
+    @Published private(set) var activeActionIssueIDs: Set<String> = []
+    @Published private(set) var actionFeedback: ActionFeedback?
 
     private var sourceID = UUID()
     private let sourceStore: SourceStore?
@@ -204,6 +212,62 @@ final class IssueLightModel: ObservableObject {
             return []
         }
         return ServerTrustChoice.allCases.filter { methods.contains($0.method) }
+    }
+
+    func supportedActions(for issue: MonitoringIssue) -> Set<MonitoringActionKind> {
+        guard let source = sources.first(where: { $0.id == issue.sourceID }) else { return [] }
+        return providerRegistry.provider(for: source.providerID)?.descriptor.capabilities.actions ?? []
+    }
+
+    func dismissActionFeedback() {
+        actionFeedback = nil
+    }
+
+    func perform(_ action: MonitoringAction, on issue: MonitoringIssue) async {
+        guard !activeActionIssueIDs.contains(issue.id) else { return }
+        guard let source = sources.first(where: { $0.id == issue.sourceID }), source.isEnabled else {
+            actionFeedback = ActionFeedback(
+                succeeded: false,
+                message: localized("Die zugehörige Quelle ist nicht verfügbar.")
+            )
+            return
+        }
+        guard let provider = providerRegistry.provider(for: source.providerID),
+              provider.descriptor.capabilities.actions.contains(action.kind) else {
+            actionFeedback = ActionFeedback(
+                succeeded: false,
+                message: localized("Diese Aktion wird von der Quelle nicht unterstützt.")
+            )
+            return
+        }
+
+        activeActionIssueIDs.insert(issue.id)
+        defer { activeActionIssueIDs.remove(issue.id) }
+        let accessResolution = await accessResolver.resolve(source: source)
+        let access: ProviderAccess
+        switch accessResolution {
+        case .resolved(let resolvedAccess):
+            access = resolvedAccess
+        case .failed(let failure):
+            actionFeedback = ActionFeedback(succeeded: false, message: accessMessage(for: failure))
+            return
+        }
+
+        let result = await provider.perform(action, on: issue, from: source, access: access)
+        switch result {
+        case .completed:
+            actionFeedback = ActionFeedback(
+                succeeded: true,
+                message: localized("Die Aktion wurde von Icinga 2 bestätigt.")
+            )
+            if let refreshTask = refresh(sourceID: source.id) {
+                await refreshTask.value
+            }
+        case .rejected(let message):
+            actionFeedback = ActionFeedback(succeeded: false, message: message)
+        case .failed(let failure):
+            actionFeedback = ActionFeedback(succeeded: false, message: refreshMessage(for: failure))
+        }
     }
 
     var actionableIssues: [MonitoringIssue] {
@@ -501,7 +565,8 @@ final class IssueLightModel: ObservableObject {
         let accessResolution = await accessResolver.resolve(
             source: source,
             passwordOverride: password,
-            allowsStoredPassword: allowsStoredPassword
+            allowsStoredPassword: allowsStoredPassword,
+            keychainInteraction: .allow
         )
         guard connectionTestID == source.id else { return }
         let access: ProviderAccess

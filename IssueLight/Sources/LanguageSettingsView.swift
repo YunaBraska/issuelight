@@ -3,21 +3,38 @@ import SwiftUI
 
 struct IssueLightSettingsView: View {
     enum Tab: Hashable {
+        case sources
         case language
         case about
     }
 
+    @ObservedObject var model: IssueLightModel
     @ObservedObject var languageSettings: AppLanguageSettings
     @Environment(\.locale) private var locale
     @State private var selection: Tab
 
-    init(languageSettings: AppLanguageSettings, initialSelection: Tab = .language) {
+    init(
+        model: IssueLightModel,
+        languageSettings: AppLanguageSettings,
+        initialSelection: Tab = .sources
+    ) {
+        self.model = model
         self.languageSettings = languageSettings
         _selection = State(initialValue: initialSelection)
     }
 
     var body: some View {
         TabView(selection: $selection) {
+            SourceSetupView(model: model)
+                .tabItem {
+                    Label {
+                        Text(verbatim: AppLocalization.string("Quellen", locale: locale))
+                    } icon: {
+                        Image(systemName: "server.rack")
+                    }
+                }
+                .tag(Tab.sources)
+
             LanguageSettingsView(languageSettings: languageSettings)
                 .tabItem {
                     Label {
@@ -39,7 +56,7 @@ struct IssueLightSettingsView: View {
                 .tag(Tab.about)
         }
         .padding(20)
-        .frame(width: 620, height: 430)
+        .frame(width: 920, height: 680)
     }
 }
 
@@ -96,6 +113,7 @@ struct AboutSettingsView: View {
     let version: String
     let build: String
     let copyrightText: String
+    private let messageKey: LocalizedStringResource
 
     private let repositoryURL = URL(string: "https://github.com/YunaBraska/issuelight")!
     private let releasesURL = URL(string: "https://github.com/YunaBraska/issuelight/releases")!
@@ -110,7 +128,8 @@ struct AboutSettingsView: View {
         icon: NSImage = NSApp.applicationIconImage,
         version: String? = nil,
         build: String? = nil,
-        copyrightText: String? = nil
+        copyrightText: String? = nil,
+        messageIndex: Int? = nil
     ) {
         self.icon = icon
         let info = Bundle.main.infoDictionary
@@ -119,6 +138,13 @@ struct AboutSettingsView: View {
         self.copyrightText = copyrightText
             ?? Bundle.main.object(forInfoDictionaryKey: "NSHumanReadableCopyright") as? String
             ?? "Copyright © 2026 Yuna Morgenstern and IssueLight contributors."
+        let messages: [LocalizedStringResource] = [
+            "Alerts multiply. Attention does not.\nIssueLight sorts the signal before it reaches you.\nA star helps. Coffee keeps the beacon lit.",
+            "Green is a temporary agreement between distributed systems.\nIssueLight watches the fine print.\nStar it if it saved a minute. Fuel it if it saved the night.",
+            "The quiet menu bar is not doing nothing.\nIt is waiting for evidence.\nStar the repository if that restraint feels useful.",
+            "Monitoring should interrupt you only when it has something useful to say.\nIssueLight keeps the noise down and the problems visible.\nCoffee is optional. Reliable alerts are not.",
+        ]
+        self.messageKey = messages[messageIndex.map { abs($0) % messages.count } ?? Int.random(in: messages.indices)]
     }
 
     var body: some View {
@@ -142,8 +168,17 @@ struct AboutSettingsView: View {
                         Text(verbatim: "Apache License 2.0")
                             .font(.caption)
                             .foregroundStyle(.secondary)
+                        Text(verbatim: AppLocalization.string("Monitoring without the noise.", locale: locale))
+                            .font(.callout.weight(.medium))
                     }
                 }
+
+                Text(verbatim: AppLocalization.string(messageKey, locale: locale))
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .padding(14)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(.quaternary, in: RoundedRectangle(cornerRadius: 12))
 
                 Divider()
 
@@ -208,42 +243,5 @@ struct AboutSettingsView: View {
 
     private var linkColumns: [GridItem] {
         [GridItem(.flexible()), GridItem(.flexible())]
-    }
-
-}
-
-struct AppLanguageMenu: View {
-    @ObservedObject var languageSettings: AppLanguageSettings
-    @Environment(\.locale) private var locale
-
-    var body: some View {
-        Menu {
-            Picker(
-                AppLocalization.string("App-Sprache", locale: locale),
-                selection: $languageSettings.selection
-            ) {
-                Text(verbatim: AppLocalization.string("Systemstandard", locale: locale))
-                    .tag(AppLanguage.system)
-                Divider()
-                ForEach(AppLanguage.supportedLanguages) { language in
-                    Text(verbatim: language.nativeName).tag(language)
-                }
-            }
-            .labelsHidden()
-        } label: {
-            Label {
-                HStack {
-                    Text(verbatim: AppLocalization.string("Sprache", locale: locale))
-                    Spacer()
-                    if languageSettings.selection == .system {
-                        Text(verbatim: AppLocalization.string("Systemstandard", locale: locale))
-                    } else {
-                        Text(verbatim: languageSettings.selection.nativeName)
-                    }
-                }
-            } icon: {
-                Image(systemName: "globe")
-            }
-        }
     }
 }

@@ -3,8 +3,8 @@ import SwiftUI
 import XCTest
 
 @MainActor
-final class StatusWindowPerformanceTests: XCTestCase {
-    func testSearchFiltersFiveThousandIssuesByObjectAndSourceText() throws {
+final class StatusMenuPerformanceTests: XCTestCase {
+    func testSearchFiltersFiveThousandIssuesByObjectAndSourceText() {
         let fixture = issueFixture(count: 5_000)
         let sourceSearch = MonitoringIssueSearch(
             query: "  homelab  ",
@@ -29,21 +29,25 @@ final class StatusWindowPerformanceTests: XCTestCase {
         XCTAssertLessThan(elapsed, .seconds(1))
     }
 
-    func testNativeStatusWindowRendersFiveThousandIssuesWithinFiveSeconds() throws {
+    func testNativeMenuPanelRendersFiveThousandIssuesWithinFiveSeconds() throws {
         let fixture = issueFixture(count: 5_000)
-        let view = StatusWindowContent(
+        let view = StatusMenuContent(
             hasConfiguredSource: true,
             hasEnabledSource: true,
             hasActiveSnapshot: true,
-            latestSuccessfulRefresh: Date(timeIntervalSince1970: 1_794_574_720),
-            refreshState: .current,
-            hasPartialRefreshFailure: false,
-            failedSources: [],
             actionableIssues: fixture.issues,
             coveredIssues: [],
             sourceNames: fixture.sourceNames,
+            refreshState: .current,
+            hasPartialRefreshFailure: false,
+            latestSuccessfulRefresh: Date(timeIntervalSince1970: 1_794_574_720),
+            menuBarSymbol: "exclamationmark.octagon.fill",
+            supportedActions: { _ in [.recheck, .acknowledge, .scheduleDowntime] },
+            activeActionIssueIDs: [],
             refresh: {},
-            openSources: {}
+            performRecheck: { _ in },
+            requestAcknowledgement: { _ in },
+            requestDowntime: { _ in }
         )
         .environment(\.locale, Locale(identifier: "de_DE"))
         .environment(\.colorScheme, .light)
@@ -51,7 +55,7 @@ final class StatusWindowPerformanceTests: XCTestCase {
         let startedAt = ContinuousClock.now
         let renderedExpectedSize = NativeViewRenderer.exerciseWindow(
             for: view,
-            size: CGSize(width: 760, height: 560)
+            size: CGSize(width: 430, height: 520)
         )
         let elapsed = ContinuousClock.now - startedAt
         let holdSeconds = Int(ProcessInfo.processInfo.environment["ISSUELIGHT_UI_HOLD_SECONDS"] ?? "0") ?? 0
@@ -61,9 +65,9 @@ final class StatusWindowPerformanceTests: XCTestCase {
         if let outputPath = ProcessInfo.processInfo.environment["ISSUELIGHT_VOLUME_SCREENSHOT_PATH"] {
             let pngData = try NativeViewRenderer.pngData(
                 for: view,
-                size: CGSize(width: 760, height: 560)
+                size: CGSize(width: 430, height: 520)
             )
-            XCTAssertGreaterThan(pngData.count, 50_000)
+            XCTAssertGreaterThan(pngData.count, 30_000)
             try pngData.write(to: URL(fileURLWithPath: outputPath), options: .atomic)
         }
     }
@@ -91,7 +95,7 @@ final class StatusWindowPerformanceTests: XCTestCase {
         }
         return (
             issues,
-            [productionID: "Produktion", homelabID: "Homelab"]
+            [productionID: "Production", homelabID: "Homelab"]
         )
     }
 }

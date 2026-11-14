@@ -75,6 +75,27 @@ final class MonitoringSourceTests: XCTestCase {
         XCTAssertEqual(source.serverTrust, .pinnedCertificate(sha256: "ABC"))
     }
 
+    func testEndpointAuthorityNormalizesDefaultHTTPAndHTTPSPorts() {
+        var httpsSource = source(endpoint: URL(string: "https://icinga.example.test/v1")!)
+        var httpSource = source(endpoint: URL(string: "http://icinga.example.test/v1")!)
+
+        XCTAssertFalse(
+            httpsSource.updateEndpoint(URL(string: "https://icinga.example.test:443/v1/")!)
+        )
+        XCTAssertFalse(
+            httpSource.updateEndpoint(URL(string: "http://icinga.example.test:80/v1/")!)
+        )
+    }
+
+    func testEndpointWithoutAuthorityIsTreatedAsAuthorityChange() {
+        var source = source(serverTrust: .pinnedCertificate(sha256: "ABC"))
+
+        let authorityChanged = source.updateEndpoint(URL(string: "relative-endpoint")!)
+
+        XCTAssertTrue(authorityChanged)
+        XCTAssertEqual(source.serverTrust, .system)
+    }
+
     func testDefaultTrustVerifiesServerCertificate() {
         XCTAssertTrue(source().serverTrust.verifiesServerCertificate)
         XCTAssertFalse(source(serverTrust: .disabled).serverTrust.verifiesServerCertificate)

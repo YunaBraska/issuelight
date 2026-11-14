@@ -88,6 +88,41 @@ final class IssueLightModelTests: XCTestCase {
         XCTAssertEqual(harness.model.menuBarSymbol, "exclamationmark.octagon.fill")
     }
 
+    func testConfirmedActionRefreshesOnlyItsSource() async throws {
+        let script = SnapshotScript()
+        let harness = try await makeHarness(sourceCount: 2, script: script)
+        for source in harness.sources {
+            await script.enqueue(
+                .result(.loaded(snapshot(source: source, observedAt: 1, summary: source.name))),
+                for: source.id
+            )
+        }
+        await harness.model.start()
+        let issue = try XCTUnwrap(
+            harness.model.actionableIssues.first(where: { $0.sourceID == harness.sources[0].id })
+        )
+        let refreshed = MonitoringSnapshot(
+            sourceID: harness.sources[0].id,
+            observedAt: Date(timeIntervalSince1970: 2),
+            issues: []
+        )
+        await script.enqueueActionResult(.completed, for: harness.sources[0].id)
+        await script.enqueue(.result(.loaded(refreshed)), for: harness.sources[0].id)
+
+        await harness.model.perform(
+            .acknowledge(author: "Operator", comment: "Investigating"),
+            on: issue
+        )
+
+        let performedActions = await script.actions(for: harness.sources[0].id)
+        let secondSourceMetrics = await script.metrics(for: harness.sources[1].id)
+        XCTAssertEqual(performedActions, [.acknowledge(author: "Operator", comment: "Investigating")])
+        XCTAssertEqual(harness.model.snapshots[harness.sources[0].id], refreshed)
+        XCTAssertEqual(secondSourceMetrics.loads, 1)
+        XCTAssertEqual(harness.model.actionFeedback?.succeeded, true)
+        XCTAssertEqual(harness.model.activeActionIssueIDs, [])
+    }
+
     func testRemovingSourceCancelsItsRefreshAndPreservesOtherSourceAndCredential() async throws {
         let script = SnapshotScript()
         let harness = try await makeHarness(sourceCount: 2, script: script)
@@ -120,10 +155,7 @@ final class IssueLightModelTests: XCTestCase {
     }
 
     func testSavingLastPrivateCAReferenceRemovesOnlyIssueLightManagedCertificate() async throws {
-        try requireUnlockedDefaultKeychain()
-        let catalog = KeychainServerCertificateCatalog(
-            ownershipScope: "berlin.yuna.issuelight.model-tests.\(UUID().uuidString)"
-        )
+        let catalog = certificateCatalog()
         let descriptor = try await catalog.importCertificate(at: serverCertificateFixtureURL)
         addTeardownBlock {
             try? await catalog.deleteCertificate(id: descriptor.id)
@@ -160,10 +192,7 @@ final class IssueLightModelTests: XCTestCase {
     }
 
     func testDeletingLastPrivateCASourceRemovesIssueLightManagedCertificate() async throws {
-        try requireUnlockedDefaultKeychain()
-        let catalog = KeychainServerCertificateCatalog(
-            ownershipScope: "berlin.yuna.issuelight.model-tests.\(UUID().uuidString)"
-        )
+        let catalog = certificateCatalog()
         let descriptor = try await catalog.importCertificate(at: serverCertificateFixtureURL)
         addTeardownBlock {
             try? await catalog.deleteCertificate(id: descriptor.id)
@@ -185,10 +214,7 @@ final class IssueLightModelTests: XCTestCase {
     }
 
     func testLoadingRemovesOrphanedManagedCertificateFromSameAppProfile() async throws {
-        try requireUnlockedDefaultKeychain()
-        let catalog = KeychainServerCertificateCatalog(
-            ownershipScope: "berlin.yuna.issuelight.model-tests.\(UUID().uuidString)"
-        )
+        let catalog = certificateCatalog()
         let descriptor = try await catalog.importCertificate(at: serverCertificateFixtureURL)
         addTeardownBlock {
             try? await catalog.deleteCertificate(id: descriptor.id)
@@ -337,14 +363,11 @@ final class IssueLightModelTests: XCTestCase {
             }
             throw XCTSkip("Live Icinga 2 environment is not configured")
         }
-        try requireUnlockedDefaultKeychain()
 
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("IssueLightLiveModelTests-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        let certificateCatalog = KeychainServerCertificateCatalog(
-            ownershipScope: "berlin.yuna.issuelight.live-model-tests.\(UUID().uuidString)"
-        )
+        let certificateCatalog = self.certificateCatalog(scope: "live")
         let certificate = try await certificateCatalog.importCertificate(
             at: URL(fileURLWithPath: certificatePath)
         )
@@ -432,9 +455,7 @@ final class IssueLightModelTests: XCTestCase {
             try? FileManager.default.removeItem(at: directory)
         }
         let registry = try ProviderRegistry([TestProvider(script: script)])
-        let resolvedCertificateCatalog = certificateCatalog ?? KeychainServerCertificateCatalog(
-            ownershipScope: "berlin.yuna.issuelight.model-tests.\(UUID().uuidString)"
-        )
+        let resolvedCertificateCatalog = certificateCatalog ?? self.certificateCatalog()
         let model = IssueLightModel(
             sourceStore: store,
             providerRegistry: registry,
@@ -461,6 +482,13 @@ final class IssueLightModelTests: XCTestCase {
             .appendingPathComponent(
                 "Packages/IssueLightCore/Tests/IssueLightCoreTests/Fixtures/issuelight-test-root.crt"
             )
+    }
+
+    private func certificateCatalog(scope: String = UUID().uuidString) -> KeychainServerCertificateCatalog {
+        KeychainServerCertificateCatalog(
+            ownershipScope: "berlin.yuna.issuelight.model-tests.\(scope)",
+            accessContext: testKeychain.context
+        )
     }
 
     private func snapshot(
@@ -518,8 +546,7 @@ private struct TestProvider: MonitoringProvider {
         capabilities: ProviderCapabilities(
             authenticationMethods: [.basic],
             serverTrustMethods: [.system, .customCertificate, .pinnedCertificate],
-            supportsAcknowledgement: false,
-            supportsDowntime: false
+            actions: [.recheck, .acknowledge, .scheduleDowntime]
         )
     )
 
@@ -540,6 +567,15 @@ private struct TestProvider: MonitoringProvider {
     ) async -> SnapshotLoadResult {
         await script.load(sourceID: source.id)
     }
+
+    func perform(
+        _ action: MonitoringAction,
+        on issue: MonitoringIssue,
+        from source: MonitoringSource,
+        access: ProviderAccess
+    ) async -> MonitoringActionResult {
+        await script.perform(action, sourceID: source.id)
+    }
 }
 
 private actor SnapshotScript {
@@ -551,9 +587,27 @@ private actor SnapshotScript {
     private var behaviors: [UUID: [Behavior]] = [:]
     private var loadCounts: [UUID: Int] = [:]
     private var cancellationCounts: [UUID: Int] = [:]
+    private var actionResults: [UUID: [MonitoringActionResult]] = [:]
+    private var performedActions: [UUID: [MonitoringAction]] = [:]
 
     func enqueue(_ behavior: Behavior, for sourceID: UUID) {
         behaviors[sourceID, default: []].append(behavior)
+    }
+
+    func enqueueActionResult(_ result: MonitoringActionResult, for sourceID: UUID) {
+        actionResults[sourceID, default: []].append(result)
+    }
+
+    func perform(_ action: MonitoringAction, sourceID: UUID) -> MonitoringActionResult {
+        performedActions[sourceID, default: []].append(action)
+        guard !actionResults[sourceID, default: []].isEmpty else {
+            return .rejected("Missing test action result")
+        }
+        return actionResults[sourceID, default: []].removeFirst()
+    }
+
+    func actions(for sourceID: UUID) -> [MonitoringAction] {
+        performedActions[sourceID, default: []]
     }
 
     func load(sourceID: UUID) async -> SnapshotLoadResult {

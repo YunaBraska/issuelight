@@ -37,17 +37,13 @@ PKCS#12 file and CA certificate are written to
 as `server.crt` for exact-certificate pinning tests. The PKCS#12 password
 remains only in the ignored `.env.local` file.
 
-`verify` temporarily imports those dedicated test identities into the default
-macOS Keychain, resolves their persistent references through `IssueLightCore`,
-proves accepted and rejected real mTLS connections, and removes them again. It
-also imports the lab CA as a source-specific Keychain reference, proves that an
+`verify` imports those dedicated test identities into isolated temporary macOS
+Keychains, resolves their persistent references through `IssueLightCore`,
+proves accepted and rejected real mTLS connections, and deletes the Keychains.
+It also imports the lab CA as a source-specific reference, proves that an
 unrelated CA is rejected, builds the native app test bundle, and refreshes two
 persisted sources with verification enabled through the real built-in Icinga 2
-provider. An interrupted process can leave a test identity or CA certificate
-behind. In that case, remove only the two
-`issuelight-live-*.issuelight.invalid` identities and certificates, or only the
-`Icinga CA` certificate whose SHA-256 fingerprint matches the generated
-`ca.crt`. The PKCS#12 files intentionally omit the lab CA so identity import
+provider. The PKCS#12 files intentionally omit the lab CA so identity import
 does not silently alter server trust.
 
 The matrix intentionally treats plain HTTP and no authentication as negative

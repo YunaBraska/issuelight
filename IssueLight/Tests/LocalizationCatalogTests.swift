@@ -2,6 +2,11 @@ import Foundation
 import XCTest
 
 final class LocalizationCatalogTests: XCTestCase {
+    private struct StringUnit {
+        let state: String
+        let value: String
+    }
+
     func testEverySupportedLanguageHasACompleteSafeCatalog() throws {
         let catalog = try loadCatalog()
         XCTAssertEqual(catalog["sourceLanguage"] as? String, "de")
@@ -20,17 +25,20 @@ final class LocalizationCatalogTests: XCTestCase {
                 "Missing localizations for \(key)"
             )
             let source = stringUnit(in: localizations["de"])?.value ?? key
+            if let germanUnit = stringUnit(in: localizations["de"]) {
+                XCTAssertEqual(germanUnit.state, "translated", "de: \(key)")
+            }
 
             for locale in translatedLocales {
                 let unit = try XCTUnwrap(
                     stringUnit(in: localizations[locale]),
                     "Missing \(locale) translation for \(key)"
                 )
-                XCTAssertEqual(unit.state, "machine_translated", "\(locale): \(key)")
+                XCTAssertEqual(unit.state, "translated", "\(locale): \(key)")
                 XCTAssertFalse(unit.value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 XCTAssertEqual(
-                    formatTokens(in: unit.value),
-                    formatTokens(in: source),
+                    try formatTokens(in: unit.value),
+                    try formatTokens(in: source),
                     "Broken format tokens in \(locale): \(key)"
                 )
                 for protectedTerm in protectedTerms where source.contains(protectedTerm) {
@@ -52,17 +60,20 @@ final class LocalizationCatalogTests: XCTestCase {
     }
 
     private func loadCatalog() throws -> [String: Any] {
-        let testsDirectory = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
-        let catalogURL = testsDirectory
-            .deletingLastPathComponent()
-            .appendingPathComponent("Resources/Localizable.xcstrings")
         let data = try Data(contentsOf: catalogURL)
         return try XCTUnwrap(
             JSONSerialization.jsonObject(with: data) as? [String: Any]
         )
     }
 
-    private func stringUnit(in rawLocalization: Any?) -> (state: String, value: String)? {
+    private var catalogURL: URL {
+        let testsDirectory = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+        return testsDirectory
+            .deletingLastPathComponent()
+            .appendingPathComponent("Resources/Localizable.xcstrings")
+    }
+
+    private func stringUnit(in rawLocalization: Any?) -> StringUnit? {
         guard
             let localization = rawLocalization as? [String: Any],
             let unit = localization["stringUnit"] as? [String: Any],
@@ -71,11 +82,11 @@ final class LocalizationCatalogTests: XCTestCase {
         else {
             return nil
         }
-        return (state, value)
+        return StringUnit(state: state, value: value)
     }
 
-    private func formatTokens(in value: String) -> [String] {
-        let expression = try! NSRegularExpression(
+    private func formatTokens(in value: String) throws -> [String] {
+        let expression = try NSRegularExpression(
             pattern: #"%(?:\d+\$)?(?:@|lld|ld|d|f)"#
         )
         let range = NSRange(value.startIndex..., in: value)

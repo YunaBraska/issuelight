@@ -81,6 +81,9 @@ remote actions.
 - `AUTH-005` Background credential discovery MUST inspect only non-secret
   Keychain metadata. An item that matches a source scope but is not owned by
   IssueLight MUST fail without requesting or reading its secret.
+- `AUTH-006` Background refresh and operator actions MUST fail rather than show
+  Keychain authentication UI. A user-initiated connection test MAY request
+  access to a protected client-identity private key.
 
 ### Server trust
 

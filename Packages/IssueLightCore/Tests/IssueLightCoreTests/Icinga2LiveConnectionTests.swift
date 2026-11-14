@@ -111,7 +111,8 @@ final class Icinga2LiveConnectionTests: XCTestCase {
               let password = environment["ISSUELIGHT_ICINGA_BASIC_PASSWORD"] else {
             throw XCTSkip("Live Icinga 2 environment is not configured")
         }
-        try requireUnlockedDefaultKeychain()
+        let keychain = try TemporaryTestKeychain()
+        addTeardownBlock { try? keychain.delete() }
         let fileURL = try XCTUnwrap(
             Bundle.module.url(
                 forResource: "issuelight-test-root",
@@ -120,7 +121,8 @@ final class Icinga2LiveConnectionTests: XCTestCase {
             )
         )
         let certificateCatalog = KeychainServerCertificateCatalog(
-            ownershipScope: "berlin.yuna.issuelight.live-core-tests.\(UUID().uuidString)"
+            ownershipScope: "berlin.yuna.issuelight.live-core-tests.\(UUID().uuidString)",
+            accessContext: keychain.context
         )
         let descriptor = try await certificateCatalog.importCertificate(at: fileURL)
         addTeardownBlock {
@@ -156,9 +158,11 @@ final class Icinga2LiveConnectionTests: XCTestCase {
               let certificatePath = environment["ISSUELIGHT_LIVE_ICINGA_CA_PATH"] else {
             throw XCTSkip("Live Icinga 2 environment is not configured")
         }
-        try requireUnlockedDefaultKeychain()
+        let keychain = try TemporaryTestKeychain()
+        addTeardownBlock { try? keychain.delete() }
         let certificateCatalog = KeychainServerCertificateCatalog(
-            ownershipScope: "berlin.yuna.issuelight.live-core-tests.\(UUID().uuidString)"
+            ownershipScope: "berlin.yuna.issuelight.live-core-tests.\(UUID().uuidString)",
+            accessContext: keychain.context
         )
         let descriptor = try await certificateCatalog.importCertificate(
             at: URL(fileURLWithPath: certificatePath)
@@ -241,6 +245,33 @@ final class Icinga2LiveConnectionTests: XCTestCase {
         XCTAssertEqual(snapshot.highestAttentionSeverity, .critical)
     }
 
+    func testLiveBasicAuthenticationRechecksARealService() async throws {
+        let environment = ProcessInfo.processInfo.environment
+        guard let endpointValue = environment["ISSUELIGHT_LIVE_ICINGA_URL"],
+              let endpoint = URL(string: endpointValue),
+              let password = environment["ISSUELIGHT_ICINGA_BASIC_PASSWORD"] else {
+            throw XCTSkip("Live Icinga 2 environment is not configured")
+        }
+        let source = MonitoringSource(
+            name: "Live action",
+            providerID: Icinga2Provider.id,
+            endpoint: endpoint,
+            authentication: .basic(username: "issuelight-basic"),
+            serverTrust: .disabled
+        )
+        let provider = try XCTUnwrap(ProviderRegistry.builtIn().provider(for: source.providerID))
+        let access = ProviderAccess(credential: .password(password))
+        let snapshotResult = await provider.loadSnapshot(from: source, access: access)
+        guard case .loaded(let snapshot) = snapshotResult,
+              let service = snapshot.issues.first(where: { $0.serviceName == "cascaded-service" }) else {
+            return XCTFail("Expected the live service fixture")
+        }
+
+        let result = await provider.perform(.recheck, on: service, from: source, access: access)
+
+        XCTAssertEqual(result, .completed)
+    }
+
     func testImportedKeychainIdentityConnectsToLiveIcingaAPI() async throws {
         let environment = ProcessInfo.processInfo.environment
         guard let endpointValue = environment["ISSUELIGHT_LIVE_ICINGA_URL"],
@@ -250,24 +281,19 @@ final class Icinga2LiveConnectionTests: XCTestCase {
               let certificatePath = environment["ISSUELIGHT_LIVE_ICINGA_CA_PATH"] else {
             throw XCTSkip("Live Icinga 2 environment is not configured")
         }
-        try requireUnlockedDefaultKeychain()
+        let keychain = try TemporaryTestKeychain()
+        addTeardownBlock { try? keychain.delete() }
 
-        let catalog = KeychainIdentityCatalog()
+        let catalog = KeychainIdentityCatalog(accessContext: keychain.context)
         let descriptor = try await catalog.importPKCS12(
             at: URL(fileURLWithPath: identityPath),
             password: identityPassword
         )
         let resolvedIdentity = try await catalog.identity(id: descriptor.id)
         let identity = try XCTUnwrap(resolvedIdentity)
-        let cleanupReferences = try Self.cleanupReferences(
-            identity: identity,
-            id: descriptor.id
-        )
-        addTeardownBlock {
-            try? Self.deleteImportedIdentity(cleanupReferences)
-        }
         let certificateCatalog = KeychainServerCertificateCatalog(
-            ownershipScope: "berlin.yuna.issuelight.live-core-tests.\(UUID().uuidString)"
+            ownershipScope: "berlin.yuna.issuelight.live-core-tests.\(UUID().uuidString)",
+            accessContext: keychain.context
         )
         let certificateDescriptor = try await certificateCatalog.importCertificate(
             at: URL(fileURLWithPath: certificatePath)
@@ -297,13 +323,6 @@ final class Icinga2LiveConnectionTests: XCTestCase {
         )
 
         XCTAssertEqual(result, .connected)
-        try Self.deleteImportedIdentity(cleanupReferences)
-        let removedIdentity = try await catalog.identity(id: descriptor.id)
-        XCTAssertNil(removedIdentity)
-        XCTAssertFalse(Self.itemExists(
-            class: kSecClassCertificate,
-            reference: cleanupReferences.certificate
-        ))
     }
 
     func testUnregisteredClientIdentityIsRejectedByLiveIcingaAPI() async throws {
@@ -315,24 +334,19 @@ final class Icinga2LiveConnectionTests: XCTestCase {
               let certificatePath = environment["ISSUELIGHT_LIVE_ICINGA_CA_PATH"] else {
             throw XCTSkip("Live Icinga 2 environment is not configured")
         }
-        try requireUnlockedDefaultKeychain()
+        let keychain = try TemporaryTestKeychain()
+        addTeardownBlock { try? keychain.delete() }
 
-        let catalog = KeychainIdentityCatalog()
+        let catalog = KeychainIdentityCatalog(accessContext: keychain.context)
         let descriptor = try await catalog.importPKCS12(
             at: URL(fileURLWithPath: identityPath),
             password: identityPassword
         )
         let resolvedIdentity = try await catalog.identity(id: descriptor.id)
         let identity = try XCTUnwrap(resolvedIdentity)
-        let cleanupReferences = try Self.cleanupReferences(
-            identity: identity,
-            id: descriptor.id
-        )
-        addTeardownBlock {
-            try? Self.deleteImportedIdentity(cleanupReferences)
-        }
         let certificateCatalog = KeychainServerCertificateCatalog(
-            ownershipScope: "berlin.yuna.issuelight.live-core-tests.\(UUID().uuidString)"
+            ownershipScope: "berlin.yuna.issuelight.live-core-tests.\(UUID().uuidString)",
+            accessContext: keychain.context
         )
         let certificateDescriptor = try await certificateCatalog.importCertificate(
             at: URL(fileURLWithPath: certificatePath)
@@ -362,85 +376,5 @@ final class Icinga2LiveConnectionTests: XCTestCase {
         )
 
         XCTAssertEqual(result, .failed(.authentication))
-        try Self.deleteImportedIdentity(cleanupReferences)
-        let removedIdentity = try await catalog.identity(id: descriptor.id)
-        XCTAssertNil(removedIdentity)
-        XCTAssertFalse(Self.itemExists(
-            class: kSecClassCertificate,
-            reference: cleanupReferences.certificate
-        ))
     }
-
-    private static func cleanupReferences(
-        identity: SecIdentity?,
-        id: String
-    ) throws -> ImportedIdentityReferences {
-        guard let identityReference = Data(base64Encoded: id), let identity else {
-            throw LiveIdentityCleanupError.invalidPersistentReference
-        }
-        var certificate: SecCertificate?
-        let certificateStatus = SecIdentityCopyCertificate(identity, &certificate)
-        guard certificateStatus == errSecSuccess, let certificate else {
-            throw LiveIdentityCleanupError.unexpectedStatus(certificateStatus)
-        }
-        let certificateQuery: [String: Any] = [
-            kSecClass as String: kSecClassCertificate,
-            kSecValueRef as String: certificate,
-            kSecReturnPersistentRef as String: true,
-            kSecMatchLimit as String: kSecMatchLimitOne,
-        ]
-        var result: CFTypeRef?
-        let referenceStatus = SecItemCopyMatching(certificateQuery as CFDictionary, &result)
-        guard referenceStatus == errSecSuccess, let certificateReference = result as? Data else {
-            throw LiveIdentityCleanupError.unexpectedStatus(referenceStatus)
-        }
-        return ImportedIdentityReferences(identity: identityReference, certificate: certificateReference)
-    }
-
-    private static func deleteImportedIdentity(_ references: ImportedIdentityReferences) throws {
-        try deleteItem(
-            class: kSecClassIdentity,
-            reference: references.identity
-        )
-        try deleteItem(
-            class: kSecClassCertificate,
-            reference: references.certificate
-        )
-    }
-
-    private static func deleteItem(
-        class itemClass: CFTypeRef,
-        reference: Data
-    ) throws {
-        let query: [String: Any] = [
-            kSecClass as String: itemClass,
-            kSecValuePersistentRef as String: reference,
-        ]
-        let status = SecItemDelete(query as CFDictionary)
-        guard status == errSecSuccess || status == errSecItemNotFound else {
-            throw LiveIdentityCleanupError.unexpectedStatus(status)
-        }
-    }
-
-    private static func itemExists(
-        class itemClass: CFTypeRef,
-        reference: Data
-    ) -> Bool {
-        let query: [String: Any] = [
-            kSecClass as String: itemClass,
-            kSecValuePersistentRef as String: reference,
-            kSecMatchLimit as String: kSecMatchLimitOne,
-        ]
-        return SecItemCopyMatching(query as CFDictionary, nil) == errSecSuccess
-    }
-}
-
-private struct ImportedIdentityReferences: Sendable {
-    let identity: Data
-    let certificate: Data
-}
-
-private enum LiveIdentityCleanupError: Error {
-    case invalidPersistentReference
-    case unexpectedStatus(OSStatus)
 }

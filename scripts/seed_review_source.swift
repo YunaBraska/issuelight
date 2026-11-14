@@ -16,7 +16,7 @@ enum SeedReviewSource {
 
         let source = MonitoringSource(
             id: UUID(uuidString: "11111111-1111-4111-8111-111111111111")!,
-            name: "Lokales Icinga 2 Review-Lab",
+            name: "Local Icinga 2 Review Lab",
             providerID: ProviderID(rawValue: "icinga2"),
             endpoint: endpoint,
             authentication: .basic(username: "issuelight-basic"),
