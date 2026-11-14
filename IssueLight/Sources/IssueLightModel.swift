@@ -86,9 +86,7 @@ final class IssueLightModel: ObservableObject {
         var id: UUID { source.id }
     }
 
-    struct ActionFeedback: Identifiable, Equatable {
-        let id = UUID()
-        let succeeded: Bool
+    struct ActionError: Equatable {
         let message: String
     }
 
@@ -132,7 +130,7 @@ final class IssueLightModel: ObservableObject {
     @Published private(set) var snapshots: [UUID: MonitoringSnapshot] = [:]
     @Published private(set) var refreshStates: [UUID: RefreshState] = [:]
     @Published private(set) var activeActionIssueIDs: Set<String> = []
-    @Published private(set) var actionFeedback: ActionFeedback?
+    @Published private(set) var actionError: ActionError?
 
     private var sourceID = UUID()
     private let sourceStore: SourceStore?
@@ -260,6 +258,23 @@ final class IssueLightModel: ObservableObject {
         )
     }
 
+    var automaticWebBaseURL: URL? {
+        guard let endpoint = URL(string: endpoint.trimmingCharacters(in: .whitespacesAndNewlines)),
+              let provider = providerRegistry.provider(for: selectedProviderID) else {
+            return nil
+        }
+        var source = selectedSource ?? MonitoringSource(
+            name: name,
+            providerID: selectedProviderID,
+            endpoint: endpoint,
+            authentication: .basic(username: username)
+        )
+        source.name = name
+        source.providerID = selectedProviderID
+        _ = source.updateEndpoint(endpoint)
+        return provider.defaultWebBaseURL(for: source)
+    }
+
     func sshURL(for issue: MonitoringIssue) -> URL? {
         guard let source = sources.first(where: { $0.id == issue.sourceID }),
               let configuration = source.remoteAccess?.ssh else {
@@ -277,8 +292,7 @@ final class IssueLightModel: ObservableObject {
     }
 
     func reportMissingWebConfiguration() {
-        actionFeedback = ActionFeedback(
-            succeeded: false,
+        actionError = ActionError(
             message: localized("Konfiguriere zuerst die Web-URL dieser Quelle.")
         )
     }
@@ -293,26 +307,25 @@ final class IssueLightModel: ObservableObject {
         case .tunnelCouldNotStart(let detail):
             message = localized("Der SSH-Tunnel konnte nicht gestartet werden: \(detail)")
         }
-        actionFeedback = ActionFeedback(succeeded: false, message: message)
+        actionError = ActionError(message: message)
     }
 
-    func dismissActionFeedback() {
-        actionFeedback = nil
+    func dismissActionError() {
+        actionError = nil
     }
 
     func perform(_ action: MonitoringAction, on issue: MonitoringIssue) async {
         guard !activeActionIssueIDs.contains(issue.id) else { return }
+        actionError = nil
         guard let source = sources.first(where: { $0.id == issue.sourceID }), source.isEnabled else {
-            actionFeedback = ActionFeedback(
-                succeeded: false,
+            actionError = ActionError(
                 message: localized("Die zugehörige Quelle ist nicht verfügbar.")
             )
             return
         }
         guard let provider = providerRegistry.provider(for: source.providerID),
               provider.descriptor.capabilities.actions.contains(action.kind) else {
-            actionFeedback = ActionFeedback(
-                succeeded: false,
+            actionError = ActionError(
                 message: localized("Diese Aktion wird von der Quelle nicht unterstützt.")
             )
             return
@@ -326,24 +339,20 @@ final class IssueLightModel: ObservableObject {
         case .resolved(let resolvedAccess):
             access = resolvedAccess
         case .failed(let failure):
-            actionFeedback = ActionFeedback(succeeded: false, message: accessMessage(for: failure))
+            actionError = ActionError(message: accessMessage(for: failure))
             return
         }
 
         let result = await provider.perform(action, on: issue, from: source, access: access)
         switch result {
         case .completed:
-            actionFeedback = ActionFeedback(
-                succeeded: true,
-                message: localized("Die Aktion wurde von Icinga 2 bestätigt.")
-            )
             if let refreshTask = refresh(sourceID: source.id) {
                 await refreshTask.value
             }
         case .rejected(let message):
-            actionFeedback = ActionFeedback(succeeded: false, message: message)
+            actionError = ActionError(message: message)
         case .failed(let failure):
-            actionFeedback = ActionFeedback(succeeded: false, message: refreshMessage(for: failure))
+            actionError = ActionError(message: refreshMessage(for: failure))
         }
     }
 

@@ -18,6 +18,7 @@ final class StatusMenuInteractionTests: XCTestCase {
             ),
             refreshState: .notConfigured,
             hasPartialRefreshFailure: false,
+            actionError: nil,
             supportedActions: { _ in [] },
             activeActionIssueIDs: [],
             openSettings: { openedSettings = true },
@@ -28,7 +29,8 @@ final class StatusMenuInteractionTests: XCTestCase {
             hasRDP: { _ in false },
             performRecheck: { _ in },
             requestAcknowledgement: { _ in },
-            requestDowntime: { _ in }
+            requestDowntime: { _ in },
+            dismissActionError: {}
         )
         .environment(\.locale, Locale(identifier: "de_DE"))
         .environment(\.colorScheme, .light)
@@ -75,6 +77,7 @@ final class StatusMenuInteractionTests: XCTestCase {
             ),
             refreshState: .current,
             hasPartialRefreshFailure: false,
+            actionError: nil,
             supportedActions: { _ in [.recheck, .acknowledge, .scheduleDowntime] },
             activeActionIssueIDs: [],
             openSettings: {},
@@ -85,7 +88,8 @@ final class StatusMenuInteractionTests: XCTestCase {
             hasRDP: { _ in true },
             performRecheck: { _ in rechecked += 1 },
             requestAcknowledgement: { _ in acknowledged += 1 },
-            requestDowntime: { _ in scheduledDowntime += 1 }
+            requestDowntime: { _ in scheduledDowntime += 1 },
+            dismissActionError: {}
         )
         .environment(\.locale, Locale(identifier: "de_DE"))
         .environment(\.colorScheme, .light)
@@ -99,5 +103,66 @@ final class StatusMenuInteractionTests: XCTestCase {
         XCTAssertEqual(rechecked, 1)
         XCTAssertEqual(acknowledged, 1)
         XCTAssertEqual(scheduledDowntime, 1)
+    }
+
+    func testActionErrorCanBeDismissedWithoutAWindowModal() {
+        var dismissed = false
+        let view = StatusActionErrorBanner(
+            message: "Icinga rejected the action.",
+            dismiss: { dismissed = true }
+        )
+        .environment(\.colorScheme, .light)
+
+        NativeViewRenderer.click(
+            CGPoint(x: 389, y: 25),
+            in: view,
+            size: CGSize(width: 400, height: 50)
+        )
+
+        XCTAssertTrue(dismissed)
+    }
+
+    func testSourceAddButtonRespondsToPointerClick() {
+        var added = false
+        let view = SourceSidebarFooter(addSource: { added = true })
+            .environment(\.locale, Locale(identifier: "de_DE"))
+            .environment(\.colorScheme, .light)
+
+        NativeViewRenderer.click(
+            CGPoint(x: 75, y: 21),
+            in: view,
+            size: CGSize(width: 250, height: 42)
+        )
+
+        XCTAssertTrue(added)
+    }
+
+    func testActionFieldsKeepEnoughIntrinsicHeightInsideMenuPanelSheet() {
+        let acknowledgement = IssueActionInputFields(
+            author: .constant("Operator"),
+            comment: .constant("Investigating"),
+            duration: .constant(3_600),
+            includesDuration: false
+        )
+        .environment(\.locale, Locale(identifier: "de_DE"))
+        let downtime = IssueActionInputFields(
+            author: .constant("Operator"),
+            comment: .constant("Maintenance"),
+            duration: .constant(3_600),
+            includesDuration: true
+        )
+        .environment(\.locale, Locale(identifier: "de_DE"))
+
+        let acknowledgementSize = NativeViewRenderer.fittingSize(
+            for: acknowledgement,
+            maximumSize: CGSize(width: 436, height: 400)
+        )
+        let downtimeSize = NativeViewRenderer.fittingSize(
+            for: downtime,
+            maximumSize: CGSize(width: 436, height: 400)
+        )
+
+        XCTAssertGreaterThanOrEqual(acknowledgementSize.height, 70)
+        XCTAssertGreaterThan(downtimeSize.height, acknowledgementSize.height)
     }
 }

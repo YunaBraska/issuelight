@@ -190,6 +190,7 @@ final class LandingPageScreenshotTests: XCTestCase {
                 filters: filterSettings(),
                 refreshState: .current,
                 hasPartialRefreshFailure: false,
+                actionError: nil,
                 supportedActions: { _ in [.recheck, .acknowledge, .scheduleDowntime] },
                 activeActionIssueIDs: [],
                 openSettings: {},
@@ -200,7 +201,8 @@ final class LandingPageScreenshotTests: XCTestCase {
                 hasRDP: { _ in true },
                 performRecheck: { _ in },
                 requestAcknowledgement: { _ in },
-                requestDowntime: { _ in }
+                requestDowntime: { _ in },
+                dismissActionError: {}
             )
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)

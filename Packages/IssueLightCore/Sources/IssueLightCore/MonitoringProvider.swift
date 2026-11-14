@@ -93,10 +93,15 @@ public protocol MonitoringProvider: Sendable {
         from source: MonitoringSource,
         access: ProviderAccess
     ) async -> MonitoringActionResult
+    func defaultWebBaseURL(for source: MonitoringSource) -> URL?
     func webURL(for issue: MonitoringIssue, from source: MonitoringSource) -> URL?
 }
 
 public extension MonitoringProvider {
+    func defaultWebBaseURL(for source: MonitoringSource) -> URL? {
+        nil
+    }
+
     func webURL(for issue: MonitoringIssue, from source: MonitoringSource) -> URL? {
         nil
     }

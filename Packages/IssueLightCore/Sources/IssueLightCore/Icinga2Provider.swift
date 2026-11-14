@@ -58,8 +58,24 @@ public struct Icinga2Provider: MonitoringProvider {
         return components.url!
     }
 
+    public func defaultWebBaseURL(for source: MonitoringSource) -> URL? {
+        guard source.providerID == Self.id,
+              var components = URLComponents(url: source.endpoint, resolvingAgainstBaseURL: false),
+              components.host?.isEmpty == false else {
+            return nil
+        }
+        components.user = nil
+        components.password = nil
+        components.port = nil
+        components.path = "/icingaweb2"
+        components.query = nil
+        components.fragment = nil
+        return components.url
+    }
+
     public func webURL(for issue: MonitoringIssue, from source: MonitoringSource) -> URL? {
-        guard issue.sourceID == source.id, let baseURL = source.web?.baseURL else {
+        guard issue.sourceID == source.id,
+              let baseURL = source.web?.baseURL ?? defaultWebBaseURL(for: source) else {
             return nil
         }
         var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false)

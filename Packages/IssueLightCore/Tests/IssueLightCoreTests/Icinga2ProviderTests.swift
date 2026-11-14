@@ -133,12 +133,15 @@ final class Icinga2ProviderTests: XCTestCase {
         )
     }
 
-    func testIcingaDoesNotBuildWebURLForMissingBaseOrForeignIssue() {
+    func testIcingaUsesSameHostIcingaWebDefaultWhenNoOverrideExists() {
         let provider = Icinga2Provider()
         var configuredSource = source(endpoint: "https://icinga.example.test:5665")
         let sourceIssue = issue(sourceID: configuredSource.id, kind: .host)
 
-        XCTAssertNil(provider.webURL(for: sourceIssue, from: configuredSource))
+        XCTAssertEqual(
+            provider.webURL(for: sourceIssue, from: configuredSource)?.absoluteString,
+            "https://icinga.example.test/icingaweb2/monitoring/host/show?host=edge-1"
+        )
 
         configuredSource.web = MonitoringWebConfiguration(
             baseURL: URL(string: "https://monitoring.example.test/icingaweb2")!

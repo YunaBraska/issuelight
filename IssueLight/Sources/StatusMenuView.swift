@@ -50,7 +50,6 @@ struct StatusMenuView: View {
     @Environment(\.openSettings) private var openSettings
     @State private var pendingAction: PendingIssueAction?
     @StateObject private var filters = PanelFilterSettings()
-    @Environment(\.locale) private var locale
 
     var body: some View {
         StatusMenuContent(
@@ -63,9 +62,11 @@ struct StatusMenuView: View {
             filters: filters,
             refreshState: model.refreshState,
             hasPartialRefreshFailure: model.hasPartialRefreshFailure,
+            actionError: model.actionError?.message,
             supportedActions: model.supportedActions,
             activeActionIssueIDs: model.activeActionIssueIDs,
             openSettings: {
+                NSApp.keyWindow?.orderOut(nil)
                 openSettings()
                 NSApp.activate()
             },
@@ -102,7 +103,8 @@ struct StatusMenuView: View {
             },
             requestDowntime: { issue in
                 pendingAction = PendingIssueAction(issue: issue, kind: .scheduleDowntime)
-            }
+            },
+            dismissActionError: model.dismissActionError
         )
         .onChange(of: model.sources.map(\.id), initial: true) { _, sourceIDs in
             filters.reconcile(
@@ -116,22 +118,11 @@ struct StatusMenuView: View {
                 isAuthoritative: hasLoadedSources
             )
         }
-        .sheet(item: $pendingAction) { pendingAction in
-            IssueActionSheet(model: model, pendingAction: pendingAction)
+        .onDisappear {
+            pendingAction = nil
         }
-        .alert(
-            model.actionFeedback?.succeeded == true
-                ? AppLocalization.string("Aktion abgeschlossen", locale: locale)
-                : AppLocalization.string("Aktion fehlgeschlagen", locale: locale),
-            isPresented: Binding(
-                get: { model.actionFeedback != nil },
-                set: { if !$0 { model.dismissActionFeedback() } }
-            ),
-            presenting: model.actionFeedback
-        ) { _ in
-            Button("OK") { model.dismissActionFeedback() }
-        } message: { feedback in
-            Text(verbatim: feedback.message)
+        .sheet(item: $pendingAction, onDismiss: { pendingAction = nil }) { pendingAction in
+            IssueActionSheet(model: model, pendingAction: pendingAction)
         }
     }
 }
@@ -152,6 +143,7 @@ struct StatusMenuContent: View {
     @ObservedObject var filters: PanelFilterSettings
     let refreshState: IssueLightModel.RefreshState
     let hasPartialRefreshFailure: Bool
+    let actionError: String?
     let supportedActions: (MonitoringIssue) -> Set<MonitoringActionKind>
     let activeActionIssueIDs: Set<String>
     let openSettings: () -> Void
@@ -163,6 +155,7 @@ struct StatusMenuContent: View {
     let performRecheck: (MonitoringIssue) -> Void
     let requestAcknowledgement: (MonitoringIssue) -> Void
     let requestDowntime: (MonitoringIssue) -> Void
+    let dismissActionError: () -> Void
     @Environment(\.locale) private var locale
     @State private var searchText = ""
 
@@ -199,6 +192,11 @@ struct StatusMenuContent: View {
 
             Divider()
 
+            if let actionError {
+                StatusActionErrorBanner(message: actionError, dismiss: dismissActionError)
+                Divider()
+            }
+
             if hasActiveSnapshot, case .failed(let message) = refreshState {
                 Label(
                     hasPartialRefreshFailure
@@ -234,6 +232,7 @@ struct StatusMenuContent: View {
         } else {
             failureHeight = 0
         }
+        let actionErrorHeight: CGFloat = actionError == nil ? 0 : 44
         return min(
             520,
             max(
@@ -241,6 +240,7 @@ struct StatusMenuContent: View {
                 52
                     + CGFloat(filteredActionableIssues.count + filteredCoveredIssues.count) * 40
                     + failureHeight
+                    + actionErrorHeight
             )
         )
     }
@@ -374,6 +374,38 @@ struct StatusMenuContent: View {
 
 }
 
+struct StatusActionErrorBanner: View {
+    let message: String
+    let dismiss: () -> Void
+    @Environment(\.locale) private var locale
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "exclamationmark.circle.fill")
+                .foregroundStyle(.red)
+                .accessibilityHidden(true)
+            Text(verbatim: message)
+                .font(.caption)
+                .lineLimit(2)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            Button(action: dismiss) {
+                Image(systemName: "xmark")
+                    .frame(width: 24, height: 24)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(AppLocalization.string("Abbrechen", locale: locale))
+            .accessibilityIdentifier("dismiss-action-error")
+        }
+        .padding(.leading, 12)
+        .padding(.trailing, 8)
+        .padding(.vertical, 6)
+        .background(Color.red.opacity(0.08))
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("action-error")
+    }
+}
+
 struct MonitoringIssueSearch {
     let query: String
     let sourceNames: [UUID: String]
@@ -497,20 +529,12 @@ private struct IssueActionSheet: View {
             Text(verbatim: pendingAction.issue.summary)
                 .foregroundStyle(.secondary)
                 .lineLimit(3)
-            Form {
-                TextField(AppLocalization.string("Autor", locale: locale), text: $author)
-                TextField(AppLocalization.string("Kommentar", locale: locale), text: $comment, axis: .vertical)
-                    .lineLimit(2...4)
-                if pendingAction.kind == .scheduleDowntime {
-                    Picker(AppLocalization.string("Dauer", locale: locale), selection: $duration) {
-                        Text(verbatim: AppLocalization.string("30 Minuten", locale: locale)).tag(TimeInterval(1_800))
-                        Text(verbatim: AppLocalization.string("1 Stunde", locale: locale)).tag(TimeInterval(3_600))
-                        Text(verbatim: AppLocalization.string("2 Stunden", locale: locale)).tag(TimeInterval(7_200))
-                        Text(verbatim: AppLocalization.string("4 Stunden", locale: locale)).tag(TimeInterval(14_400))
-                    }
-                }
-            }
-            .formStyle(.grouped)
+            IssueActionInputFields(
+                author: $author,
+                comment: $comment,
+                duration: $duration,
+                includesDuration: pendingAction.kind == .scheduleDowntime
+            )
 
             HStack {
                 Spacer()
@@ -548,6 +572,55 @@ private struct IssueActionSheet: View {
         pendingAction.kind == .acknowledge
             ? AppLocalization.string("Problem quittieren", locale: locale)
             : AppLocalization.string("Wartungszeit planen", locale: locale)
+    }
+}
+
+struct IssueActionInputFields: View {
+    @Binding var author: String
+    @Binding var comment: String
+    @Binding var duration: TimeInterval
+    let includesDuration: Bool
+    @Environment(\.locale) private var locale
+
+    var body: some View {
+        Grid(alignment: .leading, horizontalSpacing: 14, verticalSpacing: 12) {
+            GridRow {
+                Text(verbatim: AppLocalization.string("Autor", locale: locale))
+                    .foregroundStyle(.secondary)
+                TextField(AppLocalization.string("Autor", locale: locale), text: $author)
+                    .textFieldStyle(.roundedBorder)
+                    .accessibilityIdentifier("action-author")
+            }
+            GridRow(alignment: .top) {
+                Text(verbatim: AppLocalization.string("Kommentar", locale: locale))
+                    .foregroundStyle(.secondary)
+                    .padding(.top, 5)
+                TextField(
+                    AppLocalization.string("Kommentar", locale: locale),
+                    text: $comment,
+                    axis: .vertical
+                )
+                .textFieldStyle(.roundedBorder)
+                .lineLimit(2...4)
+                .accessibilityIdentifier("action-comment")
+            }
+            if includesDuration {
+                GridRow {
+                    Text(verbatim: AppLocalization.string("Dauer", locale: locale))
+                        .foregroundStyle(.secondary)
+                    Picker("", selection: $duration) {
+                        Text(verbatim: AppLocalization.string("30 Minuten", locale: locale)).tag(TimeInterval(1_800))
+                        Text(verbatim: AppLocalization.string("1 Stunde", locale: locale)).tag(TimeInterval(3_600))
+                        Text(verbatim: AppLocalization.string("2 Stunden", locale: locale)).tag(TimeInterval(7_200))
+                        Text(verbatim: AppLocalization.string("4 Stunden", locale: locale)).tag(TimeInterval(14_400))
+                    }
+                    .labelsHidden()
+                    .accessibilityLabel(AppLocalization.string("Dauer", locale: locale))
+                    .accessibilityIdentifier("action-duration")
+                }
+            }
+        }
+        .frame(maxWidth: .infinity)
     }
 }
 

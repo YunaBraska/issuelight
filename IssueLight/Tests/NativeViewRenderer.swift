@@ -78,6 +78,13 @@ enum NativeViewRenderer {
         return renderedExpectedSize
     }
 
+    static func fittingSize<Content: View>(
+        for view: Content,
+        maximumSize: CGSize
+    ) -> CGSize {
+        NSHostingController(rootView: view).sizeThatFits(in: maximumSize)
+    }
+
     static func pngData<Content: View>(
         for view: Content,
         size: CGSize

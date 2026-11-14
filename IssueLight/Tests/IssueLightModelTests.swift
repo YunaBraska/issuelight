@@ -119,7 +119,7 @@ final class IssueLightModelTests: XCTestCase {
         XCTAssertEqual(performedActions, [.acknowledge(author: "Operator", comment: "Investigating")])
         XCTAssertEqual(harness.model.snapshots[harness.sources[0].id], refreshed)
         XCTAssertEqual(secondSourceMetrics.loads, 1)
-        XCTAssertEqual(harness.model.actionFeedback?.succeeded, true)
+        XCTAssertNil(harness.model.actionError)
         XCTAssertEqual(harness.model.activeActionIssueIDs, [])
     }
 

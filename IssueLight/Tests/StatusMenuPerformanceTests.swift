@@ -43,6 +43,7 @@ final class StatusMenuPerformanceTests: XCTestCase {
             ),
             refreshState: .current,
             hasPartialRefreshFailure: false,
+            actionError: nil,
             supportedActions: { _ in [.recheck, .acknowledge, .scheduleDowntime] },
             activeActionIssueIDs: [],
             openSettings: {},
@@ -53,7 +54,8 @@ final class StatusMenuPerformanceTests: XCTestCase {
             hasRDP: { _ in true },
             performRecheck: { _ in },
             requestAcknowledgement: { _ in },
-            requestDowntime: { _ in }
+            requestDowntime: { _ in },
+            dismissActionError: {}
         )
         .environment(\.locale, Locale(identifier: "de_DE"))
         .environment(\.colorScheme, .light)

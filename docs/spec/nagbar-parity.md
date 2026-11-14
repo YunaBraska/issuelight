@@ -21,7 +21,7 @@ release deliberately smaller.
 | Text search | Partial | Done | Keep search in the panel's first row and match display name, host, output, and source. |
 | State and property filters | Done | Done | Persist the compact source, severity, and coverage filters. Do not reproduce NagBar's large filter matrix. |
 | Acknowledge, recheck, and downtime | Done | Done for Icinga 2 | Provider capabilities expose the supported commands. Acknowledgement and downtime require explicit input; every confirmed command refreshes its source. |
-| Open object in monitoring web UI | Done | Done for Icinga 2 | A row click opens the provider-built object URL. Each source owns its web base URL. Classic Monitoring and Icinga DB Web routes are supported. |
+| Open object in monitoring web UI | Done | Done for Icinga 2 | A row click opens the provider-built object URL. The API host supplies the default Icinga Web address, while each source may override it. Classic Monitoring and Icinga DB Web routes are supported. |
 | SSH and RDP target actions | Done | Done | Keep them optional per source and use the operating system's registered URL handlers. |
 | SSH port forwarding | Partial | Done for HTTP web targets | Try the direct route first, then own one loopback-only OpenSSH forward per source. HTTPS targets fail closed because rewriting the browser host would invalidate normal certificate identity checks. |
 | Native notifications | Done | Planned | Quiet defaults, per-source severity policy, deduplication, and recovery behavior. |

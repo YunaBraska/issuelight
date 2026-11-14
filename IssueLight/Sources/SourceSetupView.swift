@@ -28,39 +28,32 @@ struct SourceSetupView: View {
     @State private var connectionTask: Task<Void, Never>?
 
     var body: some View {
-        NavigationSplitView {
-            List(selection: sourceSelection) {
-                ForEach(model.sources) { source in
-                    SourceRow(source: source, model: model)
-                        .tag(source.id)
+        HStack(spacing: 0) {
+            VStack(spacing: 0) {
+                List(selection: sourceSelection) {
+                    ForEach(model.sources) { source in
+                        SourceRow(source: source, model: model)
+                            .tag(source.id)
+                    }
                 }
-            }
-            .navigationTitle("Quellen")
-            .overlay {
-                if model.sources.isEmpty {
-                    ContentUnavailableView(
-                        "Noch keine Quellen",
-                        systemImage: "server.rack",
-                        description: Text("Füge deine erste Monitoring-Quelle hinzu.")
-                    )
+                .overlay {
+                    if model.sources.isEmpty {
+                        ContentUnavailableView(
+                            "Noch keine Quellen",
+                            systemImage: "server.rack",
+                            description: Text("Füge deine erste Monitoring-Quelle hinzu.")
+                        )
+                    }
                 }
+
+                Divider()
+                SourceSidebarFooter(addSource: requestAdd)
             }
-            .toolbar {
-                Button {
-                    requestAdd()
-                } label: {
-                    Label("Quelle hinzufügen", systemImage: "plus")
-                }
-                .help("Neue Quelle")
-            }
-            .navigationSplitViewColumnWidth(min: 220, ideal: 250, max: 320)
-        } detail: {
+            .frame(width: 250)
+
+            Divider()
+
             editor
-                .navigationTitle(
-                    model.isCreatingSource
-                        ? AppLocalization.string("Neue Quelle", locale: locale)
-                        : model.name
-                )
         }
         .frame(minWidth: 700, minHeight: 500)
         .onDisappear {
@@ -270,8 +263,25 @@ struct SourceSetupView: View {
                 }
 
                 Section {
-                    TextField("Web-URL", text: $model.webURL, prompt: Text("https://monitoring.example/web"))
+                    LabeledContent {
+                        TextField(
+                            text: $model.webURL,
+                            prompt: Text(verbatim: model.automaticWebBaseURL?.absoluteString ?? "https://monitoring.example/web")
+                        ) {
+                            Text("Web-URL")
+                        }
+                        .labelsHidden()
                         .textContentType(.URL)
+                    } label: {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Web-URL")
+                            if model.webURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                                Label("Automatisch", systemImage: "sparkles")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
 
                     Toggle("Automatischer SSH-Tunnel", isOn: $model.automaticWebSSHTunnel)
                         .disabled(model.webURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
@@ -381,8 +391,7 @@ struct SourceSetupView: View {
     private var activityView: some View {
         switch model.activity {
         case .idle:
-            Text("Konfiguration eingeben, Verbindung prüfen und anschließend speichern.")
-                .foregroundStyle(.secondary)
+            EmptyView()
         case .working(let message):
             HStack {
                 ProgressView()
@@ -454,7 +463,7 @@ private struct SourceRow: View {
                     .lineLimit(1)
                 Group {
                     if source.isEnabled {
-                        Text(verbatim: model.providerName(for: source))
+                        Text(verbatim: "\(model.providerName(for: source)) · \(statusLabel)")
                     } else {
                         Text("Pausiert")
                     }
@@ -527,6 +536,26 @@ private struct SourceRow: View {
         case .failed(let message):
             return AppLocalization.string("Aktualisierung fehlgeschlagen, \(message)", locale: locale)
         }
+    }
+}
+
+struct SourceSidebarFooter: View {
+    let addSource: () -> Void
+
+    var body: some View {
+        HStack {
+            Button(action: addSource) {
+                Label("Quelle hinzufügen", systemImage: "plus")
+                    .frame(minHeight: 24)
+            }
+            .buttonStyle(.borderless)
+            .help("Neue Quelle")
+            .accessibilityIdentifier("add-source")
+            Spacer()
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(.bar)
     }
 }
 

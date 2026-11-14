@@ -120,9 +120,10 @@ notifications.
 
 ### Navigation
 
-- `NAV-001` The provider MUST build web object URLs from its own object model
-  and a source-owned web base URL. Icinga Web's monitoring module is the
-  default; a base ending in `/icingadb` selects Icinga DB Web routes.
+- `NAV-001` The provider MUST build web object URLs from its own object model.
+  An explicit source-owned base URL overrides the provider default. Icinga 2
+  defaults to `/icingaweb2` on the API host without the API port. A base ending
+  in `/icingadb` selects Icinga DB Web routes.
 - `NAV-002` A row click MUST open the web object directly unless an enabled
   tunnel is needed because the target host and port are unreachable.
 - `NAV-003` An automatic tunnel MUST use `/usr/bin/ssh`, non-interactive

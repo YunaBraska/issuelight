@@ -71,6 +71,9 @@ provider confirms the command.
   SSH and RDP remain optional secondary actions.
 - `MENU-010` Source, severity, and coverage filters MUST survive relaunch and
   MUST discard a selected source when that source no longer exists.
+- `MENU-011` A successful quick action MUST stay silent and refresh its source.
+  A failed action MUST remain dismissible inside the panel without presenting
+  a modal alert or closing the panel.
 
 ## Acceptance evidence
 
@@ -79,4 +82,4 @@ provider confirms the command.
 | SNAP-001..005 | `MonitoringSnapshot` | Core tests cover realistic host and service payloads, acknowledgement, downtime, mixed severity, and ordering |
 | REF-001 | Icinga snapshot loader | Shared transport tests and a real Icinga 2 Basic-auth query both pass; a 5,000-problem synthetic Icinga response traverses request handling, decoding, provider-neutral mapping, and sorting under a five-second regression limit |
 | REF-002..006 | app refresh model | App-model tests cover initial and manual refresh, replacement cancellation, stale retention, and source removal with persisted source and Keychain boundaries; an installed signed app retained its last successful Icinga snapshot after exact password revocation and exposed the missing credential after relaunch |
-| MENU-001..010 | running menu-bar app | Empty setup, loading, deterministic two-problem, failure with stale data, recovery, and all-paused states pass automated rendering; pointer tests exercise Settings, row opening, and all three quick actions; filter tests cover persistence and source removal; an installed review app connects to the real Icinga lab; the searchable 5,000-row menu panel renders lazily within five seconds |
+| MENU-001..011 | running menu-bar app | Empty setup, loading, deterministic two-problem, failure with stale data, recovery, and all-paused states pass automated rendering; pointer tests exercise Settings, row opening, all three quick actions, and inline error dismissal; successful actions have a model-level no-modal regression test; filter tests cover persistence and source removal; an installed review app connects to the real Icinga lab; the searchable 5,000-row menu panel renders lazily within five seconds |
