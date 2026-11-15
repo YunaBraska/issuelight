@@ -181,6 +181,8 @@ hdiutil create \
 hdiutil verify "$dmg_path"
 
 if test -n "$notary_profile"; then
+    codesign --force --sign "$identity" --timestamp "$dmg_path"
+    codesign --verify --strict "$dmg_path"
     dmg_submission_result="$package_work_directory/dmg-notary-result.plist"
     dmg_submission_log="$package_work_directory/dmg-notary-log.json"
     dmg_submission_exit=0
