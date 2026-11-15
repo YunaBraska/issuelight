@@ -245,6 +245,31 @@ final class Icinga2LiveConnectionTests: XCTestCase {
         XCTAssertEqual(snapshot.highestAttentionSeverity, .critical)
     }
 
+    func testDisabledTrustAcceptsLiveServerWithMismatchedHostname() async throws {
+        let environment = ProcessInfo.processInfo.environment
+        guard let endpointValue = environment["ISSUELIGHT_LIVE_ICINGA_URL"],
+              var endpointComponents = URLComponents(string: endpointValue),
+              let password = environment["ISSUELIGHT_ICINGA_BASIC_PASSWORD"] else {
+            throw XCTSkip("Live Icinga 2 environment is not configured")
+        }
+        endpointComponents.host = "127.0.0.1"
+        let source = MonitoringSource(
+            name: "Live server with mismatched host",
+            providerID: Icinga2Provider.id,
+            endpoint: try XCTUnwrap(endpointComponents.url),
+            authentication: .basic(username: "issuelight-basic"),
+            serverTrust: .disabled
+        )
+        let provider = try XCTUnwrap(ProviderRegistry.builtIn().provider(for: source.providerID))
+
+        let result = await provider.testConnection(
+            to: source,
+            access: ProviderAccess(credential: .password(password))
+        )
+
+        XCTAssertEqual(result, .connected)
+    }
+
     func testLiveBasicAuthenticationRechecksARealService() async throws {
         let environment = ProcessInfo.processInfo.environment
         guard let endpointValue = environment["ISSUELIGHT_LIVE_ICINGA_URL"],

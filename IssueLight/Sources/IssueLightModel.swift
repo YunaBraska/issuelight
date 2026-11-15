@@ -104,7 +104,28 @@ final class IssueLightModel: ObservableObject {
     }
 
     @Published var name = ""
-    @Published var endpoint = ""
+    @Published var endpoint = "" {
+        didSet {
+            guard endpoint != oldValue,
+                  var source = selectedSource,
+                  let newEndpoint = URL(
+                      string: endpoint.trimmingCharacters(in: .whitespacesAndNewlines)
+                  ) else {
+                return
+            }
+            if let oldEndpoint = URL(
+                string: oldValue.trimmingCharacters(in: .whitespacesAndNewlines)
+            ) {
+                source.endpoint = oldEndpoint
+            }
+            guard source.updateEndpoint(newEndpoint) else {
+                return
+            }
+            serverTrustChoice = .system
+            selectedServerCertificate = nil
+            pinnedServerCertificateSHA256 = ""
+        }
+    }
     @Published var isSourceEnabled = true
     @Published var selectedProviderID: ProviderID {
         didSet {
@@ -1112,12 +1133,7 @@ final class IssueLightModel: ObservableObject {
             existingSource.providerID = selectedProviderID
             existingSource.isEnabled = isSourceEnabled
             existingSource.authentication = authentication
-            if existingSource.updateEndpoint(url) {
-                serverTrustChoice = .system
-                selectedServerCertificate = nil
-                pinnedServerCertificateSHA256 = ""
-                serverTrust = .system
-            }
+            _ = existingSource.updateEndpoint(url)
             existingSource.serverTrust = serverTrust
             existingSource.sshTunnel = AppDistribution.supportsSSHTunnels ? sshTunnelOverrides() : nil
             existingSource.web = webConfiguration

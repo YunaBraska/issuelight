@@ -374,6 +374,49 @@ final class IssueLightModelTests: XCTestCase {
         )
     }
 
+    func testConnectionPreservesExplicitDisabledTrustAfterEndpointAuthorityChange() async throws {
+        let script = SnapshotScript()
+        let harness = try await makeHarness(sourceCount: 1, script: script)
+        await harness.model.load()
+        let sourceID = try XCTUnwrap(harness.model.selectedSourceID)
+        harness.model.endpoint = "https://127.0.0.1:5665/v1"
+        harness.model.serverTrustChoice = .disabled
+        harness.model.password = "test-only-password-1"
+
+        await harness.model.testConnection()
+        let testedTrust = await script.lastConnectionTrust(for: sourceID)
+
+        XCTAssertEqual(testedTrust, .disabled)
+        XCTAssertEqual(harness.model.serverTrustChoice, .disabled)
+    }
+
+    func testEndpointAuthorityChangeDiscardsPreviouslyStoredDisabledTrust() async throws {
+        let harness = try await makeHarness(
+            sourceCount: 1,
+            script: SnapshotScript(),
+            serverTrust: .disabled
+        )
+        await harness.model.load()
+        XCTAssertEqual(harness.model.serverTrustChoice, .disabled)
+
+        harness.model.endpoint = "https://other.example.test:5665/v1"
+
+        XCTAssertEqual(harness.model.serverTrustChoice, .system)
+    }
+
+    func testEquivalentDefaultPortPreservesExplicitDisabledTrust() async throws {
+        let harness = try await makeHarness(
+            sourceCount: 1,
+            script: SnapshotScript(),
+            serverTrust: .disabled
+        )
+        await harness.model.load()
+
+        harness.model.endpoint = "https://monitoring1.example.test:443/"
+
+        XCTAssertEqual(harness.model.serverTrustChoice, .disabled)
+    }
+
     func testCancellingConnectionTestClearsCheckingStatesWithoutTestingWeb() async throws {
         var didTestWeb = false
         let coordinator = AutomaticConnectionCoordinator { _, _, _ in
@@ -680,7 +723,7 @@ private struct TestProvider: MonitoringProvider {
         displayName: "Model Test",
         capabilities: ProviderCapabilities(
             authenticationMethods: [.basic],
-            serverTrustMethods: [.system, .customCertificate, .pinnedCertificate],
+            serverTrustMethods: [.system, .customCertificate, .pinnedCertificate, .disabled],
             actions: [.recheck, .acknowledge, .scheduleDowntime]
         )
     )
@@ -693,7 +736,7 @@ private struct TestProvider: MonitoringProvider {
         to source: MonitoringSource,
         access: ProviderAccess
     ) async -> ConnectionTestResult {
-        await script.testConnection(sourceID: source.id)
+        await script.testConnection(source: source)
     }
 
     func loadSnapshot(
@@ -734,14 +777,16 @@ private actor SnapshotScript {
     private var performedActions: [UUID: [MonitoringAction]] = [:]
     private var connectionCancellationSourceIDs: Set<UUID> = []
     private var connectionTestCounts: [UUID: Int] = [:]
+    private var connectionTrusts: [UUID: [ServerTrustConfiguration]] = [:]
 
     func waitForConnectionCancellation(for sourceID: UUID) {
         connectionCancellationSourceIDs.insert(sourceID)
     }
 
-    func testConnection(sourceID: UUID) async -> ConnectionTestResult {
-        connectionTestCounts[sourceID, default: 0] += 1
-        guard connectionCancellationSourceIDs.contains(sourceID) else {
+    func testConnection(source: MonitoringSource) async -> ConnectionTestResult {
+        connectionTestCounts[source.id, default: 0] += 1
+        connectionTrusts[source.id, default: []].append(source.serverTrust)
+        guard connectionCancellationSourceIDs.contains(source.id) else {
             return .connected
         }
         while !Task.isCancelled {
@@ -752,6 +797,10 @@ private actor SnapshotScript {
 
     func connectionTests(for sourceID: UUID) -> Int {
         connectionTestCounts[sourceID, default: 0]
+    }
+
+    func lastConnectionTrust(for sourceID: UUID) -> ServerTrustConfiguration? {
+        connectionTrusts[sourceID]?.last
     }
 
     func enqueue(_ behavior: Behavior, for sourceID: UUID) {
