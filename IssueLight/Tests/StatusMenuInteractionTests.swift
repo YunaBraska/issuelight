@@ -53,6 +53,48 @@ final class StatusMenuInteractionTests: XCTestCase {
             supportedActions: { _ in [] },
             activeActionIssueIDs: [],
             openSettings: { openedSettings = true },
+            quitApplication: {},
+            openIssue: { _ in },
+            openSSH: { _ in },
+            openRDP: { _ in },
+            hasSSH: { _ in false },
+            hasRDP: { _ in false },
+            performRecheck: { _ in },
+            requestAcknowledgement: { _ in },
+            requestDowntime: { _ in },
+            dismissActionError: {}
+        )
+        .environment(\.locale, Locale(identifier: "de_DE"))
+        .environment(\.colorScheme, .light)
+
+        NativeViewRenderer.click(
+            CGPoint(x: 657, y: 194),
+            in: view,
+            size: CGSize(width: 720, height: 220)
+        )
+
+        XCTAssertTrue(openedSettings)
+    }
+
+    func testQuitButtonRespondsToPointerClick() {
+        var quitApplication = false
+        let view = StatusMenuContent(
+            hasConfiguredSource: false,
+            hasEnabledSource: false,
+            hasActiveSnapshot: false,
+            actionableIssues: [],
+            coveredIssues: [],
+            sourceNames: [:],
+            sourceFailures: [],
+            filters: PanelFilterSettings(
+                defaults: UserDefaults(suiteName: "StatusMenuInteractionTests.\(UUID().uuidString)")!
+            ),
+            refreshState: .notConfigured,
+            actionError: nil,
+            supportedActions: { _ in [] },
+            activeActionIssueIDs: [],
+            openSettings: {},
+            quitApplication: { quitApplication = true },
             openIssue: { _ in },
             openSSH: { _ in },
             openRDP: { _ in },
@@ -72,7 +114,7 @@ final class StatusMenuInteractionTests: XCTestCase {
             size: CGSize(width: 720, height: 220)
         )
 
-        XCTAssertTrue(openedSettings)
+        XCTAssertTrue(quitApplication)
     }
 
     func testCompactPanelUsesOnlyContentHeightAndQuickActionsRespondToDirectPointerClicks() {
@@ -112,6 +154,7 @@ final class StatusMenuInteractionTests: XCTestCase {
             supportedActions: { _ in [.recheck, .acknowledge, .scheduleDowntime] },
             activeActionIssueIDs: [],
             openSettings: {},
+            quitApplication: {},
             openIssue: { _ in opened += 1 },
             openSSH: { _ in },
             openRDP: { _ in },
@@ -174,6 +217,7 @@ final class StatusMenuInteractionTests: XCTestCase {
             supportedActions: { _ in [] },
             activeActionIssueIDs: [],
             openSettings: {},
+            quitApplication: {},
             openIssue: { _ in },
             openSSH: { _ in },
             openRDP: { _ in },

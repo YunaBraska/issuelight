@@ -47,6 +47,7 @@ final class StatusMenuPerformanceTests: XCTestCase {
             supportedActions: { _ in [.recheck, .acknowledge, .scheduleDowntime] },
             activeActionIssueIDs: [],
             openSettings: {},
+            quitApplication: {},
             openIssue: { _ in },
             openSSH: { _ in },
             openRDP: { _ in },
