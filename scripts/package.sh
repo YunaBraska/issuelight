@@ -100,7 +100,7 @@ if test -n "$notary_profile"; then
         --keychain-profile "$notary_profile" \
         "$submission_id" \
         "$submission_log"
-    submission_issue_count=$(plutil -extract issues json -o - "$submission_log" | jq -e 'if type == "array" then length else error("Expected an issues array.") end')
+    submission_issue_count=$(jq -e -r '.issues | if type == "array" then length else error("Expected an issues array.") end' "$submission_log")
     case "$submission_issue_count" in
         ''|*[!0-9]*) echo "App notarization returned an invalid issue list." >&2; exit 65 ;;
     esac
@@ -198,7 +198,7 @@ if test -n "$notary_profile"; then
         --keychain-profile "$notary_profile" \
         "$dmg_submission_id" \
         "$dmg_submission_log"
-    dmg_submission_issue_count=$(plutil -extract issues json -o - "$dmg_submission_log" | jq -e 'if type == "array" then length else error("Expected an issues array.") end')
+    dmg_submission_issue_count=$(jq -e -r '.issues | if type == "array" then length else error("Expected an issues array.") end' "$dmg_submission_log")
     case "$dmg_submission_issue_count" in
         ''|*[!0-9]*) echo "DMG notarization returned an invalid issue list." >&2; exit 65 ;;
     esac
