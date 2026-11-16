@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 import UniformTypeIdentifiers
 import IssueLightCore
@@ -21,8 +22,8 @@ struct SourceSetupView: View {
     @State private var isImportingIdentity = false
     @State private var isChoosingServerCertificate = false
     @State private var isChoosingPinnedServerCertificate = false
-    @State private var isChoosingSSHIdentity = false
     @State private var isShowingSSHOverrides = false
+    @State private var isShowingConnectionAttempts = false
     @State private var isConfirmingDeletion = false
     @State private var isConfirmingDiscard = false
     @State private var pendingNavigation: PendingNavigation?
@@ -303,11 +304,6 @@ struct SourceSetupView: View {
                         )
                             .textContentType(.username)
                         TextField("SSH-Port", text: $model.sshTunnelPort, prompt: Text(verbatim: "22"))
-                        TextField(
-                            "Bevorzugter lokaler Port",
-                            text: $model.sshTunnelPreferredLocalPort,
-                            prompt: Text(verbatim: "macOS")
-                        )
                         LabeledContent("SSH-Schlüssel") {
                             HStack(spacing: 8) {
                                 if model.sshTunnelIdentityFilePath.isEmpty {
@@ -327,51 +323,46 @@ struct SourceSetupView: View {
                                     .help("Ausgewählten Schlüssel entfernen")
                                 }
                                 Button("Auswählen …") {
-                                    isChoosingSSHIdentity = true
-                                }
-                                .fileImporter(
-                                    isPresented: $isChoosingSSHIdentity,
-                                    allowedContentTypes: [.data],
-                                    allowsMultipleSelection: false
-                                ) { result in
-                                    if case .success(let urls) = result, let url = urls.first {
-                                        model.sshTunnelIdentityFilePath = url.path
-                                    }
+                                    chooseSSHIdentity()
                                 }
                             }
                         }
-                    }
-
-                    if AppDistribution.supportsRemoteAccess {
-                        Toggle("SSH für überwachten Host", isOn: $model.sshActionEnabled)
-                    }
-                    if AppDistribution.supportsRemoteAccess && model.sshActionEnabled {
                         TextField(
-                            "SSH-Benutzername",
-                            text: $model.sshUsername,
-                            prompt: Text(verbatim: "OpenSSH")
+                            "Bevorzugter lokaler Port",
+                            text: $model.sshTunnelPreferredLocalPort
                         )
-                            .textContentType(.username)
-                        PortNumberField("SSH-Port", value: $model.sshPort)
-                    }
-
-                    if AppDistribution.supportsRemoteAccess {
-                        Toggle("RDP für überwachten Host", isOn: $model.rdpActionEnabled)
-                    }
-                    if AppDistribution.supportsRemoteAccess && model.rdpActionEnabled {
-                        TextField("RDP-Benutzername", text: $model.rdpUsername)
-                            .textContentType(.username)
-                        PortNumberField("RDP-Port", value: $model.rdpPort)
                     }
                 } header: {
-                    if AppDistribution.supportsRemoteAccess {
-                        Text("Navigation & Fernzugriff")
-                    } else {
-                        Text("Navigation")
-                    }
+                    Text(verbatim: "API / Web")
                 } footer: {
                     if !AppDistribution.supportsSSHTunnels {
                         Text("Die App-Store-Ausgabe verbindet sich direkt mit Icinga. SSH-Tunnel sowie SSH- und RDP-Startaktionen stehen in der direkten GitHub-Ausgabe bereit.")
+                    }
+                }
+
+                if AppDistribution.supportsRemoteAccess {
+                    Section {
+                        Toggle("SSH für überwachten Host", isOn: $model.sshActionEnabled)
+                        if model.sshActionEnabled {
+                            TextField(
+                                "SSH-Benutzername",
+                                text: $model.sshUsername,
+                                prompt: Text(verbatim: "OpenSSH")
+                            )
+                            .textContentType(.username)
+                            PortNumberField("SSH-Port", value: $model.sshPort)
+                        }
+
+                        Toggle("RDP für überwachten Host", isOn: $model.rdpActionEnabled)
+                        if model.rdpActionEnabled {
+                            TextField("RDP-Benutzername", text: $model.rdpUsername)
+                                .textContentType(.username)
+                            PortNumberField("RDP-Port", value: $model.rdpPort)
+                        }
+                    } header: {
+                        Text(verbatim: "SSH / RDP")
+                    } footer: {
+                        Text("Diese optionalen Aktionen öffnen den in einem Problem genannten Host. Sie sind nicht der SSH-Tunnel zur Icinga-Quelle.")
                     }
                 }
 
@@ -385,6 +376,28 @@ struct SourceSetupView: View {
             VStack(alignment: .leading, spacing: 12) {
                 activityView
                     .frame(maxWidth: .infinity, alignment: .leading)
+                if !model.connectionAttempts.isEmpty {
+                    DisclosureGroup("Verbindungsversuche", isExpanded: $isShowingConnectionAttempts) {
+                        VStack(alignment: .leading, spacing: 5) {
+                            ForEach(model.connectionAttempts) { attempt in
+                                HStack(spacing: 8) {
+                                    Text(verbatim: attempt.endpoint)
+                                        .font(.caption.monospaced())
+                                        .lineLimit(1)
+                                        .help(attempt.endpoint)
+                                    Spacer(minLength: 8)
+                                    Text(verbatim: attempt.route)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                    Text(verbatim: attempt.outcome)
+                                        .font(.caption.weight(.medium))
+                                }
+                            }
+                        }
+                        .padding(.top, 4)
+                    }
+                    .font(.caption)
+                }
 
                 HStack {
                     if !model.isCreatingSource {
@@ -469,6 +482,23 @@ struct SourceSetupView: View {
             ?? "api.example"
     }
 
+    private func chooseSSHIdentity() {
+        let panel = NSOpenPanel()
+        panel.canChooseDirectories = false
+        panel.canChooseFiles = true
+        panel.allowsMultipleSelection = false
+        panel.allowedContentTypes = [.data]
+        let sshDirectory = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent(".ssh", isDirectory: true)
+        if FileManager.default.fileExists(atPath: sshDirectory.path) {
+            panel.directoryURL = sshDirectory
+        }
+        panel.begin { response in
+            guard response == .OK, let url = panel.url else { return }
+            model.sshTunnelIdentityFilePath = url.path
+        }
+    }
+
     private var isWorking: Bool {
         if case .working = model.activity { return true }
         return false
@@ -549,16 +579,7 @@ private struct SourceRow: View {
         case .refreshing:
             return "arrow.clockwise"
         case .current:
-            switch model.snapshots[source.id]?.highestAttentionSeverity {
-            case .critical:
-                return "exclamationmark.octagon.fill"
-            case .unknown:
-                return "questionmark.diamond.fill"
-            case .warning:
-                return "exclamationmark.triangle.fill"
-            case nil:
-                return "checkmark.circle"
-            }
+            return "checkmark.circle.fill"
         case .failed:
             return "wifi.exclamationmark"
         }
@@ -569,16 +590,7 @@ private struct SourceRow: View {
         case .notConfigured, .disabled, .refreshing:
             return .secondary
         case .current:
-            switch model.snapshots[source.id]?.highestAttentionSeverity {
-            case .critical:
-                return .red
-            case .unknown:
-                return .purple
-            case .warning:
-                return .orange
-            case nil:
-                return .green
-            }
+            return .green
         case .failed:
             return .red
         }
@@ -603,6 +615,7 @@ private struct SourceRow: View {
 
 struct SSHSettingsDisclosureRow: View {
     @Binding var isExpanded: Bool
+    @State private var isHovering = false
 
     var body: some View {
         Button {
@@ -613,16 +626,22 @@ struct SSHSettingsDisclosureRow: View {
                     .font(.caption.weight(.semibold))
                     .rotationEffect(.degrees(isExpanded ? 90 : 0))
                     .accessibilityHidden(true)
-                Text(verbatim: "SSH")
+                Text("Quelle über SSH erreichen")
                 Spacer()
-                Text(verbatim: "API · Web")
+                Text("Nur als Fallback")
                     .foregroundStyle(.secondary)
             }
+            .padding(.horizontal, 6)
             .frame(maxWidth: .infinity, minHeight: 28, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(.secondary.opacity(isHovering ? 0.12 : 0))
+            )
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(Text(verbatim: "SSH, API, Web"))
+        .onHover { isHovering = $0 }
+        .accessibilityLabel(Text("Quelle über SSH erreichen"))
         .accessibilityAddTraits(isExpanded ? .isSelected : [])
         .accessibilityIdentifier("ssh-settings-disclosure")
     }

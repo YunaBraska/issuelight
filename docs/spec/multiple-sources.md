@@ -19,8 +19,9 @@ credentials, and trust policy as refresh.
 
 - `SRC-001` The sources window MUST show every persisted source and MUST edit
   one selected source at a time.
-- `SRC-002` Adding a source MUST create a new draft without changing persisted
-  sources until the person saves it.
+- `SRC-002` Adding a source MUST create a new in-memory draft. Saving MUST
+  persist its public fields even when the configuration is incomplete or its
+  network target is unavailable. An incomplete draft remains disabled.
 - `SRC-003` Switching sources or starting another draft MUST NOT silently
   discard unsaved form or password changes.
 - `SRC-004` Saving an existing source MUST preserve its stable identifier and

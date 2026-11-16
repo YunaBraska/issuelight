@@ -53,6 +53,19 @@ policy. It does not own monitoring-state presentation or notifications.
 - Empty SSH overrides use the API host, the user's OpenSSH configuration,
   default user and port selection, and SSH agent. A selected identity file or
   preferred local port overrides only that value.
+- Source fields are hints until a provider confirms them. A successful
+  user-initiated test replaces the hint with the provider's canonical endpoint
+  and fills an empty display name from the discovered instance host.
+- Saving and testing are separate operations. Saving never depends on current
+  network reachability. An incomplete configuration is persisted as a disabled
+  draft and is not used for refresh or operator actions.
+- The automatic web default prefers the provider's current web integration
+  while retaining an explicit user override. Icinga 2 defaults to Icinga DB
+  Web. Classic Monitoring remains an explicit override because API credentials
+  do not authenticate Icinga Web and TCP reachability cannot identify a module.
+- SSH transport for reaching the monitoring source and optional SSH or RDP
+  actions for a monitored host are separate features. Host actions remain
+  available but are disabled by default and presented separately.
 - External-browser HTTPS deep links are opened only when directly reachable.
   Replacing their hostname with loopback would break certificate identity
   verification. HTTP deep links may use the owned loopback forward.
@@ -61,16 +74,19 @@ policy. It does not own monitoring-state presentation or notifications.
 
 ### Source model
 
-- `SRC-001` A source MUST have a stable identifier, display name, provider
-  identifier, endpoint, enabled state, authentication mode, and server-trust
-  mode.
-- `SRC-002` A source MUST reject an empty name, a non-HTTP endpoint, an endpoint
-  without a host, embedded user information, a query, or a fragment.
+- `SRC-001` A persisted source or draft MUST have a stable identifier, provider
+  identifier, enabled state, authentication mode, and server-trust mode.
+- `SRC-002` Saving MUST preserve incomplete public configuration as a disabled
+  draft. A draft MUST NOT refresh, execute operator actions, or be presented as
+  a connected monitoring source until provider validation succeeds.
 - `SRC-003` A change to scheme, host, or effective port MUST reset every
   source-specific trust exception to system trust before the source is used
   again.
 - `SRC-004` Persisted source configuration MUST NOT contain a password, private
   key, PKCS#12 import password, or exported client identity.
+- `SRC-005` A saved draft MUST remain editable after relaunch and MUST retain
+  the public field text the person entered, including an endpoint hint that is
+  not yet valid. Embedded URL credentials MUST be removed before persistence.
 
 ### Provider boundary
 
@@ -82,6 +98,9 @@ policy. It does not own monitoring-state presentation or notifications.
   single provider registration point.
 - `PRV-004` The Icinga 2 provider MUST require HTTPS and MUST accept only the
   API root or `/v1` as its configured endpoint path.
+- `PRV-005` A provider MUST own candidate generation and canonicalization for
+  its endpoint hints. Shared setup code MUST NOT contain Icinga-specific ports,
+  paths, or response rules.
 
 ### Credentials
 
@@ -134,13 +153,22 @@ policy. It does not own monitoring-state presentation or notifications.
 - `CONN-006` Background refresh and monitoring actions MUST reuse the route
   selected by the user-initiated connection test. They MUST retry route
   selection when that route becomes unreachable.
+- `CONN-007` Icinga 2 discovery MUST accept a hostname, IP address, or URL hint,
+  ignore a trailing slash or API-version suffix, require HTTPS for the real API
+  request, and try the explicit port before the provider default of `5665`.
+- `CONN-008` Only a successful provider API request MAY replace the endpoint
+  hint with a canonical endpoint. An open port, TLS handshake, HTTP response,
+  or failed authentication alone is not discovery success.
+- `CONN-009` A connection test MUST expose the attempted endpoint and route for
+  each API and web result without including a password, token, private-key
+  path, or Keychain value.
 
 ### Navigation
 
 - `NAV-001` The provider MUST build web object URLs from its own object model.
-  An explicit source-owned base URL overrides the provider default. Icinga 2
-  defaults to `/icingaweb2` on the API host without the API port. A base ending
-  in `/icingadb` selects Icinga DB Web routes.
+  An explicit source-owned base URL overrides the automatic default. Icinga 2
+  MUST default to Icinga DB Web. It MUST NOT claim to discover a web module from
+  TCP reachability alone.
 - `NAV-002` A row click MUST open the web object directly when reachable. An
   unreachable HTTP target MAY use the source-owned loopback forward. An
   unreachable HTTPS target MUST fail closed until the original browser host can
@@ -154,16 +182,23 @@ policy. It does not own monitoring-state presentation or notifications.
   app terminates.
 - `NAV-005` SSH and RDP actions MUST use escaped URLs handed to the registered
   system application. A missing handler MUST produce an explicit failure.
+- `NAV-006` Source SSH transport and monitored-host SSH or RDP actions MUST be
+  labeled and configured separately. Enabling a source tunnel MUST NOT add a
+  host action to the issue context menu.
 
 ## First journey
 
-1. The user adds an Icinga 2 source and enters its API endpoint.
-2. IssueLight validates the source without contacting the server.
+1. The user adds an Icinga 2 source and enters a hostname, IP address, or URL
+   hint. Every field that can be derived remains optional.
+2. When the user saves, IssueLight persists the public fields as a disabled
+   draft.
 3. The user selects Basic authentication or a Keychain client identity.
 4. IssueLight stores a Basic password in Keychain or retains the identity reference.
-5. The user tests the connection.
-6. IssueLight reports a concrete success or failure and saves the source without
-   copying any secret into source persistence.
+5. The user tests the connection. IssueLight tries provider-owned endpoint
+   candidates directly and then through configured SSH transport when allowed.
+6. A real provider success updates the draft to the canonical endpoint, fills
+   derived defaults, reports API and web results independently, and permits the
+   source to be enabled without copying any secret into source persistence.
 
 ## Acceptance evidence
 

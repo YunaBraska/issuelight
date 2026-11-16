@@ -72,6 +72,33 @@ final class SourceStoreTests: XCTestCase {
         XCTAssertEqual(removed, [])
     }
 
+    func testStorePreservesIncompletePublicDraftInput() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = SourceStore(fileURL: directory.appendingPathComponent("sources.json"))
+        let draft = MonitoringSource(
+            name: "Icinga 2",
+            providerID: Icinga2Provider.id,
+            endpoint: MonitoringSource.unresolvedEndpoint,
+            endpointInput: "not a valid URL %",
+            isEnabled: false,
+            authentication: .basic(username: ""),
+            web: MonitoringWebConfiguration(
+                baseURL: MonitoringSource.unresolvedEndpoint,
+                baseURLInput: "also not a URL %"
+            )
+        )
+
+        _ = try await store.upsert(draft)
+        let loaded = try await store.load()
+
+        XCTAssertEqual(loaded, [draft])
+        XCTAssertEqual(loaded.first?.editableEndpoint, "not a valid URL %")
+        XCTAssertEqual(loaded.first?.web?.editableBaseURL, "also not a URL %")
+        XCTAssertFalse(try XCTUnwrap(loaded.first).isEnabled)
+    }
+
     func testStoreRejectsDuplicateSourceIdentifiers() async throws {
         let fileURL = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)

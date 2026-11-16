@@ -99,6 +99,7 @@ public struct ProviderDescriptor: Equatable, Sendable {
 
 public protocol MonitoringProvider: Sendable {
     var descriptor: ProviderDescriptor { get }
+    func endpointCandidates(from hint: String) -> [URL]
     func validate(_ source: MonitoringSource) -> [SourceValidationIssue]
     func testConnection(
         to source: MonitoringSource,
@@ -119,6 +120,12 @@ public protocol MonitoringProvider: Sendable {
 }
 
 public extension MonitoringProvider {
+    func endpointCandidates(from hint: String) -> [URL] {
+        let value = hint.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !value.isEmpty, let url = URL(string: value) else { return [] }
+        return [url]
+    }
+
     func defaultWebBaseURL(for source: MonitoringSource) -> URL? {
         nil
     }

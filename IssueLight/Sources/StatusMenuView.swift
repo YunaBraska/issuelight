@@ -184,6 +184,7 @@ struct StatusMenuContent: View {
                 Button(action: openSettings) {
                     Image(systemName: "gearshape")
                         .frame(width: 28, height: 28)
+                        .pointerHoverFeedback()
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.borderless)
@@ -194,6 +195,7 @@ struct StatusMenuContent: View {
                 Button(action: quitApplication) {
                     Image(systemName: "power")
                         .frame(width: 28, height: 28)
+                        .pointerHoverFeedback()
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.borderless)
@@ -496,6 +498,7 @@ struct StatusActionErrorBanner: View {
             Button(action: dismiss) {
                 Image(systemName: "xmark")
                     .frame(width: 24, height: 24)
+                    .pointerHoverFeedback()
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -591,10 +594,10 @@ private struct StatusPanelIssueEntry: View {
         .overlay(alignment: .bottom) { Divider().padding(.leading, 34) }
         .contextMenu {
             if let openSSH {
-                Button("SSH", systemImage: "terminal", action: openSSH)
+                Button("SSH für überwachten Host", systemImage: "terminal", action: openSSH)
             }
             if let openRDP {
-                Button("RDP", systemImage: "rectangle.connected.to.line.below", action: openRDP)
+                Button("RDP für überwachten Host", systemImage: "rectangle.connected.to.line.below", action: openRDP)
             }
         }
     }
@@ -608,12 +611,32 @@ private struct StatusPanelIssueEntry: View {
         Button(action: action) {
             Image(systemName: systemImage)
                 .frame(width: 24, height: 28)
+                .pointerHoverFeedback()
                 .contentShape(Rectangle())
         }
         .buttonStyle(.borderless)
         .disabled(!enabled)
         .help(title)
         .accessibilityLabel(title)
+    }
+}
+
+private struct PointerHoverFeedback: ViewModifier {
+    @State private var isHovering = false
+
+    func body(content: Content) -> some View {
+        content
+            .background(
+                RoundedRectangle(cornerRadius: 5)
+                    .fill(.secondary.opacity(isHovering ? 0.14 : 0))
+            )
+            .onHover { isHovering = $0 }
+    }
+}
+
+private extension View {
+    func pointerHoverFeedback() -> some View {
+        modifier(PointerHoverFeedback())
     }
 }
 

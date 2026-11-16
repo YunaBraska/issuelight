@@ -74,6 +74,36 @@ final class Icinga2ProviderTests: XCTestCase {
         )
     }
 
+    func testIcingaBuildsCanonicalCandidatesFromMinimalAndNoisyHints() {
+        let provider = Icinga2Provider()
+
+        XCTAssertEqual(
+            provider.endpointCandidates(from: " icinga.example.test/v1/ ").map(\.absoluteString),
+            ["https://icinga.example.test:5665"]
+        )
+        XCTAssertEqual(
+            provider.endpointCandidates(from: "http://icinga.example.test:8443/v2/?ignored=yes").map(\.absoluteString),
+            [
+                "https://icinga.example.test:8443",
+                "https://icinga.example.test:5665",
+            ]
+        )
+    }
+
+    func testIcingaUsesLocalhostCandidatesForAnEmptyHint() {
+        XCTAssertEqual(
+            Icinga2Provider().endpointCandidates(from: "   ").map(\.absoluteString),
+            ["https://localhost:5665"]
+        )
+    }
+
+    func testIcingaRejectsEndpointHintsContainingCredentialsOrMissingAHost() {
+        let provider = Icinga2Provider()
+
+        XCTAssertEqual(provider.endpointCandidates(from: "https://user:secret@icinga.example.test"), [])
+        XCTAssertEqual(provider.endpointCandidates(from: "https:///v1"), [])
+    }
+
     func testIcingaBuildsStatusURLFromRootAndVersionedEndpoint() throws {
         let provider = Icinga2Provider()
 
@@ -133,14 +163,14 @@ final class Icinga2ProviderTests: XCTestCase {
         )
     }
 
-    func testIcingaUsesSameHostIcingaWebDefaultWhenNoOverrideExists() {
+    func testIcingaUsesSameHostIcingaDBWebDefaultWhenNoOverrideExists() {
         let provider = Icinga2Provider()
         var configuredSource = source(endpoint: "https://icinga.example.test:5665")
         let sourceIssue = issue(sourceID: configuredSource.id, kind: .host)
 
         XCTAssertEqual(
             provider.webURL(for: sourceIssue, from: configuredSource)?.absoluteString,
-            "https://icinga.example.test/icingaweb2/monitoring/host/show?host=edge-1"
+            "https://icinga.example.test/icingaweb2/icingadb/host?name=edge-1"
         )
 
         configuredSource.web = MonitoringWebConfiguration(
@@ -152,6 +182,14 @@ final class Icinga2ProviderTests: XCTestCase {
                 from: configuredSource
             )
         )
+    }
+
+    func testIcingaDoesNotProvideAWebDefaultForAnotherProvider() {
+        let provider = Icinga2Provider()
+        var otherSource = source(endpoint: "https://icinga.example.test:5665")
+        otherSource.providerID = ProviderID(rawValue: "other")
+
+        XCTAssertNil(provider.defaultWebBaseURL(for: otherSource))
     }
 
     func testIcingaRejectsStatusURLForInvalidSource() {

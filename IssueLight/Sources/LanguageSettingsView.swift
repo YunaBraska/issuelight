@@ -56,7 +56,7 @@ struct IssueLightSettingsView: View {
                 .tag(Tab.about)
         }
         .padding(16)
-        .frame(width: 820, height: 600)
+        .frame(minWidth: 760, minHeight: 560)
     }
 }
 

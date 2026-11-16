@@ -121,13 +121,13 @@ final class LandingPageScreenshotTests: XCTestCase {
         HStack(spacing: 26) {
             menuItem(
                 title: "Noch nicht eingerichtet",
-                symbol: "exclamationmark.triangle",
+                symbol: "gear.badge.questionmark",
                 count: 0
             )
             Divider()
-            menuItem(title: "Alles ruhig", symbol: "checkmark.circle", count: 0)
+            menuItem(title: "Alles ruhig", symbol: "circle.fill", count: 0)
             Divider()
-            menuItem(title: "Aufmerksamkeit", symbol: "exclamationmark.octagon.fill", count: 7)
+            menuItem(title: "Monitoring-Probleme", symbol: "circle.fill", count: 7)
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 12)

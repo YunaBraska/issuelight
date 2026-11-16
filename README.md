@@ -23,11 +23,11 @@ panel aggregates independently refreshed sources and exposes explicit Icinga 2
 recheck, acknowledgement, and fixed-downtime actions per issue. Persistent
 panel filters, Icinga Web deep links, SSH/RDP host actions, and automatic
 direct-first SSH fallback for API and reachability checks are available per
-source. Without an override, Icinga Web
-is inferred as `/icingaweb2` on the API host. Use a custom base URL ending in
-`/icingadb` for Icinga DB Web object links. Notifications and additional
-providers remain outside the current release. The universal ZIP/DMG/SBOM
-workflow is ready for signing credentials.
+source. Without an override, Icinga DB Web is inferred as
+`/icingaweb2/icingadb` on the API host. Classic Monitoring remains available
+through an explicit base URL ending in `/monitoring`. Notifications and
+additional providers remain outside the current release. The universal
+ZIP/DMG/SBOM workflow is ready for signing credentials.
 
 ## Requirements
 

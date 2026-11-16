@@ -51,6 +51,7 @@ struct IssueLightApp: App {
                     model.setLocalizationLocale(languageSettings.locale)
                 }
         }
+        .windowResizability(.contentMinSize)
         .commands {
             CommandGroup(replacing: .appInfo) {}
         }

@@ -27,6 +27,40 @@ public struct Icinga2Provider: MonitoringProvider {
         self.now = now
     }
 
+    public func endpointCandidates(from hint: String) -> [URL] {
+        let trimmedHint = hint.trimmingCharacters(in: .whitespacesAndNewlines)
+        let value = trimmedHint.isEmpty ? "localhost" : trimmedHint
+        let valueWithScheme = value.contains("://") ? value : "https://\(value)"
+        guard var components = URLComponents(string: valueWithScheme),
+              components.host?.isEmpty == false,
+              components.user == nil,
+              components.password == nil else {
+            return []
+        }
+
+        let explicitPort = components.port
+        components.scheme = "https"
+        components.path = ""
+        components.query = nil
+        components.fragment = nil
+
+        var ports: [Int] = []
+        if let explicitPort {
+            ports.append(explicitPort)
+        }
+        ports.append(5_665)
+
+        var seen = Set<String>()
+        return ports.compactMap { port in
+            components.port = port
+            guard let url = components.url,
+                  seen.insert(url.absoluteString).inserted else {
+                return nil
+            }
+            return url
+        }
+    }
+
     public func validate(_ source: MonitoringSource) -> [SourceValidationIssue] {
         var issues = MonitoringSourceValidator.validateSharedFields(source)
         let components = URLComponents(url: source.endpoint, resolvingAgainstBaseURL: false)
@@ -65,7 +99,7 @@ public struct Icinga2Provider: MonitoringProvider {
         components.user = nil
         components.password = nil
         components.port = nil
-        components.path = "/icingaweb2"
+        components.path = "/icingaweb2/icingadb"
         components.query = nil
         components.fragment = nil
         return components.url

@@ -85,7 +85,7 @@ final class IssueLightModelTests: XCTestCase {
         XCTAssertTrue(harness.model.hasPartialRefreshFailure)
         XCTAssertEqual(harness.model.refreshState, .failed("Source 1: Der Server ist nicht erreichbar."))
         XCTAssertEqual(Set(harness.model.actionableIssues.map(\.summary)), ["Last known", "Current"])
-        XCTAssertEqual(harness.model.menuBarSymbol, "exclamationmark.octagon.fill")
+        XCTAssertEqual(harness.model.menuBarSymbol, "wifi.exclamationmark")
     }
 
     func testConfirmedActionRefreshesOnlyItsSource() async throws {
@@ -285,6 +285,87 @@ final class IssueLightModelTests: XCTestCase {
         }
     }
 
+    func testSavingIncompleteDraftPersistsPublicInputAndKeepsItPaused() async throws {
+        let script = SnapshotScript()
+        let harness = try await makeHarness(sourceCount: 1, script: script)
+        await harness.model.load()
+        harness.model.beginAddingSource()
+        harness.model.endpoint = "not a valid URL %"
+        harness.model.webURL = "also not a URL %"
+
+        await harness.model.save()
+
+        let persisted = try await harness.store.load()
+        let draft = try XCTUnwrap(persisted.last)
+        XCTAssertEqual(persisted.count, 2)
+        XCTAssertEqual(draft.name, "Model Test")
+        XCTAssertEqual(draft.editableEndpoint, "not a valid URL %")
+        XCTAssertEqual(draft.web?.editableBaseURL, "also not a URL %")
+        XCTAssertFalse(draft.isEnabled)
+        XCTAssertEqual(harness.model.endpoint, "not a valid URL %")
+        XCTAssertEqual(harness.model.name, "Model Test")
+        XCTAssertFalse(harness.model.isSourceEnabled)
+        XCTAssertFalse(harness.model.hasUnsavedChanges)
+        XCTAssertEqual(
+            harness.model.activity,
+            .success("Entwurf gespeichert. Vervollständige und teste die Verbindung, bevor du die Quelle aktivierst.")
+        )
+        let connectionTests = await script.connectionTests(for: draft.id)
+        XCTAssertEqual(connectionTests, 0)
+    }
+
+    func testSavingDraftWithInvalidBasicCredentialsDoesNotCreateAKeychainItem() async throws {
+        let harness = try await makeHarness(sourceCount: 1, script: SnapshotScript())
+        await harness.model.load()
+        harness.model.beginAddingSource()
+        harness.model.endpoint = "https://draft.example.test:5665"
+        harness.model.username = ""
+        harness.model.password = "not-stored"
+
+        await harness.model.save()
+
+        let persisted = try await harness.store.load()
+        let draft = try XCTUnwrap(persisted.last)
+        let scope = try BasicCredentialScope(source: draft)
+        let storedPassword = try await harness.vault.password(for: scope)
+        XCTAssertFalse(draft.isEnabled)
+        XCTAssertNil(storedPassword)
+        XCTAssertEqual(harness.model.password, "not-stored")
+    }
+
+    func testSavingDraftRemovesEmbeddedURLCredentialsFromPublicConfiguration() async throws {
+        let harness = try await makeHarness(sourceCount: 1, script: SnapshotScript())
+        await harness.model.load()
+        harness.model.beginAddingSource()
+        harness.model.endpoint = "https://alice:api-secret@api.example.test:5665/v2"
+        harness.model.webURL = "https://bob:web-secret@web.example.test/icingaweb2"
+
+        await harness.model.save()
+
+        let persisted = try await harness.store.load()
+        let draft = try XCTUnwrap(persisted.last)
+        let encodedDraft = try JSONEncoder().encode(draft)
+        XCTAssertEqual(draft.editableEndpoint, "https://api.example.test:5665/v2")
+        XCTAssertEqual(draft.web?.editableBaseURL, "https://web.example.test/icingaweb2")
+        XCTAssertNil(encodedDraft.range(of: Data("secret".utf8)))
+        XCTAssertNil(encodedDraft.range(of: Data("alice".utf8)))
+        XCTAssertNil(encodedDraft.range(of: Data("bob".utf8)))
+    }
+
+    func testSavingIncompleteAuthenticationChangeKeepsPreviousPassword() async throws {
+        let harness = try await makeHarness(sourceCount: 1, script: SnapshotScript())
+        await harness.model.load()
+        harness.model.authenticationChoice = .clientCertificate
+        harness.model.selectedIdentityID = ""
+
+        await harness.model.save()
+
+        let storedPassword = try await harness.vault.password(for: harness.scopes[0])
+        let persisted = try await harness.store.load()
+        XCTAssertEqual(storedPassword, "test-only-password-1")
+        XCTAssertFalse(try XCTUnwrap(persisted.first).isEnabled)
+    }
+
     func testNavigationConfigurationPersistsAndBuildsIssueActions() async throws {
         let harness = try await makeHarness(sourceCount: 1, script: SnapshotScript())
         await harness.model.load()
@@ -371,6 +452,53 @@ final class IssueLightModelTests: XCTestCase {
         XCTAssertEqual(
             harness.model.activity,
             .success("Model Test ist erreichbar. Host- und Servicezugriff funktionieren.")
+        )
+    }
+
+    func testConnectionTestCanonicalizesDiscoveredEndpointAndDefaultNameOnlyAfterProviderSuccess() async throws {
+        let coordinator = AutomaticConnectionCoordinator { _, _, _ in true }
+        let harness = try await makeHarness(
+            sourceCount: 1,
+            script: SnapshotScript(),
+            connectionCoordinator: coordinator
+        )
+        await harness.model.load()
+        harness.model.beginAddingSource()
+        harness.model.endpoint = "monitoring-discovery.example.test/v2/"
+        harness.model.username = "operator"
+        harness.model.password = "test-only-password"
+
+        await harness.model.testConnection()
+
+        XCTAssertEqual(harness.model.endpoint, "https://monitoring-discovery.example.test:5665")
+        XCTAssertEqual(harness.model.name, "monitoring-discovery.example.test")
+        XCTAssertEqual(harness.model.selectedConnectionStatus.api, .direct)
+        XCTAssertEqual(
+            harness.model.activity,
+            .success("Model Test ist erreichbar. Host- und Servicezugriff funktionieren.")
+        )
+    }
+
+    func testConnectionDiscoveryContinuesToStoredCredentialScopeWithoutAskingForPassword() async throws {
+        let script = SnapshotScript()
+        let coordinator = AutomaticConnectionCoordinator { _, _, _ in true }
+        let harness = try await makeHarness(
+            sourceCount: 1,
+            script: script,
+            connectionCoordinator: coordinator
+        )
+        await harness.model.load()
+        harness.model.endpoint = "monitoring1.example.test:auto"
+
+        await harness.model.testConnection()
+
+        XCTAssertEqual(harness.model.endpoint, "https://monitoring1.example.test")
+        XCTAssertEqual(harness.model.selectedConnectionStatus.api, .direct)
+        XCTAssertEqual(harness.model.connectionAttempts.count, 3)
+        XCTAssertEqual(harness.model.connectionAttempts.first?.route, "—")
+        XCTAssertEqual(
+            harness.model.connectionAttempts.last?.endpoint,
+            "https://monitoring1.example.test/icingaweb2"
         )
     }
 
@@ -727,6 +855,21 @@ private struct TestProvider: MonitoringProvider {
             actions: [.recheck, .acknowledge, .scheduleDowntime]
         )
     )
+
+    func endpointCandidates(from hint: String) -> [URL] {
+        if hint == "monitoring-discovery.example.test/v2/" {
+            return [URL(string: "https://monitoring-discovery.example.test:5665")!]
+        }
+        if hint == "monitoring1.example.test:auto" {
+            return [
+                URL(string: "https://monitoring1.example.test:5665")!,
+                URL(string: "https://monitoring1.example.test")!,
+            ]
+        }
+        let value = hint.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !value.isEmpty, let url = URL(string: value) else { return [] }
+        return [url]
+    }
 
     func validate(_ source: MonitoringSource) -> [SourceValidationIssue] {
         MonitoringSourceValidator.validateSharedFields(source)
