@@ -32,7 +32,8 @@ coverage_path=$(swift test \
     --package-path Packages/IssueLightCore \
     --show-codecov-path)
 coverage_profile="$(dirname "$coverage_path")/default.profdata"
-test_binary=$(find Packages/IssueLightCore/.build -type f \
+core_build_directory=$(CDPATH='' cd Packages/IssueLightCore/.build && pwd -P)
+test_binary=$(find "$core_build_directory" -type f \
     -path '*/IssueLightCore*Tests.xctest/Contents/MacOS/IssueLightCore*Tests' \
     -print -quit)
 test -n "$test_binary"

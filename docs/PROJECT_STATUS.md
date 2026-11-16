@@ -51,12 +51,15 @@ IssueLight is pre-production pending installed-app and signed-release evidence.
   recheck, acknowledgement, downtime, and command-CGI CSRF handling.
 - Screenshot tests render the production SwiftUI views used by the product
   page.
+- Keychain tests import both protected and trusted private keys into isolated
+  temporary Keychains. Background access proves fail-closed behavior without
+  authentication UI before a provider starts TLS.
 
 ## Remaining release gates
 
-- Run the installed-app protected-private-key case described in
-  `docs/DEVELOPMENT.md`. Background refresh must fail without authentication UI
-  and retain the previous snapshot.
+- Run the final approve, deny, and recovery sequence for a protected private
+  key in the stable signed app as described in `docs/DEVELOPMENT.md`. The
+  background no-prompt path already has deterministic regression coverage.
 - Add the repository signing, notarization, and App Store signing secrets, run
   the release workflow, then verify direct stapling, Gatekeeper assessment,
   Store package upload, and installation on clean macOS accounts.

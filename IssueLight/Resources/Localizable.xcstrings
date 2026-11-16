@@ -28817,6 +28817,29 @@
     "ur": { "stringUnit": { "state": "translated", "value": "macOS پس منظر میں API کلید تک رسائی نہیں دیتا۔ ماخذ کھولیں اور اسے دوبارہ درج کریں۔" } },
     "vi": { "stringUnit": { "state": "translated", "value": "macOS không cung cấp khóa API trong nền. Hãy mở nguồn và nhập lại khóa." } },
     "zh-Hans": { "stringUnit": { "state": "translated", "value": "macOS 不允许在后台访问 API 密钥。请打开监控源并重新输入。" } }
+  } },
+  "macOS benötigt deine Freigabe für den privaten Schlüssel. Öffne die Quelle und starte „Verbindung testen“.": { "localizations": {
+    "ar": { "stringUnit": { "state": "translated", "value": "يحتاج macOS إلى موافقتك لاستخدام المفتاح الخاص. افتح المصدر وشغّل «اختبار الاتصال»." } },
+    "bn": { "stringUnit": { "state": "translated", "value": "ব্যক্তিগত কী ব্যবহার করতে macOS-এর আপনার অনুমোদন প্রয়োজন। উৎসটি খুলে “সংযোগ পরীক্ষা” চালান।" } },
+    "de": { "stringUnit": { "state": "translated", "value": "macOS benötigt deine Freigabe für den privaten Schlüssel. Öffne die Quelle und starte „Verbindung testen“." } },
+    "en": { "stringUnit": { "state": "translated", "value": "macOS needs your approval to use the private key. Open the source and run Test Connection." } },
+    "es": { "stringUnit": { "state": "translated", "value": "macOS necesita tu aprobación para usar la clave privada. Abre la fuente y ejecuta Probar conexión." } },
+    "fr": { "stringUnit": { "state": "translated", "value": "macOS a besoin de votre autorisation pour utiliser la clé privée. Ouvrez la source et lancez Tester la connexion." } },
+    "ha": { "stringUnit": { "state": "translated", "value": "macOS yana buƙatar izininka don amfani da maɓallin sirri. Buɗe tushen ka gudanar da Gwada Haɗi." } },
+    "hi": { "stringUnit": { "state": "translated", "value": "निजी कुंजी इस्तेमाल करने के लिए macOS को आपकी अनुमति चाहिए। स्रोत खोलें और कनेक्शन जाँचें चलाएँ।" } },
+    "id": { "stringUnit": { "state": "translated", "value": "macOS memerlukan persetujuan Anda untuk menggunakan kunci privat. Buka sumber lalu jalankan Uji Koneksi." } },
+    "ja": { "stringUnit": { "state": "translated", "value": "秘密鍵を使用するにはmacOSでの承認が必要です。ソースを開き、「接続をテスト」を実行してください。" } },
+    "mr": { "stringUnit": { "state": "translated", "value": "खाजगी किल्ली वापरण्यासाठी macOS ला तुमची मंजुरी आवश्यक आहे. स्रोत उघडा आणि जोडणी तपासा चालवा." } },
+    "pcm": { "stringUnit": { "state": "translated", "value": "macOS need your approval to use di private key. Open di source and run Test Connection." } },
+    "pt": { "stringUnit": { "state": "translated", "value": "O macOS precisa da sua autorização para usar a chave privada. Abra a fonte e execute Testar ligação." } },
+    "ru": { "stringUnit": { "state": "translated", "value": "macOS требуется ваше разрешение на использование закрытого ключа. Откройте источник и запустите проверку подключения." } },
+    "sv": { "stringUnit": { "state": "translated", "value": "macOS behöver ditt godkännande för att använda den privata nyckeln. Öppna källan och kör Testa anslutning." } },
+    "sw": { "stringUnit": { "state": "translated", "value": "macOS inahitaji idhini yako ili kutumia ufunguo binafsi. Fungua chanzo kisha uendeshe Jaribu Muunganisho." } },
+    "te": { "stringUnit": { "state": "translated", "value": "ప్రైవేట్ కీని ఉపయోగించడానికి macOSకు మీ అనుమతి అవసరం. మూలాన్ని తెరిచి కనెక్షన్‌ను పరీక్షించు నడపండి." } },
+    "tr": { "stringUnit": { "state": "translated", "value": "macOS'in özel anahtarı kullanmak için onayınıza ihtiyacı var. Kaynağı açıp Bağlantıyı Sına'yı çalıştırın." } },
+    "ur": { "stringUnit": { "state": "translated", "value": "نجی کلید استعمال کرنے کے لیے macOS کو آپ کی منظوری درکار ہے۔ ماخذ کھولیں اور کنکشن کی جانچ چلائیں۔" } },
+    "vi": { "stringUnit": { "state": "translated", "value": "macOS cần bạn cho phép sử dụng khóa riêng tư. Mở nguồn rồi chạy Kiểm tra kết nối." } },
+    "zh-Hans": { "stringUnit": { "state": "translated", "value": "macOS 需要你的批准才能使用私钥。请打开监控源并运行“测试连接”。" } }
   } }
   },
   "version": "1.0"

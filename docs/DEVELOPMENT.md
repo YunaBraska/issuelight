@@ -39,6 +39,11 @@ configuration.
 
 ## Protected mTLS acceptance
 
+`KeychainIdentityCatalogTests` first imports protected and trusted private keys
+into isolated temporary Keychains. It proves that background signing fails
+without authentication UI while trusted signing succeeds. The signed-app check
+below covers the user-facing approval lifecycle that automation must not fake.
+
 Use a separate macOS review profile when one is available. For this acceptance
 case only, open the lab identity's private key in Keychain Access, require
 confirmation, and do not choose **Always Allow**. This preserves the prompt so

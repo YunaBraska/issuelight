@@ -1732,6 +1732,8 @@ final class IssueLightModel: ObservableObject {
             return localized("macOS gibt den API-Schlüssel im Hintergrund nicht frei. Öffne die Quelle und gib ihn erneut ein.")
         case .clientIdentityNotAvailable:
             return localized("Das Client-Zertifikat ist nicht mehr im Schlüsselbund verfügbar.")
+        case .clientIdentityInteractionRequired:
+            return localized("macOS benötigt deine Freigabe für den privaten Schlüssel. Öffne die Quelle und starte „Verbindung testen“.")
         case .clientIdentityAccessFailed:
             return localized("Das Client-Zertifikat konnte nicht aus dem Schlüsselbund gelesen werden.")
         case .serverCertificateNotAvailable:

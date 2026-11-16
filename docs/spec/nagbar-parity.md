@@ -32,7 +32,7 @@ deliberate omissions.
 | Configurable refresh interval | Done | Partial | IssueLight owns one conservative refresh loop. A small preset choice is reasonable only if measured deployments need it. |
 | Keychain credentials | Partial | Done | Passwords, API keys, and identity references remain in macOS Keychain. Public source JSON contains no secrets. |
 | TLS verification controls | Partial | Done | System trust by default, private CA, exact leaf pin, and an explicit per-source insecure mode. |
-| Protected mTLS private keys | Partial | Partial | Normal mTLS, non-interactive lookup, locked-Keychain skipping, and prompt-free test isolation pass. Deterministic installed-app denial during protected-key signing remains open. |
+| Protected mTLS private keys | Partial | Done | Normal mTLS, protected and trusted legacy-ACL signing, locked-Keychain skipping, and prompt-free background failure pass in isolated Keychains. Approve, deny, and recovery remain signed-release acceptance checks. |
 | Stale and partial failure state | Partial | Done | Keep the last successful snapshot and identify the failing source instead of replacing status with one global error. |
 | User-defined status colors | Done | Dismissed | Use semantic system colors and symbols so dark mode, contrast, and accessibility stay coherent. |
 | Configurable columns and output length | Done | Dismissed | Keep one scannable row hierarchy and bounded output instead of exposing layout internals as preferences. |
@@ -47,7 +47,7 @@ improves multiple-source isolation, failure handling, credential storage, and
 TLS trust. Direct Icinga Classic remains available through Thruk rather than a
 separate adapter.
 
-Production readiness still requires installed-app protected-key evidence and a
+Production readiness still requires signed installed-app acceptance and a
 signed, notarized replacement-cycle release.
 
 ## Recommended delivery order

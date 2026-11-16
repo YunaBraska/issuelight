@@ -7,6 +7,7 @@ public enum ProviderAccessFailure: Equatable, Sendable {
     case apiKeyNotAvailable
     case apiKeyAccessFailed
     case clientIdentityNotAvailable
+    case clientIdentityInteractionRequired
     case clientIdentityAccessFailed
     case serverCertificateNotAvailable
     case serverCertificateAccessFailed
@@ -118,6 +119,8 @@ public struct ProviderAccessResolver: Sendable {
                         trustedServerCertificate: trustedServerCertificate
                     )
                 )
+            } catch KeychainIdentityCatalogError.interactionNotAllowed {
+                return .failed(.clientIdentityInteractionRequired)
             } catch {
                 return .failed(.clientIdentityAccessFailed)
             }
