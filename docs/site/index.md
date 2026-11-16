@@ -17,8 +17,8 @@ description: IssueLight keeps infrastructure problems in the macOS menu bar and 
   </div>
   <figure class="hero-shot app-window">
     <div class="window-bar"><span></span><span></span><span></span><strong>Menu bar status</strong></div>
-    <img src="{{ '/assets/screenshots/menu-panel-de.png' | relative_url }}" alt="IssueLight menu panel with critical and warning Icinga issues" width="860" height="480">
-    <figcaption>Search, problems, contextual actions, and one path to Settings. Nothing else competes for attention.</figcaption>
+    <img src="{{ '/assets/screenshots/menu-panel-all-providers.png' | relative_url }}" alt="IssueLight menu panel with Icinga, Checkmk, Thruk and Nagios problems" width="1440" height="410">
+    <figcaption>Four providers, one compact queue, and only the actions each provider actually supports.</figcaption>
   </figure>
 </section>
 
@@ -83,8 +83,8 @@ description: IssueLight keeps infrastructure problems in the macOS menu bar and 
 
 <section class="section shell security-section">
   <figure class="setup-shot app-window">
-    <div class="window-bar"><span></span><span></span><span></span><strong>Source setup</strong></div>
-    <img src="{{ '/assets/screenshots/source-setup.png' | relative_url }}" alt="IssueLight source setup with Icinga 2 endpoint, Basic authentication and strict macOS system trust" width="1640" height="1200">
+    <div class="window-bar"><span></span><span></span><span></span><strong>Source settings</strong></div>
+    <img src="{{ '/assets/screenshots/source-setup-icinga-window.png' | relative_url }}" alt="Resizable IssueLight source settings with an Icinga 2 source" width="1800" height="1296">
   </figure>
   <div class="security-copy">
     <p class="eyebrow"><span></span>Secure by default</p>
@@ -96,6 +96,54 @@ description: IssueLight keeps infrastructure problems in the macOS menu bar and 
       <li><strong>Homelab escape hatch</strong><span>Certificate verification can be disabled per source, with an explicit warning.</span></li>
       <li><strong>No secret config files</strong><span>Source records keep references. Passwords, API keys and private keys stay in Keychain.</span></li>
     </ul>
+  </div>
+</section>
+
+<section class="section shell provider-section">
+  <div class="section-heading">
+    <p class="eyebrow"><span></span>Provider-aware setup</p>
+    <h2>One flow. The right fields for each system.</h2>
+    <p>Choose the provider explicitly, then give IssueLight as little as possible. Endpoint normalization, API discovery and provider-specific authentication fill in the rest.</p>
+  </div>
+  <div class="provider-grid">
+    <figure class="app-window">
+      <div class="provider-shot"><img src="{{ '/assets/screenshots/source-setup-icinga-window.png' | relative_url }}" alt="Icinga 2 source setup with username and password authentication" width="1800" height="1296"></div>
+      <figcaption>Icinga 2 · Basic authentication or client certificate</figcaption>
+    </figure>
+    <figure class="app-window">
+      <div class="provider-shot"><img src="{{ '/assets/screenshots/source-setup-thruk-window.png' | relative_url }}" alt="Thruk source setup with provider-specific API authentication" width="1800" height="1296"></div>
+      <figcaption>Thruk · Basic authentication or API key</figcaption>
+    </figure>
+    <figure class="app-window">
+      <div class="provider-shot"><img src="{{ '/assets/screenshots/source-setup-checkmk-window.png' | relative_url }}" alt="Checkmk source setup with automation user and API key" width="1800" height="1296"></div>
+      <figcaption>Checkmk · Automation user and API key</figcaption>
+    </figure>
+    <figure class="app-window">
+      <div class="provider-shot"><img src="{{ '/assets/screenshots/source-setup-nagios-core-window.png' | relative_url }}" alt="Nagios Core source setup with username and password authentication" width="1800" height="1296"></div>
+      <figcaption>Nagios Core · Status JSON and command CGI</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="section shell settings-tour">
+  <div class="section-heading">
+    <p class="eyebrow"><span></span>Native macOS settings</p>
+    <h2>Sources, notifications, language and About. No duplicate controls.</h2>
+    <p>The single Settings button opens a resizable native window. Every preference stays in one predictable place.</p>
+  </div>
+  <div class="settings-grid">
+    <figure class="app-window">
+      <img src="{{ '/assets/screenshots/settings-notifications-window.png' | relative_url }}" alt="Resizable IssueLight settings window on the Notifications tab" width="2292" height="1612">
+      <figcaption>Quiet notification policies remain opt-in per source.</figcaption>
+    </figure>
+    <figure class="app-window">
+      <img src="{{ '/assets/screenshots/settings-language-window.png' | relative_url }}" alt="Resizable IssueLight settings window on the Language tab" width="2292" height="1612">
+      <figcaption>System default and 21 explicit languages are available without restarting.</figcaption>
+    </figure>
+    <figure class="app-window">
+      <img src="{{ '/assets/screenshots/settings-about-window.png' | relative_url }}" alt="Resizable IssueLight settings window on the About IssueLight tab" width="2292" height="1612">
+      <figcaption>Updates, privacy, support and project credits live in About.</figcaption>
+    </figure>
   </div>
 </section>
 
@@ -133,8 +181,8 @@ description: IssueLight keeps infrastructure problems in the macOS menu bar and 
   </div>
   <div class="scope-grid">
     <div><strong>Available now</strong><p>Multiple sources, refresh, attention ordering, quiet notifications, strict TLS options, Keychain credentials, recheck, acknowledgement, fixed downtime and stale-state retention.</p></div>
-    <div><strong>Still required</strong><p>Installed-app protected-key evidence and a signed, notarized replacement-cycle release remain production blockers.</p></div>
-    <div><strong>Release status</strong><p>The code is public and the unsigned packaging path is tested. A notarized public binary is not available yet, so this page does not pretend otherwise.</p></div>
+    <div><strong>Still required</strong><p>The final application check is an installed-app test with a genuinely user-protected mTLS private key.</p></div>
+    <div><strong>Release status</strong><p>The app and unsigned packaging path are tested. Signing, notarization and store delivery belong to the shared CI/CD release flow.</p></div>
   </div>
 </section>
 

@@ -78,8 +78,63 @@ struct IssueLightSettingsView: View {
                 .tag(Tab.about)
         }
         .padding(16)
-        .frame(minWidth: 760, minHeight: 560)
+        .frame(
+            minWidth: 760,
+            maxWidth: .infinity,
+            minHeight: 560,
+            maxHeight: .infinity
+        )
+        .background(SettingsWindowConfigurator())
     }
+}
+
+struct SettingsWindowConfigurator: NSViewRepresentable {
+    func makeNSView(context: Context) -> SettingsWindowConfigurationView {
+        SettingsWindowConfigurationView()
+    }
+
+    func updateNSView(_ view: SettingsWindowConfigurationView, context _: Context) {
+        view.configureWindow()
+    }
+}
+
+final class SettingsWindowConfigurationView: NSView {
+    private var deferredConfiguration: DispatchWorkItem?
+
+    override func viewWillMove(toWindow newWindow: NSWindow?) {
+        deferredConfiguration?.cancel()
+        deferredConfiguration = nil
+        super.viewWillMove(toWindow: newWindow)
+    }
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        configureWindow()
+        let workItem = DispatchWorkItem { [weak self] in
+            self?.configureWindow()
+        }
+        deferredConfiguration = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2, execute: workItem)
+    }
+
+    func configureWindow() {
+        guard let window else { return }
+        if !window.styleMask.contains(.resizable) {
+            window.styleMask.insert(.resizable)
+        }
+        let minimumSize = NSSize(width: 760, height: 560)
+        if window.contentMinSize != minimumSize {
+            window.contentMinSize = minimumSize
+        }
+        let maximumSize = NSSize(
+            width: CGFloat.greatestFiniteMagnitude,
+            height: CGFloat.greatestFiniteMagnitude
+        )
+        if window.contentMaxSize != maximumSize {
+            window.contentMaxSize = maximumSize
+        }
+    }
+
 }
 
 @MainActor

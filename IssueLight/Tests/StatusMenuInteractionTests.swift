@@ -1,3 +1,4 @@
+import AppKit
 import IssueLightCore
 import SwiftUI
 import XCTest
@@ -33,6 +34,25 @@ final class StatusMenuInteractionTests: XCTestCase {
             PortNumberField.format.locale(Locale(identifier: "sv_SE")).format(22_222),
             "22222"
         )
+    }
+
+    func testSettingsWindowConfigurationRestoresNativeResizeBehavior() {
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 900, height: 648),
+            styleMask: [.titled, .closable],
+            backing: .buffered,
+            defer: false
+        )
+        let configurationView = SettingsWindowConfigurationView()
+        window.contentView = configurationView
+
+        window.styleMask.remove(.resizable)
+        RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.25))
+
+        XCTAssertTrue(window.styleMask.contains(.resizable))
+        XCTAssertEqual(window.contentMinSize, NSSize(width: 760, height: 560))
+        XCTAssertEqual(window.contentMaxSize.width, CGFloat.greatestFiniteMagnitude)
+        XCTAssertEqual(window.contentMaxSize.height, CGFloat.greatestFiniteMagnitude)
     }
 
     func testSettingsButtonRespondsToPointerClick() {

@@ -34,6 +34,10 @@ final class LandingPageScreenshotTests: XCTestCase {
             for: sourceFailureMenuView,
             size: CGSize(width: 720, height: 88)
         )
+        let mixedProviderMenuData = try NativeViewRenderer.pngData(
+            for: mixedProviderMenuView,
+            size: CGSize(width: 720, height: 205)
+        )
         let swedishSettingsData = try NativeViewRenderer.pngData(
             for: languageSettingsView(language: .swedish),
             size: CGSize(width: 920, height: 680)
@@ -58,6 +62,7 @@ final class LandingPageScreenshotTests: XCTestCase {
         XCTAssertGreaterThan(swedishMenuData.count, 10_000)
         XCTAssertGreaterThan(arabicMenuData.count, 10_000)
         XCTAssertGreaterThan(sourceFailureMenuData.count, 8_000)
+        XCTAssertGreaterThan(mixedProviderMenuData.count, 18_000)
         XCTAssertGreaterThan(swedishSettingsData.count, 8_000)
         XCTAssertGreaterThan(arabicSettingsData.count, 8_000)
         XCTAssertGreaterThan(aboutSettingsData.count, 20_000)
@@ -97,6 +102,10 @@ final class LandingPageScreenshotTests: XCTestCase {
         )
         try sourceFailureMenuData.write(
             to: outputDirectory.appendingPathComponent("menu-panel-source-failure.png"),
+            options: .atomic
+        )
+        try mixedProviderMenuData.write(
+            to: outputDirectory.appendingPathComponent("menu-panel-all-providers.png"),
             options: .atomic
         )
         try swedishSettingsData.write(
@@ -305,6 +314,87 @@ final class LandingPageScreenshotTests: XCTestCase {
             dismissActionError: {}
         )
         .environment(\.locale, Locale(identifier: "de_DE"))
+        .environment(\.colorScheme, .light)
+    }
+
+    private var mixedProviderMenuView: some View {
+        let icingaID = UUID(uuidString: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa")!
+        let thrukID = UUID(uuidString: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb")!
+        let checkmkID = UUID(uuidString: "cccccccc-cccc-4ccc-8ccc-cccccccccccc")!
+        let nagiosID = UUID(uuidString: "dddddddd-dddd-4ddd-8ddd-dddddddddddd")!
+        let issues = [
+            issue(
+                sourceID: icingaID,
+                id: "icinga-db",
+                host: "db-01",
+                service: "Replication",
+                name: "Replication",
+                severity: .critical,
+                summary: "CRITICAL: primary is 184 seconds behind"
+            ),
+            issue(
+                sourceID: checkmkID,
+                id: "checkmk-edge",
+                host: "edge-01",
+                service: nil,
+                name: "edge-01",
+                severity: .critical,
+                summary: "DOWN: host is not reachable"
+            ),
+            issue(
+                sourceID: thrukID,
+                id: "thruk-storage",
+                host: "nas-01",
+                service: "Storage",
+                name: "Storage",
+                severity: .warning,
+                summary: "WARNING: volume is 82% full"
+            ),
+            issue(
+                sourceID: nagiosID,
+                id: "nagios-dns",
+                host: "legacy-01",
+                service: "DNS",
+                name: "DNS",
+                severity: .unknown,
+                summary: "UNKNOWN: resolver returned no answer"
+            ),
+        ]
+        return StatusMenuContent(
+            hasConfiguredSource: true,
+            hasEnabledSource: true,
+            hasActiveSnapshot: true,
+            actionableIssues: issues,
+            coveredIssues: [],
+            sourceNames: [
+                icingaID: "Icinga",
+                thrukID: "Thruk",
+                checkmkID: "Checkmk",
+                nagiosID: "Nagios",
+            ],
+            sourceFailures: [],
+            filters: filterSettings(),
+            refreshState: .current,
+            actionError: nil,
+            supportedActions: { issue in
+                issue.sourceID == checkmkID
+                    ? [.acknowledge, .scheduleDowntime]
+                    : [.recheck, .acknowledge, .scheduleDowntime]
+            },
+            activeActionIssueIDs: [],
+            openSettings: {},
+            quitApplication: {},
+            openIssue: { _ in },
+            openSSH: { _ in },
+            openRDP: { _ in },
+            hasSSH: { $0.sourceID == icingaID },
+            hasRDP: { $0.sourceID == checkmkID },
+            performRecheck: { _ in },
+            requestAcknowledgement: { _ in },
+            requestDowntime: { _ in },
+            dismissActionError: {}
+        )
+        .environment(\.locale, Locale(identifier: "en_US"))
         .environment(\.colorScheme, .light)
     }
 
