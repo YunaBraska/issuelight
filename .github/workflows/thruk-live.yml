@@ -1,0 +1,27 @@
+name: Thruk live compatibility
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/thruk-live.yml"
+      - "integration/thruk/**"
+      - "scripts/thruk_lab.sh"
+      - "Packages/IssueLightCore/Sources/IssueLightCore/ProviderHTTPSession.swift"
+      - "Packages/IssueLightCore/Sources/IssueLightCore/ThrukProvider.swift"
+      - "Packages/IssueLightCore/Sources/IssueLightCore/ThrukSnapshotDecoder.swift"
+      - "Packages/IssueLightCore/Sources/IssueLightCore/ThrukTransport.swift"
+      - "Packages/IssueLightCore/Tests/IssueLightCoreTests/ThrukLiveConnectionTests.swift"
+      - "Packages/IssueLightCore/Tests/IssueLightCoreTests/ThrukProviderTests.swift"
+
+permissions:
+  contents: read
+
+jobs:
+  api-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+      - name: Verify the pinned Thruk REST API
+        run: scripts/thruk_lab.sh api-test

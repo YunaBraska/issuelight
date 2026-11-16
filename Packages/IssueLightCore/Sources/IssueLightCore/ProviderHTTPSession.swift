@@ -11,6 +11,11 @@ enum ProviderHTTPAuthentication {
     case clientIdentity(SecIdentity)
 }
 
+struct ProviderHTTPResponse {
+    let data: Data
+    let statusCode: Int
+}
+
 final class ProviderHTTPSession {
     private let authentication: ProviderHTTPAuthentication
     private let delegate: ProviderHTTPSessionDelegate
@@ -52,15 +57,20 @@ final class ProviderHTTPSession {
     }
 
     func data(for request: URLRequest) async throws -> Data {
+        let response = try await response(for: request)
+        if let failure = Self.failure(forStatusCode: response.statusCode) {
+            throw ProviderHTTPError.failure(failure)
+        }
+        return response.data
+    }
+
+    func response(for request: URLRequest) async throws -> ProviderHTTPResponse {
         do {
             let (data, response) = try await session.data(for: authenticated(request))
             guard let httpResponse = response as? HTTPURLResponse else {
                 throw ProviderHTTPError.failure(.incompatibleResponse)
             }
-            if let failure = Self.failure(forStatusCode: httpResponse.statusCode) {
-                throw ProviderHTTPError.failure(failure)
-            }
-            return data
+            return ProviderHTTPResponse(data: data, statusCode: httpResponse.statusCode)
         } catch let error as ProviderHTTPError {
             throw error
         } catch {

@@ -36,15 +36,15 @@ IssueLight is pre-production. It is not yet a complete NagBar successor.
 - `sh scripts/icinga2_lab.sh verify` runs the real containerized Icinga 2 and
   Icinga Web matrix for Basic authentication, mTLS, private CA trust,
   certificate pinning, object deep links, and expected failures.
+- `sh scripts/thruk_lab.sh test` runs the built-in Thruk provider against the
+  pinned official OMD Labs image. It covers Basic and API-key authentication,
+  strict and disabled trust, snapshots, recheck, acknowledgement, downtime,
+  and the API-key requirement for write actions.
 - Screenshot tests render the production SwiftUI views used by the product
   page.
 
 ## Remaining release gates
 
-- Run the Thruk adapter against a real installation. Its discovery, Basic and
-  API-key authentication, snapshots, web navigation, actions, diagnostics, and
-  Keychain lifecycle pass deterministic public-boundary tests, but the adapter
-  is not release-qualified without real-system evidence.
 - Add complete direct Nagios Core and Checkmk provider journeys. A Thruk source
   already covers Nagios-compatible backends exposed through Thruk without HTML
   parsing.

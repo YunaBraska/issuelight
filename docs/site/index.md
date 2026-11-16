@@ -13,7 +13,7 @@ description: IssueLight keeps infrastructure problems in the macOS menu bar and 
       <a class="button" href="{{ '/install.html' | relative_url }}">Build IssueLight</a>
       <a class="button secondary" href="{{ site.repository }}">View the source</a>
     </div>
-    <p class="release-note"><span>Open-source preview</span> macOS 14+ · Icinga 2 baseline · Thruk preview</p>
+    <p class="release-note"><span>Open-source preview</span> macOS 14+ · Icinga 2 baseline · Thruk supported</p>
   </div>
   <figure class="hero-shot app-window">
     <div class="window-bar"><span></span><span></span><span></span><strong>Menu bar status</strong></div>
@@ -103,9 +103,9 @@ description: IssueLight keeps infrastructure problems in the macOS menu bar and 
   <div class="shell evidence-layout">
     <div>
       <p class="eyebrow"><span></span>Tested against the thing itself</p>
-      <h2>A real Icinga 2 lab, not an optimistic JSON fixture.</h2>
+      <h2>Real monitoring systems, not optimistic JSON fixtures.</h2>
     </div>
-    <div class="matrix" role="list" aria-label="Icinga integration coverage">
+    <div class="matrix" role="list" aria-label="Real-system integration coverage">
       <span role="listitem">HTTP</span>
       <span role="listitem">HTTPS</span>
       <span role="listitem">Basic auth</span>
@@ -114,8 +114,11 @@ description: IssueLight keeps infrastructure problems in the macOS menu bar and 
       <span role="listitem">Exact pinning</span>
       <span role="listitem">Rejected auth</span>
       <span role="listitem">Rejected trust</span>
+      <span role="listitem">Thruk 3.30</span>
+      <span role="listitem">Naemon</span>
+      <span role="listitem">API-key commands</span>
     </div>
-    <p class="evidence-note">The container lab drives the same public provider path used by the app. Unit tests cover deterministic domain behavior. The screenshot test renders the production SwiftUI views shown on this page.</p>
+    <p class="evidence-note">The pinned Icinga and OMD Labs containers drive the same public provider paths used by the app. Unit tests cover deterministic domain behavior. The screenshot test renders the production SwiftUI views shown on this page.</p>
   </div>
 </section>
 
@@ -123,11 +126,11 @@ description: IssueLight keeps infrastructure problems in the macOS menu bar and 
   <div class="section-heading">
     <p class="eyebrow"><span></span>Scope you can reason about</p>
     <h2>Icinga 2 baseline. Thruk as the second adapter.</h2>
-    <p>Icinga 2 is the current compatibility baseline. Thruk now crosses the same provider boundary with its documented REST API, Basic authentication and API keys. The Thruk adapter still needs a real-system qualification run. Direct Nagios Core and Checkmk adapters remain open.</p>
+    <p>Icinga 2 is the current compatibility baseline. Thruk crosses the same provider boundary and is verified against the pinned official OMD Labs image. Basic sources are read-only; API-key sources support commands. Direct Nagios Core and Checkmk adapters remain open.</p>
   </div>
   <div class="scope-grid">
     <div><strong>Available now</strong><p>Multiple sources, refresh, attention ordering, quiet notifications, strict TLS options, Keychain credentials, recheck, acknowledgement, fixed downtime and stale-state retention.</p></div>
-    <div><strong>Still required</strong><p>Real-system Thruk qualification and direct Nagios Core and Checkmk providers remain production blockers. Provider-built web deep links are implemented.</p></div>
+    <div><strong>Still required</strong><p>Direct Nagios Core and Checkmk providers remain production blockers. Provider-built web deep links are implemented.</p></div>
     <div><strong>Release status</strong><p>The code is public and the unsigned packaging path is tested. A notarized public binary is not available yet, so this page does not pretend otherwise.</p></div>
   </div>
 </section>

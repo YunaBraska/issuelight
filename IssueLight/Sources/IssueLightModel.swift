@@ -305,8 +305,9 @@ final class IssueLightModel: ObservableObject {
     }
 
     func supportedActions(for issue: MonitoringIssue) -> Set<MonitoringActionKind> {
-        guard let source = sources.first(where: { $0.id == issue.sourceID }) else { return [] }
-        return providerRegistry.provider(for: source.providerID)?.descriptor.capabilities.actions ?? []
+        guard let source = sources.first(where: { $0.id == issue.sourceID }),
+              let provider = providerRegistry.provider(for: source.providerID) else { return [] }
+        return provider.supportedActions(for: source)
     }
 
     func webTarget(for issue: MonitoringIssue) -> IssueWebTarget? {
@@ -397,7 +398,7 @@ final class IssueLightModel: ObservableObject {
             return
         }
         guard let provider = providerRegistry.provider(for: source.providerID),
-              provider.descriptor.capabilities.actions.contains(action.kind) else {
+              provider.supportedActions(for: source).contains(action.kind) else {
             actionError = ActionError(
                 message: localized("Diese Aktion wird von der Quelle nicht unterstützt.")
             )

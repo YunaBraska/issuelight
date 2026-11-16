@@ -18,7 +18,7 @@ deliberate omissions.
 | Icinga 2 API | Done | Done | First fully supported provider and current compatibility baseline. |
 | Issue row details | Done | Mostly done | Always show source, host, service, state, state duration, check attempt, first output line, acknowledgement, and downtime. Add check age later as a stale-data signal instead of another timestamp column. |
 | Nagios Core and Icinga Classic | Done | Partial through Thruk | Thruk-backed installations use its documented REST API. Direct legacy support still needs a complete compatibility slice without reviving the original app's brittle HTML parser. |
-| Thruk | Done | Implemented, real-system verification open | The REST adapter owns discovery, Basic and API-key authentication, snapshots, commands, and web links. It is not release-qualified until a real installation passes. |
+| Thruk | Done | Done | The REST adapter owns discovery, Basic and API-key authentication, snapshots, commands, and web links. The pinned official OMD Labs image verifies real Thruk and Naemon behavior. Basic sources are read-only; API-key sources expose commands. |
 | Checkmk | Done | Missing | Implement a versioned Checkmk adapter with explicit API-version compatibility and token support. |
 | Text search | Partial | Done | Keep search in the panel's first row and match display name, host, output, and source. |
 | State and property filters | Done | Done | Persist the compact source, severity, and coverage filters. Do not reproduce NagBar's large filter matrix. |
@@ -43,8 +43,8 @@ deliberate omissions.
 IssueLight covers NagBar's central Icinga 2 journey and implements the same
 provider-neutral journey for Thruk. It improves multiple-source isolation,
 failure handling, credential storage, and TLS trust. It is not functionally
-equivalent to NagBar today because direct Nagios Core, Checkmk, and real-system
-Thruk qualification are still absent.
+equivalent to NagBar today because direct Nagios Core and Checkmk providers are
+still absent.
 
 Claiming full parity or production readiness before those capabilities exist
 would be inaccurate.
@@ -53,8 +53,7 @@ would be inaccurate.
 
 1. Close the protected-key and signed-app verification gaps without weakening
    background security.
-2. Qualify the Thruk adapter against a pinned real installation.
-3. Add Nagios Core and Checkmk without introducing a binary plug-in SDK.
+2. Add Nagios Core and Checkmk without introducing a binary plug-in SDK.
 
 The existing visual hierarchy should remain. New actions belong in row context
 menus or a small detail surface. Settings should describe sources and policies,

@@ -20190,6 +20190,130 @@
         }
       }
     },
+    "Thruk-Schnellaktionen benötigen einen API-Schlüssel.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تتطلب إجراءات Thruk السريعة مفتاح API."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thruk দ্রুত অ্যাকশনের জন্য একটি API কী প্রয়োজন।"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thruk quick actions require an API key."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las acciones rápidas de Thruk requieren una clave de API."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les actions rapides Thruk nécessitent une clé API."
+          }
+        },
+        "ha": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ayyukan gaggawa na Thruk suna buƙatar mabuɗin API."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thruk की त्वरित कार्रवाइयों के लिए API कुंजी आवश्यक है।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tindakan cepat Thruk memerlukan kunci API."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ThrukのクイックアクションにはAPIキーが必要です。"
+          }
+        },
+        "mr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thruk द्रुत क्रियांसाठी API किल्ली आवश्यक आहे."
+          }
+        },
+        "pcm": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thruk quick actions need API key."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "As ações rápidas do Thruk exigem uma chave de API."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Для быстрых действий Thruk требуется ключ API."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thruk-snabbåtgärder kräver en API-nyckel."
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vitendo vya haraka vya Thruk vinahitaji ufunguo wa API."
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thruk త్వరిత చర్యలకు API కీ అవసరం."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thruk hızlı eylemleri bir API anahtarı gerektirir."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thruk کی فوری کارروائیوں کے لیے API کلید درکار ہے۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Các thao tác nhanh của Thruk cần khóa API."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thruk 快速操作需要 API 密钥。"
+          }
+        }
+      }
+    },
     "TLS": {
       "localizations": {
         "ar": {

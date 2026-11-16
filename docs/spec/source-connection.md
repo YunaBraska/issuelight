@@ -26,6 +26,9 @@ monitoring-state presentation or notifications.
   and validates that the shared model has no Icinga-only state.
 - Provider discovery uses one built-in registry. Third-party plug-ins are not a
   current requirement.
+- Thruk Basic authentication is read-only. IssueLight exposes Thruk write
+  actions only for API-key sources because the REST command API otherwise
+  requires browser-session CSRF state.
 - Source records contain references and public configuration only. Passwords
   and private keys never enter source JSON, logs, diagnostics, or fixtures.
 - Server certificate verification is enabled by default. A user may disable it
@@ -127,6 +130,8 @@ monitoring-state presentation or notifications.
 - `AUTH-007` Thruk API keys MUST be stored in source-scoped Keychain entries
   distinct from Basic passwords. Source JSON MAY contain the optional public
   user context but MUST NOT contain the key.
+- `AUTH-008` Thruk Basic authentication MUST NOT advertise or submit write
+  actions. A Thruk API-key source MAY expose the provider's supported commands.
 
 ### Server trust
 
@@ -222,10 +227,10 @@ monitoring-state presentation or notifications.
 | Requirement | Public boundary | Evidence |
 | --- | --- | --- |
 | SRC-001..004 | `MonitoringSource` | Package tests for validation, encoding, and authority changes |
-| PRV-001..006 | provider registry and adapters | Package tests cover both adapters' discovery, capabilities, endpoint rules, provider-neutral snapshot dispatch, actions, and web links; the Icinga live matrix crosses the same registry boundary; real Thruk compatibility remains open |
-| AUTH-001, AUTH-007 | `KeychainPasswordVault` | Temporary real-Keychain tests prove independent Basic-password and API-key storage, replacement, lookup, and cleanup |
+| PRV-001..006 | provider registry and adapters | Package tests cover both adapters' discovery, capabilities, endpoint rules, provider-neutral snapshot dispatch, actions, and web links; the Icinga and Thruk live matrices cross the same registry boundary against pinned real systems |
+| AUTH-001, AUTH-007..008 | `KeychainPasswordVault` and Thruk provider | Temporary real-Keychain tests prove independent Basic-password and API-key storage, replacement, lookup, and cleanup; real Thruk tests prove Basic reads, API-key reads and commands, wrong-password rejection, and source-specific action availability |
 | AUTH-002, AUTH-004 | Keychain identity catalog and connection test | Real PKCS#12 import, persistent-reference resolution, accepted and rejected live Icinga mTLS, and exact cleanup |
 | AUTH-003, AUTH-005 | source setup journey | Password availability uses only non-secret ownership metadata; a real foreign legacy Keychain item is rejected without reading its secret; background password and exact-identity reads use a non-interactive authentication context; broad identity searches silently skip protected items; missing identities fail explicitly; installed protected-private-key denial still needs running-app evidence |
 | TLS-001..006 | connection test and source lifecycle | Default, source-specific private CA, exact leaf pinning, and unchecked trust implemented; the live matrix accepts the configured CA and exact leaf, rejects an unrelated CA, mismatched leaf, and exact leaf under the wrong hostname; Apple trust evaluation preserves certificate validity policy; authority changes reset custom trust; real Keychain tests cover ownership-aware CA cleanup after the final source reference; pin replacement remains an explicit user action |
-| CONN-001..006 | connection test | Real containerized Icinga 2 Basic and mTLS success, distinct 401 and 403 failures, unit coverage for direct-first routing and independent settings status, plus running-UI cancellation evidence |
+| CONN-001..006 | connection test | Real containerized Icinga 2 Basic and mTLS success, real OMD/Thruk Basic and API-key success, distinct authentication, authorization, and trust failures, unit coverage for direct-first routing and independent settings status, plus running-UI cancellation evidence |
 | NAV-001..005 | issue row and source settings | Core tests cover classic and Icinga DB Web host/service links plus escaped SSH/RDP URLs; app tests cover source-wide SSH persistence, safe OpenSSH commands, direct opening, row clicks, and source-owned cleanup; real OpenSSH integration tests verify HTTP forwarding and an Icinga API request through SOCKS5 before closing owned ports |

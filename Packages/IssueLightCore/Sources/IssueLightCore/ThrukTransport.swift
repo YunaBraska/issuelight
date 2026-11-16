@@ -113,6 +113,14 @@ final class ThrukTransport {
         }
     }
 
+    func response(for request: URLRequest) async throws -> ProviderHTTPResponse {
+        do {
+            return try await httpSession.response(for: request)
+        } catch let ProviderHTTPError.failure(failure) {
+            throw ThrukTransportError.failure(failure)
+        }
+    }
+
     func close() {
         httpSession.close()
     }

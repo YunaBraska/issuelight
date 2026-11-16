@@ -109,6 +109,7 @@ public protocol MonitoringProvider: Sendable {
     var descriptor: ProviderDescriptor { get }
     func endpointCandidates(from hint: String) -> [URL]
     func validate(_ source: MonitoringSource) -> [SourceValidationIssue]
+    func supportedActions(for source: MonitoringSource) -> Set<MonitoringActionKind>
     func testConnection(
         to source: MonitoringSource,
         access: ProviderAccess
@@ -136,6 +137,10 @@ public extension MonitoringProvider {
 
     func defaultWebBaseURL(for source: MonitoringSource) -> URL? {
         nil
+    }
+
+    func supportedActions(for source: MonitoringSource) -> Set<MonitoringActionKind> {
+        descriptor.capabilities.actions
     }
 
     func webURL(for issue: MonitoringIssue, from source: MonitoringSource) -> URL? {

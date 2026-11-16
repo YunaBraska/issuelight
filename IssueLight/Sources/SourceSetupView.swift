@@ -159,6 +159,20 @@ struct SourceSetupView: View {
                         )
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                        if model.selectedProviderID == ThrukProvider.id {
+                            Label {
+                                Text(
+                                    verbatim: AppLocalization.string(
+                                        "Thruk-Schnellaktionen benötigen einen API-Schlüssel.",
+                                        locale: locale
+                                    )
+                                )
+                            } icon: {
+                                Image(systemName: "info.circle")
+                            }
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        }
                     } else if model.authenticationChoice == .apiKey {
                         TextField("API-Benutzer (optional)", text: $model.username)
                         .textContentType(.username)

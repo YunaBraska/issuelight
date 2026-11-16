@@ -9,12 +9,14 @@
 | Official Icinga 2, Icinga DB, and Icinga Web container images | External-system compatibility tests | Development only, not shipped |
 | MariaDB and Redis container images | Icinga DB test persistence and transport | Development only, not shipped |
 | Nginx container image | Loopback-only authentication gateway for manual Icinga Web review | Development only, not shipped |
+| Official OMD Labs Debian image | Real Thruk and Naemon compatibility tests | Development and CI only, not shipped |
 
 Thruk support uses its HTTP REST API and adds no runtime dependency. A pinned
-real-system fixture is still required before that adapter is release-qualified.
+official OMD Labs fixture qualifies the adapter against Thruk 3.30 and its real
+Livestatus and command responses.
 
 The exact integration image versions and digests are pinned in
-`integration/icinga2/compose.yaml`. Any new runtime dependency requires a
+`integration/icinga2/compose.yaml` and `scripts/thruk_lab.sh`. Any new runtime dependency requires a
 purpose, license review, provenance record, and removal plan before it is added.
 Sparkle's complete distribution license is shipped as
 `IssueLight/Resources/Sparkle-LICENSE.txt` in direct builds.

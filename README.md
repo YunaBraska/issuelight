@@ -31,7 +31,10 @@ through an explicit base URL ending in `/monitoring`. Native notifications are
 opt-in per source, suppress the initial snapshot, deduplicate unchanged issues,
 remove recovered summaries, and omit monitoring details from banner content.
 Notification clicks use the same direct-first web and SSH-tunnel path as issue
-rows. The Thruk adapter still needs a real-system compatibility run.
+rows. The Thruk adapter is qualified against the pinned official OMD Labs image.
+Thruk Basic authentication is read-only in IssueLight because its command API
+requires a browser CSRF token or an API key. API-key sources expose quick
+actions.
 Direct Nagios Core and Checkmk providers are not yet implemented and block a
 claim of full NagBar compatibility. The universal ZIP/DMG/SBOM workflow is ready
 for signing credentials. Direct releases use a signed Sparkle feed for updates.
@@ -43,7 +46,7 @@ The App Store target uses Apple's update channel and contains no Sparkle runtime
 - System-default language or one of 21 built-in languages
 - Xcode 16 or newer
 - XcodeGen 2.45 or newer when changing `IssueLight/project.yml`
-- Docker with Compose for the optional real Icinga 2 integration matrix
+- Docker with Compose for the optional real Icinga 2 and Thruk integration labs
 
 ## Build and test
 
@@ -69,8 +72,10 @@ Regenerate the Xcode project after changing `IssueLight/project.yml`:
 xcodegen generate --spec IssueLight/project.yml
 ```
 
-Run the complete local CI contract with `sh scripts/check.sh`. The real Icinga 2 matrix is documented in
-[`integration/icinga2/README.md`](integration/icinga2/README.md).
+Run the complete local CI contract with `sh scripts/check.sh`. The real-system
+matrices are documented in
+[`integration/icinga2/README.md`](integration/icinga2/README.md) and
+[`integration/thruk/README.md`](integration/thruk/README.md).
 
 ## Project documentation
 

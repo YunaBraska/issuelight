@@ -81,6 +81,10 @@ public struct ThrukProvider: MonitoringProvider {
         return issues
     }
 
+    public func supportedActions(for source: MonitoringSource) -> Set<MonitoringActionKind> {
+        source.authentication.method == .apiKey ? descriptor.capabilities.actions : []
+    }
+
     public func testConnection(
         to source: MonitoringSource,
         access: ProviderAccess
@@ -164,19 +168,32 @@ public struct ThrukProvider: MonitoringProvider {
         guard issue.sourceID == source.id else {
             return .rejected("The issue does not belong to this source.")
         }
+        guard source.authentication.method == .apiKey else {
+            return .rejected("Thruk write actions require API-key authentication.")
+        }
         do {
             let transport = try makeTransport(source: source, access: access)
             defer { transport.close() }
             let command = try Self.command(for: action, issue: issue)
-            let data = try await transport.data(
+            let httpResponse = try await transport.response(
                 for: transport.request(
                     pathComponents: command.pathComponents,
                     method: "POST",
                     form: command.form
                 )
             )
-            let response = try JSONDecoder().decode(ThrukCommandResponse.self, from: data)
-            return response.success ? .completed : .rejected(response.message)
+            let response = try? JSONDecoder().decode(
+                ThrukCommandResponse.self,
+                from: httpResponse.data
+            )
+            if let rejection = response?.rejection {
+                return .rejected(rejection)
+            }
+            if let failure = ProviderHTTPSession.failure(forStatusCode: httpResponse.statusCode) {
+                return .failed(failure)
+            }
+            guard response != nil else { return .failed(.incompatibleResponse) }
+            return .completed
         } catch let ThrukTransportError.failure(failure) {
             return .failed(failure)
         } catch is CancellationError {
@@ -321,6 +338,19 @@ struct ThrukCommand {
 }
 
 struct ThrukCommandResponse: Decodable {
+    let code: Int?
+    let description: String?
+    let error: String?
+    let failed: Bool?
     let message: String
-    let success: Bool
+    let success: Bool?
+
+    var rejection: String? {
+        guard success == false || failed == true || (code ?? 0) >= 400 || error != nil else {
+            return nil
+        }
+        if let description, !description.isEmpty { return description }
+        if let error, !error.isEmpty { return error }
+        return message
+    }
 }

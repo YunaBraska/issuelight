@@ -25,6 +25,19 @@ final class ThrukProviderTests: XCTestCase {
         )
     }
 
+    func testWriteActionsRequireAPIKeyAuthentication() {
+        let provider = ThrukProvider()
+        var configuredSource = source()
+
+        XCTAssertTrue(provider.supportedActions(for: configuredSource).isEmpty)
+
+        configuredSource.authentication = .apiKey(username: "operator")
+        XCTAssertEqual(
+            provider.supportedActions(for: configuredSource),
+            [.recheck, .acknowledge, .scheduleDowntime]
+        )
+    }
+
     func testEndpointDiscoveryAcceptsHostAPIAndWebURLs() {
         let provider = ThrukProvider()
 
@@ -235,11 +248,12 @@ final class ThrukProviderTests: XCTestCase {
             return Self.response(
                 request: request,
                 statusCode: 200,
-                body: #"{"message":"command sent successfully","success":true}"#
+                body: #"{"commands":"COMMAND [1794824682] SCHEDULE_FORCED_SVC_CHECK;edge-1;Disk / root;1794824682","message":"Command successfully submitted"}"#
             )
         }
         let provider = ThrukProvider(configuration: configuration())
-        let actionSource = source()
+        var actionSource = source()
+        actionSource.authentication = .apiKey(username: "operator")
         let hostIssue = issue(sourceID: actionSource.id, kind: .host)
         let serviceIssue = issue(sourceID: actionSource.id, kind: .service, serviceName: "Disk / root")
 
@@ -247,14 +261,14 @@ final class ThrukProviderTests: XCTestCase {
             .recheck,
             on: serviceIssue,
             from: actionSource,
-            access: ProviderAccess(credential: .password("secret"))
+            access: ProviderAccess(credential: .apiKey("secret"))
         )
         XCTAssertEqual(recheckResult, .completed)
         let acknowledgeResult = await provider.perform(
             .acknowledge(author: "Operator", comment: "Investigating"),
             on: hostIssue,
             from: actionSource,
-            access: ProviderAccess(credential: .password("secret"))
+            access: ProviderAccess(credential: .apiKey("secret"))
         )
         XCTAssertEqual(acknowledgeResult, .completed)
         let downtimeResult = await provider.perform(
@@ -266,7 +280,7 @@ final class ThrukProviderTests: XCTestCase {
             ),
             on: serviceIssue,
             from: actionSource,
-            access: ProviderAccess(credential: .password("secret"))
+            access: ProviderAccess(credential: .apiKey("secret"))
         )
         XCTAssertEqual(downtimeResult, .completed)
 
@@ -304,6 +318,48 @@ final class ThrukProviderTests: XCTestCase {
             )
         }
         let provider = ThrukProvider(configuration: configuration())
+        var actionSource = source()
+        actionSource.authentication = .apiKey(username: "operator")
+
+        let result = await provider.perform(
+            .recheck,
+            on: issue(sourceID: actionSource.id, kind: .host),
+            from: actionSource,
+            access: ProviderAccess(credential: .apiKey("secret"))
+        )
+
+        XCTAssertEqual(result, .rejected("command permission denied"))
+    }
+
+    func testRejectedActionReturnsDocumentedCoreErrorDetail() async {
+        StubURLProtocol.configure(host: stubHost) { request in
+            Self.response(
+                request: request,
+                statusCode: 200,
+                body: #"{"code":400,"error":"Couldn't parse command argument","message":"sending command failed"}"#
+            )
+        }
+        let provider = ThrukProvider(configuration: configuration())
+        var actionSource = source()
+        actionSource.authentication = .apiKey(username: "operator")
+
+        let result = await provider.perform(
+            .recheck,
+            on: issue(sourceID: actionSource.id, kind: .host),
+            from: actionSource,
+            access: ProviderAccess(credential: .apiKey("secret"))
+        )
+
+        XCTAssertEqual(result, .rejected("Couldn't parse command argument"))
+    }
+
+    func testBasicAuthenticatedCommandRequiresAPIKeyWithoutNetworkAccess() async {
+        let recorder = ThrukRequestRecorder()
+        StubURLProtocol.configure(host: stubHost) { request in
+            recorder.append(request)
+            return Self.response(request: request, statusCode: 500, body: #"{}"#)
+        }
+        let provider = ThrukProvider(configuration: configuration())
         let actionSource = source()
 
         let result = await provider.perform(
@@ -313,7 +369,11 @@ final class ThrukProviderTests: XCTestCase {
             access: ProviderAccess(credential: .password("secret"))
         )
 
-        XCTAssertEqual(result, .rejected("command permission denied"))
+        XCTAssertEqual(
+            result,
+            .rejected("Thruk write actions require API-key authentication.")
+        )
+        XCTAssertTrue(recorder.requests.isEmpty)
     }
 
     func testWebURLsPreserveDeploymentPrefix() {
