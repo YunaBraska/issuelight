@@ -439,18 +439,15 @@ private struct StatusPanelSourceFailureRow: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            IssueLightSignalGlyph(state: .failed)
-                .foregroundStyle(.red)
-                .frame(width: 20, height: 20)
             Text(verbatim: failure.source.name)
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
-                .frame(width: 82, alignment: .leading)
+                .frame(width: 100, alignment: .leading)
             Text(verbatim: AppLocalization.string("Status konnte nicht geladen werden", locale: locale))
                 .font(.callout.weight(.medium))
                 .lineLimit(1)
-                .frame(width: 204, alignment: .leading)
+                .frame(width: 214, alignment: .leading)
             Text(verbatim: failure.message)
                 .font(.callout)
                 .foregroundStyle(.secondary)
@@ -465,7 +462,7 @@ private struct StatusPanelSourceFailureRow: View {
                 .fill(Color.red)
                 .frame(width: 3)
         }
-        .overlay(alignment: .bottom) { Divider().padding(.leading, 34) }
+        .overlay(alignment: .bottom) { Divider().padding(.leading, 10) }
         .help(hoverText)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(hoverText)
@@ -760,19 +757,16 @@ private struct StatusPanelIssueRow: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            IssueLightSignalGlyph(state: signalState)
-                .foregroundStyle(color)
-                .frame(width: 20, height: 20)
             Text(verbatim: sourceName)
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
-                .frame(width: 82, alignment: .leading)
+                .frame(width: 100, alignment: .leading)
             Text(verbatim: title)
                 .font(.callout.weight(.medium))
                 .lineLimit(1)
-                .frame(width: 204, alignment: .leading)
-            Text(verbatim: issue.summary)
+                .frame(width: 214, alignment: .leading)
+            Text(verbatim: summaryText)
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
@@ -806,21 +800,6 @@ private struct StatusPanelIssueRow: View {
         issue.kind == .host ? issue.displayName : "\(issue.hostName) · \(issue.displayName)"
     }
 
-    private var signalState: IssueLightSignalState {
-        if issue.kind == .host {
-            return .down
-        }
-        switch issue.severity {
-        case .critical: return .critical
-        case .unknown: return .unknown
-        case .warning: return .warning
-        }
-    }
-
-    private var color: Color {
-        issue.presentationColor
-    }
-
     private var severityText: String {
         if issue.kind == .host {
             return "DOWN"
@@ -830,6 +809,20 @@ private struct StatusPanelIssueRow: View {
         case .unknown: return AppLocalization.string("Unbekannt", locale: locale)
         case .warning: return AppLocalization.string("Warnung", locale: locale)
         }
+    }
+
+    private var summaryText: String {
+        let summary = issue.summary.trimmingCharacters(in: .whitespacesAndNewlines)
+        let normalizedSummary = summary.lowercased(with: locale)
+        let knownPrefixes = ["CRITICAL", "WARNING", "UNKNOWN", "DOWN", severityText]
+        let alreadyIncludesState = knownPrefixes.contains { prefix in
+            let normalizedPrefix = prefix.lowercased(with: locale)
+            return normalizedSummary == normalizedPrefix
+                || normalizedSummary.hasPrefix("\(normalizedPrefix):")
+                || normalizedSummary.hasPrefix("\(normalizedPrefix) ")
+                || normalizedSummary.hasPrefix("\(normalizedPrefix) ·")
+        }
+        return alreadyIncludesState ? summary : "\(severityText) · \(summary)"
     }
 
     private var durationText: String? {
@@ -868,7 +861,7 @@ private struct StatusPanelIssueRow: View {
     }
 
     private var hoverText: String {
-        [sourceName, title, issue.summary]
+        [sourceName, severityText, title, issue.summary]
             .filter { !$0.isEmpty }
             .joined(separator: "\n")
     }
