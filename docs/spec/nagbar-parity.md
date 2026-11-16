@@ -4,9 +4,9 @@ Status: Reviewed against `volendavidov/NagBar` and the maintained
 `YunaBraska/NagBar` fork on 2026-11-14.
 
 IssueLight is not a visual rewrite of NagBar. It preserves the useful operator
-journey while replacing unsafe or noisy behavior. Missing provider and
-real-system qualification journeys remain release blockers rather than
-deliberate omissions.
+journey while replacing unsafe or noisy behavior. Every declared built-in
+provider has real-system qualification. Signed installed-app acceptance and
+the first notarized replacement cycle remain release blockers.
 
 ## Capability matrix
 
