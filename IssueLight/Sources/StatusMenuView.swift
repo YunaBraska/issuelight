@@ -8,15 +8,15 @@ struct StatusMenuLabel: View {
     let accessibilityText: String
 
     var body: some View {
-        HStack(spacing: 3) {
+        if counts.compactText.isEmpty {
             IssueLightBeaconGlyph(state: state)
                 .frame(width: 17, height: 17)
-            if !counts.compactText.isEmpty {
-                Text(verbatim: counts.compactText)
-                    .monospacedDigit()
-            }
+                .accessibilityLabel(accessibilityText)
+        } else {
+            Text(verbatim: counts.compactText)
+                .monospacedDigit()
+                .accessibilityLabel(accessibilityText)
         }
-        .accessibilityLabel(accessibilityText)
     }
 }
 

@@ -5,6 +5,52 @@ import XCTest
 
 @MainActor
 final class StatusMenuInteractionTests: XCTestCase {
+    func testMenuBarShowsGlyphOnlyWhenThereAreNoIssueCounts() {
+        let issue = MonitoringIssue(
+            sourceID: UUID(),
+            nativeID: "critical-service",
+            kind: .service,
+            hostName: "api-01",
+            serviceName: "Health",
+            displayName: "Health",
+            severity: .critical,
+            summary: "Unavailable",
+            isAcknowledged: false,
+            isInDowntime: false
+        )
+        let counts = MenuBarIssueCounts(issues: [issue])
+        let maximumSize = CGSize(width: 200, height: 40)
+        let labelSize = NativeViewRenderer.fittingSize(
+            for: StatusMenuLabel(
+                state: .current,
+                counts: counts,
+                accessibilityText: "One critical issue"
+            )
+            .font(.system(size: 14)),
+            maximumSize: maximumSize
+        )
+        let countOnlySize = NativeViewRenderer.fittingSize(
+            for: Text(verbatim: counts.compactText)
+                .monospacedDigit()
+                .font(.system(size: 14)),
+            maximumSize: maximumSize
+        )
+        let emptySize = NativeViewRenderer.fittingSize(
+            for: StatusMenuLabel(
+                state: .current,
+                counts: MenuBarIssueCounts(issues: []),
+                accessibilityText: "All clear"
+            )
+            .font(.system(size: 14)),
+            maximumSize: maximumSize
+        )
+
+        XCTAssertEqual(labelSize.width, countOnlySize.width, accuracy: 0.5)
+        XCTAssertEqual(labelSize.height, countOnlySize.height, accuracy: 0.5)
+        XCTAssertGreaterThanOrEqual(emptySize.width, 17)
+        XCTAssertGreaterThanOrEqual(emptySize.height, 17)
+    }
+
     func testSSHSettingsDisclosureRespondsAcrossTheEntireRow() {
         var isExpanded = false
         let view = SSHSettingsDisclosureRow(
