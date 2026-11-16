@@ -86,7 +86,7 @@ wait_for_problem() {
       '{"columns":["name","state","plugin_output","acknowledged","scheduled_downtime_depth"],"query":{"op":"=","left":"name","right":"issuelight-live"}}' \
       "$endpoint/domain-types/host/collections/all")
     if printf '%s' "$host_data" | jq --exit-status \
-      '.value | any(.extensions; .name == "issuelight-live" and .state == 1 and .plugin_output == "DOWN - IssueLight live lab")' \
+      '.value | any(.[]; .extensions.name == "issuelight-live" and .extensions.state == 1 and .extensions.plugin_output == "DOWN - IssueLight live lab")' \
       >/dev/null; then
       return
     fi
@@ -129,7 +129,7 @@ verify_api() {
     '{"columns":["name","state","plugin_output"],"query":{"op":"=","left":"name","right":"issuelight-live"}}' \
     "$endpoint/domain-types/host/collections/all" \
     | jq --exit-status \
-      '.value | any(.extensions; .name == "issuelight-live" and .state == 1)' \
+      '.value | any(.[]; .extensions.name == "issuelight-live" and .extensions.state == 1)' \
       >/dev/null
 
   api_post \
@@ -148,7 +148,7 @@ verify_api() {
       '{"columns":["name","acknowledged","scheduled_downtime_depth"],"query":{"op":"=","left":"name","right":"issuelight-live"}}' \
       "$endpoint/domain-types/host/collections/all")
     if printf '%s' "$host_data" | jq --exit-status \
-      '.value | any(.extensions; .name == "issuelight-live" and .acknowledged == 1 and .scheduled_downtime_depth > 0)' \
+      '.value | any(.[]; .extensions.name == "issuelight-live" and .extensions.acknowledged == 1 and .extensions.scheduled_downtime_depth > 0)' \
       >/dev/null; then
       return
     fi
