@@ -162,6 +162,31 @@ final class KeychainPasswordVaultTests: XCTestCase {
         }
     }
 
+    func testCredentialScopesRejectEndpointsWithoutAHost() {
+        let sourceID = UUID()
+        let basicSource = MonitoringSource(
+            id: sourceID,
+            name: "Invalid basic endpoint",
+            providerID: Icinga2Provider.id,
+            endpoint: URL(fileURLWithPath: "/tmp/icinga"),
+            authentication: .basic(username: "operator")
+        )
+        let apiKeySource = MonitoringSource(
+            id: sourceID,
+            name: "Invalid API endpoint",
+            providerID: ThrukProvider.id,
+            endpoint: URL(fileURLWithPath: "/tmp/thruk"),
+            authentication: .apiKey(username: "automation")
+        )
+
+        XCTAssertThrowsError(try BasicCredentialScope(source: basicSource)) { error in
+            XCTAssertEqual(error as? CredentialScopeError, .invalidEndpoint)
+        }
+        XCTAssertThrowsError(try APIKeyCredentialScope(source: apiKeySource)) { error in
+            XCTAssertEqual(error as? CredentialScopeError, .invalidEndpoint)
+        }
+    }
+
     private func source(id: UUID, account: String) -> MonitoringSource {
         MonitoringSource(
             id: id,

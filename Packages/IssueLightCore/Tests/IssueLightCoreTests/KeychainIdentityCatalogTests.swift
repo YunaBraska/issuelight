@@ -9,6 +9,8 @@ final class KeychainIdentityCatalogTests: XCTestCase {
         let fixture = try makePKCS12(commonName: commonName)
 
         let catalog = KeychainIdentityCatalog(accessContext: keychain.context)
+        let identitiesBeforeImport = try await catalog.identities()
+        XCTAssertEqual(identitiesBeforeImport, [])
         let descriptor = try await catalog.importPKCS12(
             at: fixture.identityURL,
             password: fixture.password

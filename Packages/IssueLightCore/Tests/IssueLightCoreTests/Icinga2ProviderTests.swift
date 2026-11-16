@@ -43,6 +43,21 @@ final class Icinga2ProviderTests: XCTestCase {
         XCTAssertEqual(result, .rejected("This provider does not support the requested action."))
     }
 
+    func testProviderDefaultsRemainSafeForReadOnlyImplementations() {
+        let provider = ReadOnlyTestProvider()
+        let actionSource = source(endpoint: "https://icinga.example.test:5665")
+        let actionIssue = issue(sourceID: actionSource.id, kind: .host)
+
+        XCTAssertEqual(
+            provider.endpointCandidates(from: "  https://monitoring.example.test/api  "),
+            [URL(string: "https://monitoring.example.test/api")!]
+        )
+        XCTAssertTrue(provider.endpointCandidates(from: "   ").isEmpty)
+        XCTAssertTrue(provider.supportedActions(for: actionSource).isEmpty)
+        XCTAssertNil(provider.defaultWebBaseURL(for: actionSource))
+        XCTAssertNil(provider.webURL(for: actionIssue, from: actionSource))
+    }
+
     func testMonitoringActionsExposeTheirCapabilityKinds() {
         let start = Date(timeIntervalSince1970: 1_800_000_000)
 

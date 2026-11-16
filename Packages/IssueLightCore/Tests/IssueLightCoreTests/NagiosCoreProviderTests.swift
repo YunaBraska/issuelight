@@ -219,6 +219,59 @@ final class NagiosCoreProviderTests: XCTestCase {
         XCTAssertEqual(failed, .failed(.incompatibleResponse))
     }
 
+    func testSnapshotRejectsMissingAndUnsupportedHostFields() async {
+        let provider = NagiosCoreProvider(configuration: configuration())
+        for hostData in [
+            #"{"hostlist":{"edge":{"name":"edge"}}}"#,
+            #"{"hostlist":{"edge":{"status":4}}}"#,
+            #"{"hostlist":{"edge":{"name":"edge","status":32}}}"#,
+        ] {
+            StubURLProtocol.configure(host: stubHost) { request in
+                let query = URLComponents(url: request.url!, resolvingAgainstBaseURL: false)?
+                    .queryItems?.first(where: { $0.name == "query" })?.value ?? ""
+                let data = query == "hostlist" ? hostData : #"{"servicelist":{}}"#
+                return Self.response(
+                    request: request,
+                    statusCode: 200,
+                    body: Self.envelope(query: query, data: data)
+                )
+            }
+
+            let result = await provider.loadSnapshot(
+                from: source(),
+                access: ProviderAccess(credential: .password("welcome"))
+            )
+            XCTAssertEqual(result, .failed(.incompatibleResponse))
+        }
+    }
+
+    func testSnapshotRejectsMissingAndUnsupportedServiceFields() async {
+        let provider = NagiosCoreProvider(configuration: configuration())
+        for serviceData in [
+            #"{"servicelist":{"edge":{"Disk":{"host_name":"edge","description":"Disk"}}}}"#,
+            #"{"servicelist":{"edge":{"Disk":{"description":"Disk","status":4}}}}"#,
+            #"{"servicelist":{"edge":{"Disk":{"host_name":"edge","status":4}}}}"#,
+            #"{"servicelist":{"edge":{"Disk":{"host_name":"edge","description":"Disk","status":32}}}}"#,
+        ] {
+            StubURLProtocol.configure(host: stubHost) { request in
+                let query = URLComponents(url: request.url!, resolvingAgainstBaseURL: false)?
+                    .queryItems?.first(where: { $0.name == "query" })?.value ?? ""
+                let data = query == "hostlist" ? #"{"hostlist":{}}"# : serviceData
+                return Self.response(
+                    request: request,
+                    statusCode: 200,
+                    body: Self.envelope(query: query, data: data)
+                )
+            }
+
+            let result = await provider.loadSnapshot(
+                from: source(),
+                access: ProviderAccess(credential: .password("welcome"))
+            )
+            XCTAssertEqual(result, .failed(.incompatibleResponse))
+        }
+    }
+
     func testActionsUseCSRFHandshakeAndDocumentedCommandFields() async throws {
         let recorder = NagiosRequestRecorder()
         StubURLProtocol.configure(host: stubHost) { request in

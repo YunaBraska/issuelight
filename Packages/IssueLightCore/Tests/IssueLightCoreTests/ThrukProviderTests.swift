@@ -241,6 +241,72 @@ final class ThrukProviderTests: XCTestCase {
         XCTAssertEqual(result, .failed(.incompatibleResponse))
     }
 
+    func testSnapshotAcceptsSupportedScalarRepresentationsAndAllProblemStates() async {
+        StubURLProtocol.configure(host: stubHost) { request in
+            let body = request.url?.path.hasSuffix("/hosts") == true
+                ? #"[{"acknowledged":"yes","current_attempt":"2","name":"unreachable","scheduled_downtime_depth":"1","state":"2"},{"name":"pending","state":3}]"#
+                : #"[{"acknowledged":true,"description":"Critical","host_name":"edge","state":2},{"acknowledged":0,"description":"Unknown","host_name":"edge","state":3}]"#
+            return Self.response(request: request, statusCode: 200, body: body)
+        }
+        let provider = ThrukProvider(configuration: configuration())
+
+        let result = await provider.loadSnapshot(
+            from: source(),
+            access: ProviderAccess(credential: .password("secret"))
+        )
+
+        guard case .loaded(let snapshot) = result else {
+            return XCTFail("Expected a loaded snapshot, got \(result)")
+        }
+        XCTAssertEqual(snapshot.issues.map(\.severity), [.unknown, .unknown, .critical, .unknown])
+        XCTAssertEqual(snapshot.issues[0].checkAttempt, 2)
+        XCTAssertTrue(snapshot.issues[0].isAcknowledged)
+        XCTAssertTrue(snapshot.issues[0].isInDowntime)
+        XCTAssertTrue(snapshot.issues[2].isAcknowledged)
+        XCTAssertFalse(snapshot.issues[3].isAcknowledged)
+    }
+
+    func testSnapshotRejectsMissingRequiredHostFields() async {
+        let provider = ThrukProvider(configuration: configuration())
+        for hostBody in [#"[{"name":"edge"}]"#, #"[{"state":1}]"#] {
+            StubURLProtocol.configure(host: stubHost) { request in
+                Self.response(
+                    request: request,
+                    statusCode: 200,
+                    body: request.url?.path.hasSuffix("/hosts") == true ? hostBody : "[]"
+                )
+            }
+
+            let result = await provider.loadSnapshot(
+                from: source(),
+                access: ProviderAccess(credential: .password("secret"))
+            )
+            XCTAssertEqual(result, .failed(.incompatibleResponse))
+        }
+    }
+
+    func testSnapshotRejectsMissingRequiredServiceFields() async {
+        let provider = ThrukProvider(configuration: configuration())
+        for serviceBody in [
+            #"[{"description":"Disk","state":1}]"#,
+            #"[{"host_name":"edge","state":1}]"#,
+        ] {
+            StubURLProtocol.configure(host: stubHost) { request in
+                Self.response(
+                    request: request,
+                    statusCode: 200,
+                    body: request.url?.path.hasSuffix("/hosts") == true ? "[]" : serviceBody
+                )
+            }
+
+            let result = await provider.loadSnapshot(
+                from: source(),
+                access: ProviderAccess(credential: .password("secret"))
+            )
+            XCTAssertEqual(result, .failed(.incompatibleResponse))
+        }
+    }
+
     func testActionsPostDocumentedThrukCommands() async throws {
         let recorder = ThrukRequestRecorder()
         StubURLProtocol.configure(host: stubHost) { request in
