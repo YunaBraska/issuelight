@@ -315,6 +315,11 @@ final class IssueLightModel: ObservableObject {
               let url = provider.webURL(for: issue, from: source) else {
             return nil
         }
+        return webTarget(sourceID: source.id, url: url)
+    }
+
+    func webTarget(sourceID: UUID, url: URL) -> IssueWebTarget? {
+        guard let source = sources.first(where: { $0.id == sourceID }) else { return nil }
         return IssueWebTarget(
             sourceID: source.id,
             url: url,

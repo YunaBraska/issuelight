@@ -28,7 +28,10 @@ direct-first SSH fallback for API and reachability checks are available per
 source. Without an override, Icinga DB Web is inferred as
 `/icingaweb2/icingadb` on the API host. Classic Monitoring remains available
 through an explicit base URL ending in `/monitoring`. Native notifications are
-not implemented. The Thruk adapter still needs a real-system compatibility run.
+opt-in per source, suppress the initial snapshot, deduplicate unchanged issues,
+remove recovered summaries, and omit monitoring details from banner content.
+Notification clicks use the same direct-first web and SSH-tunnel path as issue
+rows. The Thruk adapter still needs a real-system compatibility run.
 Direct Nagios Core and Checkmk providers are not yet implemented and block a
 claim of full NagBar compatibility. The universal ZIP/DMG/SBOM workflow is ready
 for signing credentials. Direct releases use a signed Sparkle feed for updates.

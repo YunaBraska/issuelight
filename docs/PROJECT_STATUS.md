@@ -18,6 +18,10 @@ IssueLight is pre-production. It is not yet a complete NagBar successor.
   for API and web reachability with app-owned cleanup.
 - System Default plus 21 selectable app languages, including Swedish and
   right-to-left layout for Arabic and Urdu.
+- Quiet native notifications with explicit per-source severity policies,
+  first-snapshot suppression, escalation detection, stable source summaries,
+  recovery cleanup, and detail-free banner content. Notification clicks reuse
+  the issue row's direct-first web and SSH-tunnel path.
 - Universal ZIP and DMG packaging, SPDX SBOM, checksums, signing, notarization,
   and GitHub release automation that fails closed when credentials are absent.
 - Signed Sparkle updates for direct releases. The App Store target contains no
@@ -44,8 +48,6 @@ IssueLight is pre-production. It is not yet a complete NagBar successor.
 - Add complete direct Nagios Core and Checkmk provider journeys. A Thruk source
   already covers Nagios-compatible backends exposed through Thruk without HTML
   parsing.
-- Add quiet native notifications with deduplication, recovery handling, and
-  per-source policy.
 - Run the installed-app protected-private-key case described in
   `docs/DEVELOPMENT.md`. Background refresh must fail without authentication UI
   and retain the previous snapshot.

@@ -46,6 +46,10 @@ final class LandingPageScreenshotTests: XCTestCase {
             for: aboutSettingsView,
             size: CGSize(width: 660, height: 470)
         )
+        let notificationSettingsData = try NativeViewRenderer.pngData(
+            for: notificationSettingsView,
+            size: CGSize(width: 760, height: 560)
+        )
 
         XCTAssertGreaterThan(sourceData.count, 50_000)
         XCTAssertGreaterThan(thrukSourceData.count, 50_000)
@@ -57,6 +61,7 @@ final class LandingPageScreenshotTests: XCTestCase {
         XCTAssertGreaterThan(swedishSettingsData.count, 8_000)
         XCTAssertGreaterThan(arabicSettingsData.count, 8_000)
         XCTAssertGreaterThan(aboutSettingsData.count, 20_000)
+        XCTAssertGreaterThan(notificationSettingsData.count, 20_000)
 
         guard let outputPath = ProcessInfo.processInfo.environment["ISSUELIGHT_SCREENSHOT_OUTPUT_DIR"] else {
             return
@@ -68,6 +73,10 @@ final class LandingPageScreenshotTests: XCTestCase {
         )
         try sourceData.write(
             to: outputDirectory.appendingPathComponent("source-setup.png"),
+            options: .atomic
+        )
+        try thrukSourceData.write(
+            to: outputDirectory.appendingPathComponent("source-setup-thruk.png"),
             options: .atomic
         )
         try menuItemData.write(
@@ -86,6 +95,10 @@ final class LandingPageScreenshotTests: XCTestCase {
             to: outputDirectory.appendingPathComponent("menu-panel-ar.png"),
             options: .atomic
         )
+        try sourceFailureMenuData.write(
+            to: outputDirectory.appendingPathComponent("menu-panel-source-failure.png"),
+            options: .atomic
+        )
         try swedishSettingsData.write(
             to: outputDirectory.appendingPathComponent("language-settings-sv.png"),
             options: .atomic
@@ -96,6 +109,10 @@ final class LandingPageScreenshotTests: XCTestCase {
         )
         try aboutSettingsData.write(
             to: outputDirectory.appendingPathComponent("settings-about.png"),
+            options: .atomic
+        )
+        try notificationSettingsData.write(
+            to: outputDirectory.appendingPathComponent("settings-notifications.png"),
             options: .atomic
         )
     }
@@ -296,11 +313,57 @@ final class LandingPageScreenshotTests: XCTestCase {
         return IssueLightSettingsView(
             model: screenshotModel,
             languageSettings: settings,
+            notificationCoordinator: screenshotNotificationCoordinator(locale: settings.locale),
             updateController: AppUpdateController(),
             initialSelection: .language
         )
             .appLanguageEnvironment(settings)
             .environment(\.colorScheme, .light)
+    }
+
+    private var notificationSettingsView: some View {
+        let productionID = UUID(uuidString: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")!
+        let homelabID = UUID(uuidString: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")!
+        let sources = [
+            MonitoringSource(
+                id: productionID,
+                name: "Production",
+                providerID: Icinga2Provider.id,
+                endpoint: URL(string: "https://icinga.example:5665")!,
+                authentication: .basic(username: "monitoring")
+            ),
+            MonitoringSource(
+                id: homelabID,
+                name: "Homelab",
+                providerID: ThrukProvider.id,
+                endpoint: URL(string: "https://monitoring.example/thruk/r/v1")!,
+                isEnabled: false,
+                authentication: .apiKey(username: "")
+            ),
+        ]
+        return NotificationSettingsContent(
+            sources: sources,
+            authorization: .authorized,
+            policy: { sourceID in
+                sourceID == productionID ? .criticalOnly : .allAttentionStates
+            },
+            setPolicy: { _, _ in },
+            requestAuthorization: {}
+        )
+        .frame(width: 728, height: 528)
+        .environment(\.locale, Locale(identifier: "de"))
+        .environment(\.colorScheme, .light)
+    }
+
+    private func screenshotNotificationCoordinator(locale: Locale) -> IssueNotificationCoordinator {
+        let defaults = UserDefaults(
+            suiteName: "LandingPageScreenshotNotifications.\(UUID().uuidString)"
+        )!
+        return IssueNotificationCoordinator(
+            policyStore: IssueNotificationPolicyStore(defaults: defaults),
+            notificationCenter: ScreenshotNotificationCenterClient(),
+            locale: locale
+        )
     }
 
     private var screenshotModel: IssueLightModel {
@@ -360,4 +423,14 @@ final class LandingPageScreenshotTests: XCTestCase {
         )
     }
 
+}
+
+@MainActor
+private final class ScreenshotNotificationCenterClient: IssueNotificationCenterClient {
+    func setResponseHandler(_: @escaping @MainActor (String) -> Void) {}
+    func currentAuthorization() async -> IssueNotificationAuthorization { .authorized }
+    func requestAuthorization() async -> IssueNotificationAuthorization { .authorized }
+    func deliver(_: IssueNotificationContent) async throws {}
+    func remove(identifier _: String) {}
+    func removeAll() {}
 }

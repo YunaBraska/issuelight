@@ -41,6 +41,24 @@ description: IssueLight keeps infrastructure problems in the macOS menu bar and 
   </div>
 </section>
 
+<section class="section shell security-section">
+  <div class="security-copy">
+    <p class="eyebrow"><span></span>Quiet notifications</p>
+    <h2>New signal, not recurring noise.</h2>
+    <p>Notifications are off until you enable a policy for a source. Existing problems establish a silent baseline. Only a new or escalated problem earns a banner.</p>
+    <ul class="check-list">
+      <li><strong>Per source</strong><span>Choose critical, warning and critical, or every attention state.</span></li>
+      <li><strong>Deduplicated</strong><span>Unchanged problems never repeat. Full recovery removes the source summary.</span></li>
+      <li><strong>Private banner</strong><span>No source, host, service, output, credential or infrastructure URL is shown.</span></li>
+      <li><strong>Same navigation</strong><span>A click uses the provider web target and its direct-first SSH fallback.</span></li>
+    </ul>
+  </div>
+  <figure class="app-window">
+    <div class="window-bar"><span></span><span></span><span></span><strong>Notification settings</strong></div>
+    <img src="{{ '/assets/screenshots/settings-notifications.png' | relative_url }}" alt="IssueLight notification settings with macOS access and a severity policy for each source" width="1520" height="1120">
+  </figure>
+</section>
+
 <section class="section shell language-section">
   <div class="section-heading">
     <p class="eyebrow"><span></span>Your language, without a restart</p>
@@ -108,8 +126,8 @@ description: IssueLight keeps infrastructure problems in the macOS menu bar and 
     <p>Icinga 2 is the current compatibility baseline. Thruk now crosses the same provider boundary with its documented REST API, Basic authentication and API keys. The Thruk adapter still needs a real-system qualification run. Direct Nagios Core and Checkmk adapters remain open.</p>
   </div>
   <div class="scope-grid">
-    <div><strong>Available now</strong><p>Multiple sources, refresh, attention ordering, strict TLS options, Keychain credentials, recheck, acknowledgement, fixed downtime and stale-state retention.</p></div>
-    <div><strong>Still required</strong><p>Native notifications, real-system Thruk qualification, and direct Nagios Core and Checkmk providers remain production blockers. Provider-built web deep links are implemented.</p></div>
+    <div><strong>Available now</strong><p>Multiple sources, refresh, attention ordering, quiet notifications, strict TLS options, Keychain credentials, recheck, acknowledgement, fixed downtime and stale-state retention.</p></div>
+    <div><strong>Still required</strong><p>Real-system Thruk qualification and direct Nagios Core and Checkmk providers remain production blockers. Provider-built web deep links are implemented.</p></div>
     <div><strong>Release status</strong><p>The code is public and the unsigned packaging path is tested. A notarized public binary is not available yet, so this page does not pretend otherwise.</p></div>
   </div>
 </section>

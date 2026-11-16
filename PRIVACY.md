@@ -45,9 +45,14 @@ channel.
   IssueLight removes a certificate automatically only when the same app
   profile created it and no saved source references it.
 - Monitoring snapshots are held in memory and are not persisted by IssueLight.
-- The selected app-language identifier and compact panel filters are stored in
-  macOS preferences. System Default stores no inferred language profile and
-  follows the current macOS app language.
+- The selected app-language identifier, compact panel filters, and explicit
+  per-source notification policies are stored in macOS preferences. System
+  Default stores no inferred language profile and follows the current macOS app
+  language.
+- When enabled, macOS Notification Center stores IssueLight's aggregate
+  notification title and body until recovery, app relaunch, or user removal.
+  This content contains no source, host, service, provider output, credential,
+  or navigation URL. Current-session navigation targets remain only in memory.
 
 Removing a source removes its saved Basic password or API key. Client
 identities and shared or externally managed certificates remain in Keychain

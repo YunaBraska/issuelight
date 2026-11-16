@@ -9,6 +9,7 @@ struct IssueLightApp: App {
     @StateObject private var model: IssueLightModel
     @StateObject private var languageSettings: AppLanguageSettings
     @StateObject private var externalActions: ExternalActionCoordinator
+    @StateObject private var notificationCoordinator: IssueNotificationCoordinator
     private let updateController: AppUpdateController
 
     init() {
@@ -23,9 +24,29 @@ struct IssueLightApp: App {
             connectionCoordinator: connectionCoordinator
         )
         let actionCoordinator = ExternalActionCoordinator(tunnelManager: tunnelManager)
+        let issueNotificationCoordinator = IssueNotificationCoordinator(locale: settings.locale)
         actionCoordinator.observeSources(issueModel)
+        issueNotificationCoordinator.observe(issueModel)
+        issueNotificationCoordinator.configureNavigation(
+            issueURL: { [weak issueModel] issue in
+                issueModel?.webTarget(for: issue)?.url
+            },
+            target: { [weak issueModel] sourceID, url in
+                issueModel?.webTarget(sourceID: sourceID, url: url)
+            },
+            open: { [weak issueModel, weak actionCoordinator] target in
+                guard let actionCoordinator else { return }
+                if case .failure(let error) = await actionCoordinator.openWeb(target) {
+                    issueModel?.reportExternalActionError(error)
+                }
+            }
+        )
+        Task {
+            await issueNotificationCoordinator.prepareForSession()
+        }
         _languageSettings = StateObject(wrappedValue: settings)
         _externalActions = StateObject(wrappedValue: actionCoordinator)
+        _notificationCoordinator = StateObject(wrappedValue: issueNotificationCoordinator)
         _model = StateObject(wrappedValue: issueModel)
         updateController = AppUpdateController()
     }
@@ -36,6 +57,7 @@ struct IssueLightApp: App {
                 .appLanguageEnvironment(languageSettings)
                 .onChange(of: languageSettings.selection) {
                     model.setLocalizationLocale(languageSettings.locale)
+                    notificationCoordinator.setLocale(languageSettings.locale)
                 }
         } label: {
             StatusMenuLabel(
@@ -50,11 +72,13 @@ struct IssueLightApp: App {
             IssueLightSettingsView(
                 model: model,
                 languageSettings: languageSettings,
+                notificationCoordinator: notificationCoordinator,
                 updateController: updateController
             )
                 .appLanguageEnvironment(languageSettings)
                 .onChange(of: languageSettings.selection) {
                     model.setLocalizationLocale(languageSettings.locale)
+                    notificationCoordinator.setLocale(languageSettings.locale)
                 }
         }
         .windowResizability(.contentMinSize)

@@ -78,6 +78,7 @@ targets:
       - Sources/LanguageSettingsView.swift
       - Sources/IssueLightModel.swift
       - Sources/IssueCountText.swift
+      - Sources/IssueNotificationCoordinator.swift
       - Sources/PanelFilterSettings.swift
       - Sources/SourceSetupView.swift
       - Sources/StatusMenuView.swift

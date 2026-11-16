@@ -5,7 +5,8 @@ Status: Reviewed against `volendavidov/NagBar` and the maintained
 
 IssueLight is not a visual rewrite of NagBar. It preserves the useful operator
 journey while replacing unsafe or noisy behavior. Missing provider and
-notification journeys remain release blockers rather than deliberate omissions.
+real-system qualification journeys remain release blockers rather than
+deliberate omissions.
 
 ## Capability matrix
 
@@ -25,7 +26,7 @@ notification journeys remain release blockers rather than deliberate omissions.
 | Open object in monitoring web UI | Done | Implemented for Icinga 2 and Thruk | A row click opens the provider-built object URL. Each source may override the provider default. |
 | SSH and RDP target actions | Done | Done | Keep them optional per source and use the operating system's registered URL handlers. |
 | SSH port forwarding | Partial | Done for API and reachability checks, plus HTTP web targets | Try direct first, then reuse one source-owned OpenSSH SOCKS5 session. API TLS keeps its original hostname. External-browser HTTPS remains direct-only because rewriting the hostname would invalidate certificate identity checks. |
-| Native notifications | Done | Planned | Quiet defaults, per-source severity policy, deduplication, and recovery behavior. |
+| Native notifications | Done | Done | Disabled by default, explicit per-source severity policies, first-snapshot suppression, escalation detection, stable source summaries, recovery cleanup, and private banner content. |
 | Audible alarms and status flashing | Done | Dismissed | They create noise and accessibility problems. Native notifications are the replacement. |
 | Configurable refresh interval | Done | Partial | IssueLight owns one conservative refresh loop. A small preset choice is reasonable only if measured deployments need it. |
 | Keychain credentials | Partial | Done | Passwords, API keys, and identity references remain in macOS Keychain. Public source JSON contains no secrets. |
@@ -42,8 +43,8 @@ notification journeys remain release blockers rather than deliberate omissions.
 IssueLight covers NagBar's central Icinga 2 journey and implements the same
 provider-neutral journey for Thruk. It improves multiple-source isolation,
 failure handling, credential storage, and TLS trust. It is not functionally
-equivalent to NagBar today because notifications, direct Nagios Core, Checkmk,
-and real-system Thruk qualification are still absent.
+equivalent to NagBar today because direct Nagios Core, Checkmk, and real-system
+Thruk qualification are still absent.
 
 Claiming full parity or production readiness before those capabilities exist
 would be inaccurate.
@@ -54,7 +55,6 @@ would be inaccurate.
    background security.
 2. Qualify the Thruk adapter against a pinned real installation.
 3. Add Nagios Core and Checkmk without introducing a binary plug-in SDK.
-4. Add quiet native notifications with deduplication and recovery semantics.
 
 The existing visual hierarchy should remain. New actions belong in row context
 menus or a small detail surface. Settings should describe sources and policies,

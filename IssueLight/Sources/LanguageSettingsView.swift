@@ -1,16 +1,19 @@
 import AppKit
+import IssueLightCore
 import SwiftUI
 
 @MainActor
 struct IssueLightSettingsView: View {
     enum Tab: Hashable {
         case sources
+        case notifications
         case language
         case about
     }
 
     @ObservedObject var model: IssueLightModel
     @ObservedObject var languageSettings: AppLanguageSettings
+    @ObservedObject var notificationCoordinator: IssueNotificationCoordinator
     let updateController: AppUpdateController
     @Environment(\.locale) private var locale
     @State private var selection: Tab
@@ -18,11 +21,13 @@ struct IssueLightSettingsView: View {
     init(
         model: IssueLightModel,
         languageSettings: AppLanguageSettings,
+        notificationCoordinator: IssueNotificationCoordinator,
         updateController: AppUpdateController,
         initialSelection: Tab = .sources
     ) {
         self.model = model
         self.languageSettings = languageSettings
+        self.notificationCoordinator = notificationCoordinator
         self.updateController = updateController
         _selection = State(initialValue: initialSelection)
     }
@@ -38,6 +43,19 @@ struct IssueLightSettingsView: View {
                     }
                 }
                 .tag(Tab.sources)
+
+            NotificationSettingsView(
+                model: model,
+                coordinator: notificationCoordinator
+            )
+                .tabItem {
+                    Label {
+                        Text(verbatim: AppLocalization.string("Benachrichtigungen", locale: locale))
+                    } icon: {
+                        Image(systemName: "bell")
+                    }
+                }
+                .tag(Tab.notifications)
 
             LanguageSettingsView(languageSettings: languageSettings)
                 .tabItem {
@@ -61,6 +79,177 @@ struct IssueLightSettingsView: View {
         }
         .padding(16)
         .frame(minWidth: 760, minHeight: 560)
+    }
+}
+
+@MainActor
+struct NotificationSettingsView: View {
+    @ObservedObject var model: IssueLightModel
+    @ObservedObject var coordinator: IssueNotificationCoordinator
+    @ObservedObject private var policyStore: IssueNotificationPolicyStore
+    @Environment(\.locale) private var locale
+
+    init(model: IssueLightModel, coordinator: IssueNotificationCoordinator) {
+        self.model = model
+        self.coordinator = coordinator
+        _policyStore = ObservedObject(wrappedValue: coordinator.policyStore)
+    }
+
+    var body: some View {
+        NotificationSettingsContent(
+            sources: model.sources,
+            authorization: coordinator.authorization,
+            policy: policyStore.policy,
+            setPolicy: { policy, sourceID in
+                Task { await coordinator.setPolicy(policy, for: sourceID) }
+            },
+            requestAuthorization: {
+                Task { await coordinator.requestAuthorization() }
+            }
+        )
+        .task {
+            await coordinator.refreshAuthorizationStatus()
+        }
+    }
+}
+
+struct NotificationSettingsContent: View {
+    let sources: [MonitoringSource]
+    let authorization: IssueNotificationAuthorization
+    let policy: (UUID) -> IssueNotificationPolicy
+    let setPolicy: (IssueNotificationPolicy, UUID) -> Void
+    let requestAuthorization: () -> Void
+    @Environment(\.locale) private var locale
+
+    var body: some View {
+        Form {
+            Section {
+                HStack(spacing: 10) {
+                    Label {
+                        Text(verbatim: authorizationTitle)
+                    } icon: {
+                        Image(systemName: authorizationSymbol)
+                            .foregroundStyle(authorizationColor)
+                    }
+                    Spacer()
+                    if authorization == .notDetermined {
+                        Button {
+                            requestAuthorization()
+                        } label: {
+                            Text(verbatim: AppLocalization.string("Erlauben …", locale: locale))
+                        }
+                        .accessibilityIdentifier("allow-notifications-button")
+                    }
+                }
+                if authorization == .denied {
+                    Text(
+                        verbatim: AppLocalization.string(
+                            "Aktiviere IssueLight unter Systemeinstellungen › Mitteilungen.",
+                            locale: locale
+                        )
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                }
+            } header: {
+                Text(verbatim: AppLocalization.string("Systemzugriff", locale: locale))
+            }
+
+            Section {
+                if sources.isEmpty {
+                    ContentUnavailableView {
+                        Label {
+                            Text(verbatim: AppLocalization.string("Keine Quellen", locale: locale))
+                        } icon: {
+                            Image(systemName: "server.rack")
+                        }
+                    } description: {
+                        Text(
+                            verbatim: AppLocalization.string(
+                                "Füge zuerst eine Monitoring-Quelle hinzu.",
+                                locale: locale
+                            )
+                        )
+                    }
+                } else {
+                    ForEach(sources) { source in
+                        LabeledContent {
+                            Picker("", selection: Binding(
+                                get: { policy(source.id) },
+                                set: { setPolicy($0, source.id) }
+                            )) {
+                                ForEach(IssueNotificationPolicy.allCases, id: \.self) { value in
+                                    Text(verbatim: value.displayName(locale: locale)).tag(value)
+                                }
+                            }
+                            .labelsHidden()
+                            .frame(width: 220)
+                            .accessibilityLabel(
+                                Text(
+                                    verbatim: AppLocalization.string(
+                                        "Benachrichtigungen für \(source.name)",
+                                        locale: locale
+                                    )
+                                )
+                            )
+                        } label: {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(verbatim: source.name)
+                                if !source.isEnabled {
+                                    Text(verbatim: AppLocalization.string("Pausiert", locale: locale))
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                        }
+                    }
+                }
+            } header: {
+                Text(verbatim: AppLocalization.string("Quellen", locale: locale))
+            } footer: {
+                Text(
+                    verbatim: AppLocalization.string(
+                        "Nur neue oder verschärfte Probleme werden gemeldet. Mitteilungen verbergen Monitoring-Details.",
+                        locale: locale
+                    )
+                )
+            }
+        }
+        .formStyle(.grouped)
+        .accessibilityIdentifier("notification-settings")
+    }
+
+    private var authorizationTitle: String {
+        switch authorization {
+        case .notDetermined:
+            return AppLocalization.string("Noch nicht erlaubt", locale: locale)
+        case .authorized:
+            return AppLocalization.string("Erlaubt", locale: locale)
+        case .denied:
+            return AppLocalization.string("In macOS deaktiviert", locale: locale)
+        }
+    }
+
+    private var authorizationSymbol: String {
+        switch authorization {
+        case .notDetermined:
+            return "bell.badge"
+        case .authorized:
+            return "checkmark.circle.fill"
+        case .denied:
+            return "exclamationmark.triangle.fill"
+        }
+    }
+
+    private var authorizationColor: Color {
+        switch authorization {
+        case .notDetermined:
+            return .secondary
+        case .authorized:
+            return .green
+        case .denied:
+            return .orange
+        }
     }
 }
 
