@@ -5,6 +5,15 @@ import XCTest
 
 @MainActor
 final class LandingPageScreenshotTests: XCTestCase {
+    private enum PanelFixtureState {
+        case noSource
+        case disabledSource
+        case loading
+        case allClear
+        case filteredEmpty
+        case actionError
+    }
+
     func testLandingPageScreenshotsRenderFromProductionViews() throws {
         let sourceData = try NativeViewRenderer.pngData(
             for: sourceSetupView,
@@ -35,8 +44,56 @@ final class LandingPageScreenshotTests: XCTestCase {
             size: CGSize(width: 720, height: 88)
         )
         let mixedProviderMenuData = try NativeViewRenderer.pngData(
-            for: mixedProviderMenuView,
+            for: mixedProviderMenuView(),
             size: CGSize(width: 720, height: 205)
+        )
+        let noSourceMenuData = try NativeViewRenderer.pngData(
+            for: menuPanelStateView(.noSource),
+            size: CGSize(width: 720, height: 220)
+        )
+        let disabledSourceMenuData = try NativeViewRenderer.pngData(
+            for: menuPanelStateView(.disabledSource),
+            size: CGSize(width: 720, height: 220)
+        )
+        let loadingMenuData = try NativeViewRenderer.pngData(
+            for: menuPanelStateView(.loading),
+            size: CGSize(width: 720, height: 220)
+        )
+        let allClearMenuData = try NativeViewRenderer.pngData(
+            for: menuPanelStateView(.allClear),
+            size: CGSize(width: 720, height: 200)
+        )
+        let filteredEmptyMenuData = try NativeViewRenderer.pngData(
+            for: menuPanelStateView(.filteredEmpty),
+            size: CGSize(width: 720, height: 200)
+        )
+        let actionErrorMenuData = try NativeViewRenderer.pngData(
+            for: menuPanelStateView(.actionError),
+            size: CGSize(width: 720, height: 132)
+        )
+        let darkLargeTextMenuData = try NativeViewRenderer.pngData(
+            for: mixedProviderMenuView(colorScheme: .dark, dynamicTypeSize: .xLarge),
+            size: CGSize(width: 720, height: 225)
+        )
+        let mtlsPinnedSourceData = try NativeViewRenderer.pngData(
+            for: sourceSecurityView(
+                authentication: .clientCertificate,
+                trust: .pinnedCertificate,
+                expandsSSH: false
+            ),
+            size: CGSize(width: 900, height: 1_200)
+        )
+        let insecureSSHSourceData = try NativeViewRenderer.pngData(
+            for: sourceSecurityView(
+                authentication: .basic,
+                trust: .disabled,
+                expandsSSH: true
+            ),
+            size: CGSize(width: 900, height: 1_500)
+        )
+        let connectionPathData = try NativeViewRenderer.pngData(
+            for: connectionPathCombinationsView,
+            size: CGSize(width: 820, height: 500)
         )
         let swedishSettingsData = try NativeViewRenderer.pngData(
             for: languageSettingsView(language: .swedish),
@@ -63,6 +120,16 @@ final class LandingPageScreenshotTests: XCTestCase {
         XCTAssertGreaterThan(arabicMenuData.count, 10_000)
         XCTAssertGreaterThan(sourceFailureMenuData.count, 8_000)
         XCTAssertGreaterThan(mixedProviderMenuData.count, 18_000)
+        XCTAssertGreaterThan(noSourceMenuData.count, 12_000)
+        XCTAssertGreaterThan(disabledSourceMenuData.count, 12_000)
+        XCTAssertGreaterThan(loadingMenuData.count, 12_000)
+        XCTAssertGreaterThan(allClearMenuData.count, 12_000)
+        XCTAssertGreaterThan(filteredEmptyMenuData.count, 12_000)
+        XCTAssertGreaterThan(actionErrorMenuData.count, 12_000)
+        XCTAssertGreaterThan(darkLargeTextMenuData.count, 20_000)
+        XCTAssertGreaterThan(mtlsPinnedSourceData.count, 60_000)
+        XCTAssertGreaterThan(insecureSSHSourceData.count, 60_000)
+        XCTAssertGreaterThan(connectionPathData.count, 20_000)
         XCTAssertGreaterThan(swedishSettingsData.count, 8_000)
         XCTAssertGreaterThan(arabicSettingsData.count, 8_000)
         XCTAssertGreaterThan(aboutSettingsData.count, 20_000)
@@ -106,6 +173,46 @@ final class LandingPageScreenshotTests: XCTestCase {
         )
         try mixedProviderMenuData.write(
             to: outputDirectory.appendingPathComponent("menu-panel-all-providers.png"),
+            options: .atomic
+        )
+        try noSourceMenuData.write(
+            to: outputDirectory.appendingPathComponent("menu-panel-no-source.png"),
+            options: .atomic
+        )
+        try disabledSourceMenuData.write(
+            to: outputDirectory.appendingPathComponent("menu-panel-disabled-source.png"),
+            options: .atomic
+        )
+        try loadingMenuData.write(
+            to: outputDirectory.appendingPathComponent("menu-panel-loading.png"),
+            options: .atomic
+        )
+        try allClearMenuData.write(
+            to: outputDirectory.appendingPathComponent("menu-panel-all-clear.png"),
+            options: .atomic
+        )
+        try filteredEmptyMenuData.write(
+            to: outputDirectory.appendingPathComponent("menu-panel-filtered-empty.png"),
+            options: .atomic
+        )
+        try actionErrorMenuData.write(
+            to: outputDirectory.appendingPathComponent("menu-panel-action-error.png"),
+            options: .atomic
+        )
+        try darkLargeTextMenuData.write(
+            to: outputDirectory.appendingPathComponent("menu-panel-dark-large-text.png"),
+            options: .atomic
+        )
+        try mtlsPinnedSourceData.write(
+            to: outputDirectory.appendingPathComponent("source-setup-mtls-pinned.png"),
+            options: .atomic
+        )
+        try insecureSSHSourceData.write(
+            to: outputDirectory.appendingPathComponent("source-setup-insecure-ssh.png"),
+            options: .atomic
+        )
+        try connectionPathData.write(
+            to: outputDirectory.appendingPathComponent("connection-path-combinations.png"),
             options: .atomic
         )
         try swedishSettingsData.write(
@@ -324,7 +431,10 @@ final class LandingPageScreenshotTests: XCTestCase {
         .environment(\.colorScheme, .light)
     }
 
-    private var mixedProviderMenuView: some View {
+    private func mixedProviderMenuView(
+        colorScheme: ColorScheme = .light,
+        dynamicTypeSize: DynamicTypeSize = .large
+    ) -> some View {
         let icingaID = UUID(uuidString: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa")!
         let thrukID = UUID(uuidString: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb")!
         let checkmkID = UUID(uuidString: "cccccccc-cccc-4ccc-8ccc-cccccccccccc")!
@@ -401,6 +511,104 @@ final class LandingPageScreenshotTests: XCTestCase {
             requestDowntime: { _ in },
             dismissActionError: {}
         )
+        .background(.regularMaterial)
+        .environment(\.locale, Locale(identifier: "en_US"))
+        .environment(\.colorScheme, colorScheme)
+        .environment(\.dynamicTypeSize, dynamicTypeSize)
+    }
+
+    private func menuPanelStateView(_ state: PanelFixtureState) -> some View {
+        let sourceID = UUID(uuidString: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee")!
+        let sourceNames = [sourceID: "Production"]
+        let problem = issue(
+            sourceID: sourceID,
+            id: "state-problem",
+            host: "api-01",
+            service: "Health",
+            name: "Health",
+            severity: .critical,
+            summary: "CRITICAL: upstream is unavailable"
+        )
+        let filters = filterSettings()
+
+        let hasConfiguredSource: Bool
+        let hasEnabledSource: Bool
+        let hasActiveSnapshot: Bool
+        let issues: [MonitoringIssue]
+        let refreshState: IssueLightModel.RefreshState
+        let actionError: String?
+
+        switch state {
+        case .noSource:
+            hasConfiguredSource = false
+            hasEnabledSource = false
+            hasActiveSnapshot = false
+            issues = []
+            refreshState = .notConfigured
+            actionError = nil
+        case .disabledSource:
+            hasConfiguredSource = true
+            hasEnabledSource = false
+            hasActiveSnapshot = false
+            issues = []
+            refreshState = .notConfigured
+            actionError = nil
+        case .loading:
+            hasConfiguredSource = true
+            hasEnabledSource = true
+            hasActiveSnapshot = false
+            issues = []
+            refreshState = .refreshing
+            actionError = nil
+        case .allClear:
+            hasConfiguredSource = true
+            hasEnabledSource = true
+            hasActiveSnapshot = true
+            issues = []
+            refreshState = .current
+            actionError = nil
+        case .filteredEmpty:
+            hasConfiguredSource = true
+            hasEnabledSource = true
+            hasActiveSnapshot = true
+            issues = [problem]
+            filters.severity = .warning
+            refreshState = .current
+            actionError = nil
+        case .actionError:
+            hasConfiguredSource = true
+            hasEnabledSource = true
+            hasActiveSnapshot = true
+            issues = [problem]
+            refreshState = .current
+            actionError = "Acknowledgement failed. The server rejected the request."
+        }
+
+        return StatusMenuContent(
+            hasConfiguredSource: hasConfiguredSource,
+            hasEnabledSource: hasEnabledSource,
+            hasActiveSnapshot: hasActiveSnapshot,
+            actionableIssues: issues,
+            coveredIssues: [],
+            sourceNames: sourceNames,
+            sourceFailures: [],
+            filters: filters,
+            refreshState: refreshState,
+            actionError: actionError,
+            supportedActions: { _ in [.recheck, .acknowledge, .scheduleDowntime] },
+            activeActionIssueIDs: [],
+            openSettings: {},
+            quitApplication: {},
+            openIssue: { _ in },
+            openSSH: { _ in },
+            openRDP: { _ in },
+            hasSSH: { _ in false },
+            hasRDP: { _ in false },
+            performRecheck: { _ in },
+            requestAcknowledgement: { _ in },
+            requestDowntime: { _ in },
+            dismissActionError: {}
+        )
         .environment(\.locale, Locale(identifier: "en_US"))
         .environment(\.colorScheme, .light)
     }
@@ -461,6 +669,80 @@ final class LandingPageScreenshotTests: XCTestCase {
             notificationCenter: ScreenshotNotificationCenterClient(),
             locale: locale
         )
+    }
+
+    private func sourceSecurityView(
+        authentication: IssueLightModel.AuthenticationChoice,
+        trust: IssueLightModel.ServerTrustChoice,
+        expandsSSH: Bool
+    ) -> some View {
+        let model = screenshotModel
+        model.beginAddingSource()
+        model.name = expandsSSH ? "Homelab" : "Production"
+        model.endpoint = expandsSSH
+            ? "monitoring.internal:5665"
+            : "https://icinga.example:5665"
+        model.authenticationChoice = authentication
+        model.username = "monitoring"
+        model.serverTrustChoice = trust
+        if expandsSSH {
+            model.sshTunnelHost = "bastion.internal"
+            model.sshTunnelUsername = "operator"
+            model.sshTunnelPort = "2222"
+            model.sshTunnelPreferredLocalPort = "5665"
+            model.sshActionEnabled = true
+            model.sshUsername = "operator"
+            model.rdpActionEnabled = true
+            model.rdpUsername = "administrator"
+        }
+        return SourceSetupView(
+            model: model,
+            initiallyShowsSSHOverrides: expandsSSH
+        )
+        .environment(\.locale, Locale(identifier: "de_DE"))
+        .environment(\.colorScheme, .light)
+    }
+
+    private var connectionPathCombinationsView: some View {
+        let combinations: [(String, IssueLightModel.ConnectionEndpointState, IssueLightModel.ConnectionEndpointState)] = [
+            ("Both direct", .direct, .direct),
+            ("API through SSH", .ssh, .direct),
+            ("Web through SSH", .direct, .ssh),
+            ("Web unavailable", .direct, .failed("Web interface is unreachable")),
+            ("API unavailable", .failed("API is unreachable"), .direct),
+            ("Both unavailable", .failed("API is unreachable"), .failed("Web interface is unreachable")),
+        ]
+        let columns = [GridItem(.flexible()), GridItem(.flexible())]
+        return VStack(alignment: .leading, spacing: 18) {
+            Text(verbatim: "API and web reachability")
+                .font(.title2.weight(.semibold))
+            Text(verbatim: "IssueLight tests both endpoints independently and reports the selected route.")
+                .foregroundStyle(.secondary)
+            LazyVGrid(columns: columns, spacing: 14) {
+                ForEach(Array(combinations.enumerated()), id: \.offset) { _, combination in
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text(verbatim: combination.0)
+                            .font(.headline)
+                        Divider()
+                        LabeledContent("API") {
+                            ConnectionEndpointStatusView(state: combination.1)
+                        }
+                        LabeledContent("Web") {
+                            ConnectionEndpointStatusView(state: combination.2)
+                        }
+                    }
+                    .padding(14)
+                    .frame(maxWidth: .infinity, minHeight: 112, alignment: .topLeading)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color(nsColor: .controlBackgroundColor))
+                    )
+                }
+            }
+        }
+        .padding(22)
+        .environment(\.locale, Locale(identifier: "en_US"))
+        .environment(\.colorScheme, .light)
     }
 
     private var screenshotModel: IssueLightModel {

@@ -129,7 +129,7 @@ description: IssueLight keeps infrastructure problems in the macOS menu bar and 
   <div class="section-heading">
     <p class="eyebrow"><span></span>Native macOS settings</p>
     <h2>Sources, notifications, language and About. No duplicate controls.</h2>
-    <p>The single Settings button opens a resizable native window. Every preference stays in one predictable place.</p>
+    <p>The single Settings button opens a resizable native window. Every preference stays in one predictable place. <a href="{{ '/review.html' | relative_url }}">Review every meaningful UI state.</a></p>
   </div>
   <div class="settings-grid">
     <figure class="app-window">

@@ -29,6 +29,14 @@ struct SourceSetupView: View {
     @State private var pendingNavigation: PendingNavigation?
     @State private var connectionTask: Task<Void, Never>?
 
+    init(
+        model: IssueLightModel,
+        initiallyShowsSSHOverrides: Bool = false
+    ) {
+        self.model = model
+        _isShowingSSHOverrides = State(initialValue: initiallyShowsSSHOverrides)
+    }
+
     var body: some View {
         HStack(spacing: 0) {
             VStack(spacing: 0) {
@@ -305,12 +313,12 @@ struct SourceSetupView: View {
 
                 Section {
                     LabeledContent {
-                        connectionStatus(model.selectedConnectionStatus.api)
+                        ConnectionEndpointStatusView(state: model.selectedConnectionStatus.api)
                     } label: {
                         Text(verbatim: "API")
                     }
                     LabeledContent {
-                        connectionStatus(model.selectedConnectionStatus.web)
+                        ConnectionEndpointStatusView(state: model.selectedConnectionStatus.web)
                     } label: {
                         Text(verbatim: "Web")
                     }
@@ -490,32 +498,6 @@ struct SourceSetupView: View {
         }
     }
 
-    @ViewBuilder
-    private func connectionStatus(_ state: IssueLightModel.ConnectionEndpointState) -> some View {
-        switch state {
-        case .notTested:
-            Text(verbatim: "—")
-                .foregroundStyle(.secondary)
-        case .checking:
-            ProgressView()
-                .controlSize(.small)
-                .accessibilityLabel(Text("Verbindung wird geprüft …"))
-        case .direct:
-            Label("Direkt", systemImage: "checkmark.circle.fill")
-                .foregroundStyle(.green)
-        case .ssh:
-            Label("SSH", systemImage: "checkmark.circle.fill")
-                .foregroundStyle(.green)
-        case .failed(let message):
-            Label(message, systemImage: "exclamationmark.circle.fill")
-                .foregroundStyle(.red)
-                .lineLimit(1)
-                .truncationMode(.tail)
-                .frame(maxWidth: 260, alignment: .trailing)
-                .help(message)
-        }
-    }
-
     private var automaticSSHHost: String {
         URL(string: model.endpoint.trimmingCharacters(in: .whitespacesAndNewlines))?.host
             ?? "api.example"
@@ -574,6 +556,36 @@ struct SourceSetupView: View {
             case .select(let sourceID):
                 await model.selectSource(id: sourceID)
             }
+        }
+    }
+}
+
+struct ConnectionEndpointStatusView: View {
+    let state: IssueLightModel.ConnectionEndpointState
+
+    @ViewBuilder
+    var body: some View {
+        switch state {
+        case .notTested:
+            Text(verbatim: "—")
+                .foregroundStyle(.secondary)
+        case .checking:
+            ProgressView()
+                .controlSize(.small)
+                .accessibilityLabel(Text("Verbindung wird geprüft …"))
+        case .direct:
+            Label("Direkt", systemImage: "checkmark.circle.fill")
+                .foregroundStyle(.green)
+        case .ssh:
+            Label("SSH", systemImage: "checkmark.circle.fill")
+                .foregroundStyle(.green)
+        case .failed(let message):
+            Label(message, systemImage: "exclamationmark.circle.fill")
+                .foregroundStyle(.red)
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .frame(maxWidth: 260, alignment: .trailing)
+                .help(message)
         }
     }
 }
