@@ -281,19 +281,19 @@ final class LandingPageScreenshotTests: XCTestCase {
     private var menuItemStatesView: some View {
         VStack(spacing: 12) {
             HStack(spacing: 18) {
-                menuItem(title: "Set up", state: .needsSetup, count: 0)
+                menuItem(title: "Set up", count: 0)
                 Divider()
-                menuItem(title: "Paused", state: .paused, count: 0)
+                menuItem(title: "Paused", count: 0)
                 Divider()
-                menuItem(title: "Refreshing", state: .refreshing, count: 0)
+                menuItem(title: "Refreshing", count: 0)
             }
             Divider()
             HStack(spacing: 18) {
-                menuItem(title: "All clear", state: .current, count: 0)
+                menuItem(title: "All clear", count: 0)
                 Divider()
-                menuItem(title: "Connection failed", state: .failed, count: 0)
+                menuItem(title: "Connection failed", count: 0)
                 Divider()
-                menuItem(title: "7 problems", state: .current, count: 7)
+                menuItem(title: "7 problems", count: 7)
             }
         }
         .padding(.horizontal, 18)
@@ -302,10 +302,9 @@ final class LandingPageScreenshotTests: XCTestCase {
         .environment(\.colorScheme, .light)
     }
 
-    private func menuItem(title: String, state: IssueLightBeaconState, count: Int) -> some View {
+    private func menuItem(title: String, count: Int) -> some View {
         VStack(spacing: 6) {
             StatusMenuLabel(
-                state: state,
                 counts: MenuBarIssueCounts(
                     issues: (0..<count).map { index in
                         issue(

@@ -83,6 +83,8 @@ targets:
       - Sources/PanelFilterSettings.swift
       - Sources/SourceSetupView.swift
       - Sources/StatusMenuView.swift
+      - path: Resources/Assets.xcassets
+        buildPhase: resources
       - path: Resources/Localizable.xcstrings
         buildPhase: resources
     dependencies:

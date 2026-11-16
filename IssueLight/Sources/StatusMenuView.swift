@@ -3,13 +3,15 @@ import SwiftUI
 import IssueLightCore
 
 struct StatusMenuLabel: View {
-    let state: IssueLightBeaconState
     let counts: MenuBarIssueCounts
     let accessibilityText: String
 
     var body: some View {
         if counts.compactText.isEmpty {
-            IssueLightBeaconGlyph(state: state)
+            Image("MenuBarLighthouse", bundle: IssueLightResources.bundle)
+                .renderingMode(.template)
+                .resizable()
+                .scaledToFit()
                 .frame(width: 17, height: 17)
                 .accessibilityLabel(accessibilityText)
         } else {
@@ -26,11 +28,16 @@ struct MenuBarIssueCounts: Equatable {
     let unknown: Int
     let down: Int
 
-    init(issues: [MonitoringIssue]) {
+    init(issues: [MonitoringIssue], unavailableSourceCount: Int = 0) {
         critical = issues.filter { $0.kind == .service && $0.severity == .critical }.count
         warning = issues.filter { $0.kind == .service && $0.severity == .warning }.count
         unknown = issues.filter { $0.kind == .service && $0.severity == .unknown }.count
+            + max(0, unavailableSourceCount)
         down = issues.filter { $0.kind == .host }.count
+    }
+
+    var attentionCount: Int {
+        critical + warning + unknown + down
     }
 
     var compactText: String {

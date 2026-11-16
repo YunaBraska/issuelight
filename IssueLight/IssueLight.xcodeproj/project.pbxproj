@@ -56,6 +56,7 @@
 		A7F379C3CED9A745548B15D6 /* StatusMenuPerformanceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06A48976E4AB75573ECCFF22 /* StatusMenuPerformanceTests.swift */; };
 		AC8E0BDF7F000806256AAEF6 /* Credits.rtf in Resources */ = {isa = PBXBuildFile; fileRef = F67A90F002C144D3E2AE5556 /* Credits.rtf */; };
 		ADA92616F272E70BE3B28746 /* AppDistribution.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1D1EF8621B37EDA49826C93 /* AppDistribution.swift */; };
+		B4A2E9BCE87D092BF1BBE034 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B4A3CB918861A6E32F276DAF /* Assets.xcassets */; };
 		B81CCE09BABB9300B27BF6F7 /* AppDistribution.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1D1EF8621B37EDA49826C93 /* AppDistribution.swift */; };
 		BAF3AC4C4462588FDDB8B1A0 /* LanguageSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 954985937899EA275A666B0A /* LanguageSettingsView.swift */; };
 		BBBD8F6DA31720A7A7FB2B55 /* IssueLightModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B9C6A87B0F7798160330A47 /* IssueLightModelTests.swift */; };
@@ -388,6 +389,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B4A2E9BCE87D092BF1BBE034 /* Assets.xcassets in Resources */,
 				0DB16FAB8C158AEB86B5C322 /* Localizable.xcstrings in Resources */,
 				0C74FE8B177F2742C2E20064 /* fake-ssh-listener.sh in Resources */,
 			);

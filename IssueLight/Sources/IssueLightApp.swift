@@ -67,8 +67,7 @@ struct IssueLightApp: App {
                 }
         } label: {
             StatusMenuLabel(
-                state: menuBarGlyphState,
-                counts: MenuBarIssueCounts(issues: menuBarIssues),
+                counts: menuBarCounts,
                 accessibilityText: menuBarAccessibilityLabel
             )
         }
@@ -93,15 +92,22 @@ struct IssueLightApp: App {
         }
     }
 
-    private var menuBarGlyphState: IssueLightBeaconState {
-        if !model.hasConfiguredSource { return .needsSetup }
-        if !model.hasEnabledSource { return .paused }
-        if case .failed = model.refreshState { return .failed }
-        return model.refreshState == .refreshing ? .refreshing : .current
-    }
-
     private var menuBarIssues: [MonitoringIssue] {
         model.actionableIssues.filter(panelFilters.includesHost)
+    }
+
+    private var menuBarUnavailableSourceCount: Int {
+        model.failedSources.filter { failure in
+            panelFilters.sourceID.isEmpty
+                || failure.source.id.uuidString.lowercased() == panelFilters.sourceID
+        }.count
+    }
+
+    private var menuBarCounts: MenuBarIssueCounts {
+        MenuBarIssueCounts(
+            issues: menuBarIssues,
+            unavailableSourceCount: menuBarUnavailableSourceCount
+        )
     }
 
     private var menuBarAccessibilityLabel: String {
@@ -117,7 +123,7 @@ struct IssueLightApp: App {
                 locale: languageSettings.locale
             )
         }
-        let count = menuBarIssues.count
+        let count = menuBarCounts.attentionCount
         let attention = IssueCountText.attention(count, locale: languageSettings.locale)
         if case .failed(let message) = model.refreshState {
             let failure = model.hasPartialRefreshFailure
