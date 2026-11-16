@@ -10,6 +10,7 @@ struct IssueLightApp: App {
     @StateObject private var languageSettings: AppLanguageSettings
     @StateObject private var externalActions: ExternalActionCoordinator
     @StateObject private var notificationCoordinator: IssueNotificationCoordinator
+    @StateObject private var panelFilters: PanelFilterSettings
     private let updateController: AppUpdateController
 
     init() {
@@ -47,13 +48,18 @@ struct IssueLightApp: App {
         _languageSettings = StateObject(wrappedValue: settings)
         _externalActions = StateObject(wrappedValue: actionCoordinator)
         _notificationCoordinator = StateObject(wrappedValue: issueNotificationCoordinator)
+        _panelFilters = StateObject(wrappedValue: PanelFilterSettings())
         _model = StateObject(wrappedValue: issueModel)
         updateController = AppUpdateController()
     }
 
     var body: some Scene {
         MenuBarExtra {
-            StatusMenuView(model: model, externalActions: externalActions)
+            StatusMenuView(
+                model: model,
+                externalActions: externalActions,
+                filters: panelFilters
+            )
                 .appLanguageEnvironment(languageSettings)
                 .onChange(of: languageSettings.selection) {
                     model.setLocalizationLocale(languageSettings.locale)
@@ -62,7 +68,7 @@ struct IssueLightApp: App {
         } label: {
             StatusMenuLabel(
                 state: menuBarGlyphState,
-                counts: MenuBarIssueCounts(issues: model.actionableIssues),
+                counts: MenuBarIssueCounts(issues: menuBarIssues),
                 accessibilityText: menuBarAccessibilityLabel
             )
         }
@@ -94,6 +100,10 @@ struct IssueLightApp: App {
         return model.refreshState == .refreshing ? .refreshing : .current
     }
 
+    private var menuBarIssues: [MonitoringIssue] {
+        model.actionableIssues.filter(panelFilters.includesHost)
+    }
+
     private var menuBarAccessibilityLabel: String {
         if !model.hasConfiguredSource {
             return AppLocalization.string(
@@ -107,7 +117,7 @@ struct IssueLightApp: App {
                 locale: languageSettings.locale
             )
         }
-        let count = model.actionableIssues.count
+        let count = menuBarIssues.count
         let attention = IssueCountText.attention(count, locale: languageSettings.locale)
         if case .failed(let message) = model.refreshState {
             let failure = model.hasPartialRefreshFailure

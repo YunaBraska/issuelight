@@ -12385,6 +12385,110 @@
         }
       }
     },
+    "Alle Hosts": {
+      "localizations": {
+        "ar": {
+          "stringUnit": { "state": "translated",
+            "value": "جميع الأجهزة المضيفة"
+          }
+        },
+        "bn": {
+          "stringUnit": { "state": "translated",
+            "value": "সব হোস্ট"
+          }
+        },
+        "en": {
+          "stringUnit": { "state": "translated",
+            "value": "All hosts"
+          }
+        },
+        "es": {
+          "stringUnit": { "state": "translated",
+            "value": "Todos los hosts"
+          }
+        },
+        "fr": {
+          "stringUnit": { "state": "translated",
+            "value": "Tous les hôtes"
+          }
+        },
+        "ha": {
+          "stringUnit": { "state": "translated",
+            "value": "Duk rundunonin"
+          }
+        },
+        "hi": {
+          "stringUnit": { "state": "translated",
+            "value": "सभी होस्ट"
+          }
+        },
+        "id": {
+          "stringUnit": { "state": "translated",
+            "value": "Semua host"
+          }
+        },
+        "ja": {
+          "stringUnit": { "state": "translated",
+            "value": "すべてのホスト"
+          }
+        },
+        "mr": {
+          "stringUnit": { "state": "translated",
+            "value": "सर्व होस्ट"
+          }
+        },
+        "pcm": {
+          "stringUnit": { "state": "translated",
+            "value": "All hosts"
+          }
+        },
+        "pt": {
+          "stringUnit": { "state": "translated",
+            "value": "Todos os hosts"
+          }
+        },
+        "ru": {
+          "stringUnit": { "state": "translated",
+            "value": "Все хосты"
+          }
+        },
+        "sv": {
+          "stringUnit": { "state": "translated",
+            "value": "Alla värdar"
+          }
+        },
+        "sw": {
+          "stringUnit": { "state": "translated",
+            "value": "Hosti zote"
+          }
+        },
+        "te": {
+          "stringUnit": { "state": "translated",
+            "value": "అన్ని హోస్ట్‌లు"
+          }
+        },
+        "tr": {
+          "stringUnit": { "state": "translated",
+            "value": "Tüm ana bilgisayarlar"
+          }
+        },
+        "ur": {
+          "stringUnit": { "state": "translated",
+            "value": "تمام ہوسٹس"
+          }
+        },
+        "vi": {
+          "stringUnit": { "state": "translated",
+            "value": "Tất cả máy chủ"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": { "state": "translated",
+            "value": "所有主机"
+          }
+        }
+      }
+    },
     "Host": {
       "localizations": {
         "ar": {

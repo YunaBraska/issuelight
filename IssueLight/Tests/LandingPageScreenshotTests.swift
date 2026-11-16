@@ -572,7 +572,10 @@ final class LandingPageScreenshotTests: XCTestCase {
             hasEnabledSource = true
             hasActiveSnapshot = true
             issues = [problem]
-            filters.severity = .warning
+            filters.setHost(
+                PanelHostSelection(sourceID: sourceID, hostName: "web-02"),
+                selected: true
+            )
             refreshState = .current
             actionError = nil
         case .actionError:

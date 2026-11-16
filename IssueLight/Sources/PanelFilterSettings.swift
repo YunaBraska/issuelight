@@ -34,6 +34,25 @@ enum PanelCoverageFilter: String, CaseIterable, Identifiable {
     var id: String { rawValue }
 }
 
+struct PanelHostSelection: Codable, Hashable, Identifiable {
+    let sourceID: UUID
+    let hostName: String
+
+    var id: String {
+        "\(sourceID.uuidString.lowercased()):\(hostName)"
+    }
+
+    init(sourceID: UUID, hostName: String) {
+        self.sourceID = sourceID
+        self.hostName = hostName
+    }
+
+    init(issue: MonitoringIssue) {
+        sourceID = issue.sourceID
+        hostName = issue.hostName
+    }
+}
+
 @MainActor
 final class PanelFilterSettings: ObservableObject {
     @Published var sourceID: String {
@@ -45,21 +64,34 @@ final class PanelFilterSettings: ObservableObject {
     @Published var coverage: PanelCoverageFilter {
         didSet { defaults.set(coverage.rawValue, forKey: coverageKey) }
     }
+    @Published private(set) var hostSelections: Set<PanelHostSelection> {
+        didSet {
+            if hostSelections.isEmpty {
+                defaults.removeObject(forKey: hostsKey)
+            } else if let data = try? JSONEncoder().encode(hostSelections) {
+                defaults.set(data, forKey: hostsKey)
+            }
+        }
+    }
 
     private let defaults: UserDefaults
     private let sourceKey = "panel.filter.source"
     private let severityKey = "panel.filter.severity"
     private let coverageKey = "panel.filter.coverage"
+    private let hostsKey = "panel.filter.hosts"
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         sourceID = defaults.string(forKey: sourceKey) ?? ""
         severity = defaults.string(forKey: severityKey).flatMap(PanelSeverityFilter.init(rawValue:)) ?? .all
         coverage = defaults.string(forKey: coverageKey).flatMap(PanelCoverageFilter.init(rawValue:)) ?? .all
+        hostSelections = defaults.data(forKey: hostsKey)
+            .flatMap { try? JSONDecoder().decode(Set<PanelHostSelection>.self, from: $0) }
+            ?? []
     }
 
     var isActive: Bool {
-        !sourceID.isEmpty || severity != .all || coverage != .all
+        !sourceID.isEmpty || severity != .all || coverage != .all || !hostSelections.isEmpty
     }
 
     func includes(_ issue: MonitoringIssue, isCovered: Bool) -> Bool {
@@ -67,6 +99,9 @@ final class PanelFilterSettings: ObservableObject {
             return false
         }
         if !severity.includes(issue) {
+            return false
+        }
+        if !includesHost(issue) {
             return false
         }
         switch coverage {
@@ -79,11 +114,35 @@ final class PanelFilterSettings: ObservableObject {
         }
     }
 
+    func includesHost(_ issue: MonitoringIssue) -> Bool {
+        hostSelections.isEmpty || hostSelections.contains(PanelHostSelection(issue: issue))
+    }
+
+    func isHostSelected(_ selection: PanelHostSelection) -> Bool {
+        hostSelections.contains(selection)
+    }
+
+    func setHost(_ selection: PanelHostSelection, selected: Bool) {
+        if selected {
+            hostSelections.insert(selection)
+        } else {
+            hostSelections.remove(selection)
+        }
+    }
+
+    func clearHosts() {
+        hostSelections = []
+    }
+
     func reconcile(sourceIDs: Set<UUID>, isAuthoritative: Bool = true) {
         guard isAuthoritative else { return }
-        guard !sourceID.isEmpty else { return }
-        if !sourceIDs.map({ $0.uuidString.lowercased() }).contains(sourceID) {
+        let storedSourceIDs = Set(sourceIDs.map { $0.uuidString.lowercased() })
+        if !sourceID.isEmpty, !storedSourceIDs.contains(sourceID) {
             sourceID = ""
+        }
+        let retainedHosts = Set(hostSelections.filter { sourceIDs.contains($0.sourceID) })
+        if retainedHosts != hostSelections {
+            hostSelections = retainedHosts
         }
     }
 
@@ -91,5 +150,6 @@ final class PanelFilterSettings: ObservableObject {
         sourceID = ""
         severity = .all
         coverage = .all
+        hostSelections = []
     }
 }

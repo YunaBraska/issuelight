@@ -48,9 +48,9 @@ struct MenuBarIssueCounts: Equatable {
 struct StatusMenuView: View {
     @ObservedObject var model: IssueLightModel
     @ObservedObject var externalActions: ExternalActionCoordinator
+    @ObservedObject var filters: PanelFilterSettings
     @Environment(\.openSettings) private var openSettings
     @State private var pendingAction: PendingIssueAction?
-    @StateObject private var filters = PanelFilterSettings()
 
     var body: some View {
         StatusMenuContent(
@@ -326,6 +326,36 @@ struct StatusMenuContent: View {
                 Text(verbatim: AppLocalization.string("Benötigt Aufmerksamkeit", locale: locale)).tag(PanelCoverageFilter.attention)
                 Text(verbatim: AppLocalization.string("Quittiert oder in Wartungszeit", locale: locale)).tag(PanelCoverageFilter.covered)
             }
+            if !hostOptions.isEmpty {
+                Menu {
+                    Toggle(
+                        isOn: Binding(
+                            get: { filters.hostSelections.isEmpty },
+                            set: { if $0 { filters.clearHosts() } }
+                        )
+                    ) {
+                        Text(verbatim: AppLocalization.string("Alle Hosts", locale: locale))
+                    }
+                    Divider()
+                    ForEach(hostOptions) { selection in
+                        Toggle(
+                            isOn: Binding(
+                                get: { filters.isHostSelected(selection) },
+                                set: { filters.setHost(selection, selected: $0) }
+                            )
+                        ) {
+                            Text(
+                                verbatim: sourceNames[selection.sourceID].map {
+                                    "\(selection.hostName) · \($0)"
+                                } ?? selection.hostName
+                            )
+                        }
+                    }
+                } label: {
+                    Text(verbatim: AppLocalization.string("Host", locale: locale))
+                }
+                .accessibilityIdentifier("host-filter")
+            }
             if filters.isActive {
                 Divider()
                 Button(AppLocalization.string("Filter zurücksetzen", locale: locale)) {
@@ -343,6 +373,21 @@ struct StatusMenuContent: View {
         .help(AppLocalization.string("Filter", locale: locale))
         .accessibilityLabel(AppLocalization.string("Filter", locale: locale))
         .accessibilityIdentifier("issue-filter")
+    }
+
+    private var hostOptions: [PanelHostSelection] {
+        let visibleHosts = Set(
+            (actionableIssues + coveredIssues).map(PanelHostSelection.init(issue:))
+        )
+        return visibleHosts.union(filters.hostSelections).sorted { lhs, rhs in
+            let lhsSource = sourceNames[lhs.sourceID] ?? ""
+            let rhsSource = sourceNames[rhs.sourceID] ?? ""
+            let sourceOrder = lhsSource.localizedCaseInsensitiveCompare(rhsSource)
+            if sourceOrder != .orderedSame {
+                return sourceOrder == .orderedAscending
+            }
+            return lhs.hostName.localizedCaseInsensitiveCompare(rhs.hostName) == .orderedAscending
+        }
     }
 
     @ViewBuilder
