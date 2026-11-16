@@ -4,8 +4,8 @@ Status: Reviewed against `volendavidov/NagBar` and the maintained
 `YunaBraska/NagBar` fork on 2026-11-14.
 
 IssueLight is not a visual rewrite of NagBar. It preserves the useful operator
-journey, replaces unsafe or noisy behavior, and keeps the first supported
-release deliberately smaller.
+journey while replacing unsafe or noisy behavior. Missing provider and
+notification journeys remain release blockers rather than deliberate omissions.
 
 ## Capability matrix
 
@@ -16,8 +16,9 @@ release deliberately smaller.
 | Multiple monitoring sources | Done | Done | Independent credentials, refresh, stale state, and failure reporting. |
 | Icinga 2 API | Done | Done | First fully supported provider and current compatibility baseline. |
 | Issue row details | Done | Mostly done | Always show source, host, service, state, state duration, check attempt, first output line, acknowledgement, and downtime. Add check age later as a stale-data signal instead of another timestamp column. |
-| Nagios CGI and Icinga Classic | Done | Planned | Add only after the shared Icinga read journey and provider contract are stable. |
-| Thruk and Checkmk | Done | Planned | Same provider rule. No provider-specific state in shared UI or persistence. |
+| Nagios Core and Icinga Classic | Done | Missing | Add a complete compatibility slice without reviving the original app's brittle HTML parser. Direct Icinga Classic support may be covered through Thruk where available. |
+| Thruk | Done | Missing | Implement the documented REST API first. It covers multiple Nagios-compatible backends and supports the required commands without HTML scraping. |
+| Checkmk | Done | Missing | Implement a versioned Checkmk adapter with explicit API-version compatibility and token support. |
 | Text search | Partial | Done | Keep search in the panel's first row and match display name, host, output, and source. |
 | State and property filters | Done | Done | Persist the compact source, severity, and coverage filters. Do not reproduce NagBar's large filter matrix. |
 | Acknowledge, recheck, and downtime | Done | Done for Icinga 2 | Provider capabilities expose the supported commands. Acknowledgement and downtime require explicit input; every confirmed command refreshes its source. |
@@ -34,7 +35,7 @@ release deliberately smaller.
 | User-defined status colors | Done | Dismissed | Use semantic system colors and symbols so dark mode, contrast, and accessibility stay coherent. |
 | Configurable columns and output length | Done | Dismissed | Keep one scannable row hierarchy and bounded output instead of exposing layout internals as preferences. |
 | Dock-icon toggle | Done | Dismissed | IssueLight is a menu-bar utility and remains an `LSUIElement` app. |
-| Automatic update check | Done | Dismissed for first release | Use the explicit signed release channel until the update mechanism itself can be secured and supported. |
+| Automatic update check | Done | Done for direct builds | Direct releases use a signed Sparkle feed. App Store builds contain no Sparkle runtime and use Apple's update channel. A published replacement cycle remains a release gate. |
 
 ## Current parity conclusion
 
@@ -44,16 +45,17 @@ isolation, failure handling, credential storage, and TLS trust. It is not
 functionally equivalent to NagBar today because notifications and four legacy
 provider families are absent.
 
-That difference is intentional for the first release. Claiming full parity
-before those capabilities exist would be inaccurate.
+Claiming full parity or production readiness before those capabilities exist
+would be inaccurate.
 
 ## Recommended delivery order
 
 1. Close the protected-key and signed-app verification gaps without weakening
    background security.
-2. Add quiet native notifications with deduplication and recovery semantics.
-3. Add the second provider as one complete vertical slice. Use that evidence to
-   refine the existing provider boundary instead of introducing a plugin SDK.
+2. Add Thruk as the second complete provider slice and use it to validate the
+   existing provider boundary.
+3. Add Nagios Core and Checkmk without introducing a binary plug-in SDK.
+4. Add quiet native notifications with deduplication and recovery semantics.
 
 The existing visual hierarchy should remain. New actions belong in row context
 menus or a small detail surface. Settings should describe sources and policies,

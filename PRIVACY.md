@@ -23,6 +23,13 @@ infrastructure such as DNS resolvers, proxies, and VPNs. Disabling certificate
 verification removes server-identity protection for that source and is not the
 default.
 
+The direct-download edition periodically checks the signed update feed hosted
+with the project's GitHub Releases. GitHub can receive ordinary connection
+metadata such as the IP address and request time. IssueLight sends no monitoring
+configuration, credentials, issue data, or analytics with this request. The
+Mac App Store edition does not contain this updater and uses Apple's update
+channel.
+
 ## Data stored on the Mac
 
 - Public source configuration is stored in

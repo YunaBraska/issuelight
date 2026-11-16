@@ -153,9 +153,12 @@ policy. It does not own monitoring-state presentation or notifications.
 - `CONN-006` Background refresh and monitoring actions MUST reuse the route
   selected by the user-initiated connection test. They MUST retry route
   selection when that route becomes unreachable.
-- `CONN-007` Icinga 2 discovery MUST accept a hostname, IP address, or URL hint,
-  ignore a trailing slash or API-version suffix, require HTTPS for the real API
-  request, and try the explicit port before the provider default of `5665`.
+- `CONN-007` Icinga 2 discovery MUST accept a hostname, IP address, API URL, or
+  pasted monitoring-web URL. It MUST discard path, query, and fragment data,
+  require HTTPS for the real API request, and confirm every candidate through
+  the Icinga API. API-shaped hints try their stated port before `5665`.
+  Web-shaped hints try `5665` before their stated HTTPS port so a pasted web
+  address does not turn a web authentication response into a false API match.
 - `CONN-008` Only a successful provider API request MAY replace the endpoint
   hint with a canonical endpoint. An open port, TLS handshake, HTTP response,
   or failed authentication alone is not discovery success.

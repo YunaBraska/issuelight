@@ -98,6 +98,9 @@ rm -f "$coverage_json"
 It builds a universal app and verifies its bundle identifier, version, positive
 build number, architectures, layout, and forbidden secret-bearing file types.
 It writes a ZIP, DMG, SPDX 2.3 SBOM, and verified SHA-256 checksums.
+When both update keys are configured, it also embeds the public key and HTTPS
+feed in the direct app and writes a signed `appcast.xml`. The App Store target
+does not link Sparkle or contain direct-update metadata.
 
 For a local unsigned pipeline check, use an isolated output directory:
 
@@ -131,6 +134,11 @@ secrets before dispatching it:
 - `MACOS_APP_STORE_INSTALLER_CERTIFICATE`
 - `MACOS_APP_STORE_CERTIFICATE_PASSWORD`
 - `MACOS_APP_STORE_PROFILE`
+- `MACOS_UPDATE_PRIVATE_KEY`
+
+Configure the matching `MACOS_UPDATE_PUBLIC_KEY` repository variable. The
+private key is a secret; the public key is intentionally embedded in direct
+releases. The workflow verifies that the pair matches before packaging.
 
 GitHub secrets are write-only. Values stored in another repository cannot be
 copied out by a workflow or maintainer command.
@@ -151,6 +159,8 @@ The release entrypoint requires these environment variables:
 - `APPLE_TEAM_ID`: the 10-character team that owns the release identity
 - `APPLE_SIGNING_IDENTITY`: the full Developer ID Application identity name
 - `NOTARY_KEYCHAIN_PROFILE`: the profile created by `notarytool`
+- `MACOS_UPDATE_PRIVATE_KEY`: the Base64 Ed25519 private update key
+- `MACOS_UPDATE_PUBLIC_KEY`: the matching Base64 Ed25519 public update key
 
 Run it only from a clean checkout. The revision argument must equal `HEAD`, and
 the output directory must be absolute:

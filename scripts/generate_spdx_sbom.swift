@@ -54,12 +54,34 @@ let document: [String: Any] = [
                 ],
             ],
         ],
+        [
+            "name": "Sparkle",
+            "SPDXID": "SPDXRef-Package-Sparkle",
+            "versionInfo": "2.10.0",
+            "downloadLocation": "https://github.com/sparkle-project/Sparkle/releases/tag/2.10.0",
+            "filesAnalyzed": false,
+            "licenseConcluded": "NOASSERTION",
+            "licenseDeclared": "NOASSERTION",
+            "copyrightText": "Copyright Sparkle contributors",
+            "externalRefs": [
+                [
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceType": "purl",
+                    "referenceLocator": "pkg:github/sparkle-project/Sparkle@2.10.0",
+                ],
+            ],
+        ],
     ],
     "relationships": [
         [
             "spdxElementId": "SPDXRef-DOCUMENT",
             "relationshipType": "DESCRIBES",
             "relatedSpdxElement": "SPDXRef-Package-IssueLight",
+        ],
+        [
+            "spdxElementId": "SPDXRef-Package-IssueLight",
+            "relationshipType": "DEPENDS_ON",
+            "relatedSpdxElement": "SPDXRef-Package-Sparkle",
         ],
     ],
 ]

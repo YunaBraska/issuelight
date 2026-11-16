@@ -25,9 +25,12 @@ panel filters, Icinga Web deep links, SSH/RDP host actions, and automatic
 direct-first SSH fallback for API and reachability checks are available per
 source. Without an override, Icinga DB Web is inferred as
 `/icingaweb2/icingadb` on the API host. Classic Monitoring remains available
-through an explicit base URL ending in `/monitoring`. Notifications and
-additional providers remain outside the current release. The universal
-ZIP/DMG/SBOM workflow is ready for signing credentials.
+through an explicit base URL ending in `/monitoring`. Native notifications,
+Nagios Core, Thruk, and Checkmk providers are not yet implemented and block a
+claim of full NagBar compatibility. The universal
+ZIP/DMG/SBOM workflow is ready for signing credentials. Direct releases use a
+signed Sparkle feed for updates. The App Store target uses Apple's update
+channel and contains no Sparkle runtime.
 
 ## Requirements
 

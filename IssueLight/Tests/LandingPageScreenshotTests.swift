@@ -268,6 +268,7 @@ final class LandingPageScreenshotTests: XCTestCase {
         return IssueLightSettingsView(
             model: screenshotModel,
             languageSettings: settings,
+            updateController: AppUpdateController(),
             initialSelection: .language
         )
             .appLanguageEnvironment(settings)
@@ -297,6 +298,7 @@ final class LandingPageScreenshotTests: XCTestCase {
             version: "0.1.0",
             build: "1",
             copyrightText: "Copyright © 2026 Yuna Morgenstern and IssueLight contributors.",
+            updateController: AppUpdateController(),
             messageIndex: 0
         )
         .frame(width: 620, height: 430)

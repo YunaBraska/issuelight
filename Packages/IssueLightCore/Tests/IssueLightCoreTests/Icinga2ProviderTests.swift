@@ -90,6 +90,50 @@ final class Icinga2ProviderTests: XCTestCase {
         )
     }
 
+    func testIcingaDerivesAPICandidatesFromPastedBrowserURLs() {
+        let provider = Icinga2Provider()
+
+        XCTAssertEqual(
+            provider.endpointCandidates(
+                from: "http://localhost:8080/icingadb/hosts#!/icingadb/host?name=down-host"
+            ).map(\.absoluteString),
+            [
+                "https://localhost:5665",
+                "https://localhost:8080",
+            ]
+        )
+        XCTAssertEqual(
+            provider.endpointCandidates(
+                from: "https://monitoring.example.test/icingaweb2/monitoring/list/services?service_problem=1"
+            ).map(\.absoluteString),
+            [
+                "https://monitoring.example.test:5665",
+                "https://monitoring.example.test:443",
+            ]
+        )
+        XCTAssertEqual(
+            provider.endpointCandidates(from: "//monitoring.example.test/icingaweb2").map(\.absoluteString),
+            [
+                "https://monitoring.example.test:5665",
+                "https://monitoring.example.test:443",
+            ]
+        )
+    }
+
+    func testIcingaKeepsAnExplicitPortFirstForAPIShapedHints() {
+        let provider = Icinga2Provider()
+
+        XCTAssertEqual(
+            provider.endpointCandidates(
+                from: "https://monitoring.example.test:8443/v1/objects/hosts?attrs=name#ignored"
+            ).map(\.absoluteString),
+            [
+                "https://monitoring.example.test:8443",
+                "https://monitoring.example.test:5665",
+            ]
+        )
+    }
+
     func testIcingaUsesLocalhostCandidatesForAnEmptyHint() {
         XCTAssertEqual(
             Icinga2Provider().endpointCandidates(from: "   ").map(\.absoluteString),

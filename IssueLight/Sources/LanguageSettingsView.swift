@@ -1,6 +1,7 @@
 import AppKit
 import SwiftUI
 
+@MainActor
 struct IssueLightSettingsView: View {
     enum Tab: Hashable {
         case sources
@@ -10,16 +11,19 @@ struct IssueLightSettingsView: View {
 
     @ObservedObject var model: IssueLightModel
     @ObservedObject var languageSettings: AppLanguageSettings
+    let updateController: AppUpdateController
     @Environment(\.locale) private var locale
     @State private var selection: Tab
 
     init(
         model: IssueLightModel,
         languageSettings: AppLanguageSettings,
+        updateController: AppUpdateController,
         initialSelection: Tab = .sources
     ) {
         self.model = model
         self.languageSettings = languageSettings
+        self.updateController = updateController
         _selection = State(initialValue: initialSelection)
     }
 
@@ -45,7 +49,7 @@ struct IssueLightSettingsView: View {
                 }
                 .tag(Tab.language)
 
-            AboutSettingsView()
+            AboutSettingsView(updateController: updateController)
                 .tabItem {
                     Label {
                         Text(verbatim: AppLocalization.string("Über IssueLight", locale: locale))
@@ -107,6 +111,7 @@ struct LanguageSettingsView: View {
     }
 }
 
+@MainActor
 struct AboutSettingsView: View {
     private static let messages: [LocalizedStringResource] = [
         "Alerts multiply. Attention does not.\nIssueLight sorts the signal before it reaches you.\nA star helps. Coffee keeps the beacon lit.",
@@ -120,6 +125,7 @@ struct AboutSettingsView: View {
     let version: String
     let build: String
     let copyrightText: String
+    let updateController: AppUpdateController
     @State private var messageIndex: Int
 
     private let repositoryURL = URL(string: "https://github.com/YunaBraska/issuelight")!
@@ -133,19 +139,21 @@ struct AboutSettingsView: View {
     private let nagBarURL = URL(string: "https://github.com/volendavidov/NagBar")!
 
     init(
-        icon: NSImage = NSApp.applicationIconImage,
+        icon: NSImage? = nil,
         version: String? = nil,
         build: String? = nil,
         copyrightText: String? = nil,
+        updateController: AppUpdateController,
         messageIndex: Int? = nil
     ) {
-        self.icon = icon
+        self.icon = icon ?? NSApp.applicationIconImage
         let info = Bundle.main.infoDictionary
         self.version = version ?? (info?["CFBundleShortVersionString"] as? String ?? "Development")
         self.build = build ?? (info?["CFBundleVersion"] as? String ?? "Local")
         self.copyrightText = copyrightText
             ?? Bundle.main.object(forInfoDictionaryKey: "NSHumanReadableCopyright") as? String
             ?? "Copyright © 2026 Yuna Morgenstern and IssueLight contributors."
+        self.updateController = updateController
         _messageIndex = State(
             initialValue: messageIndex.map { abs($0) % Self.messages.count }
                 ?? Int.random(in: Self.messages.indices)
@@ -183,6 +191,8 @@ struct AboutSettingsView: View {
 
                 Divider()
 
+                updateAction
+
                 links
 
                 Text(verbatim: copyrightText)
@@ -196,6 +206,32 @@ struct AboutSettingsView: View {
             .padding(.vertical, 4)
         }
         .accessibilityIdentifier("about-settings")
+    }
+
+    @ViewBuilder
+    private var updateAction: some View {
+        if AppDistribution.usesAppStoreUpdates {
+            Link(destination: URL(string: "macappstore://showUpdatesPage")!) {
+                Label {
+                    Text(verbatim: AppLocalization.string("Open App Store Updates…", locale: locale))
+                } icon: {
+                    Image(systemName: "arrow.triangle.2.circlepath")
+                }
+            }
+            .buttonStyle(.link)
+        } else if updateController.canCheckForUpdates {
+            Button {
+                updateController.checkForUpdates()
+            } label: {
+                Label {
+                    Text(verbatim: AppLocalization.string("Check for Updates…", locale: locale))
+                } icon: {
+                    Image(systemName: "arrow.triangle.2.circlepath")
+                }
+            }
+            .buttonStyle(.link)
+            .accessibilityIdentifier("check-for-updates-button")
+        }
     }
 
     private var links: some View {

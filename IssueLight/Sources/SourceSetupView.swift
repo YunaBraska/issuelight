@@ -109,15 +109,13 @@ struct SourceSetupView: View {
             Form {
                 Section {
                     Toggle("Quelle aktiv", isOn: $model.isSourceEnabled)
-                    if model.providers.count == 1 {
-                        LabeledContent("Typ", value: model.providerDisplayName)
-                    } else {
-                        Picker("Typ", selection: $model.selectedProviderID) {
-                            ForEach(model.providers, id: \.id) { provider in
-                                Text(provider.displayName).tag(provider.id)
-                            }
+                    Picker("Typ", selection: $model.selectedProviderID) {
+                        ForEach(model.providers, id: \.id) { provider in
+                            Text(provider.displayName).tag(provider.id)
                         }
                     }
+                    .pickerStyle(.menu)
+                    .accessibilityIdentifier("source-provider-picker")
                     TextField("Name", text: $model.name, prompt: Text("Produktion"))
                     TextField("Server", text: $model.endpoint, prompt: Text("https://icinga.example:5665"))
                         .textContentType(.URL)

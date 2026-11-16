@@ -1,6 +1,6 @@
 # Project status
 
-IssueLight is a release candidate, not a published production release.
+IssueLight is pre-production. It is not yet a complete NagBar successor.
 
 ## Implemented
 
@@ -19,6 +19,8 @@ IssueLight is a release candidate, not a published production release.
   right-to-left layout for Arabic and Urdu.
 - Universal ZIP and DMG packaging, SPDX SBOM, checksums, signing, notarization,
   and GitHub release automation that fails closed when credentials are absent.
+- Signed Sparkle updates for direct releases. The App Store target contains no
+  Sparkle framework or direct-update configuration.
 - Sandboxed App Store package automation for direct Icinga connections. The
   Store edition deliberately excludes SSH tunnels and remote-client launchers.
 
@@ -34,12 +36,18 @@ IssueLight is a release candidate, not a published production release.
 
 ## Remaining release gates
 
+- Add complete Nagios Core, Thruk, and Checkmk provider journeys. Each provider
+  needs discovery, authentication, snapshot loading, web navigation, supported
+  actions, diagnostics, and a real-system compatibility test. Thruk is the
+  next vertical slice because one adapter covers multiple Nagios-compatible
+  monitoring cores without parsing HTML.
+- Add quiet native notifications with deduplication, recovery handling, and
+  per-source policy.
 - Run the installed-app protected-private-key case described in
   `docs/DEVELOPMENT.md`. Background refresh must fail without authentication UI
   and retain the previous snapshot.
 - Add the repository signing, notarization, and App Store signing secrets, run
   the release workflow, then verify direct stapling, Gatekeeper assessment,
   Store package upload, and installation on clean macOS accounts.
-
-Native notifications and providers other than Icinga 2 are not part of this
-release.
+- Configure the Sparkle private-key secret and matching public-key repository
+  variable, then verify one published update and replacement cycle.

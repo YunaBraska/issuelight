@@ -105,11 +105,11 @@ description: IssueLight keeps Icinga 2 problems in the macOS menu bar and stays 
   <div class="section-heading">
     <p class="eyebrow"><span></span>Scope you can reason about</p>
     <h2>Icinga 2 first. Provider-neutral where it matters.</h2>
-    <p>The first supported provider is Icinga 2. Provider-specific transport, authentication and decoding stop at a small core boundary, so another backend can be added without turning the UI or saved sources into Icinga-shaped state.</p>
+    <p>The currently supported provider is Icinga 2. Provider-specific transport, authentication and decoding stop at a small core boundary. Nagios Core, Thruk and Checkmk still need complete adapters before IssueLight can claim NagBar compatibility.</p>
   </div>
   <div class="scope-grid">
     <div><strong>Available now</strong><p>Multiple sources, refresh, attention ordering, strict TLS options, Keychain credentials, recheck, acknowledgement, fixed downtime and stale-state retention.</p></div>
-    <div><strong>Deliberately absent</strong><p>Notifications, web deep links and additional monitoring providers remain outside the current release.</p></div>
+    <div><strong>Still required</strong><p>Native notifications and the Nagios Core, Thruk and Checkmk providers remain production blockers. Icinga Web deep links are already implemented.</p></div>
     <div><strong>Release status</strong><p>The code is public and the release path is tested. A notarized public binary is not available yet, so this page does not pretend otherwise.</p></div>
   </div>
 </section>

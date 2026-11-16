@@ -9,6 +9,7 @@ struct IssueLightApp: App {
     @StateObject private var model: IssueLightModel
     @StateObject private var languageSettings: AppLanguageSettings
     @StateObject private var externalActions: ExternalActionCoordinator
+    private let updateController: AppUpdateController
 
     init() {
 #if DEBUG
@@ -26,6 +27,7 @@ struct IssueLightApp: App {
         _languageSettings = StateObject(wrappedValue: settings)
         _externalActions = StateObject(wrappedValue: actionCoordinator)
         _model = StateObject(wrappedValue: issueModel)
+        updateController = AppUpdateController()
     }
 
     var body: some Scene {
@@ -45,7 +47,11 @@ struct IssueLightApp: App {
         .menuBarExtraStyle(.window)
 
         Settings {
-            IssueLightSettingsView(model: model, languageSettings: languageSettings)
+            IssueLightSettingsView(
+                model: model,
+                languageSettings: languageSettings,
+                updateController: updateController
+            )
                 .appLanguageEnvironment(languageSettings)
                 .onChange(of: languageSettings.selection) {
                     model.setLocalizationLocale(languageSettings.locale)

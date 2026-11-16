@@ -30,25 +30,46 @@ public struct Icinga2Provider: MonitoringProvider {
     public func endpointCandidates(from hint: String) -> [URL] {
         let trimmedHint = hint.trimmingCharacters(in: .whitespacesAndNewlines)
         let value = trimmedHint.isEmpty ? "localhost" : trimmedHint
-        let valueWithScheme = value.contains("://") ? value : "https://\(value)"
+        let hasExplicitScheme = value.hasPrefix("//") || value.contains("://")
+        let valueWithScheme: String
+        if value.hasPrefix("//") {
+            valueWithScheme = "https:\(value)"
+        } else if value.contains("://") {
+            valueWithScheme = value
+        } else {
+            valueWithScheme = "https://\(value)"
+        }
         guard var components = URLComponents(string: valueWithScheme),
               components.host?.isEmpty == false,
               components.user == nil,
-              components.password == nil else {
+              components.password == nil,
+              let hintedScheme = components.scheme?.lowercased(),
+              ["http", "https"].contains(hintedScheme) else {
             return []
         }
 
         let explicitPort = components.port
+        let hintedPort = explicitPort ?? (hasExplicitScheme && hintedScheme == "https" ? 443 : nil)
+        let firstPathComponent = components.path
+            .split(separator: "/", omittingEmptySubsequences: true)
+            .first?
+            .lowercased()
+        let looksLikeAPIPath = firstPathComponent == nil
+            || firstPathComponent == "v1"
+            || firstPathComponent == "v2"
         components.scheme = "https"
         components.path = ""
         components.query = nil
         components.fragment = nil
 
         var ports: [Int] = []
-        if let explicitPort {
-            ports.append(explicitPort)
+        if let hintedPort, looksLikeAPIPath {
+            ports.append(hintedPort)
         }
         ports.append(5_665)
+        if let hintedPort, !looksLikeAPIPath {
+            ports.append(hintedPort)
+        }
 
         var seen = Set<String>()
         return ports.compactMap { port in
