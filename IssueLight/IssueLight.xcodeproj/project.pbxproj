@@ -20,6 +20,7 @@
 		1F983AA1F7B05DF0217BBEA0 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 3431970B83ED36AE4011D43C /* Localizable.xcstrings */; };
 		219A1DA2400B9976A26B6A33 /* Sparkle-LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = CB3B44DEDEE906A5C4924575 /* Sparkle-LICENSE.txt */; };
 		22CDF40DF453298B307B7B2C /* IssueCountTextTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C616C33DB6BD5AED6F10556 /* IssueCountTextTests.swift */; };
+		2317446C9DF2EB3D68BFB340 /* IssueLightGlyphs.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDF39582BC883C81A32BB1F6 /* IssueLightGlyphs.swift */; };
 		268F81DA510FAFC126E60E17 /* IssueNotificationCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1552EFA0F1AE02133FB7D1FF /* IssueNotificationCoordinator.swift */; };
 		2706748F00FD1DC813FF86DD /* NativeViewRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = E251E1A18DE4AA9C76CEDBBD /* NativeViewRenderer.swift */; };
 		27C72349416EB5AF8ADB8966 /* IssueNotificationCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1552EFA0F1AE02133FB7D1FF /* IssueNotificationCoordinator.swift */; };
@@ -34,6 +35,7 @@
 		463FB2C2555A5007E1EE3618 /* AppUpdateController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B97F335B12E0E1191A755D4B /* AppUpdateController.swift */; };
 		467A5D45EC0372DA6A037EC2 /* SourceSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91EE3ED68B171A6AE0F289E8 /* SourceSetupView.swift */; };
 		475F650BEDA4F74525EF7B5D /* IssueLightModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 708ED225862B8236A5E0FD62 /* IssueLightModel.swift */; };
+		4977B2399C522E1C58B519C1 /* IssueLightGlyphs.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDF39582BC883C81A32BB1F6 /* IssueLightGlyphs.swift */; };
 		5D1B5DC3F19762A3AD5DC2B2 /* IssueCountText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 502E71E6DEA91CB94AB31AD7 /* IssueCountText.swift */; };
 		5F248D226902BC01E7D9E28F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B4A3CB918861A6E32F276DAF /* Assets.xcassets */; };
 		6099663AAEF17546D879E2F4 /* PanelFilterSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A3BB5DC3F8ADDA61DAECC4D /* PanelFilterSettings.swift */; };
@@ -42,6 +44,7 @@
 		70B663DEDAF6DDD5FEEBFFF5 /* ExternalActionCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDED0A17E2827B7F6258D479 /* ExternalActionCoordinatorTests.swift */; };
 		70D7ADE8D0598C8DE677591D /* IssueNotificationCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1552EFA0F1AE02133FB7D1FF /* IssueNotificationCoordinator.swift */; };
 		715C1238E7DC2FB96E762C96 /* IssueLightModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 708ED225862B8236A5E0FD62 /* IssueLightModel.swift */; };
+		76299AD13F898DC05AF9512D /* IssueLightGlyphs.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDF39582BC883C81A32BB1F6 /* IssueLightGlyphs.swift */; };
 		775F60EE8E9BBA98A28C88A5 /* Credits.rtf in Resources */ = {isa = PBXBuildFile; fileRef = F67A90F002C144D3E2AE5556 /* Credits.rtf */; };
 		815D4ECC8D5B172C7C0C273F /* IssueLightModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 708ED225862B8236A5E0FD62 /* IssueLightModel.swift */; };
 		8C5294817A98E0E5C5B0F13C /* AppLanguage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18E60BF16AEA857551A17BA1 /* AppLanguage.swift */; };
@@ -104,6 +107,7 @@
 		DDED0A17E2827B7F6258D479 /* ExternalActionCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExternalActionCoordinatorTests.swift; sourceTree = "<group>"; };
 		E251E1A18DE4AA9C76CEDBBD /* NativeViewRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeViewRenderer.swift; sourceTree = "<group>"; };
 		E4B3515E72AB361E1828C443 /* LocalizationCatalogTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalizationCatalogTests.swift; sourceTree = "<group>"; };
+		EDF39582BC883C81A32BB1F6 /* IssueLightGlyphs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IssueLightGlyphs.swift; sourceTree = "<group>"; };
 		F67A90F002C144D3E2AE5556 /* Credits.rtf */ = {isa = PBXFileReference; lastKnownFileType = text.rtf; path = Credits.rtf; sourceTree = "<group>"; };
 		F6F8CAD83D6C023F422BEE76 /* IssueLightAppStore.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = IssueLightAppStore.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		FFCAE8E8019BB6AAC0EEAAC2 /* IssueLightCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = IssueLightCore; path = ../Packages/IssueLightCore; sourceTree = SOURCE_ROOT; };
@@ -196,6 +200,7 @@
 				97C6E00A2AD6D8AD6E1AF5CC /* ExternalActionCoordinator.swift */,
 				502E71E6DEA91CB94AB31AD7 /* IssueCountText.swift */,
 				5F4B6283E19456DD6950A2C1 /* IssueLightApp.swift */,
+				EDF39582BC883C81A32BB1F6 /* IssueLightGlyphs.swift */,
 				708ED225862B8236A5E0FD62 /* IssueLightModel.swift */,
 				1552EFA0F1AE02133FB7D1FF /* IssueNotificationCoordinator.swift */,
 				954985937899EA275A666B0A /* LanguageSettingsView.swift */,
@@ -401,6 +406,7 @@
 				44A25CC4EDE9DC060EA250A5 /* ExternalActionCoordinator.swift in Sources */,
 				5D1B5DC3F19762A3AD5DC2B2 /* IssueCountText.swift in Sources */,
 				2B9BDDA6F24BEB8C916226FB /* IssueLightApp.swift in Sources */,
+				4977B2399C522E1C58B519C1 /* IssueLightGlyphs.swift in Sources */,
 				815D4ECC8D5B172C7C0C273F /* IssueLightModel.swift in Sources */,
 				70D7ADE8D0598C8DE677591D /* IssueNotificationCoordinator.swift in Sources */,
 				BAF3AC4C4462588FDDB8B1A0 /* LanguageSettingsView.swift in Sources */,
@@ -422,6 +428,7 @@
 				70B663DEDAF6DDD5FEEBFFF5 /* ExternalActionCoordinatorTests.swift in Sources */,
 				FA67C9ED0CC54ECBBB48FF3E /* IssueCountText.swift in Sources */,
 				22CDF40DF453298B307B7B2C /* IssueCountTextTests.swift in Sources */,
+				2317446C9DF2EB3D68BFB340 /* IssueLightGlyphs.swift in Sources */,
 				715C1238E7DC2FB96E762C96 /* IssueLightModel.swift in Sources */,
 				BBBD8F6DA31720A7A7FB2B55 /* IssueLightModelTests.swift in Sources */,
 				268F81DA510FAFC126E60E17 /* IssueNotificationCoordinator.swift in Sources */,
@@ -450,6 +457,7 @@
 				1E356F134B4F9D44674BE099 /* ExternalActionCoordinator.swift in Sources */,
 				C707C18D50D16E074EFC1D59 /* IssueCountText.swift in Sources */,
 				63CA65203517415A75811A5C /* IssueLightApp.swift in Sources */,
+				76299AD13F898DC05AF9512D /* IssueLightGlyphs.swift in Sources */,
 				475F650BEDA4F74525EF7B5D /* IssueLightModel.swift in Sources */,
 				27C72349416EB5AF8ADB8966 /* IssueNotificationCoordinator.swift in Sources */,
 				9CB5EC34F304E5EB99481A82 /* LanguageSettingsView.swift in Sources */,

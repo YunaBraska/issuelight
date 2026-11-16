@@ -3,13 +3,14 @@ import SwiftUI
 import IssueLightCore
 
 struct StatusMenuLabel: View {
-    let symbol: String
+    let state: IssueLightBeaconState
     let counts: MenuBarIssueCounts
     let accessibilityText: String
 
     var body: some View {
         HStack(spacing: 3) {
-            Image(systemName: symbol)
+            IssueLightBeaconGlyph(state: state)
+                .frame(width: 17, height: 17)
             if !counts.compactText.isEmpty {
                 Text(verbatim: counts.compactText)
                     .monospacedDigit()
@@ -438,9 +439,9 @@ private struct StatusPanelSourceFailureRow: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            Image(systemName: "wifi.exclamationmark")
+            IssueLightSignalGlyph(state: .failed)
                 .foregroundStyle(.red)
-                .frame(width: 20)
+                .frame(width: 20, height: 20)
             Text(verbatim: failure.source.name)
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
@@ -488,8 +489,9 @@ struct StatusActionErrorBanner: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            Image(systemName: "exclamationmark.circle.fill")
+            IssueLightSignalGlyph(state: .failed)
                 .foregroundStyle(.red)
+                .frame(width: 18, height: 18)
                 .accessibilityHidden(true)
             Text(verbatim: message)
                 .font(.callout)
@@ -758,9 +760,9 @@ private struct StatusPanelIssueRow: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            Image(systemName: symbol)
+            IssueLightSignalGlyph(state: signalState)
                 .foregroundStyle(color)
-                .frame(width: 20)
+                .frame(width: 20, height: 20)
             Text(verbatim: sourceName)
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
@@ -804,14 +806,14 @@ private struct StatusPanelIssueRow: View {
         issue.kind == .host ? issue.displayName : "\(issue.hostName) · \(issue.displayName)"
     }
 
-    private var symbol: String {
+    private var signalState: IssueLightSignalState {
         if issue.kind == .host {
-            return "network.slash"
+            return .down
         }
         switch issue.severity {
-        case .critical: return "exclamationmark.octagon.fill"
-        case .unknown: return "questionmark.diamond.fill"
-        case .warning: return "exclamationmark.triangle.fill"
+        case .critical: return .critical
+        case .unknown: return .unknown
+        case .warning: return .warning
         }
     }
 

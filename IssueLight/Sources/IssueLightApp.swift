@@ -61,7 +61,7 @@ struct IssueLightApp: App {
                 }
         } label: {
             StatusMenuLabel(
-                symbol: model.menuBarSymbol,
+                state: menuBarGlyphState,
                 counts: MenuBarIssueCounts(issues: model.actionableIssues),
                 accessibilityText: menuBarAccessibilityLabel
             )
@@ -85,6 +85,13 @@ struct IssueLightApp: App {
         .commands {
             CommandGroup(replacing: .appInfo) {}
         }
+    }
+
+    private var menuBarGlyphState: IssueLightBeaconState {
+        if !model.hasConfiguredSource { return .needsSetup }
+        if !model.hasEnabledSource { return .paused }
+        if case .failed = model.refreshState { return .failed }
+        return model.refreshState == .refreshing ? .refreshing : .current
     }
 
     private var menuBarAccessibilityLabel: String {

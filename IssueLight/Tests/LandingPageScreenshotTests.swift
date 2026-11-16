@@ -16,7 +16,7 @@ final class LandingPageScreenshotTests: XCTestCase {
         )
         let menuItemData = try NativeViewRenderer.pngData(
             for: menuItemStatesView,
-            size: CGSize(width: 540, height: 92)
+            size: CGSize(width: 660, height: 180)
         )
         let germanMenuData = try NativeViewRenderer.pngData(
             for: menuPanelView(language: .german),
@@ -172,16 +172,22 @@ final class LandingPageScreenshotTests: XCTestCase {
     }
 
     private var menuItemStatesView: some View {
-        HStack(spacing: 26) {
-            menuItem(
-                title: "Noch nicht eingerichtet",
-                symbol: "gear.badge.questionmark",
-                count: 0
-            )
+        VStack(spacing: 12) {
+            HStack(spacing: 18) {
+                menuItem(title: "Set up", state: .needsSetup, count: 0)
+                Divider()
+                menuItem(title: "Paused", state: .paused, count: 0)
+                Divider()
+                menuItem(title: "Refreshing", state: .refreshing, count: 0)
+            }
             Divider()
-            menuItem(title: "Alles ruhig", symbol: "circle.fill", count: 0)
-            Divider()
-            menuItem(title: "Monitoring-Probleme", symbol: "circle.fill", count: 7)
+            HStack(spacing: 18) {
+                menuItem(title: "All clear", state: .current, count: 0)
+                Divider()
+                menuItem(title: "Connection failed", state: .failed, count: 0)
+                Divider()
+                menuItem(title: "7 problems", state: .current, count: 7)
+            }
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 12)
@@ -189,10 +195,10 @@ final class LandingPageScreenshotTests: XCTestCase {
         .environment(\.colorScheme, .light)
     }
 
-    private func menuItem(title: String, symbol: String, count: Int) -> some View {
+    private func menuItem(title: String, state: IssueLightBeaconState, count: Int) -> some View {
         VStack(spacing: 6) {
             StatusMenuLabel(
-                symbol: symbol,
+                state: state,
                 counts: MenuBarIssueCounts(
                     issues: (0..<count).map { index in
                         issue(
@@ -213,6 +219,7 @@ final class LandingPageScreenshotTests: XCTestCase {
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
+        .frame(maxWidth: .infinity)
     }
 
     private func menuPanelView(language: AppLanguage) -> some View {

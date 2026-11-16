@@ -499,13 +499,6 @@ final class IssueLightModel: ObservableObject {
         return .refreshing
     }
 
-    var menuBarSymbol: String {
-        if !hasConfiguredSource { return "gear.badge.questionmark" }
-        if !hasEnabledSource { return "pause.circle" }
-        if case .failed = refreshState { return "wifi.exclamationmark" }
-        return refreshState == .refreshing ? "arrow.clockwise" : "circle.fill"
-    }
-
     var deletionMessage: String {
         guard let selectedSource else {
             return localized("Die Quellenkonfiguration wird von diesem Mac entfernt.")

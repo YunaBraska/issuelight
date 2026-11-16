@@ -67,8 +67,8 @@ description: IssueLight keeps infrastructure problems in the macOS menu bar and 
   </div>
   <div class="language-grid">
     <figure class="app-window language-states">
-      <img src="{{ '/assets/screenshots/menu-item-states.png' | relative_url }}" alt="IssueLight menu bar item in setup, healthy and seven-problem states" width="1080" height="184">
-      <figcaption>The menu-bar signal stays compact in setup, healthy and attention states.</figcaption>
+      <img src="{{ '/assets/screenshots/menu-item-states.png' | relative_url }}" alt="IssueLight custom lighthouse menu bar signal in setup, paused, refreshing, healthy, failed and seven-problem states" width="1320" height="360">
+      <figcaption>One custom lighthouse signal covers setup, paused, refreshing, healthy, failed and attention states.</figcaption>
     </figure>
     <figure class="app-window">
       <img src="{{ '/assets/screenshots/menu-panel-sv.png' | relative_url }}" alt="IssueLight status menu in Swedish" width="860" height="480">

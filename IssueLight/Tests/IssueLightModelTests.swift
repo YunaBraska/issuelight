@@ -85,7 +85,6 @@ final class IssueLightModelTests: XCTestCase {
         XCTAssertTrue(harness.model.hasPartialRefreshFailure)
         XCTAssertEqual(harness.model.refreshState, .failed("Source 1: Der Server ist nicht erreichbar."))
         XCTAssertEqual(Set(harness.model.actionableIssues.map(\.summary)), ["Last known", "Current"])
-        XCTAssertEqual(harness.model.menuBarSymbol, "wifi.exclamationmark")
     }
 
     func testConfirmedActionRefreshesOnlyItsSource() async throws {
