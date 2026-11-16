@@ -10,7 +10,8 @@ final class Icinga2ProviderTests: XCTestCase {
         let registry = ProviderRegistry.builtIn()
         let provider = try XCTUnwrap(registry.provider(for: Icinga2Provider.id))
 
-        XCTAssertEqual(registry.descriptors.map(\.displayName), ["Icinga 2"])
+        XCTAssertEqual(registry.descriptors.map(\.displayName), ["Checkmk", "Icinga 2", "Nagios Core", "Thruk"])
+        XCTAssertEqual(provider.descriptor.endpointExample, "https://icinga.example:5665")
         XCTAssertEqual(provider.descriptor.capabilities.authenticationMethods, [.basic, .clientCertificate])
         XCTAssertEqual(
             provider.descriptor.capabilities.serverTrustMethods,
@@ -40,6 +41,21 @@ final class Icinga2ProviderTests: XCTestCase {
         )
 
         XCTAssertEqual(result, .rejected("This provider does not support the requested action."))
+    }
+
+    func testProviderDefaultsRemainSafeForReadOnlyImplementations() {
+        let provider = ReadOnlyTestProvider()
+        let actionSource = source(endpoint: "https://icinga.example.test:5665")
+        let actionIssue = issue(sourceID: actionSource.id, kind: .host)
+
+        XCTAssertEqual(
+            provider.endpointCandidates(from: "  https://monitoring.example.test/api  "),
+            [URL(string: "https://monitoring.example.test/api")!]
+        )
+        XCTAssertTrue(provider.endpointCandidates(from: "   ").isEmpty)
+        XCTAssertTrue(provider.supportedActions(for: actionSource).isEmpty)
+        XCTAssertNil(provider.defaultWebBaseURL(for: actionSource))
+        XCTAssertNil(provider.webURL(for: actionIssue, from: actionSource))
     }
 
     func testMonitoringActionsExposeTheirCapabilityKinds() {
@@ -72,6 +88,80 @@ final class Icinga2ProviderTests: XCTestCase {
             provider.validate(source(endpoint: "https://icinga.example.test:5665/custom")),
             [.unsupportedPath("/custom")]
         )
+    }
+
+    func testIcingaBuildsCanonicalCandidatesFromMinimalAndNoisyHints() {
+        let provider = Icinga2Provider()
+
+        XCTAssertEqual(
+            provider.endpointCandidates(from: " icinga.example.test/v1/ ").map(\.absoluteString),
+            ["https://icinga.example.test:5665"]
+        )
+        XCTAssertEqual(
+            provider.endpointCandidates(from: "http://icinga.example.test:8443/v2/?ignored=yes").map(\.absoluteString),
+            [
+                "https://icinga.example.test:8443",
+                "https://icinga.example.test:5665",
+            ]
+        )
+    }
+
+    func testIcingaDerivesAPICandidatesFromPastedBrowserURLs() {
+        let provider = Icinga2Provider()
+
+        XCTAssertEqual(
+            provider.endpointCandidates(
+                from: "http://localhost:8080/icingadb/hosts#!/icingadb/host?name=down-host"
+            ).map(\.absoluteString),
+            [
+                "https://localhost:5665",
+                "https://localhost:8080",
+            ]
+        )
+        XCTAssertEqual(
+            provider.endpointCandidates(
+                from: "https://monitoring.example.test/icingaweb2/monitoring/list/services?service_problem=1"
+            ).map(\.absoluteString),
+            [
+                "https://monitoring.example.test:5665",
+                "https://monitoring.example.test:443",
+            ]
+        )
+        XCTAssertEqual(
+            provider.endpointCandidates(from: "//monitoring.example.test/icingaweb2").map(\.absoluteString),
+            [
+                "https://monitoring.example.test:5665",
+                "https://monitoring.example.test:443",
+            ]
+        )
+    }
+
+    func testIcingaKeepsAnExplicitPortFirstForAPIShapedHints() {
+        let provider = Icinga2Provider()
+
+        XCTAssertEqual(
+            provider.endpointCandidates(
+                from: "https://monitoring.example.test:8443/v1/objects/hosts?attrs=name#ignored"
+            ).map(\.absoluteString),
+            [
+                "https://monitoring.example.test:8443",
+                "https://monitoring.example.test:5665",
+            ]
+        )
+    }
+
+    func testIcingaUsesLocalhostCandidatesForAnEmptyHint() {
+        XCTAssertEqual(
+            Icinga2Provider().endpointCandidates(from: "   ").map(\.absoluteString),
+            ["https://localhost:5665"]
+        )
+    }
+
+    func testIcingaRejectsEndpointHintsContainingCredentialsOrMissingAHost() {
+        let provider = Icinga2Provider()
+
+        XCTAssertEqual(provider.endpointCandidates(from: "https://user:secret@icinga.example.test"), [])
+        XCTAssertEqual(provider.endpointCandidates(from: "https:///v1"), [])
     }
 
     func testIcingaBuildsStatusURLFromRootAndVersionedEndpoint() throws {
@@ -133,14 +223,14 @@ final class Icinga2ProviderTests: XCTestCase {
         )
     }
 
-    func testIcingaUsesSameHostIcingaWebDefaultWhenNoOverrideExists() {
+    func testIcingaUsesSameHostIcingaDBWebDefaultWhenNoOverrideExists() {
         let provider = Icinga2Provider()
         var configuredSource = source(endpoint: "https://icinga.example.test:5665")
         let sourceIssue = issue(sourceID: configuredSource.id, kind: .host)
 
         XCTAssertEqual(
             provider.webURL(for: sourceIssue, from: configuredSource)?.absoluteString,
-            "https://icinga.example.test/icingaweb2/monitoring/host/show?host=edge-1"
+            "https://icinga.example.test/icingaweb2/icingadb/host?name=edge-1"
         )
 
         configuredSource.web = MonitoringWebConfiguration(
@@ -152,6 +242,14 @@ final class Icinga2ProviderTests: XCTestCase {
                 from: configuredSource
             )
         )
+    }
+
+    func testIcingaDoesNotProvideAWebDefaultForAnotherProvider() {
+        let provider = Icinga2Provider()
+        var otherSource = source(endpoint: "https://icinga.example.test:5665")
+        otherSource.providerID = ProviderID(rawValue: "other")
+
+        XCTAssertNil(provider.defaultWebBaseURL(for: otherSource))
     }
 
     func testIcingaRejectsStatusURLForInvalidSource() {

@@ -4,7 +4,10 @@ import Security
 public enum ProviderAccessFailure: Equatable, Sendable {
     case passwordNotAvailable
     case passwordAccessFailed
+    case apiKeyNotAvailable
+    case apiKeyAccessFailed
     case clientIdentityNotAvailable
+    case clientIdentityInteractionRequired
     case clientIdentityAccessFailed
     case serverCertificateNotAvailable
     case serverCertificateAccessFailed
@@ -32,8 +35,8 @@ public struct ProviderAccessResolver: Sendable {
 
     public func resolve(
         source: MonitoringSource,
-        passwordOverride: String? = nil,
-        allowsStoredPassword: Bool = true,
+        credentialOverride: String? = nil,
+        allowsStoredCredential: Bool = true,
         keychainInteraction: KeychainInteraction = .fail
     ) async -> ProviderAccessResolution {
         let trustedServerCertificate: SecCertificate?
@@ -54,10 +57,10 @@ public struct ProviderAccessResolver: Sendable {
         switch source.authentication {
         case .basic:
             let password: String
-            if let passwordOverride, !passwordOverride.isEmpty {
-                password = passwordOverride
+            if let credentialOverride, !credentialOverride.isEmpty {
+                password = credentialOverride
             } else {
-                guard allowsStoredPassword else {
+                guard allowsStoredCredential else {
                     return .failed(.passwordNotAvailable)
                 }
                 do {
@@ -77,6 +80,31 @@ public struct ProviderAccessResolver: Sendable {
                     trustedServerCertificate: trustedServerCertificate
                 )
             )
+        case .apiKey:
+            let apiKey: String
+            if let credentialOverride, !credentialOverride.isEmpty {
+                apiKey = credentialOverride
+            } else {
+                guard allowsStoredCredential else {
+                    return .failed(.apiKeyNotAvailable)
+                }
+                do {
+                    guard let storedAPIKey = try await passwordVault.apiKey(
+                        for: APIKeyCredentialScope(source: source)
+                    ) else {
+                        return .failed(.apiKeyNotAvailable)
+                    }
+                    apiKey = storedAPIKey
+                } catch {
+                    return .failed(.apiKeyAccessFailed)
+                }
+            }
+            return .resolved(
+                ProviderAccess(
+                    credential: .apiKey(apiKey),
+                    trustedServerCertificate: trustedServerCertificate
+                )
+            )
         case .clientCertificate(let identityID):
             do {
                 guard let identity = try await identityCatalog.identity(
@@ -91,6 +119,8 @@ public struct ProviderAccessResolver: Sendable {
                         trustedServerCertificate: trustedServerCertificate
                     )
                 )
+            } catch KeychainIdentityCatalogError.interactionNotAllowed {
+                return .failed(.clientIdentityInteractionRequired)
             } catch {
                 return .failed(.clientIdentityAccessFailed)
             }

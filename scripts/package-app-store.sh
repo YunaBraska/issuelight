@@ -65,7 +65,7 @@ derived_data="$temporary_directory/DerivedData"
 if [ "$allow_unsigned" = true ]; then
     xcodebuild build \
         -project "$repository_root/IssueLight/IssueLight.xcodeproj" \
-        -scheme IssueLight \
+        -scheme IssueLightAppStore \
         -configuration Release \
         -destination 'generic/platform=macOS' \
         -derivedDataPath "$derived_data" \
@@ -78,7 +78,7 @@ if [ "$allow_unsigned" = true ]; then
 else
     xcodebuild build \
         -project "$repository_root/IssueLight/IssueLight.xcodeproj" \
-        -scheme IssueLight \
+        -scheme IssueLightAppStore \
         -configuration Release \
         -destination 'generic/platform=macOS' \
         -derivedDataPath "$derived_data" \
@@ -116,6 +116,12 @@ fi
 if strings "$app/Contents/MacOS/IssueLight" | grep -F '/usr/bin/ssh' >/dev/null \
     || strings "$app/Contents/MacOS/IssueLight" | grep -F '/usr/bin/nc' >/dev/null; then
     printf '%s\n' 'App Store app must not contain external tunnel executables.' >&2
+    exit 65
+fi
+if test -d "$app/Contents/Frameworks/Sparkle.framework" \
+    || otool -L "$app/Contents/MacOS/IssueLight" | grep -F Sparkle.framework >/dev/null \
+    || test -e "$app/Contents/Resources/Sparkle-LICENSE.txt"; then
+    printf '%s\n' 'App Store app must not contain the direct-release updater.' >&2
     exit 65
 fi
 

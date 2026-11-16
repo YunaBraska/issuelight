@@ -38,7 +38,7 @@
         </nav>
       </div>
     </header>
-    <main id="content">
+    <main id="content" tabindex="-1">
       {{ content }}
     </main>
     <footer class="site-footer">
@@ -48,6 +48,7 @@
           <span>by {{ site.author }}</span>
         </div>
         <div class="footer-links">
+          <a href="{{ '/review.html' | relative_url }}">UI Gallery</a>
           <a href="{{ '/privacy.html' | relative_url }}">Privacy</a>
           <a href="{{ site.repository }}">Source</a>
           <a href="{{ site.support }}">Support</a>

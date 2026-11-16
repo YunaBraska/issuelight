@@ -11,23 +11,36 @@ IssueLight is a native macOS menu bar client for infrastructure monitoring. It
 stays quiet when systems are healthy and brings actionable problems forward
 when attention is required.
 
-Icinga 2 is the first supported provider. The core keeps provider-specific
-transport, authentication, and response handling behind a small built-in
-provider boundary so future providers do not leak into shared UI or storage.
+Icinga 2 is the compatibility baseline. Built-in Thruk, Checkmk, and Nagios Core
+adapters implement their documented HTTP interfaces. The core keeps
+provider-specific transport, authentication, discovery, and response handling
+behind one provider boundary so new providers do not leak into shared UI or
+storage.
 
 IssueLight is under active development. Source setup, macOS Keychain-backed
 credentials, strict-by-default TLS, source-specific private CAs, optional
 exact server-certificate pinning, optional per-source certificate bypass, and a
 real containerized Icinga 2 compatibility lab are implemented. The menu-bar
-panel aggregates independently refreshed sources and exposes explicit Icinga 2
-recheck, acknowledgement, and fixed-downtime actions per issue. Persistent
-panel filters, Icinga Web deep links, SSH/RDP host actions, and automatic
+panel aggregates independently refreshed sources and exposes provider-owned
+recheck, acknowledgement, and fixed-downtime actions per issue. Thruk supports
+Basic authentication and API keys stored separately in Keychain. Persistent
+panel filters, provider-built web deep links, SSH/RDP host actions, and automatic
 direct-first SSH fallback for API and reachability checks are available per
-source. Without an override, Icinga Web
-is inferred as `/icingaweb2` on the API host. Use a custom base URL ending in
-`/icingadb` for Icinga DB Web object links. Notifications and additional
-providers remain outside the current release. The universal ZIP/DMG/SBOM
-workflow is ready for signing credentials.
+source. Without an override, Icinga DB Web is inferred as
+`/icingaweb2/icingadb` on the API host. Classic Monitoring remains available
+through an explicit base URL ending in `/monitoring`. Native notifications are
+opt-in per source, suppress the initial snapshot, deduplicate unchanged issues,
+remove recovered summaries, and omit monitoring details from banner content.
+Notification clicks use the same direct-first web and SSH-tunnel path as issue
+rows. The Thruk adapter is qualified against the pinned official OMD Labs image.
+Thruk Basic authentication is read-only in IssueLight because its command API
+requires a browser CSRF token or an API key. API-key sources expose quick
+actions. Checkmk API-key sources expose acknowledgement and fixed-downtime
+actions through its REST API. Nagios Core sources use the official JSON status
+and command CGIs with Basic authentication and are qualified against the
+source-built 4.5.14 release. The universal ZIP/DMG/SBOM workflow is ready for
+signing credentials. Direct releases use a signed Sparkle feed for updates. The
+App Store target uses Apple's update channel and contains no Sparkle runtime.
 
 ## Requirements
 
@@ -35,7 +48,7 @@ workflow is ready for signing credentials.
 - System-default language or one of 21 built-in languages
 - Xcode 16 or newer
 - XcodeGen 2.45 or newer when changing `IssueLight/project.yml`
-- Docker with Compose for the optional real Icinga 2 integration matrix
+- Docker with Compose for the optional real-system integration labs
 
 ## Build and test
 
@@ -61,8 +74,13 @@ Regenerate the Xcode project after changing `IssueLight/project.yml`:
 xcodegen generate --spec IssueLight/project.yml
 ```
 
-Run the complete local CI contract with `sh scripts/check.sh`. The real Icinga 2 matrix is documented in
-[`integration/icinga2/README.md`](integration/icinga2/README.md).
+Run the complete local CI contract with `sh scripts/check.sh`. The real-system
+matrices are documented in
+[`integration/icinga2/README.md`](integration/icinga2/README.md) and
+[`integration/thruk/README.md`](integration/thruk/README.md). The Checkmk lab is
+documented in [`integration/checkmk/README.md`](integration/checkmk/README.md),
+and the Nagios Core lab in
+[`integration/nagioscore/README.md`](integration/nagioscore/README.md).
 
 ## Project documentation
 

@@ -10,12 +10,15 @@ public struct ProviderID: RawRepresentable, Codable, Hashable, Sendable {
 
 public enum AuthenticationConfiguration: Codable, Equatable, Sendable {
     case basic(username: String)
+    case apiKey(username: String)
     case clientCertificate(identityID: String)
 
     public var method: AuthenticationMethod {
         switch self {
         case .basic:
             return .basic
+        case .apiKey:
+            return .apiKey
         case .clientCertificate:
             return .clientCertificate
         }
@@ -24,6 +27,7 @@ public enum AuthenticationConfiguration: Codable, Equatable, Sendable {
 
 public enum AuthenticationMethod: String, Codable, CaseIterable, Sendable {
     case basic
+    case apiKey
     case clientCertificate
 }
 
@@ -105,19 +109,38 @@ public struct SSHTunnelConfiguration: Codable, Equatable, Sendable {
 
 public struct MonitoringWebConfiguration: Codable, Equatable, Sendable {
     public var baseURL: URL
+    public var baseURLInput: String?
     public var automaticSSHTunnel: SSHTunnelConfiguration?
 
     public init(baseURL: URL, automaticSSHTunnel: SSHTunnelConfiguration? = nil) {
         self.baseURL = baseURL
+        baseURLInput = nil
         self.automaticSSHTunnel = automaticSSHTunnel
+    }
+
+    public init(
+        baseURL: URL,
+        baseURLInput: String?,
+        automaticSSHTunnel: SSHTunnelConfiguration? = nil
+    ) {
+        self.baseURL = baseURL
+        self.baseURLInput = baseURLInput
+        self.automaticSSHTunnel = automaticSSHTunnel
+    }
+
+    public var editableBaseURL: String {
+        baseURLInput ?? baseURL.absoluteString
     }
 }
 
 public struct MonitoringSource: Codable, Equatable, Identifiable, Sendable {
+    public static let unresolvedEndpoint = URL(string: "issuelight-draft:")!
+
     public let id: UUID
     public var name: String
     public var providerID: ProviderID
     public var endpoint: URL
+    public var endpointInput: String?
     public var isEnabled: Bool
     public var authentication: AuthenticationConfiguration
     public var serverTrust: ServerTrustConfiguration
@@ -141,12 +164,43 @@ public struct MonitoringSource: Codable, Equatable, Identifiable, Sendable {
         self.name = name
         self.providerID = providerID
         self.endpoint = endpoint
+        endpointInput = nil
         self.isEnabled = isEnabled
         self.authentication = authentication
         self.serverTrust = serverTrust
         self.sshTunnel = sshTunnel
         self.web = web
         self.remoteAccess = remoteAccess
+    }
+
+    public init(
+        id: UUID = UUID(),
+        name: String,
+        providerID: ProviderID,
+        endpoint: URL,
+        endpointInput: String?,
+        isEnabled: Bool = true,
+        authentication: AuthenticationConfiguration,
+        serverTrust: ServerTrustConfiguration = .system,
+        sshTunnel: SSHTunnelConfiguration? = nil,
+        web: MonitoringWebConfiguration? = nil,
+        remoteAccess: RemoteAccessConfiguration? = nil
+    ) {
+        self.id = id
+        self.name = name
+        self.providerID = providerID
+        self.endpoint = endpoint
+        self.endpointInput = endpointInput
+        self.isEnabled = isEnabled
+        self.authentication = authentication
+        self.serverTrust = serverTrust
+        self.sshTunnel = sshTunnel
+        self.web = web
+        self.remoteAccess = remoteAccess
+    }
+
+    public var editableEndpoint: String {
+        endpointInput ?? endpoint.absoluteString
     }
 
     /// The persistent Keychain reference for source-specific CA trust, when configured.
@@ -164,6 +218,7 @@ public struct MonitoringSource: Codable, Equatable, Identifiable, Sendable {
             serverTrust = .system
         }
         endpoint = newEndpoint
+        endpointInput = nil
         return authorityChanged
     }
 
@@ -233,6 +288,8 @@ public enum MonitoringSourceValidator {
             } else if username.contains(":") {
                 issues.append(.invalidUsername)
             }
+        case .apiKey:
+            break
         case .clientCertificate(let identityID):
             if identityID.isEmpty {
                 issues.append(.missingClientIdentity)

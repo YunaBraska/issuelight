@@ -118,6 +118,46 @@ final class LocalizationCatalogTests: XCTestCase {
         XCTAssertTrue(missingKeys.isEmpty, "Missing source keys: \(missingKeys)")
     }
 
+    func testCatalogContainsEveryStaticAppLocalizationKey() throws {
+        let sourceDirectory = catalogURL
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .appendingPathComponent("Sources", isDirectory: true)
+        let sourceFiles = try FileManager.default.contentsOfDirectory(
+            at: sourceDirectory,
+            includingPropertiesForKeys: nil
+        )
+        .filter { $0.pathExtension == "swift" }
+        .sorted { $0.path < $1.path }
+        let expression = try NSRegularExpression(
+            pattern: #"AppLocalization\s*\.\s*string\s*\(\s*\"((?:\\.|[^\"\\])*)\""#
+        )
+        var referencedKeys = Set<String>()
+
+        for sourceFile in sourceFiles {
+            let source = try String(contentsOf: sourceFile, encoding: .utf8)
+            let range = NSRange(source.startIndex..., in: source)
+            for match in expression.matches(in: source, range: range) {
+                guard let captureRange = Range(match.range(at: 1), in: source) else { continue }
+                let literal = String(source[captureRange])
+                guard !literal.contains(#"\("#) else { continue }
+                let encoded = try XCTUnwrap(
+                    "\"\(literal)\"".data(using: .utf8),
+                    sourceFile.lastPathComponent
+                )
+                let key = try XCTUnwrap(
+                    JSONSerialization.jsonObject(with: encoded, options: .fragmentsAllowed) as? String,
+                    "Invalid localized string literal in \(sourceFile.lastPathComponent): \(literal)"
+                )
+                referencedKeys.insert(key)
+            }
+        }
+
+        let catalogStrings = try XCTUnwrap(loadCatalog()["strings"] as? [String: Any])
+        let missingKeys = referencedKeys.subtracting(catalogStrings.keys).sorted()
+        XCTAssertTrue(missingKeys.isEmpty, "Missing AppLocalization keys: \(missingKeys)")
+    }
+
     private var protectedTerms: [String] {
         ["IssueLight", "macOS", "Icinga", "PKCS#12", "SHA-256", "HTTP", "TLS", "API"]
     }

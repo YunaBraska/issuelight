@@ -1,6 +1,30 @@
 {
   "sourceLanguage": "de",
   "strings": {
+    "Aus": {"localizations":{"ar":{"stringUnit":{"state":"translated","value":"إيقاف"}},"bn":{"stringUnit":{"state":"translated","value":"বন্ধ"}},"en":{"stringUnit":{"state":"translated","value":"Off"}},"es":{"stringUnit":{"state":"translated","value":"Desactivado"}},"fr":{"stringUnit":{"state":"translated","value":"Désactivé"}},"ha":{"stringUnit":{"state":"translated","value":"A kashe"}},"hi":{"stringUnit":{"state":"translated","value":"बंद"}},"id":{"stringUnit":{"state":"translated","value":"Mati"}},"ja":{"stringUnit":{"state":"translated","value":"オフ"}},"mr":{"stringUnit":{"state":"translated","value":"बंद"}},"pcm":{"stringUnit":{"state":"translated","value":"Off"}},"pt":{"stringUnit":{"state":"translated","value":"Desativado"}},"ru":{"stringUnit":{"state":"translated","value":"Выкл."}},"sv":{"stringUnit":{"state":"translated","value":"Av"}},"sw":{"stringUnit":{"state":"translated","value":"Zima"}},"te":{"stringUnit":{"state":"translated","value":"ఆఫ్"}},"tr":{"stringUnit":{"state":"translated","value":"Kapalı"}},"ur":{"stringUnit":{"state":"translated","value":"بند"}},"vi":{"stringUnit":{"state":"translated","value":"Tắt"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"关闭"}}}},
+    "Benachrichtigungen": {"localizations":{"ar":{"stringUnit":{"state":"translated","value":"الإشعارات"}},"bn":{"stringUnit":{"state":"translated","value":"বিজ্ঞপ্তি"}},"en":{"stringUnit":{"state":"translated","value":"Notifications"}},"es":{"stringUnit":{"state":"translated","value":"Notificaciones"}},"fr":{"stringUnit":{"state":"translated","value":"Notifications"}},"ha":{"stringUnit":{"state":"translated","value":"Sanarwa"}},"hi":{"stringUnit":{"state":"translated","value":"सूचनाएँ"}},"id":{"stringUnit":{"state":"translated","value":"Notifikasi"}},"ja":{"stringUnit":{"state":"translated","value":"通知"}},"mr":{"stringUnit":{"state":"translated","value":"सूचना"}},"pcm":{"stringUnit":{"state":"translated","value":"Notifications"}},"pt":{"stringUnit":{"state":"translated","value":"Notificações"}},"ru":{"stringUnit":{"state":"translated","value":"Уведомления"}},"sv":{"stringUnit":{"state":"translated","value":"Notiser"}},"sw":{"stringUnit":{"state":"translated","value":"Arifa"}},"te":{"stringUnit":{"state":"translated","value":"నోటిఫికేషన్‌లు"}},"tr":{"stringUnit":{"state":"translated","value":"Bildirimler"}},"ur":{"stringUnit":{"state":"translated","value":"اطلاعات"}},"vi":{"stringUnit":{"state":"translated","value":"Thông báo"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"通知"}}}},
+    "Keine Quellen": {"localizations":{"ar":{"stringUnit":{"state":"translated","value":"لا توجد مصادر"}},"bn":{"stringUnit":{"state":"translated","value":"কোনো উৎস নেই"}},"en":{"stringUnit":{"state":"translated","value":"No sources"}},"es":{"stringUnit":{"state":"translated","value":"Sin fuentes"}},"fr":{"stringUnit":{"state":"translated","value":"Aucune source"}},"ha":{"stringUnit":{"state":"translated","value":"Babu tushe"}},"hi":{"stringUnit":{"state":"translated","value":"कोई स्रोत नहीं"}},"id":{"stringUnit":{"state":"translated","value":"Tidak ada sumber"}},"ja":{"stringUnit":{"state":"translated","value":"ソースなし"}},"mr":{"stringUnit":{"state":"translated","value":"कोणतेही स्त्रोत नाहीत"}},"pcm":{"stringUnit":{"state":"translated","value":"No source"}},"pt":{"stringUnit":{"state":"translated","value":"Sem origens"}},"ru":{"stringUnit":{"state":"translated","value":"Нет источников"}},"sv":{"stringUnit":{"state":"translated","value":"Inga källor"}},"sw":{"stringUnit":{"state":"translated","value":"Hakuna vyanzo"}},"te":{"stringUnit":{"state":"translated","value":"మూలాలు లేవు"}},"tr":{"stringUnit":{"state":"translated","value":"Kaynak yok"}},"ur":{"stringUnit":{"state":"translated","value":"کوئی سورس نہیں"}},"vi":{"stringUnit":{"state":"translated","value":"Không có nguồn"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"无数据源"}}}},
+    "Nur kritisch": {"localizations":{"ar":{"stringUnit":{"state":"translated","value":"الحرجة فقط"}},"bn":{"stringUnit":{"state":"translated","value":"শুধু গুরুতর"}},"en":{"stringUnit":{"state":"translated","value":"Critical only"}},"es":{"stringUnit":{"state":"translated","value":"Solo críticos"}},"fr":{"stringUnit":{"state":"translated","value":"Critiques uniquement"}},"ha":{"stringUnit":{"state":"translated","value":"Masu tsanani kawai"}},"hi":{"stringUnit":{"state":"translated","value":"केवल गंभीर"}},"id":{"stringUnit":{"state":"translated","value":"Hanya kritis"}},"ja":{"stringUnit":{"state":"translated","value":"重大のみ"}},"mr":{"stringUnit":{"state":"translated","value":"फक्त गंभीर"}},"pcm":{"stringUnit":{"state":"translated","value":"Critical only"}},"pt":{"stringUnit":{"state":"translated","value":"Apenas críticos"}},"ru":{"stringUnit":{"state":"translated","value":"Только критические"}},"sv":{"stringUnit":{"state":"translated","value":"Endast kritiska"}},"sw":{"stringUnit":{"state":"translated","value":"Muhimu pekee"}},"te":{"stringUnit":{"state":"translated","value":"క్లిష్టమైనవి మాత్రమే"}},"tr":{"stringUnit":{"state":"translated","value":"Yalnızca kritik"}},"ur":{"stringUnit":{"state":"translated","value":"صرف سنگین"}},"vi":{"stringUnit":{"state":"translated","value":"Chỉ nghiêm trọng"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"仅严重"}}}},
+    "Warnungen und kritisch": {"localizations":{"ar":{"stringUnit":{"state":"translated","value":"التحذيرات والحرجة"}},"bn":{"stringUnit":{"state":"translated","value":"সতর্কতা ও গুরুতর"}},"en":{"stringUnit":{"state":"translated","value":"Warnings and critical"}},"es":{"stringUnit":{"state":"translated","value":"Avisos y críticos"}},"fr":{"stringUnit":{"state":"translated","value":"Avertissements et critiques"}},"ha":{"stringUnit":{"state":"translated","value":"Gargaɗi da masu tsanani"}},"hi":{"stringUnit":{"state":"translated","value":"चेतावनी और गंभीर"}},"id":{"stringUnit":{"state":"translated","value":"Peringatan dan kritis"}},"ja":{"stringUnit":{"state":"translated","value":"警告と重大"}},"mr":{"stringUnit":{"state":"translated","value":"इशारे आणि गंभीर"}},"pcm":{"stringUnit":{"state":"translated","value":"Warnings and critical"}},"pt":{"stringUnit":{"state":"translated","value":"Avisos e críticos"}},"ru":{"stringUnit":{"state":"translated","value":"Предупреждения и критические"}},"sv":{"stringUnit":{"state":"translated","value":"Varningar och kritiska"}},"sw":{"stringUnit":{"state":"translated","value":"Maonyo na muhimu"}},"te":{"stringUnit":{"state":"translated","value":"హెచ్చరికలు మరియు క్లిష్టమైనవి"}},"tr":{"stringUnit":{"state":"translated","value":"Uyarılar ve kritik"}},"ur":{"stringUnit":{"state":"translated","value":"انتباہات اور سنگین"}},"vi":{"stringUnit":{"state":"translated","value":"Cảnh báo và nghiêm trọng"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"警告和严重"}}}},
+    "Erlauben …": {"localizations":{"ar":{"stringUnit":{"state":"translated","value":"السماح…"}},"bn":{"stringUnit":{"state":"translated","value":"অনুমতি দিন…"}},"en":{"stringUnit":{"state":"translated","value":"Allow…"}},"es":{"stringUnit":{"state":"translated","value":"Permitir…"}},"fr":{"stringUnit":{"state":"translated","value":"Autoriser…"}},"ha":{"stringUnit":{"state":"translated","value":"Ba da izini…"}},"hi":{"stringUnit":{"state":"translated","value":"अनुमति दें…"}},"id":{"stringUnit":{"state":"translated","value":"Izinkan…"}},"ja":{"stringUnit":{"state":"translated","value":"許可…"}},"mr":{"stringUnit":{"state":"translated","value":"परवानगी द्या…"}},"pcm":{"stringUnit":{"state":"translated","value":"Allow…"}},"pt":{"stringUnit":{"state":"translated","value":"Permitir…"}},"ru":{"stringUnit":{"state":"translated","value":"Разрешить…"}},"sv":{"stringUnit":{"state":"translated","value":"Tillåt…"}},"sw":{"stringUnit":{"state":"translated","value":"Ruhusu…"}},"te":{"stringUnit":{"state":"translated","value":"అనుమతించు…"}},"tr":{"stringUnit":{"state":"translated","value":"İzin ver…"}},"ur":{"stringUnit":{"state":"translated","value":"اجازت دیں…"}},"vi":{"stringUnit":{"state":"translated","value":"Cho phép…"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"允许…"}}}},
+    "Aktiviere IssueLight unter Systemeinstellungen › Mitteilungen.": {"localizations":{"ar":{"stringUnit":{"state":"translated","value":"فعّل IssueLight في إعدادات النظام › الإشعارات."}},"bn":{"stringUnit":{"state":"translated","value":"সিস্টেম সেটিংস › বিজ্ঞপ্তি-তে IssueLight চালু করুন।"}},"en":{"stringUnit":{"state":"translated","value":"Enable IssueLight in System Settings › Notifications."}},"es":{"stringUnit":{"state":"translated","value":"Activa IssueLight en Ajustes del Sistema › Notificaciones."}},"fr":{"stringUnit":{"state":"translated","value":"Activez IssueLight dans Réglages Système › Notifications."}},"ha":{"stringUnit":{"state":"translated","value":"Kunna IssueLight a Saitunan Tsari › Sanarwa."}},"hi":{"stringUnit":{"state":"translated","value":"सिस्टम सेटिंग्स › सूचनाएँ में IssueLight चालू करें।"}},"id":{"stringUnit":{"state":"translated","value":"Aktifkan IssueLight di Pengaturan Sistem › Pemberitahuan."}},"ja":{"stringUnit":{"state":"translated","value":"システム設定 › 通知で IssueLight を有効にしてください。"}},"mr":{"stringUnit":{"state":"translated","value":"सिस्टम सेटिंग्ज › सूचना येथे IssueLight सुरू करा."}},"pcm":{"stringUnit":{"state":"translated","value":"Enable IssueLight for System Settings › Notifications."}},"pt":{"stringUnit":{"state":"translated","value":"Ative o IssueLight em Definições do Sistema › Notificações."}},"ru":{"stringUnit":{"state":"translated","value":"Включите IssueLight в Системных настройках › Уведомления."}},"sv":{"stringUnit":{"state":"translated","value":"Aktivera IssueLight i Systeminställningar › Notiser."}},"sw":{"stringUnit":{"state":"translated","value":"Washa IssueLight katika Mipangilio ya Mfumo › Arifa."}},"te":{"stringUnit":{"state":"translated","value":"సిస్టమ్ సెట్టింగ్‌లు › నోటిఫికేషన్‌లలో IssueLightను ప్రారంభించండి."}},"tr":{"stringUnit":{"state":"translated","value":"Sistem Ayarları › Bildirimler bölümünde IssueLight’ı etkinleştirin."}},"ur":{"stringUnit":{"state":"translated","value":"سسٹم سیٹنگز › اطلاعات میں IssueLight فعال کریں۔"}},"vi":{"stringUnit":{"state":"translated","value":"Bật IssueLight trong Cài đặt hệ thống › Thông báo."}},"zh-Hans":{"stringUnit":{"state":"translated","value":"请在系统设置 › 通知中启用 IssueLight。"}}}},
+    "Systemzugriff": {"localizations":{"ar":{"stringUnit":{"state":"translated","value":"الوصول إلى النظام"}},"bn":{"stringUnit":{"state":"translated","value":"সিস্টেম অ্যাক্সেস"}},"en":{"stringUnit":{"state":"translated","value":"System access"}},"es":{"stringUnit":{"state":"translated","value":"Acceso al sistema"}},"fr":{"stringUnit":{"state":"translated","value":"Accès au système"}},"ha":{"stringUnit":{"state":"translated","value":"Izinin tsarin"}},"hi":{"stringUnit":{"state":"translated","value":"सिस्टम एक्सेस"}},"id":{"stringUnit":{"state":"translated","value":"Akses sistem"}},"ja":{"stringUnit":{"state":"translated","value":"システムアクセス"}},"mr":{"stringUnit":{"state":"translated","value":"सिस्टम प्रवेश"}},"pcm":{"stringUnit":{"state":"translated","value":"System access"}},"pt":{"stringUnit":{"state":"translated","value":"Acesso ao sistema"}},"ru":{"stringUnit":{"state":"translated","value":"Системный доступ"}},"sv":{"stringUnit":{"state":"translated","value":"Systemåtkomst"}},"sw":{"stringUnit":{"state":"translated","value":"Ufikiaji wa mfumo"}},"te":{"stringUnit":{"state":"translated","value":"సిస్టమ్ యాక్సెస్"}},"tr":{"stringUnit":{"state":"translated","value":"Sistem erişimi"}},"ur":{"stringUnit":{"state":"translated","value":"سسٹم رسائی"}},"vi":{"stringUnit":{"state":"translated","value":"Quyền truy cập hệ thống"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"系统访问权限"}}}},
+    "Noch nicht erlaubt": {"localizations":{"ar":{"stringUnit":{"state":"translated","value":"لم يُسمح بعد"}},"bn":{"stringUnit":{"state":"translated","value":"এখনও অনুমতি দেওয়া হয়নি"}},"en":{"stringUnit":{"state":"translated","value":"Not allowed yet"}},"es":{"stringUnit":{"state":"translated","value":"Aún no permitido"}},"fr":{"stringUnit":{"state":"translated","value":"Pas encore autorisé"}},"ha":{"stringUnit":{"state":"translated","value":"Ba a ba da izini ba tukuna"}},"hi":{"stringUnit":{"state":"translated","value":"अभी अनुमति नहीं है"}},"id":{"stringUnit":{"state":"translated","value":"Belum diizinkan"}},"ja":{"stringUnit":{"state":"translated","value":"未許可"}},"mr":{"stringUnit":{"state":"translated","value":"अद्याप परवानगी नाही"}},"pcm":{"stringUnit":{"state":"translated","value":"Never allow yet"}},"pt":{"stringUnit":{"state":"translated","value":"Ainda não permitido"}},"ru":{"stringUnit":{"state":"translated","value":"Пока не разрешено"}},"sv":{"stringUnit":{"state":"translated","value":"Inte tillåtet ännu"}},"sw":{"stringUnit":{"state":"translated","value":"Bado haijaruhusiwa"}},"te":{"stringUnit":{"state":"translated","value":"ఇంకా అనుమతించలేదు"}},"tr":{"stringUnit":{"state":"translated","value":"Henüz izin verilmedi"}},"ur":{"stringUnit":{"state":"translated","value":"ابھی اجازت نہیں دی گئی"}},"vi":{"stringUnit":{"state":"translated","value":"Chưa được cho phép"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"尚未允许"}}}},
+    "Erlaubt": {"localizations":{"ar":{"stringUnit":{"state":"translated","value":"مسموح"}},"bn":{"stringUnit":{"state":"translated","value":"অনুমোদিত"}},"en":{"stringUnit":{"state":"translated","value":"Allowed"}},"es":{"stringUnit":{"state":"translated","value":"Permitido"}},"fr":{"stringUnit":{"state":"translated","value":"Autorisé"}},"ha":{"stringUnit":{"state":"translated","value":"An ba da izini"}},"hi":{"stringUnit":{"state":"translated","value":"अनुमति है"}},"id":{"stringUnit":{"state":"translated","value":"Diizinkan"}},"ja":{"stringUnit":{"state":"translated","value":"許可済み"}},"mr":{"stringUnit":{"state":"translated","value":"परवानगी दिली"}},"pcm":{"stringUnit":{"state":"translated","value":"Allowed"}},"pt":{"stringUnit":{"state":"translated","value":"Permitido"}},"ru":{"stringUnit":{"state":"translated","value":"Разрешено"}},"sv":{"stringUnit":{"state":"translated","value":"Tillåtet"}},"sw":{"stringUnit":{"state":"translated","value":"Imeruhusiwa"}},"te":{"stringUnit":{"state":"translated","value":"అనుమతించబడింది"}},"tr":{"stringUnit":{"state":"translated","value":"İzin verildi"}},"ur":{"stringUnit":{"state":"translated","value":"اجازت ہے"}},"vi":{"stringUnit":{"state":"translated","value":"Đã cho phép"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"已允许"}}}},
+    "In macOS deaktiviert": {"localizations":{"ar":{"stringUnit":{"state":"translated","value":"معطّل في macOS"}},"bn":{"stringUnit":{"state":"translated","value":"macOS-এ বন্ধ"}},"en":{"stringUnit":{"state":"translated","value":"Disabled in macOS"}},"es":{"stringUnit":{"state":"translated","value":"Desactivado en macOS"}},"fr":{"stringUnit":{"state":"translated","value":"Désactivé dans macOS"}},"ha":{"stringUnit":{"state":"translated","value":"An kashe a macOS"}},"hi":{"stringUnit":{"state":"translated","value":"macOS में बंद"}},"id":{"stringUnit":{"state":"translated","value":"Dinonaktifkan di macOS"}},"ja":{"stringUnit":{"state":"translated","value":"macOS で無効"}},"mr":{"stringUnit":{"state":"translated","value":"macOS मध्ये बंद"}},"pcm":{"stringUnit":{"state":"translated","value":"Disabled for macOS"}},"pt":{"stringUnit":{"state":"translated","value":"Desativado no macOS"}},"ru":{"stringUnit":{"state":"translated","value":"Отключено в macOS"}},"sv":{"stringUnit":{"state":"translated","value":"Avstängt i macOS"}},"sw":{"stringUnit":{"state":"translated","value":"Imezimwa katika macOS"}},"te":{"stringUnit":{"state":"translated","value":"macOSలో నిలిపివేయబడింది"}},"tr":{"stringUnit":{"state":"translated","value":"macOS’ta devre dışı"}},"ur":{"stringUnit":{"state":"translated","value":"macOS میں بند"}},"vi":{"stringUnit":{"state":"translated","value":"Đã tắt trong macOS"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"已在 macOS 中停用"}}}},
+    "Nur neue oder verschärfte Probleme werden gemeldet. Mitteilungen verbergen Monitoring-Details.": {"localizations":{"ar":{"stringUnit":{"state":"translated","value":"لا يتم الإبلاغ إلا عن المشكلات الجديدة أو المتفاقمة. تخفي الإشعارات تفاصيل المراقبة."}},"bn":{"stringUnit":{"state":"translated","value":"শুধু নতুন বা আরও গুরুতর সমস্যার বিজ্ঞপ্তি দেওয়া হয়। বিজ্ঞপ্তিতে পর্যবেক্ষণের বিবরণ লুকানো থাকে।"}},"en":{"stringUnit":{"state":"translated","value":"Only new or escalated problems are reported. Notifications hide monitoring details."}},"es":{"stringUnit":{"state":"translated","value":"Solo se notifican problemas nuevos o agravados. Las notificaciones ocultan los detalles de monitorización."}},"fr":{"stringUnit":{"state":"translated","value":"Seuls les problèmes nouveaux ou aggravés sont signalés. Les notifications masquent les détails de surveillance."}},"ha":{"stringUnit":{"state":"translated","value":"Sabbin matsaloli ko waɗanda suka tsananta kawai ake sanarwa. Sanarwa suna ɓoye bayanan sa ido."}},"hi":{"stringUnit":{"state":"translated","value":"केवल नई या गंभीर हुई समस्याओं की सूचना दी जाती है। सूचनाएँ निगरानी विवरण छिपाती हैं।"}},"id":{"stringUnit":{"state":"translated","value":"Hanya masalah baru atau yang memburuk yang dilaporkan. Notifikasi menyembunyikan detail pemantauan."}},"ja":{"stringUnit":{"state":"translated","value":"新規または悪化した問題のみ通知します。通知には監視の詳細を表示しません。"}},"mr":{"stringUnit":{"state":"translated","value":"फक्त नवीन किंवा अधिक गंभीर झालेल्या समस्यांची सूचना दिली जाते. सूचनांमध्ये मॉनिटरिंग तपशील लपवले जातात."}},"pcm":{"stringUnit":{"state":"translated","value":"Na only new problem or problem wey worse dem go report. Notification no go show monitoring details."}},"pt":{"stringUnit":{"state":"translated","value":"Apenas são comunicados problemas novos ou agravados. As notificações ocultam os detalhes de monitorização."}},"ru":{"stringUnit":{"state":"translated","value":"Уведомления отправляются только о новых или усугубившихся проблемах. Сведения мониторинга в них скрыты."}},"sv":{"stringUnit":{"state":"translated","value":"Endast nya eller förvärrade problem rapporteras. Notiser döljer övervakningsdetaljer."}},"sw":{"stringUnit":{"state":"translated","value":"Matatizo mapya au yaliyoongezeka pekee ndiyo yanaripotiwa. Arifa huficha maelezo ya ufuatiliaji."}},"te":{"stringUnit":{"state":"translated","value":"కొత్త లేదా తీవ్రత పెరిగిన సమస్యలను మాత్రమే తెలియజేస్తుంది. నోటిఫికేషన్‌లు మానిటరింగ్ వివరాలను దాచుతాయి."}},"tr":{"stringUnit":{"state":"translated","value":"Yalnızca yeni veya ağırlaşan sorunlar bildirilir. Bildirimler izleme ayrıntılarını gizler."}},"ur":{"stringUnit":{"state":"translated","value":"صرف نئے یا زیادہ سنگین مسائل کی اطلاع دی جاتی ہے۔ اطلاعات میں نگرانی کی تفصیلات پوشیدہ رہتی ہیں۔"}},"vi":{"stringUnit":{"state":"translated","value":"Chỉ thông báo sự cố mới hoặc nghiêm trọng hơn. Thông báo ẩn chi tiết giám sát."}},"zh-Hans":{"stringUnit":{"state":"translated","value":"仅报告新出现或升级的问题。通知会隐藏监控详情。"}}}},
+    "Neues Monitoring-Problem": {"localizations":{"ar":{"stringUnit":{"state":"translated","value":"مشكلة مراقبة جديدة"}},"bn":{"stringUnit":{"state":"translated","value":"নতুন পর্যবেক্ষণ সমস্যা"}},"en":{"stringUnit":{"state":"translated","value":"New monitoring problem"}},"es":{"stringUnit":{"state":"translated","value":"Nuevo problema de monitorización"}},"fr":{"stringUnit":{"state":"translated","value":"Nouveau problème de surveillance"}},"ha":{"stringUnit":{"state":"translated","value":"Sabuwar matsalar sa ido"}},"hi":{"stringUnit":{"state":"translated","value":"नई निगरानी समस्या"}},"id":{"stringUnit":{"state":"translated","value":"Masalah pemantauan baru"}},"ja":{"stringUnit":{"state":"translated","value":"新しい監視問題"}},"mr":{"stringUnit":{"state":"translated","value":"नवीन मॉनिटरिंग समस्या"}},"pcm":{"stringUnit":{"state":"translated","value":"New monitoring problem"}},"pt":{"stringUnit":{"state":"translated","value":"Novo problema de monitorização"}},"ru":{"stringUnit":{"state":"translated","value":"Новая проблема мониторинга"}},"sv":{"stringUnit":{"state":"translated","value":"Nytt övervakningsproblem"}},"sw":{"stringUnit":{"state":"translated","value":"Tatizo jipya la ufuatiliaji"}},"te":{"stringUnit":{"state":"translated","value":"కొత్త మానిటరింగ్ సమస్య"}},"tr":{"stringUnit":{"state":"translated","value":"Yeni izleme sorunu"}},"ur":{"stringUnit":{"state":"translated","value":"نیا نگرانی کا مسئلہ"}},"vi":{"stringUnit":{"state":"translated","value":"Sự cố giám sát mới"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"新的监控问题"}}}},
+    "%lld neue Monitoring-Probleme": {"localizations":{"ar":{"stringUnit":{"state":"translated","value":"%lld مشكلات مراقبة جديدة"}},"bn":{"stringUnit":{"state":"translated","value":"%lldটি নতুন পর্যবেক্ষণ সমস্যা"}},"en":{"stringUnit":{"state":"translated","value":"%lld new monitoring problems"}},"es":{"stringUnit":{"state":"translated","value":"%lld problemas nuevos de monitorización"}},"fr":{"stringUnit":{"state":"translated","value":"%lld nouveaux problèmes de surveillance"}},"ha":{"stringUnit":{"state":"translated","value":"Sabbin matsalolin sa ido %lld"}},"hi":{"stringUnit":{"state":"translated","value":"%lld नई निगरानी समस्याएँ"}},"id":{"stringUnit":{"state":"translated","value":"%lld masalah pemantauan baru"}},"ja":{"stringUnit":{"state":"translated","value":"%lld 件の新しい監視問題"}},"mr":{"stringUnit":{"state":"translated","value":"%lld नवीन मॉनिटरिंग समस्या"}},"pcm":{"stringUnit":{"state":"translated","value":"%lld new monitoring problems"}},"pt":{"stringUnit":{"state":"translated","value":"%lld novos problemas de monitorização"}},"ru":{"stringUnit":{"state":"translated","value":"%lld новых проблем мониторинга"}},"sv":{"stringUnit":{"state":"translated","value":"%lld nya övervakningsproblem"}},"sw":{"stringUnit":{"state":"translated","value":"Matatizo mapya ya ufuatiliaji %lld"}},"te":{"stringUnit":{"state":"translated","value":"%lld కొత్త మానిటరింగ్ సమస్యలు"}},"tr":{"stringUnit":{"state":"translated","value":"%lld yeni izleme sorunu"}},"ur":{"stringUnit":{"state":"translated","value":"%lld نئے نگرانی کے مسائل"}},"vi":{"stringUnit":{"state":"translated","value":"%lld sự cố giám sát mới"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"%lld 个新的监控问题"}}}},
+    "Öffne IssueLight, um den aktuellen Status zu prüfen.": {"localizations":{"ar":{"stringUnit":{"state":"translated","value":"افتح IssueLight للتحقق من الحالة الحالية."}},"bn":{"stringUnit":{"state":"translated","value":"বর্তমান অবস্থা দেখতে IssueLight খুলুন।"}},"en":{"stringUnit":{"state":"translated","value":"Open IssueLight to check the current status."}},"es":{"stringUnit":{"state":"translated","value":"Abre IssueLight para comprobar el estado actual."}},"fr":{"stringUnit":{"state":"translated","value":"Ouvrez IssueLight pour vérifier l’état actuel."}},"ha":{"stringUnit":{"state":"translated","value":"Buɗe IssueLight don duba halin yanzu."}},"hi":{"stringUnit":{"state":"translated","value":"वर्तमान स्थिति देखने के लिए IssueLight खोलें।"}},"id":{"stringUnit":{"state":"translated","value":"Buka IssueLight untuk memeriksa status saat ini."}},"ja":{"stringUnit":{"state":"translated","value":"現在の状態を確認するには IssueLight を開いてください。"}},"mr":{"stringUnit":{"state":"translated","value":"सध्याची स्थिती पाहण्यासाठी IssueLight उघडा."}},"pcm":{"stringUnit":{"state":"translated","value":"Open IssueLight to check current status."}},"pt":{"stringUnit":{"state":"translated","value":"Abra o IssueLight para verificar o estado atual."}},"ru":{"stringUnit":{"state":"translated","value":"Откройте IssueLight, чтобы проверить текущее состояние."}},"sv":{"stringUnit":{"state":"translated","value":"Öppna IssueLight för att kontrollera aktuell status."}},"sw":{"stringUnit":{"state":"translated","value":"Fungua IssueLight ili kuangalia hali ya sasa."}},"te":{"stringUnit":{"state":"translated","value":"ప్రస్తుత స్థితిని తనిఖీ చేయడానికి IssueLightను తెరవండి."}},"tr":{"stringUnit":{"state":"translated","value":"Güncel durumu kontrol etmek için IssueLight’ı açın."}},"ur":{"stringUnit":{"state":"translated","value":"موجودہ حالت دیکھنے کے لیے IssueLight کھولیں۔"}},"vi":{"stringUnit":{"state":"translated","value":"Mở IssueLight để kiểm tra trạng thái hiện tại."}},"zh-Hans":{"stringUnit":{"state":"translated","value":"打开 IssueLight 以检查当前状态。"}}}},
+    "Benachrichtigungen für %@": {"localizations":{"ar":{"stringUnit":{"state":"translated","value":"إشعارات %@"}},"bn":{"stringUnit":{"state":"translated","value":"%@-এর বিজ্ঞপ্তি"}},"en":{"stringUnit":{"state":"translated","value":"Notifications for %@"}},"es":{"stringUnit":{"state":"translated","value":"Notificaciones de %@"}},"fr":{"stringUnit":{"state":"translated","value":"Notifications pour %@"}},"ha":{"stringUnit":{"state":"translated","value":"Sanarwa don %@"}},"hi":{"stringUnit":{"state":"translated","value":"%@ के लिए सूचनाएँ"}},"id":{"stringUnit":{"state":"translated","value":"Notifikasi untuk %@"}},"ja":{"stringUnit":{"state":"translated","value":"%@ の通知"}},"mr":{"stringUnit":{"state":"translated","value":"%@ साठी सूचना"}},"pcm":{"stringUnit":{"state":"translated","value":"Notifications for %@"}},"pt":{"stringUnit":{"state":"translated","value":"Notificações para %@"}},"ru":{"stringUnit":{"state":"translated","value":"Уведомления для %@"}},"sv":{"stringUnit":{"state":"translated","value":"Notiser för %@"}},"sw":{"stringUnit":{"state":"translated","value":"Arifa za %@"}},"te":{"stringUnit":{"state":"translated","value":"%@ కోసం నోటిఫికేషన్‌లు"}},"tr":{"stringUnit":{"state":"translated","value":"%@ bildirimleri"}},"ur":{"stringUnit":{"state":"translated","value":"%@ کے لیے اطلاعات"}},"vi":{"stringUnit":{"state":"translated","value":"Thông báo cho %@"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"%@ 的通知"}}}},
+    "Check for Updates…": {"localizations":{"ar":{"stringUnit":{"state":"translated","value":"التحقق من وجود تحديثات…"}},"bn":{"stringUnit":{"state":"translated","value":"আপডেট পরীক্ষা করুন…"}},"de":{"stringUnit":{"state":"translated","value":"Nach Updates suchen …"}},"en":{"stringUnit":{"state":"translated","value":"Check for Updates…"}},"es":{"stringUnit":{"state":"translated","value":"Buscar actualizaciones…"}},"fr":{"stringUnit":{"state":"translated","value":"Rechercher les mises à jour…"}},"ha":{"stringUnit":{"state":"translated","value":"Duba sabuntawa…"}},"hi":{"stringUnit":{"state":"translated","value":"अपडेट की जाँच करें…"}},"id":{"stringUnit":{"state":"translated","value":"Periksa pembaruan…"}},"ja":{"stringUnit":{"state":"translated","value":"アップデートを確認…"}},"mr":{"stringUnit":{"state":"translated","value":"अद्यतने तपासा…"}},"pcm":{"stringUnit":{"state":"translated","value":"Check for updates…"}},"pt":{"stringUnit":{"state":"translated","value":"Procurar atualizações…"}},"ru":{"stringUnit":{"state":"translated","value":"Проверить наличие обновлений…"}},"sv":{"stringUnit":{"state":"translated","value":"Sök efter uppdateringar…"}},"sw":{"stringUnit":{"state":"translated","value":"Angalia masasisho…"}},"te":{"stringUnit":{"state":"translated","value":"నవీకరణల కోసం తనిఖీ చేయండి…"}},"tr":{"stringUnit":{"state":"translated","value":"Güncellemeleri denetle…"}},"ur":{"stringUnit":{"state":"translated","value":"اپ ڈیٹس چیک کریں…"}},"vi":{"stringUnit":{"state":"translated","value":"Kiểm tra bản cập nhật…"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"检查更新…"}}}},
+    "Open App Store Updates…": {"localizations":{"ar":{"stringUnit":{"state":"translated","value":"فتح تحديثات App Store…"}},"bn":{"stringUnit":{"state":"translated","value":"App Store আপডেট খুলুন…"}},"de":{"stringUnit":{"state":"translated","value":"App Store-Updates öffnen …"}},"en":{"stringUnit":{"state":"translated","value":"Open App Store Updates…"}},"es":{"stringUnit":{"state":"translated","value":"Abrir actualizaciones del App Store…"}},"fr":{"stringUnit":{"state":"translated","value":"Ouvrir les mises à jour de l’App Store…"}},"ha":{"stringUnit":{"state":"translated","value":"Buɗe sabuntawar App Store…"}},"hi":{"stringUnit":{"state":"translated","value":"App Store अपडेट खोलें…"}},"id":{"stringUnit":{"state":"translated","value":"Buka pembaruan App Store…"}},"ja":{"stringUnit":{"state":"translated","value":"App Store のアップデートを開く…"}},"mr":{"stringUnit":{"state":"translated","value":"App Store अद्यतने उघडा…"}},"pcm":{"stringUnit":{"state":"translated","value":"Open App Store updates…"}},"pt":{"stringUnit":{"state":"translated","value":"Abrir atualizações da App Store…"}},"ru":{"stringUnit":{"state":"translated","value":"Открыть обновления App Store…"}},"sv":{"stringUnit":{"state":"translated","value":"Öppna App Store-uppdateringar…"}},"sw":{"stringUnit":{"state":"translated","value":"Fungua masasisho ya App Store…"}},"te":{"stringUnit":{"state":"translated","value":"App Store నవీకరణలను తెరవండి…"}},"tr":{"stringUnit":{"state":"translated","value":"App Store güncellemelerini aç…"}},"ur":{"stringUnit":{"state":"translated","value":"App Store اپ ڈیٹس کھولیں…"}},"vi":{"stringUnit":{"state":"translated","value":"Mở bản cập nhật App Store…"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"打开 App Store 更新…"}}}},
+    "Diese optionalen Aktionen öffnen den in einem Problem genannten Host. Sie sind nicht der SSH-Tunnel zur Icinga-Quelle.": {"localizations":{"ar":{"stringUnit":{"state":"translated","value":"تفتح هذه الإجراءات الاختيارية المضيف المذكور في المشكلة. وهي ليست نفق SSH إلى مصدر Icinga."}},"bn":{"stringUnit":{"state":"translated","value":"এই ঐচ্ছিক কাজগুলো সমস্যায় উল্লেখ করা হোস্টটি খোলে। এগুলো Icinga উৎসের SSH টানেল নয়।"}},"de":{"stringUnit":{"state":"translated","value":"Diese optionalen Aktionen öffnen den in einem Problem genannten Host. Sie sind nicht der SSH-Tunnel zur Icinga-Quelle."}},"en":{"stringUnit":{"state":"translated","value":"These optional actions open the host named in an issue. They are not the SSH tunnel to the Icinga source."}},"es":{"stringUnit":{"state":"translated","value":"Estas acciones opcionales abren el host indicado en un problema. No son el túnel SSH hacia la fuente de Icinga."}},"fr":{"stringUnit":{"state":"translated","value":"Ces actions facultatives ouvrent l’hôte indiqué dans un problème. Elles ne correspondent pas au tunnel SSH vers la source Icinga."}},"ha":{"stringUnit":{"state":"translated","value":"Waɗannan ayyukan na zaɓi suna buɗe kwamfutar da aka ambata a matsala. Ba su ne ramin SSH zuwa tushen Icinga ba."}},"hi":{"stringUnit":{"state":"translated","value":"ये वैकल्पिक कार्रवाइयाँ समस्या में बताए गए होस्ट को खोलती हैं। ये Icinga स्रोत की SSH टनल नहीं हैं।"}},"id":{"stringUnit":{"state":"translated","value":"Tindakan opsional ini membuka host yang disebut dalam masalah. Ini bukan terowongan SSH ke sumber Icinga."}},"ja":{"stringUnit":{"state":"translated","value":"これらの任意の操作は、問題に記載されたホストを開きます。Icinga ソースへの SSH トンネルではありません。"}},"mr":{"stringUnit":{"state":"translated","value":"या ऐच्छिक कृती समस्येमध्ये नमूद केलेला होस्ट उघडतात. त्या Icinga स्त्रोतासाठीचा SSH टनेल नाहीत."}},"pcm":{"stringUnit":{"state":"translated","value":"Dis optional actions go open di host wey issue mention. Dem no be SSH tunnel to Icinga source."}},"pt":{"stringUnit":{"state":"translated","value":"Estas ações opcionais abrem o anfitrião indicado num problema. Não são o túnel SSH para a origem Icinga."}},"ru":{"stringUnit":{"state":"translated","value":"Эти необязательные действия открывают узел, указанный в проблеме. Это не SSH-туннель к источнику Icinga."}},"sv":{"stringUnit":{"state":"translated","value":"Dessa valfria åtgärder öppnar värden som anges i ett problem. De är inte SSH-tunneln till Icinga-källan."}},"sw":{"stringUnit":{"state":"translated","value":"Vitendo hivi vya hiari hufungua seva iliyotajwa kwenye tatizo. Si handaki la SSH kwenda kwenye chanzo cha Icinga."}},"te":{"stringUnit":{"state":"translated","value":"ఈ ఐచ్ఛిక చర్యలు సమస్యలో పేర్కొన్న హోస్ట్‌ను తెరుస్తాయి. ఇవి Icinga మూలానికి SSH టన్నెల్ కావు."}},"tr":{"stringUnit":{"state":"translated","value":"Bu isteğe bağlı eylemler, sorunda belirtilen ana makineyi açar. Bunlar Icinga kaynağına giden SSH tüneli değildir."}},"ur":{"stringUnit":{"state":"translated","value":"یہ اختیاری کارروائیاں مسئلے میں درج ہوسٹ کو کھولتی ہیں۔ یہ Icinga سورس کی SSH ٹنل نہیں ہیں۔"}},"vi":{"stringUnit":{"state":"translated","value":"Các thao tác tùy chọn này mở máy chủ được nêu trong sự cố. Chúng không phải là đường hầm SSH tới nguồn Icinga."}},"zh-Hans":{"stringUnit":{"state":"translated","value":"这些可选操作会打开问题中提到的主机。它们不是通往 Icinga 数据源的 SSH 隧道。"}}}},
+    "Quelle über SSH erreichen": {"localizations":{"ar":{"stringUnit":{"state":"translated","value":"الوصول إلى المصدر عبر SSH"}},"bn":{"stringUnit":{"state":"translated","value":"SSH-এর মাধ্যমে উৎসে পৌঁছান"}},"de":{"stringUnit":{"state":"translated","value":"Quelle über SSH erreichen"}},"en":{"stringUnit":{"state":"translated","value":"Reach source via SSH"}},"es":{"stringUnit":{"state":"translated","value":"Acceder a la fuente mediante SSH"}},"fr":{"stringUnit":{"state":"translated","value":"Accéder à la source via SSH"}},"ha":{"stringUnit":{"state":"translated","value":"Isa ga tushe ta SSH"}},"hi":{"stringUnit":{"state":"translated","value":"SSH के ज़रिए स्रोत तक पहुँचें"}},"id":{"stringUnit":{"state":"translated","value":"Jangkau sumber melalui SSH"}},"ja":{"stringUnit":{"state":"translated","value":"SSH 経由でソースに接続"}},"mr":{"stringUnit":{"state":"translated","value":"SSH द्वारे स्त्रोताशी जोडा"}},"pcm":{"stringUnit":{"state":"translated","value":"Reach source through SSH"}},"pt":{"stringUnit":{"state":"translated","value":"Aceder à origem por SSH"}},"ru":{"stringUnit":{"state":"translated","value":"Подключаться к источнику через SSH"}},"sv":{"stringUnit":{"state":"translated","value":"Nå källan via SSH"}},"sw":{"stringUnit":{"state":"translated","value":"Fikia chanzo kupitia SSH"}},"te":{"stringUnit":{"state":"translated","value":"SSH ద్వారా మూలాన్ని చేరుకోండి"}},"tr":{"stringUnit":{"state":"translated","value":"Kaynağa SSH üzerinden eriş"}},"ur":{"stringUnit":{"state":"translated","value":"SSH کے ذریعے سورس تک پہنچیں"}},"vi":{"stringUnit":{"state":"translated","value":"Truy cập nguồn qua SSH"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"通过 SSH 访问数据源"}}}},
+    "Nur als Fallback": {"localizations":{"ar":{"stringUnit":{"state":"translated","value":"للاستخدام الاحتياطي فقط"}},"bn":{"stringUnit":{"state":"translated","value":"শুধু বিকল্প ব্যবস্থা হিসেবে"}},"de":{"stringUnit":{"state":"translated","value":"Nur als Fallback"}},"en":{"stringUnit":{"state":"translated","value":"Fallback only"}},"es":{"stringUnit":{"state":"translated","value":"Solo como alternativa"}},"fr":{"stringUnit":{"state":"translated","value":"Uniquement en secours"}},"ha":{"stringUnit":{"state":"translated","value":"A matsayin mafita ta biyu kawai"}},"hi":{"stringUnit":{"state":"translated","value":"केवल वैकल्पिक मार्ग के रूप में"}},"id":{"stringUnit":{"state":"translated","value":"Hanya sebagai cadangan"}},"ja":{"stringUnit":{"state":"translated","value":"フォールバック時のみ"}},"mr":{"stringUnit":{"state":"translated","value":"फक्त पर्यायी मार्ग म्हणून"}},"pcm":{"stringUnit":{"state":"translated","value":"Na only as backup"}},"pt":{"stringUnit":{"state":"translated","value":"Apenas como alternativa"}},"ru":{"stringUnit":{"state":"translated","value":"Только как резервный вариант"}},"sv":{"stringUnit":{"state":"translated","value":"Endast som reserv"}},"sw":{"stringUnit":{"state":"translated","value":"Kwa njia mbadala pekee"}},"te":{"stringUnit":{"state":"translated","value":"ప్రత్యామ్నాయంగా మాత్రమే"}},"tr":{"stringUnit":{"state":"translated","value":"Yalnızca yedek olarak"}},"ur":{"stringUnit":{"state":"translated","value":"صرف متبادل کے طور پر"}},"vi":{"stringUnit":{"state":"translated","value":"Chỉ dùng làm phương án dự phòng"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"仅作为备用方式"}}}},
+    "Verbindungsversuche": {"localizations":{"ar":{"stringUnit":{"state":"translated","value":"محاولات الاتصال"}},"bn":{"stringUnit":{"state":"translated","value":"সংযোগের চেষ্টা"}},"de":{"stringUnit":{"state":"translated","value":"Verbindungsversuche"}},"en":{"stringUnit":{"state":"translated","value":"Connection attempts"}},"es":{"stringUnit":{"state":"translated","value":"Intentos de conexión"}},"fr":{"stringUnit":{"state":"translated","value":"Tentatives de connexion"}},"ha":{"stringUnit":{"state":"translated","value":"Ƙoƙarin haɗawa"}},"hi":{"stringUnit":{"state":"translated","value":"कनेक्शन के प्रयास"}},"id":{"stringUnit":{"state":"translated","value":"Percobaan koneksi"}},"ja":{"stringUnit":{"state":"translated","value":"接続試行"}},"mr":{"stringUnit":{"state":"translated","value":"कनेक्शनचे प्रयत्न"}},"pcm":{"stringUnit":{"state":"translated","value":"Connection attempts"}},"pt":{"stringUnit":{"state":"translated","value":"Tentativas de ligação"}},"ru":{"stringUnit":{"state":"translated","value":"Попытки подключения"}},"sv":{"stringUnit":{"state":"translated","value":"Anslutningsförsök"}},"sw":{"stringUnit":{"state":"translated","value":"Majaribio ya muunganisho"}},"te":{"stringUnit":{"state":"translated","value":"కనెక్షన్ ప్రయత్నాలు"}},"tr":{"stringUnit":{"state":"translated","value":"Bağlantı denemeleri"}},"ur":{"stringUnit":{"state":"translated","value":"کنکشن کی کوششیں"}},"vi":{"stringUnit":{"state":"translated","value":"Các lần thử kết nối"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"连接尝试"}}}},
+    "Entwurf gespeichert. Das Passwort konnte nicht im macOS-Schlüsselbund gespeichert werden; die Quelle bleibt pausiert.": {"localizations":{"ar":{"stringUnit":{"state":"translated","value":"تم حفظ المسودة. تعذر حفظ كلمة المرور في سلسلة مفاتيح macOS؛ سيظل المصدر متوقفًا مؤقتًا."}},"bn":{"stringUnit":{"state":"translated","value":"খসড়া সংরক্ষিত হয়েছে। macOS Keychain-এ পাসওয়ার্ড সংরক্ষণ করা যায়নি; উৎসটি বিরত থাকবে।"}},"de":{"stringUnit":{"state":"translated","value":"Entwurf gespeichert. Das Passwort konnte nicht im macOS-Schlüsselbund gespeichert werden; die Quelle bleibt pausiert."}},"en":{"stringUnit":{"state":"translated","value":"Draft saved. The password could not be stored in the macOS Keychain; the source remains paused."}},"es":{"stringUnit":{"state":"translated","value":"Borrador guardado. La contraseña no se pudo guardar en el llavero de macOS; la fuente permanece en pausa."}},"fr":{"stringUnit":{"state":"translated","value":"Brouillon enregistré. Le mot de passe n’a pas pu être stocké dans le trousseau macOS ; la source reste en pause."}},"ha":{"stringUnit":{"state":"translated","value":"An ajiye daftari. Ba a iya ajiye kalmar sirri a macOS Keychain ba; tushen zai ci gaba da kasancewa a dakatar."}},"hi":{"stringUnit":{"state":"translated","value":"ड्राफ़्ट सहेजा गया। पासवर्ड macOS Keychain में सहेजा नहीं जा सका; स्रोत रुका रहेगा।"}},"id":{"stringUnit":{"state":"translated","value":"Draf disimpan. Kata sandi tidak dapat disimpan di Rantai Kunci macOS; sumber tetap dijeda."}},"ja":{"stringUnit":{"state":"translated","value":"下書きを保存しました。パスワードを macOS キーチェーンに保存できなかったため、ソースは一時停止のままです。"}},"mr":{"stringUnit":{"state":"translated","value":"मसुदा जतन केला. पासवर्ड macOS Keychain मध्ये जतन करता आला नाही; स्त्रोत थांबवलेलाच राहील."}},"pcm":{"stringUnit":{"state":"translated","value":"Draft don save. E no fit save password for macOS Keychain; source go remain paused."}},"pt":{"stringUnit":{"state":"translated","value":"Rascunho guardado. Não foi possível guardar a palavra-passe no Porta-chaves do macOS; a origem permanece em pausa."}},"ru":{"stringUnit":{"state":"translated","value":"Черновик сохранён. Пароль не удалось сохранить в связке ключей macOS; источник остаётся приостановленным."}},"sv":{"stringUnit":{"state":"translated","value":"Utkastet har sparats. Lösenordet kunde inte lagras i macOS-nyckelringen; källan förblir pausad."}},"sw":{"stringUnit":{"state":"translated","value":"Rasimu imehifadhiwa. Nenosiri halikuweza kuhifadhiwa katika Keychain ya macOS; chanzo kitasalia kimesitishwa."}},"te":{"stringUnit":{"state":"translated","value":"డ్రాఫ్ట్ సేవ్ అయింది. పాస్‌వర్డ్‌ను macOS Keychainలో సేవ్ చేయలేకపోయాం; మూలం పాజ్‌లోనే ఉంటుంది."}},"tr":{"stringUnit":{"state":"translated","value":"Taslak kaydedildi. Parola macOS Anahtar Zinciri’ne kaydedilemedi; kaynak duraklatılmış olarak kalır."}},"ur":{"stringUnit":{"state":"translated","value":"مسودہ محفوظ ہو گیا۔ پاس ورڈ macOS Keychain میں محفوظ نہیں ہو سکا؛ سورس موقوف رہے گا۔"}},"vi":{"stringUnit":{"state":"translated","value":"Đã lưu bản nháp. Không thể lưu mật khẩu vào Chuỗi khóa macOS; nguồn vẫn tạm dừng."}},"zh-Hans":{"stringUnit":{"state":"translated","value":"草稿已保存。无法将密码存储到 macOS 钥匙串；数据源将保持暂停。"}}}},
+    "Entwurf gespeichert. Vervollständige und teste die Verbindung, bevor du die Quelle aktivierst.": {"localizations":{"ar":{"stringUnit":{"state":"translated","value":"تم حفظ المسودة. أكمل الاتصال واختبره قبل تفعيل المصدر."}},"bn":{"stringUnit":{"state":"translated","value":"খসড়া সংরক্ষিত হয়েছে। উৎসটি সক্রিয় করার আগে সংযোগ সম্পূর্ণ করে পরীক্ষা করুন।"}},"de":{"stringUnit":{"state":"translated","value":"Entwurf gespeichert. Vervollständige und teste die Verbindung, bevor du die Quelle aktivierst."}},"en":{"stringUnit":{"state":"translated","value":"Draft saved. Complete and test the connection before enabling the source."}},"es":{"stringUnit":{"state":"translated","value":"Borrador guardado. Completa y prueba la conexión antes de activar la fuente."}},"fr":{"stringUnit":{"state":"translated","value":"Brouillon enregistré. Terminez et testez la connexion avant d’activer la source."}},"ha":{"stringUnit":{"state":"translated","value":"An ajiye daftari. Kammala kuma gwada haɗin kafin ka kunna tushen."}},"hi":{"stringUnit":{"state":"translated","value":"ड्राफ़्ट सहेजा गया। स्रोत सक्रिय करने से पहले कनेक्शन पूरा करें और जाँचें।"}},"id":{"stringUnit":{"state":"translated","value":"Draf disimpan. Lengkapi dan uji koneksi sebelum mengaktifkan sumber."}},"ja":{"stringUnit":{"state":"translated","value":"下書きを保存しました。ソースを有効にする前に、接続を完了してテストしてください。"}},"mr":{"stringUnit":{"state":"translated","value":"मसुदा जतन केला. स्त्रोत सुरू करण्यापूर्वी कनेक्शन पूर्ण करून तपासा."}},"pcm":{"stringUnit":{"state":"translated","value":"Draft don save. Complete and test connection before you enable source."}},"pt":{"stringUnit":{"state":"translated","value":"Rascunho guardado. Conclua e teste a ligação antes de ativar a origem."}},"ru":{"stringUnit":{"state":"translated","value":"Черновик сохранён. Завершите и проверьте подключение перед включением источника."}},"sv":{"stringUnit":{"state":"translated","value":"Utkastet har sparats. Slutför och testa anslutningen innan du aktiverar källan."}},"sw":{"stringUnit":{"state":"translated","value":"Rasimu imehifadhiwa. Kamilisha na ujaribu muunganisho kabla ya kuwezesha chanzo."}},"te":{"stringUnit":{"state":"translated","value":"డ్రాఫ్ట్ సేవ్ అయింది. మూలాన్ని ప్రారంభించే ముందు కనెక్షన్‌ను పూర్తి చేసి పరీక్షించండి."}},"tr":{"stringUnit":{"state":"translated","value":"Taslak kaydedildi. Kaynağı etkinleştirmeden önce bağlantıyı tamamlayıp test edin."}},"ur":{"stringUnit":{"state":"translated","value":"مسودہ محفوظ ہو گیا۔ سورس فعال کرنے سے پہلے کنکشن مکمل کر کے آزمائیں۔"}},"vi":{"stringUnit":{"state":"translated","value":"Đã lưu bản nháp. Hoàn tất và kiểm tra kết nối trước khi bật nguồn."}},"zh-Hans":{"stringUnit":{"state":"translated","value":"草稿已保存。请先完成并测试连接，然后再启用数据源。"}}}},
       "Erneut prüfen": {
         "localizations": {
           "de": {
@@ -12361,6 +12385,110 @@
         }
       }
     },
+    "Alle Hosts": {
+      "localizations": {
+        "ar": {
+          "stringUnit": { "state": "translated",
+            "value": "جميع الأجهزة المضيفة"
+          }
+        },
+        "bn": {
+          "stringUnit": { "state": "translated",
+            "value": "সব হোস্ট"
+          }
+        },
+        "en": {
+          "stringUnit": { "state": "translated",
+            "value": "All hosts"
+          }
+        },
+        "es": {
+          "stringUnit": { "state": "translated",
+            "value": "Todos los hosts"
+          }
+        },
+        "fr": {
+          "stringUnit": { "state": "translated",
+            "value": "Tous les hôtes"
+          }
+        },
+        "ha": {
+          "stringUnit": { "state": "translated",
+            "value": "Duk rundunonin"
+          }
+        },
+        "hi": {
+          "stringUnit": { "state": "translated",
+            "value": "सभी होस्ट"
+          }
+        },
+        "id": {
+          "stringUnit": { "state": "translated",
+            "value": "Semua host"
+          }
+        },
+        "ja": {
+          "stringUnit": { "state": "translated",
+            "value": "すべてのホスト"
+          }
+        },
+        "mr": {
+          "stringUnit": { "state": "translated",
+            "value": "सर्व होस्ट"
+          }
+        },
+        "pcm": {
+          "stringUnit": { "state": "translated",
+            "value": "All hosts"
+          }
+        },
+        "pt": {
+          "stringUnit": { "state": "translated",
+            "value": "Todos os hosts"
+          }
+        },
+        "ru": {
+          "stringUnit": { "state": "translated",
+            "value": "Все хосты"
+          }
+        },
+        "sv": {
+          "stringUnit": { "state": "translated",
+            "value": "Alla värdar"
+          }
+        },
+        "sw": {
+          "stringUnit": { "state": "translated",
+            "value": "Hosti zote"
+          }
+        },
+        "te": {
+          "stringUnit": { "state": "translated",
+            "value": "అన్ని హోస్ట్‌లు"
+          }
+        },
+        "tr": {
+          "stringUnit": { "state": "translated",
+            "value": "Tüm ana bilgisayarlar"
+          }
+        },
+        "ur": {
+          "stringUnit": { "state": "translated",
+            "value": "تمام ہوسٹس"
+          }
+        },
+        "vi": {
+          "stringUnit": { "state": "translated",
+            "value": "Tất cả máy chủ"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": { "state": "translated",
+            "value": "所有主机"
+          }
+        }
+      }
+    },
     "Host": {
       "localizations": {
         "ar": {
@@ -20162,6 +20290,130 @@
         "zh-Hans": {
           "stringUnit": { "state": "translated",
             "value": "系统默认"
+          }
+        }
+      }
+    },
+    "Thruk-Schnellaktionen benötigen einen API-Schlüssel.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تتطلب إجراءات Thruk السريعة مفتاح API."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thruk দ্রুত অ্যাকশনের জন্য একটি API কী প্রয়োজন।"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thruk quick actions require an API key."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las acciones rápidas de Thruk requieren una clave de API."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les actions rapides Thruk nécessitent une clé API."
+          }
+        },
+        "ha": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ayyukan gaggawa na Thruk suna buƙatar mabuɗin API."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thruk की त्वरित कार्रवाइयों के लिए API कुंजी आवश्यक है।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tindakan cepat Thruk memerlukan kunci API."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ThrukのクイックアクションにはAPIキーが必要です。"
+          }
+        },
+        "mr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thruk द्रुत क्रियांसाठी API किल्ली आवश्यक आहे."
+          }
+        },
+        "pcm": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thruk quick actions need API key."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "As ações rápidas do Thruk exigem uma chave de API."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Для быстрых действий Thruk требуется ключ API."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thruk-snabbåtgärder kräver en API-nyckel."
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vitendo vya haraka vya Thruk vinahitaji ufunguo wa API."
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thruk త్వరిత చర్యలకు API కీ అవసరం."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thruk hızlı eylemleri bir API anahtarı gerektirir."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thruk کی فوری کارروائیوں کے لیے API کلید درکار ہے۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Các thao tác nhanh của Thruk cần khóa API."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thruk 快速操作需要 API 密钥。"
           }
         }
       }
@@ -28383,7 +28635,316 @@
   }
 }
     }
-  }
+  },
+  "API-Schlüssel": { "localizations": {
+    "ar": { "stringUnit": { "state": "translated", "value": "مفتاح API" } },
+    "bn": { "stringUnit": { "state": "translated", "value": "API কী" } },
+    "en": { "stringUnit": { "state": "translated", "value": "API Key" } },
+    "es": { "stringUnit": { "state": "translated", "value": "Clave de API" } },
+    "fr": { "stringUnit": { "state": "translated", "value": "Clé API" } },
+    "ha": { "stringUnit": { "state": "translated", "value": "Mabuɗin API" } },
+    "hi": { "stringUnit": { "state": "translated", "value": "API कुंजी" } },
+    "id": { "stringUnit": { "state": "translated", "value": "Kunci API" } },
+    "ja": { "stringUnit": { "state": "translated", "value": "APIキー" } },
+    "mr": { "stringUnit": { "state": "translated", "value": "API किल्ली" } },
+    "pcm": { "stringUnit": { "state": "translated", "value": "API key" } },
+    "pt": { "stringUnit": { "state": "translated", "value": "Chave de API" } },
+    "ru": { "stringUnit": { "state": "translated", "value": "Ключ API" } },
+    "sv": { "stringUnit": { "state": "translated", "value": "API-nyckel" } },
+    "sw": { "stringUnit": { "state": "translated", "value": "Ufunguo wa API" } },
+    "te": { "stringUnit": { "state": "translated", "value": "API కీ" } },
+    "tr": { "stringUnit": { "state": "translated", "value": "API Anahtarı" } },
+    "ur": { "stringUnit": { "state": "translated", "value": "API کلید" } },
+    "vi": { "stringUnit": { "state": "translated", "value": "Khóa API" } },
+    "zh-Hans": { "stringUnit": { "state": "translated", "value": "API 密钥" } }
+  } },
+  "API-Benutzer (optional)": { "localizations": {
+    "ar": { "stringUnit": { "state": "translated", "value": "مستخدم API (اختياري)" } },
+    "bn": { "stringUnit": { "state": "translated", "value": "API ব্যবহারকারী (ঐচ্ছিক)" } },
+    "en": { "stringUnit": { "state": "translated", "value": "API User (Optional)" } },
+    "es": { "stringUnit": { "state": "translated", "value": "Usuario de API (opcional)" } },
+    "fr": { "stringUnit": { "state": "translated", "value": "Utilisateur API (facultatif)" } },
+    "ha": { "stringUnit": { "state": "translated", "value": "Mai amfani da API (na zaɓi)" } },
+    "hi": { "stringUnit": { "state": "translated", "value": "API उपयोगकर्ता (वैकल्पिक)" } },
+    "id": { "stringUnit": { "state": "translated", "value": "Pengguna API (opsional)" } },
+    "ja": { "stringUnit": { "state": "translated", "value": "APIユーザー（任意）" } },
+    "mr": { "stringUnit": { "state": "translated", "value": "API वापरकर्ता (ऐच्छिक)" } },
+    "pcm": { "stringUnit": { "state": "translated", "value": "API user (optional)" } },
+    "pt": { "stringUnit": { "state": "translated", "value": "Usuário da API (opcional)" } },
+    "ru": { "stringUnit": { "state": "translated", "value": "Пользователь API (необязательно)" } },
+    "sv": { "stringUnit": { "state": "translated", "value": "API-användare (valfritt)" } },
+    "sw": { "stringUnit": { "state": "translated", "value": "Mtumiaji wa API (si lazima)" } },
+    "te": { "stringUnit": { "state": "translated", "value": "API వినియోగదారు (ఐచ్ఛికం)" } },
+    "tr": { "stringUnit": { "state": "translated", "value": "API Kullanıcısı (isteğe bağlı)" } },
+    "ur": { "stringUnit": { "state": "translated", "value": "API صارف (اختیاری)" } },
+    "vi": { "stringUnit": { "state": "translated", "value": "Người dùng API (tùy chọn)" } },
+    "zh-Hans": { "stringUnit": { "state": "translated", "value": "API 用户（可选）" } }
+  } },
+  "Leer lassen, um den vorhandenen API-Schlüssel bei unveränderten Zugangsdaten beizubehalten.": { "localizations": {
+    "ar": { "stringUnit": { "state": "translated", "value": "اتركه فارغًا للاحتفاظ بمفتاح API الحالي إذا لم تتغير بيانات الاعتماد." } },
+    "bn": { "stringUnit": { "state": "translated", "value": "পরিচয়পত্র অপরিবর্তিত থাকলে বর্তমান API কী রাখতে ফাঁকা রাখুন।" } },
+    "en": { "stringUnit": { "state": "translated", "value": "Leave blank to keep the existing API key when the credentials are unchanged." } },
+    "es": { "stringUnit": { "state": "translated", "value": "Déjalo vacío para conservar la clave de API si las credenciales no cambian." } },
+    "fr": { "stringUnit": { "state": "translated", "value": "Laissez vide pour conserver la clé API existante si les identifiants restent inchangés." } },
+    "ha": { "stringUnit": { "state": "translated", "value": "Bar shi babu komai don riƙe mabuɗin API na yanzu idan bayanan shiga ba su canza ba." } },
+    "hi": { "stringUnit": { "state": "translated", "value": "पहचान जानकारी न बदलने पर मौजूदा API कुंजी रखने के लिए इसे खाली छोड़ें।" } },
+    "id": { "stringUnit": { "state": "translated", "value": "Biarkan kosong untuk mempertahankan kunci API yang ada jika kredensial tidak berubah." } },
+    "ja": { "stringUnit": { "state": "translated", "value": "認証情報を変更しない場合は、既存のAPIキーを保持するため空欄にします。" } },
+    "mr": { "stringUnit": { "state": "translated", "value": "ओळख तपशील बदलले नसल्यास विद्यमान API किल्ली ठेवण्यासाठी रिकामे सोडा." } },
+    "pcm": { "stringUnit": { "state": "translated", "value": "Leave am empty to keep di API key wey dey if login details no change." } },
+    "pt": { "stringUnit": { "state": "translated", "value": "Deixe em branco para manter a chave de API atual se as credenciais não mudarem." } },
+    "ru": { "stringUnit": { "state": "translated", "value": "Оставьте поле пустым, чтобы сохранить текущий ключ API, если учётные данные не изменились." } },
+    "sv": { "stringUnit": { "state": "translated", "value": "Lämna tomt för att behålla den befintliga API-nyckeln när inloggningsuppgifterna är oförändrade." } },
+    "sw": { "stringUnit": { "state": "translated", "value": "Acha wazi ili kuhifadhi ufunguo wa API uliopo ikiwa taarifa za kuingia hazijabadilika." } },
+    "te": { "stringUnit": { "state": "translated", "value": "ఆధారాలు మారకపోతే ఇప్పటికే ఉన్న API కీని ఉంచడానికి ఖాళీగా వదలండి." } },
+    "tr": { "stringUnit": { "state": "translated", "value": "Kimlik bilgileri değişmediyse mevcut API anahtarını korumak için boş bırakın." } },
+    "ur": { "stringUnit": { "state": "translated", "value": "اگر اسناد تبدیل نہ ہوں تو موجودہ API کلید برقرار رکھنے کے لیے خالی چھوڑ دیں۔" } },
+    "vi": { "stringUnit": { "state": "translated", "value": "Để trống để giữ khóa API hiện có nếu thông tin xác thực không thay đổi." } },
+    "zh-Hans": { "stringUnit": { "state": "translated", "value": "如果凭据未更改，请留空以保留现有 API 密钥。" } }
+  } },
+  "Der API-Schlüssel wird ausschließlich im macOS-Schlüsselbund gespeichert.": { "localizations": {
+    "ar": { "stringUnit": { "state": "translated", "value": "يُحفظ مفتاح API حصريًا في سلسلة مفاتيح macOS." } },
+    "bn": { "stringUnit": { "state": "translated", "value": "API কী শুধু macOS Keychain-এ সংরক্ষিত হয়।" } },
+    "en": { "stringUnit": { "state": "translated", "value": "The API key is stored only in the macOS Keychain." } },
+    "es": { "stringUnit": { "state": "translated", "value": "La clave de API se guarda únicamente en el llavero de macOS." } },
+    "fr": { "stringUnit": { "state": "translated", "value": "La clé API est stockée uniquement dans le trousseau macOS." } },
+    "ha": { "stringUnit": { "state": "translated", "value": "Ana adana mabuɗin API a cikin macOS Keychain kawai." } },
+    "hi": { "stringUnit": { "state": "translated", "value": "API कुंजी केवल macOS Keychain में संग्रहीत होती है।" } },
+    "id": { "stringUnit": { "state": "translated", "value": "Kunci API hanya disimpan di Rantai Kunci macOS." } },
+    "ja": { "stringUnit": { "state": "translated", "value": "APIキーはmacOSキーチェーンにのみ保存されます。" } },
+    "mr": { "stringUnit": { "state": "translated", "value": "API किल्ली फक्त macOS Keychain मध्ये साठवली जाते." } },
+    "pcm": { "stringUnit": { "state": "translated", "value": "IssueLight dey keep di API key only for macOS Keychain." } },
+    "pt": { "stringUnit": { "state": "translated", "value": "A chave de API é armazenada apenas nas Chaves do macOS." } },
+    "ru": { "stringUnit": { "state": "translated", "value": "Ключ API хранится только в Связке ключей macOS." } },
+    "sv": { "stringUnit": { "state": "translated", "value": "API-nyckeln lagras endast i macOS-nyckelringen." } },
+    "sw": { "stringUnit": { "state": "translated", "value": "Ufunguo wa API huhifadhiwa tu katika Keychain ya macOS." } },
+    "te": { "stringUnit": { "state": "translated", "value": "API కీ macOS Keychainలో మాత్రమే నిల్వ చేయబడుతుంది." } },
+    "tr": { "stringUnit": { "state": "translated", "value": "API anahtarı yalnızca macOS Anahtar Zinciri'nde saklanır." } },
+    "ur": { "stringUnit": { "state": "translated", "value": "API کلید صرف macOS Keychain میں محفوظ ہوتی ہے۔" } },
+    "vi": { "stringUnit": { "state": "translated", "value": "Khóa API chỉ được lưu trong Chuỗi khóa macOS." } },
+    "zh-Hans": { "stringUnit": { "state": "translated", "value": "API 密钥仅存储在 macOS 钥匙串中。" } }
+  } },
+  "Die App-Store-Ausgabe verbindet sich direkt mit der Monitoring-Quelle. SSH-Tunnel sowie SSH- und RDP-Startaktionen stehen in der direkten GitHub-Ausgabe bereit.": { "localizations": {
+    "ar": { "stringUnit": { "state": "translated", "value": "يتصل إصدار App Store مباشرةً بمصدر المراقبة. تتوفر أنفاق SSH وإجراءات تشغيل SSH وRDP في إصدار GitHub المباشر." } },
+    "bn": { "stringUnit": { "state": "translated", "value": "App Store সংস্করণ সরাসরি পর্যবেক্ষণ উৎসে সংযুক্ত হয়। SSH টানেল এবং SSH ও RDP চালুর কাজ সরাসরি GitHub সংস্করণে পাওয়া যায়।" } },
+    "en": { "stringUnit": { "state": "translated", "value": "The App Store edition connects directly to the monitoring source. SSH tunnels and SSH and RDP launch actions are available in the direct GitHub edition." } },
+    "es": { "stringUnit": { "state": "translated", "value": "La edición de App Store se conecta directamente a la fuente de monitorización. Los túneles SSH y las acciones para iniciar SSH y RDP están disponibles en la edición directa de GitHub." } },
+    "fr": { "stringUnit": { "state": "translated", "value": "L’édition App Store se connecte directement à la source de supervision. Les tunnels SSH et les actions de lancement SSH et RDP sont disponibles dans l’édition GitHub directe." } },
+    "ha": { "stringUnit": { "state": "translated", "value": "Sigar App Store tana haɗuwa kai tsaye da tushen sa ido. Ana samun ramukan SSH da ayyukan buɗe SSH da RDP a sigar GitHub ta kai tsaye." } },
+    "hi": { "stringUnit": { "state": "translated", "value": "App Store संस्करण सीधे निगरानी स्रोत से जुड़ता है। SSH टनल और SSH व RDP शुरू करने की क्रियाएँ सीधे GitHub संस्करण में उपलब्ध हैं।" } },
+    "id": { "stringUnit": { "state": "translated", "value": "Edisi App Store terhubung langsung ke sumber pemantauan. Terowongan SSH serta tindakan untuk membuka SSH dan RDP tersedia dalam edisi GitHub langsung." } },
+    "ja": { "stringUnit": { "state": "translated", "value": "App Store版は監視ソースに直接接続します。SSHトンネルおよびSSHとRDPの起動操作は、GitHub直接配布版で利用できます。" } },
+    "mr": { "stringUnit": { "state": "translated", "value": "App Store आवृत्ती निरीक्षण स्रोताशी थेट जोडते. SSH टनेल आणि SSH व RDP सुरू करण्याच्या क्रिया थेट GitHub आवृत्तीत उपलब्ध आहेत." } },
+    "pcm": { "stringUnit": { "state": "translated", "value": "Di App Store edition dey connect direct to di monitoring source. SSH tunnel and actions to open SSH and RDP dey for di direct GitHub edition." } },
+    "pt": { "stringUnit": { "state": "translated", "value": "A edição da App Store conecta-se diretamente à fonte de monitoramento. Túneis SSH e ações para abrir SSH e RDP estão disponíveis na edição direta do GitHub." } },
+    "ru": { "stringUnit": { "state": "translated", "value": "Версия из App Store подключается к источнику мониторинга напрямую. SSH-туннели и команды запуска SSH и RDP доступны в версии, распространяемой через GitHub." } },
+    "sv": { "stringUnit": { "state": "translated", "value": "App Store-utgåvan ansluter direkt till övervakningskällan. SSH-tunnlar samt startåtgärder för SSH och RDP finns i den direkta GitHub-utgåvan." } },
+    "sw": { "stringUnit": { "state": "translated", "value": "Toleo la App Store huunganisha moja kwa moja na chanzo cha ufuatiliaji. Njia za SSH na vitendo vya kufungua SSH na RDP vinapatikana katika toleo la moja kwa moja la GitHub." } },
+    "te": { "stringUnit": { "state": "translated", "value": "App Store ఎడిషన్ పర్యవేక్షణ మూలానికి నేరుగా కనెక్ట్ అవుతుంది. SSH టన్నెల్లు మరియు SSH, RDP ప్రారంభ చర్యలు నేరుగా GitHub ఎడిషన్‌లో అందుబాటులో ఉంటాయి." } },
+    "tr": { "stringUnit": { "state": "translated", "value": "App Store sürümü izleme kaynağına doğrudan bağlanır. SSH tünelleri ile SSH ve RDP başlatma eylemleri doğrudan GitHub sürümünde bulunur." } },
+    "ur": { "stringUnit": { "state": "translated", "value": "App Store ایڈیشن براہ راست نگرانی کے ماخذ سے جڑتا ہے۔ SSH ٹنل اور SSH و RDP شروع کرنے کی کارروائیاں براہ راست GitHub ایڈیشن میں دستیاب ہیں۔" } },
+    "vi": { "stringUnit": { "state": "translated", "value": "Bản App Store kết nối trực tiếp với nguồn giám sát. Đường hầm SSH và thao tác mở SSH, RDP có trong bản phát hành trực tiếp trên GitHub." } },
+    "zh-Hans": { "stringUnit": { "state": "translated", "value": "App Store 版本直接连接监控源。SSH 隧道以及启动 SSH 和 RDP 的操作可在 GitHub 直接发行版中使用。" } }
+  } },
+  "Die Konfiguration und der zugehörige API-Schlüssel werden von diesem Mac entfernt.": { "localizations": {
+    "ar": { "stringUnit": { "state": "translated", "value": "ستتم إزالة الإعداد ومفتاح API المرتبط به من هذا الـ Mac." } },
+    "bn": { "stringUnit": { "state": "translated", "value": "এই Mac থেকে কনফিগারেশন এবং সংশ্লিষ্ট API কী সরানো হবে।" } },
+    "en": { "stringUnit": { "state": "translated", "value": "The configuration and its API key will be removed from this Mac." } },
+    "es": { "stringUnit": { "state": "translated", "value": "La configuración y su clave de API se eliminarán de este Mac." } },
+    "fr": { "stringUnit": { "state": "translated", "value": "La configuration et sa clé API seront supprimées de ce Mac." } },
+    "ha": { "stringUnit": { "state": "translated", "value": "Za a cire saitin da mabuɗin API ɗinsa daga wannan Mac." } },
+    "hi": { "stringUnit": { "state": "translated", "value": "इस Mac से कॉन्फ़िगरेशन और उसकी API कुंजी हटा दी जाएगी।" } },
+    "id": { "stringUnit": { "state": "translated", "value": "Konfigurasi dan kunci API terkait akan dihapus dari Mac ini." } },
+    "ja": { "stringUnit": { "state": "translated", "value": "このMacから設定と関連するAPIキーが削除されます。" } },
+    "mr": { "stringUnit": { "state": "translated", "value": "या Mac वरून संरचना आणि तिची API किल्ली काढली जाईल." } },
+    "pcm": { "stringUnit": { "state": "translated", "value": "IssueLight go remove di setup and im API key from dis Mac." } },
+    "pt": { "stringUnit": { "state": "translated", "value": "A configuração e sua chave de API serão removidas deste Mac." } },
+    "ru": { "stringUnit": { "state": "translated", "value": "Конфигурация и связанный с ней ключ API будут удалены с этого Mac." } },
+    "sv": { "stringUnit": { "state": "translated", "value": "Konfigurationen och dess API-nyckel tas bort från denna Mac." } },
+    "sw": { "stringUnit": { "state": "translated", "value": "Usanidi na ufunguo wake wa API vitaondolewa kwenye Mac hii." } },
+    "te": { "stringUnit": { "state": "translated", "value": "ఈ Mac నుండి కాన్ఫిగరేషన్ మరియు దాని API కీ తీసివేయబడతాయి." } },
+    "tr": { "stringUnit": { "state": "translated", "value": "Yapılandırma ve ilgili API anahtarı bu Mac'ten kaldırılacak." } },
+    "ur": { "stringUnit": { "state": "translated", "value": "اس Mac سے ترتیب اور اس کی API کلید ہٹا دی جائے گی۔" } },
+    "vi": { "stringUnit": { "state": "translated", "value": "Cấu hình và khóa API liên quan sẽ bị xóa khỏi máy Mac này." } },
+    "zh-Hans": { "stringUnit": { "state": "translated", "value": "配置及其 API 密钥将从这台 Mac 上移除。" } }
+  } },
+  "macOS gibt diesen Schlüsselbund-Eintrag nicht ohne Nachfrage frei. Gib das Geheimnis in der Quelle erneut ein.": { "localizations": {
+    "ar": { "stringUnit": { "state": "translated", "value": "لن يسمح macOS بالوصول إلى عنصر سلسلة المفاتيح هذا في الخلفية. أدخل السر مرة أخرى في المصدر." } },
+    "bn": { "stringUnit": { "state": "translated", "value": "macOS নিশ্চিতকরণ ছাড়া এই Keychain আইটেমে প্রবেশাধিকার দেয় না। উৎসে গোপন মানটি আবার লিখুন।" } },
+    "en": { "stringUnit": { "state": "translated", "value": "macOS will not release this Keychain item without confirmation. Enter the secret again in the source." } },
+    "es": { "stringUnit": { "state": "translated", "value": "macOS no permite usar este elemento del llavero sin confirmación. Vuelve a introducir el secreto en la fuente." } },
+    "fr": { "stringUnit": { "state": "translated", "value": "macOS ne permet pas d’utiliser cet élément du trousseau sans confirmation. Saisissez de nouveau le secret dans la source." } },
+    "ha": { "stringUnit": { "state": "translated", "value": "macOS ba zai ba da wannan abin Keychain ba tare da tabbatarwa ba. Sake shigar da sirrin a tushen." } },
+    "hi": { "stringUnit": { "state": "translated", "value": "macOS पुष्टि के बिना इस Keychain आइटम को उपलब्ध नहीं कराता। स्रोत में गोपनीय मान फिर से दर्ज करें।" } },
+    "id": { "stringUnit": { "state": "translated", "value": "macOS tidak akan memberikan item Rantai Kunci ini tanpa konfirmasi. Masukkan kembali rahasia pada sumber." } },
+    "ja": { "stringUnit": { "state": "translated", "value": "macOSは確認なしではこのキーチェーン項目を提供しません。ソースでシークレットを再入力してください。" } },
+    "mr": { "stringUnit": { "state": "translated", "value": "macOS पुष्टीशिवाय हा Keychain घटक उपलब्ध करत नाही. स्रोतात गुप्त मूल्य पुन्हा प्रविष्ट करा." } },
+    "pcm": { "stringUnit": { "state": "translated", "value": "macOS no go release dis Keychain item without confirmation. Enter di secret again for di source." } },
+    "pt": { "stringUnit": { "state": "translated", "value": "O macOS não libera este item das Chaves sem confirmação. Digite o segredo novamente na fonte." } },
+    "ru": { "stringUnit": { "state": "translated", "value": "macOS не предоставляет этот элемент Связки ключей без подтверждения. Введите секрет заново в источнике." } },
+    "sv": { "stringUnit": { "state": "translated", "value": "macOS lämnar inte ut det här nyckelringsobjektet utan bekräftelse. Ange hemligheten igen i källan." } },
+    "sw": { "stringUnit": { "state": "translated", "value": "macOS haitoi kipengee hiki cha Keychain bila uthibitisho. Ingiza siri tena katika chanzo." } },
+    "te": { "stringUnit": { "state": "translated", "value": "నిర్ధారణ లేకుండా macOS ఈ Keychain అంశాన్ని అందించదు. మూలంలో రహస్యాన్ని మళ్లీ నమోదు చేయండి." } },
+    "tr": { "stringUnit": { "state": "translated", "value": "macOS bu Anahtar Zinciri öğesini onay olmadan kullanıma açmaz. Kaynakta gizli değeri yeniden girin." } },
+    "ur": { "stringUnit": { "state": "translated", "value": "macOS تصدیق کے بغیر اس Keychain آئٹم تک رسائی نہیں دیتا۔ ماخذ میں راز دوبارہ درج کریں۔" } },
+    "vi": { "stringUnit": { "state": "translated", "value": "macOS không cung cấp mục Chuỗi khóa này nếu chưa xác nhận. Hãy nhập lại bí mật trong nguồn." } },
+    "zh-Hans": { "stringUnit": { "state": "translated", "value": "macOS 未经确认不会提供此钥匙串项目。请在监控源中重新输入密钥。" } }
+  } },
+  "Die gespeicherten Zugangsdaten konnten nicht aus dem Schlüsselbund gelesen werden.": { "localizations": {
+    "ar": { "stringUnit": { "state": "translated", "value": "تعذرت قراءة بيانات الاعتماد المحفوظة من سلسلة المفاتيح." } },
+    "bn": { "stringUnit": { "state": "translated", "value": "Keychain থেকে সংরক্ষিত পরিচয়পত্র পড়া যায়নি।" } },
+    "en": { "stringUnit": { "state": "translated", "value": "The saved credentials could not be read from the Keychain." } },
+    "es": { "stringUnit": { "state": "translated", "value": "No se pudieron leer las credenciales guardadas del llavero." } },
+    "fr": { "stringUnit": { "state": "translated", "value": "Les identifiants enregistrés n’ont pas pu être lus dans le trousseau." } },
+    "ha": { "stringUnit": { "state": "translated", "value": "Ba a iya karanta bayanan shiga da aka adana daga Keychain ba." } },
+    "hi": { "stringUnit": { "state": "translated", "value": "सहेजी गई पहचान जानकारी को Keychain से पढ़ा नहीं जा सका।" } },
+    "id": { "stringUnit": { "state": "translated", "value": "Kredensial tersimpan tidak dapat dibaca dari Rantai Kunci." } },
+    "ja": { "stringUnit": { "state": "translated", "value": "保存された認証情報をキーチェーンから読み取れませんでした。" } },
+    "mr": { "stringUnit": { "state": "translated", "value": "साठवलेले ओळख तपशील Keychain मधून वाचता आले नाहीत." } },
+    "pcm": { "stringUnit": { "state": "translated", "value": "IssueLight no fit read di saved login details from Keychain." } },
+    "pt": { "stringUnit": { "state": "translated", "value": "Não foi possível ler as credenciais salvas nas Chaves." } },
+    "ru": { "stringUnit": { "state": "translated", "value": "Не удалось прочитать сохранённые учётные данные из Связки ключей." } },
+    "sv": { "stringUnit": { "state": "translated", "value": "De sparade inloggningsuppgifterna kunde inte läsas från nyckelringen." } },
+    "sw": { "stringUnit": { "state": "translated", "value": "Haikuwezekana kusoma taarifa za kuingia zilizohifadhiwa kutoka Keychain." } },
+    "te": { "stringUnit": { "state": "translated", "value": "నిల్వ చేసిన ఆధారాలను Keychain నుండి చదవలేకపోయింది." } },
+    "tr": { "stringUnit": { "state": "translated", "value": "Kaydedilmiş kimlik bilgileri Anahtar Zinciri'nden okunamadı." } },
+    "ur": { "stringUnit": { "state": "translated", "value": "محفوظ شدہ اسناد Keychain سے نہیں پڑھی جا سکیں۔" } },
+    "vi": { "stringUnit": { "state": "translated", "value": "Không thể đọc thông tin xác thực đã lưu từ Chuỗi khóa." } },
+    "zh-Hans": { "stringUnit": { "state": "translated", "value": "无法从钥匙串读取已存储的凭据。" } }
+  } },
+  "Gib einen API-Schlüssel ein.": { "localizations": {
+    "ar": { "stringUnit": { "state": "translated", "value": "أدخل مفتاح API." } },
+    "bn": { "stringUnit": { "state": "translated", "value": "একটি API কী লিখুন।" } },
+    "en": { "stringUnit": { "state": "translated", "value": "Enter an API key." } },
+    "es": { "stringUnit": { "state": "translated", "value": "Introduce una clave de API." } },
+    "fr": { "stringUnit": { "state": "translated", "value": "Saisissez une clé API." } },
+    "ha": { "stringUnit": { "state": "translated", "value": "Shigar da mabuɗin API." } },
+    "hi": { "stringUnit": { "state": "translated", "value": "API कुंजी दर्ज करें।" } },
+    "id": { "stringUnit": { "state": "translated", "value": "Masukkan kunci API." } },
+    "ja": { "stringUnit": { "state": "translated", "value": "APIキーを入力してください。" } },
+    "mr": { "stringUnit": { "state": "translated", "value": "API किल्ली प्रविष्ट करा." } },
+    "pcm": { "stringUnit": { "state": "translated", "value": "Enter API key." } },
+    "pt": { "stringUnit": { "state": "translated", "value": "Insira uma chave de API." } },
+    "ru": { "stringUnit": { "state": "translated", "value": "Введите ключ API." } },
+    "sv": { "stringUnit": { "state": "translated", "value": "Ange en API-nyckel." } },
+    "sw": { "stringUnit": { "state": "translated", "value": "Weka ufunguo wa API." } },
+    "te": { "stringUnit": { "state": "translated", "value": "API కీని నమోదు చేయండి." } },
+    "tr": { "stringUnit": { "state": "translated", "value": "Bir API anahtarı girin." } },
+    "ur": { "stringUnit": { "state": "translated", "value": "API کلید درج کریں۔" } },
+    "vi": { "stringUnit": { "state": "translated", "value": "Nhập khóa API." } },
+    "zh-Hans": { "stringUnit": { "state": "translated", "value": "请输入 API 密钥。" } }
+  } },
+  "Entwurf gespeichert. Die Zugangsdaten konnten nicht im macOS-Schlüsselbund gespeichert werden; die Quelle bleibt pausiert.": { "localizations": {
+    "ar": { "stringUnit": { "state": "translated", "value": "حُفظت المسودة. تعذر حفظ بيانات الاعتماد في سلسلة مفاتيح macOS؛ سيظل المصدر متوقفًا مؤقتًا." } },
+    "bn": { "stringUnit": { "state": "translated", "value": "খসড়া সংরক্ষিত হয়েছে। macOS Keychain-এ পরিচয়পত্র সংরক্ষণ করা যায়নি; উৎসটি বিরত থাকবে।" } },
+    "en": { "stringUnit": { "state": "translated", "value": "Draft saved. The credentials could not be saved in the macOS Keychain, so the source remains paused." } },
+    "es": { "stringUnit": { "state": "translated", "value": "Borrador guardado. No se pudieron guardar las credenciales en el llavero de macOS; la fuente seguirá en pausa." } },
+    "fr": { "stringUnit": { "state": "translated", "value": "Brouillon enregistré. Les identifiants n’ont pas pu être enregistrés dans le trousseau macOS ; la source reste en pause." } },
+    "ha": { "stringUnit": { "state": "translated", "value": "An adana daftarin. Ba a iya adana bayanan shiga a macOS Keychain ba; tushen zai ci gaba da kasancewa a dakatar." } },
+    "hi": { "stringUnit": { "state": "translated", "value": "प्रारूप सहेजा गया। पहचान जानकारी को macOS Keychain में सहेजा नहीं जा सका; स्रोत रुका रहेगा।" } },
+    "id": { "stringUnit": { "state": "translated", "value": "Draf disimpan. Kredensial tidak dapat disimpan di Rantai Kunci macOS; sumber tetap dijeda." } },
+    "ja": { "stringUnit": { "state": "translated", "value": "下書きを保存しました。認証情報をmacOSキーチェーンに保存できなかったため、ソースは一時停止のままです。" } },
+    "mr": { "stringUnit": { "state": "translated", "value": "मसुदा साठवला. ओळख तपशील macOS Keychain मध्ये साठवता आले नाहीत; स्रोत विरामित राहील." } },
+    "pcm": { "stringUnit": { "state": "translated", "value": "Draft don save. IssueLight no fit save di login details for macOS Keychain, so di source still pause." } },
+    "pt": { "stringUnit": { "state": "translated", "value": "Rascunho salvo. Não foi possível salvar as credenciais nas Chaves do macOS; a fonte continuará pausada." } },
+    "ru": { "stringUnit": { "state": "translated", "value": "Черновик сохранён. Не удалось сохранить учётные данные в Связке ключей macOS; источник останется приостановленным." } },
+    "sv": { "stringUnit": { "state": "translated", "value": "Utkastet sparades. Inloggningsuppgifterna kunde inte sparas i macOS-nyckelringen, så källan förblir pausad." } },
+    "sw": { "stringUnit": { "state": "translated", "value": "Rasimu imehifadhiwa. Taarifa za kuingia hazikuweza kuhifadhiwa katika Keychain ya macOS; chanzo kitasalia kimesitishwa." } },
+    "te": { "stringUnit": { "state": "translated", "value": "డ్రాఫ్ట్ నిల్వ చేయబడింది. ఆధారాలను macOS Keychainలో నిల్వ చేయలేకపోయింది; మూలం పాజ్‌లోనే ఉంటుంది." } },
+    "tr": { "stringUnit": { "state": "translated", "value": "Taslak kaydedildi. Kimlik bilgileri macOS Anahtar Zinciri'ne kaydedilemedi; kaynak duraklatılmış olarak kalacak." } },
+    "ur": { "stringUnit": { "state": "translated", "value": "مسودہ محفوظ ہو گیا۔ اسناد macOS Keychain میں محفوظ نہیں ہو سکیں؛ ماخذ موقوف رہے گا۔" } },
+    "vi": { "stringUnit": { "state": "translated", "value": "Đã lưu bản nháp. Không thể lưu thông tin xác thực vào Chuỗi khóa macOS; nguồn vẫn bị tạm dừng." } },
+    "zh-Hans": { "stringUnit": { "state": "translated", "value": "草稿已保存。无法将凭据存入 macOS 钥匙串，因此监控源将保持暂停。" } }
+  } },
+  "Quelle und gespeicherter API-Schlüssel wurden entfernt.": { "localizations": {
+    "ar": { "stringUnit": { "state": "translated", "value": "تمت إزالة المصدر ومفتاح API المحفوظ." } },
+    "bn": { "stringUnit": { "state": "translated", "value": "উৎস এবং সংরক্ষিত API কী সরানো হয়েছে।" } },
+    "en": { "stringUnit": { "state": "translated", "value": "The source and saved API key were removed." } },
+    "es": { "stringUnit": { "state": "translated", "value": "Se eliminaron la fuente y la clave de API guardada." } },
+    "fr": { "stringUnit": { "state": "translated", "value": "La source et la clé API enregistrée ont été supprimées." } },
+    "ha": { "stringUnit": { "state": "translated", "value": "An cire tushen da mabuɗin API da aka adana." } },
+    "hi": { "stringUnit": { "state": "translated", "value": "स्रोत और सहेजी गई API कुंजी हटा दी गई।" } },
+    "id": { "stringUnit": { "state": "translated", "value": "Sumber dan kunci API tersimpan telah dihapus." } },
+    "ja": { "stringUnit": { "state": "translated", "value": "ソースと保存済みAPIキーを削除しました。" } },
+    "mr": { "stringUnit": { "state": "translated", "value": "स्रोत आणि साठवलेली API किल्ली काढली." } },
+    "pcm": { "stringUnit": { "state": "translated", "value": "IssueLight don remove di source and saved API key." } },
+    "pt": { "stringUnit": { "state": "translated", "value": "A fonte e a chave de API salva foram removidas." } },
+    "ru": { "stringUnit": { "state": "translated", "value": "Источник и сохранённый ключ API удалены." } },
+    "sv": { "stringUnit": { "state": "translated", "value": "Källan och den sparade API-nyckeln togs bort." } },
+    "sw": { "stringUnit": { "state": "translated", "value": "Chanzo na ufunguo wa API uliohifadhiwa vimeondolewa." } },
+    "te": { "stringUnit": { "state": "translated", "value": "మూలం మరియు నిల్వ చేసిన API కీ తీసివేయబడ్డాయి." } },
+    "tr": { "stringUnit": { "state": "translated", "value": "Kaynak ve kayıtlı API anahtarı kaldırıldı." } },
+    "ur": { "stringUnit": { "state": "translated", "value": "ماخذ اور محفوظ شدہ API کلید ہٹا دی گئی۔" } },
+    "vi": { "stringUnit": { "state": "translated", "value": "Đã xóa nguồn và khóa API đã lưu." } },
+    "zh-Hans": { "stringUnit": { "state": "translated", "value": "已移除监控源和存储的 API 密钥。" } }
+  } },
+  "Der API-Schlüssel ist nicht mehr im Schlüsselbund verfügbar.": { "localizations": {
+    "ar": { "stringUnit": { "state": "translated", "value": "لم يعد مفتاح API متاحًا في سلسلة المفاتيح." } },
+    "bn": { "stringUnit": { "state": "translated", "value": "API কীটি আর Keychain-এ নেই।" } },
+    "en": { "stringUnit": { "state": "translated", "value": "The API key is no longer available in the Keychain." } },
+    "es": { "stringUnit": { "state": "translated", "value": "La clave de API ya no está disponible en el llavero." } },
+    "fr": { "stringUnit": { "state": "translated", "value": "La clé API n’est plus disponible dans le trousseau." } },
+    "ha": { "stringUnit": { "state": "translated", "value": "Ba a samun mabuɗin API a Keychain kuma." } },
+    "hi": { "stringUnit": { "state": "translated", "value": "API कुंजी अब Keychain में उपलब्ध नहीं है।" } },
+    "id": { "stringUnit": { "state": "translated", "value": "Kunci API tidak lagi tersedia di Rantai Kunci." } },
+    "ja": { "stringUnit": { "state": "translated", "value": "APIキーがキーチェーンで利用できなくなりました。" } },
+    "mr": { "stringUnit": { "state": "translated", "value": "API किल्ली आता Keychain मध्ये उपलब्ध नाही." } },
+    "pcm": { "stringUnit": { "state": "translated", "value": "Di API key no dey available for Keychain again." } },
+    "pt": { "stringUnit": { "state": "translated", "value": "A chave de API não está mais disponível nas Chaves." } },
+    "ru": { "stringUnit": { "state": "translated", "value": "Ключ API больше недоступен в Связке ключей." } },
+    "sv": { "stringUnit": { "state": "translated", "value": "API-nyckeln är inte längre tillgänglig i nyckelringen." } },
+    "sw": { "stringUnit": { "state": "translated", "value": "Ufunguo wa API haupatikani tena katika Keychain." } },
+    "te": { "stringUnit": { "state": "translated", "value": "API కీ ఇకపై Keychainలో అందుబాటులో లేదు." } },
+    "tr": { "stringUnit": { "state": "translated", "value": "API anahtarı artık Anahtar Zinciri'nde bulunmuyor." } },
+    "ur": { "stringUnit": { "state": "translated", "value": "API کلید اب Keychain میں دستیاب نہیں ہے۔" } },
+    "vi": { "stringUnit": { "state": "translated", "value": "Khóa API không còn trong Chuỗi khóa." } },
+    "zh-Hans": { "stringUnit": { "state": "translated", "value": "API 密钥已不在钥匙串中。" } }
+  } },
+  "macOS gibt den API-Schlüssel im Hintergrund nicht frei. Öffne die Quelle und gib ihn erneut ein.": { "localizations": {
+    "ar": { "stringUnit": { "state": "translated", "value": "لا يسمح macOS باستخدام مفتاح API في الخلفية. افتح المصدر وأدخله مرة أخرى." } },
+    "bn": { "stringUnit": { "state": "translated", "value": "macOS পটভূমিতে API কী ব্যবহারের অনুমতি দিচ্ছে না। উৎসটি খুলে কীটি আবার লিখুন।" } },
+    "en": { "stringUnit": { "state": "translated", "value": "macOS will not release the API key in the background. Open the source and enter it again." } },
+    "es": { "stringUnit": { "state": "translated", "value": "macOS no permite usar la clave de API en segundo plano. Abre la fuente y vuelve a introducirla." } },
+    "fr": { "stringUnit": { "state": "translated", "value": "macOS ne permet pas d’utiliser la clé API en arrière-plan. Ouvrez la source et saisissez-la de nouveau." } },
+    "ha": { "stringUnit": { "state": "translated", "value": "macOS ba ya ba da mabuɗin API a bango. Buɗe tushen ka sake shigar da shi." } },
+    "hi": { "stringUnit": { "state": "translated", "value": "macOS पृष्ठभूमि में API कुंजी उपलब्ध नहीं कराता। स्रोत खोलें और इसे फिर से दर्ज करें।" } },
+    "id": { "stringUnit": { "state": "translated", "value": "macOS tidak memberikan kunci API di latar belakang. Buka sumber dan masukkan kembali kuncinya." } },
+    "ja": { "stringUnit": { "state": "translated", "value": "macOSはバックグラウンドでAPIキーを提供しません。ソースを開いて再入力してください。" } },
+    "mr": { "stringUnit": { "state": "translated", "value": "macOS पार्श्वभूमीत API किल्ली उपलब्ध करत नाही. स्रोत उघडा आणि ती पुन्हा प्रविष्ट करा." } },
+    "pcm": { "stringUnit": { "state": "translated", "value": "macOS no go release di API key for background. Open di source and enter am again." } },
+    "pt": { "stringUnit": { "state": "translated", "value": "O macOS não libera a chave de API em segundo plano. Abra a fonte e digite-a novamente." } },
+    "ru": { "stringUnit": { "state": "translated", "value": "macOS не предоставляет ключ API в фоновом режиме. Откройте источник и введите его заново." } },
+    "sv": { "stringUnit": { "state": "translated", "value": "macOS lämnar inte ut API-nyckeln i bakgrunden. Öppna källan och ange den igen." } },
+    "sw": { "stringUnit": { "state": "translated", "value": "macOS haitoi ufunguo wa API chinichini. Fungua chanzo na uweke tena." } },
+    "te": { "stringUnit": { "state": "translated", "value": "నేపథ్యంలో macOS API కీని అందించదు. మూలాన్ని తెరిచి దాన్ని మళ్లీ నమోదు చేయండి." } },
+    "tr": { "stringUnit": { "state": "translated", "value": "macOS API anahtarını arka planda kullanıma açmıyor. Kaynağı açıp anahtarı yeniden girin." } },
+    "ur": { "stringUnit": { "state": "translated", "value": "macOS پس منظر میں API کلید تک رسائی نہیں دیتا۔ ماخذ کھولیں اور اسے دوبارہ درج کریں۔" } },
+    "vi": { "stringUnit": { "state": "translated", "value": "macOS không cung cấp khóa API trong nền. Hãy mở nguồn và nhập lại khóa." } },
+    "zh-Hans": { "stringUnit": { "state": "translated", "value": "macOS 不允许在后台访问 API 密钥。请打开监控源并重新输入。" } }
+  } },
+  "macOS benötigt deine Freigabe für den privaten Schlüssel. Öffne die Quelle und starte „Verbindung testen“.": { "localizations": {
+    "ar": { "stringUnit": { "state": "translated", "value": "يحتاج macOS إلى موافقتك لاستخدام المفتاح الخاص. افتح المصدر وشغّل «اختبار الاتصال»." } },
+    "bn": { "stringUnit": { "state": "translated", "value": "ব্যক্তিগত কী ব্যবহার করতে macOS-এর আপনার অনুমোদন প্রয়োজন। উৎসটি খুলে “সংযোগ পরীক্ষা” চালান।" } },
+    "de": { "stringUnit": { "state": "translated", "value": "macOS benötigt deine Freigabe für den privaten Schlüssel. Öffne die Quelle und starte „Verbindung testen“." } },
+    "en": { "stringUnit": { "state": "translated", "value": "macOS needs your approval to use the private key. Open the source and run Test Connection." } },
+    "es": { "stringUnit": { "state": "translated", "value": "macOS necesita tu aprobación para usar la clave privada. Abre la fuente y ejecuta Probar conexión." } },
+    "fr": { "stringUnit": { "state": "translated", "value": "macOS a besoin de votre autorisation pour utiliser la clé privée. Ouvrez la source et lancez Tester la connexion." } },
+    "ha": { "stringUnit": { "state": "translated", "value": "macOS yana buƙatar izininka don amfani da maɓallin sirri. Buɗe tushen ka gudanar da Gwada Haɗi." } },
+    "hi": { "stringUnit": { "state": "translated", "value": "निजी कुंजी इस्तेमाल करने के लिए macOS को आपकी अनुमति चाहिए। स्रोत खोलें और कनेक्शन जाँचें चलाएँ।" } },
+    "id": { "stringUnit": { "state": "translated", "value": "macOS memerlukan persetujuan Anda untuk menggunakan kunci privat. Buka sumber lalu jalankan Uji Koneksi." } },
+    "ja": { "stringUnit": { "state": "translated", "value": "秘密鍵を使用するにはmacOSでの承認が必要です。ソースを開き、「接続をテスト」を実行してください。" } },
+    "mr": { "stringUnit": { "state": "translated", "value": "खाजगी किल्ली वापरण्यासाठी macOS ला तुमची मंजुरी आवश्यक आहे. स्रोत उघडा आणि जोडणी तपासा चालवा." } },
+    "pcm": { "stringUnit": { "state": "translated", "value": "macOS need your approval to use di private key. Open di source and run Test Connection." } },
+    "pt": { "stringUnit": { "state": "translated", "value": "O macOS precisa da sua autorização para usar a chave privada. Abra a fonte e execute Testar ligação." } },
+    "ru": { "stringUnit": { "state": "translated", "value": "macOS требуется ваше разрешение на использование закрытого ключа. Откройте источник и запустите проверку подключения." } },
+    "sv": { "stringUnit": { "state": "translated", "value": "macOS behöver ditt godkännande för att använda den privata nyckeln. Öppna källan och kör Testa anslutning." } },
+    "sw": { "stringUnit": { "state": "translated", "value": "macOS inahitaji idhini yako ili kutumia ufunguo binafsi. Fungua chanzo kisha uendeshe Jaribu Muunganisho." } },
+    "te": { "stringUnit": { "state": "translated", "value": "ప్రైవేట్ కీని ఉపయోగించడానికి macOSకు మీ అనుమతి అవసరం. మూలాన్ని తెరిచి కనెక్షన్‌ను పరీక్షించు నడపండి." } },
+    "tr": { "stringUnit": { "state": "translated", "value": "macOS'in özel anahtarı kullanmak için onayınıza ihtiyacı var. Kaynağı açıp Bağlantıyı Sına'yı çalıştırın." } },
+    "ur": { "stringUnit": { "state": "translated", "value": "نجی کلید استعمال کرنے کے لیے macOS کو آپ کی منظوری درکار ہے۔ ماخذ کھولیں اور کنکشن کی جانچ چلائیں۔" } },
+    "vi": { "stringUnit": { "state": "translated", "value": "macOS cần bạn cho phép sử dụng khóa riêng tư. Mở nguồn rồi chạy Kiểm tra kết nối." } },
+    "zh-Hans": { "stringUnit": { "state": "translated", "value": "macOS 需要你的批准才能使用私钥。请打开监控源并运行“测试连接”。" } }
+  } }
   },
   "version": "1.0"
 }

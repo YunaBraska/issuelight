@@ -7,3 +7,6 @@ source was made available under the Apache License 2.0.
 
 Icinga is a trademark of Icinga GmbH. IssueLight is an independent project and
 is not affiliated with or endorsed by Icinga GmbH.
+
+Direct distributions include Sparkle 2.10.0. Its complete license and bundled
+third-party notices are provided in Sparkle-LICENSE.txt.

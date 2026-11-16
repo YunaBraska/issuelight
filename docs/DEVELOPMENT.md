@@ -3,8 +3,11 @@
 ## Repository layout
 
 - `IssueLight/`: native macOS app and XcodeGen specification
-- `Packages/IssueLightCore/`: provider-neutral domain and Icinga 2 adapter
+- `Packages/IssueLightCore/`: provider-neutral domain plus built-in monitoring adapters
 - `integration/icinga2/`: real external-system test lab
+- `integration/thruk/`: real OMD, Thruk, and Naemon compatibility lab
+- `integration/checkmk/`: real Checkmk compatibility lab
+- `integration/nagioscore/`: real Nagios Core CGI compatibility lab
 - `docs/spec/`: accepted observable behavior
 - `docs/adr/`: lasting architecture decisions
 
@@ -21,7 +24,13 @@ sh scripts/check.sh
 Live integration remains separate so ordinary checks do not start Docker or
 import test client identities. See
 [`../integration/icinga2/README.md`](../integration/icinga2/README.md) for the
-real Icinga compatibility matrix.
+real Icinga compatibility matrix and
+[`../integration/thruk/README.md`](../integration/thruk/README.md) for the
+real Thruk provider run, and
+[`../integration/checkmk/README.md`](../integration/checkmk/README.md) for the
+real Checkmk provider run, and
+[`../integration/nagioscore/README.md`](../integration/nagioscore/README.md) for
+the real Nagios Core provider run.
 
 Use a stable Apple Development identity and the fixed bundle identifier
 `berlin.yuna.issuelight` for permission-sensitive installed-app tests.
@@ -29,6 +38,11 @@ Keep team identifiers and certificate fingerprints outside Git in ignored local
 configuration.
 
 ## Protected mTLS acceptance
+
+`KeychainIdentityCatalogTests` first imports protected and trusted private keys
+into isolated temporary Keychains. It proves that background signing fails
+without authentication UI while trusted signing succeeds. The signed-app check
+below covers the user-facing approval lifecycle that automation must not fake.
 
 Use a separate macOS review profile when one is available. For this acceptance
 case only, open the lab identity's private key in Keychain Access, require
@@ -98,6 +112,9 @@ rm -f "$coverage_json"
 It builds a universal app and verifies its bundle identifier, version, positive
 build number, architectures, layout, and forbidden secret-bearing file types.
 It writes a ZIP, DMG, SPDX 2.3 SBOM, and verified SHA-256 checksums.
+When both update keys are configured, it also embeds the public key and HTTPS
+feed in the direct app and writes a signed `appcast.xml`. The App Store target
+does not link Sparkle or contain direct-update metadata.
 
 For a local unsigned pipeline check, use an isolated output directory:
 
@@ -131,6 +148,11 @@ secrets before dispatching it:
 - `MACOS_APP_STORE_INSTALLER_CERTIFICATE`
 - `MACOS_APP_STORE_CERTIFICATE_PASSWORD`
 - `MACOS_APP_STORE_PROFILE`
+- `MACOS_UPDATE_PRIVATE_KEY`
+
+Configure the matching `MACOS_UPDATE_PUBLIC_KEY` repository variable. The
+private key is a secret; the public key is intentionally embedded in direct
+releases. The workflow verifies that the pair matches before packaging.
 
 GitHub secrets are write-only. Values stored in another repository cannot be
 copied out by a workflow or maintainer command.
@@ -151,6 +173,8 @@ The release entrypoint requires these environment variables:
 - `APPLE_TEAM_ID`: the 10-character team that owns the release identity
 - `APPLE_SIGNING_IDENTITY`: the full Developer ID Application identity name
 - `NOTARY_KEYCHAIN_PROFILE`: the profile created by `notarytool`
+- `MACOS_UPDATE_PRIVATE_KEY`: the Base64 Ed25519 private update key
+- `MACOS_UPDATE_PUBLIC_KEY`: the matching Base64 Ed25519 public update key
 
 Run it only from a clean checkout. The revision argument must equal `HEAD`, and
 the output directory must be absolute:

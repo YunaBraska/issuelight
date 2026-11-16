@@ -23,18 +23,35 @@ xcodebuild build-for-testing \
     CODE_SIGNING_ALLOWED=NO
 
 test_bundle="$derived_data/Build/Products/Debug/IssueLightModelTests.xctest"
+ditto \
+    "$derived_data/Build/Products/Debug/Sparkle.framework" \
+    "$derived_data/Build/Products/Debug/PackageFrameworks/Sparkle.framework"
 ISSUELIGHT_SCREENSHOT_OUTPUT_DIR="$output_directory" \
     xcrun xctest \
     -XCTest IssueLightModelTests.LandingPageScreenshotTests/testLandingPageScreenshotsRenderFromProductionViews \
     "$test_bundle"
 
 test -s "$output_directory/source-setup.png"
+test -s "$output_directory/source-setup-thruk.png"
 test -s "$output_directory/menu-item-states.png"
 test -s "$output_directory/menu-panel-de.png"
 test -s "$output_directory/menu-panel-sv.png"
 test -s "$output_directory/menu-panel-ar.png"
+test -s "$output_directory/menu-panel-source-failure.png"
+test -s "$output_directory/menu-panel-all-providers.png"
+test -s "$output_directory/menu-panel-no-source.png"
+test -s "$output_directory/menu-panel-disabled-source.png"
+test -s "$output_directory/menu-panel-loading.png"
+test -s "$output_directory/menu-panel-all-clear.png"
+test -s "$output_directory/menu-panel-filtered-empty.png"
+test -s "$output_directory/menu-panel-action-error.png"
+test -s "$output_directory/menu-panel-dark-large-text.png"
+test -s "$output_directory/source-setup-mtls-pinned.png"
+test -s "$output_directory/source-setup-insecure-ssh.png"
+test -s "$output_directory/connection-path-combinations.png"
 test -s "$output_directory/language-settings-sv.png"
 test -s "$output_directory/language-settings-ar.png"
 test -s "$output_directory/settings-about.png"
+test -s "$output_directory/settings-notifications.png"
 
 printf '%s\n' "Generated IssueLight site screenshots in $output_directory"

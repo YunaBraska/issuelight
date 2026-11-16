@@ -1,5 +1,4 @@
 import Foundation
-import Network
 
 public struct Icinga2Provider: MonitoringProvider {
     public static let id = ProviderID(rawValue: "icinga2")
@@ -10,6 +9,7 @@ public struct Icinga2Provider: MonitoringProvider {
     public let descriptor = ProviderDescriptor(
         id: Icinga2Provider.id,
         displayName: "Icinga 2",
+        endpointExample: "https://icinga.example:5665",
         capabilities: ProviderCapabilities(
             authenticationMethods: [.basic, .clientCertificate],
             serverTrustMethods: [.system, .customCertificate, .pinnedCertificate, .disabled],
@@ -27,9 +27,68 @@ public struct Icinga2Provider: MonitoringProvider {
         self.now = now
     }
 
+    public func endpointCandidates(from hint: String) -> [URL] {
+        let trimmedHint = hint.trimmingCharacters(in: .whitespacesAndNewlines)
+        let value = trimmedHint.isEmpty ? "localhost" : trimmedHint
+        let hasExplicitScheme = value.hasPrefix("//") || value.contains("://")
+        let valueWithScheme: String
+        if value.hasPrefix("//") {
+            valueWithScheme = "https:\(value)"
+        } else if value.contains("://") {
+            valueWithScheme = value
+        } else {
+            valueWithScheme = "https://\(value)"
+        }
+        guard var components = URLComponents(string: valueWithScheme),
+              components.host?.isEmpty == false,
+              components.user == nil,
+              components.password == nil,
+              let hintedScheme = components.scheme?.lowercased(),
+              ["http", "https"].contains(hintedScheme) else {
+            return []
+        }
+
+        let explicitPort = components.port
+        let hintedPort = explicitPort ?? (hasExplicitScheme && hintedScheme == "https" ? 443 : nil)
+        let firstPathComponent = components.path
+            .split(separator: "/", omittingEmptySubsequences: true)
+            .first?
+            .lowercased()
+        let looksLikeAPIPath = firstPathComponent == nil
+            || firstPathComponent == "v1"
+            || firstPathComponent == "v2"
+        components.scheme = "https"
+        components.path = ""
+        components.query = nil
+        components.fragment = nil
+
+        var ports: [Int] = []
+        if let hintedPort, looksLikeAPIPath {
+            ports.append(hintedPort)
+        }
+        ports.append(5_665)
+        if let hintedPort, !looksLikeAPIPath {
+            ports.append(hintedPort)
+        }
+
+        var seen = Set<String>()
+        return ports.compactMap { port in
+            components.port = port
+            guard let url = components.url,
+                  seen.insert(url.absoluteString).inserted else {
+                return nil
+            }
+            return url
+        }
+    }
+
     public func validate(_ source: MonitoringSource) -> [SourceValidationIssue] {
         var issues = MonitoringSourceValidator.validateSharedFields(source)
         let components = URLComponents(url: source.endpoint, resolvingAgainstBaseURL: false)
+
+        if !descriptor.capabilities.authenticationMethods.contains(source.authentication.method) {
+            issues.append(.unsupportedAuthentication(source.authentication.method))
+        }
 
         if components?.scheme?.lowercased() == "http" {
             issues.append(.unsupportedScheme("http"))
@@ -65,7 +124,7 @@ public struct Icinga2Provider: MonitoringProvider {
         components.user = nil
         components.password = nil
         components.port = nil
-        components.path = "/icingaweb2"
+        components.path = "/icingaweb2/icingadb"
         components.query = nil
         components.fragment = nil
         return components.url
@@ -122,10 +181,12 @@ public struct Icinga2Provider: MonitoringProvider {
                 clientIdentity: identity,
                 trustedServerCertificate: access.trustedServerCertificate
             )
-        case (.basic, .clientIdentity):
+        case (.basic, .clientIdentity), (.basic, .apiKey):
             return .failed(.authentication)
-        case (.clientCertificate, .password):
+        case (.clientCertificate, .password), (.clientCertificate, .apiKey):
             return .failed(.clientCertificateNotAvailable)
+        case (.apiKey, _):
+            return .failed(.invalidConfiguration([.unsupportedAuthentication(.apiKey)]))
         }
     }
 
@@ -150,10 +211,12 @@ public struct Icinga2Provider: MonitoringProvider {
                 clientIdentity: identity,
                 trustedServerCertificate: access.trustedServerCertificate
             )
-        case (.basic, .clientIdentity):
+        case (.basic, .clientIdentity), (.basic, .apiKey):
             return .failed(.authentication)
-        case (.clientCertificate, .password):
+        case (.clientCertificate, .password), (.clientCertificate, .apiKey):
             return .failed(.clientCertificateNotAvailable)
+        case (.apiKey, _):
+            return .failed(.invalidConfiguration([.unsupportedAuthentication(.apiKey)]))
         }
     }
 
@@ -184,10 +247,12 @@ public struct Icinga2Provider: MonitoringProvider {
                     trustedServerCertificate: access.trustedServerCertificate,
                     configuration: sessionConfiguration(for: access)
                 )
-            case (.basic, .clientIdentity):
+            case (.basic, .clientIdentity), (.basic, .apiKey):
                 return .failed(.authentication)
-            case (.clientCertificate, .password):
+            case (.clientCertificate, .password), (.clientCertificate, .apiKey):
                 return .failed(.clientCertificateNotAvailable)
+            case (.apiKey, _):
+                return .failed(.invalidConfiguration([.unsupportedAuthentication(.apiKey)]))
             }
             defer { transport.close() }
             let request = try transport.actionRequest(action, issue: issue)
@@ -212,20 +277,7 @@ public struct Icinga2Provider: MonitoringProvider {
     }
 
     private func sessionConfiguration(for access: ProviderAccess) -> URLSessionConfiguration {
-        let value = configuration.copy() as! URLSessionConfiguration
-        guard let proxy = access.socksProxy else { return value }
-        if #available(macOS 14.0, *) {
-            guard (1...65_535).contains(proxy.port),
-                  let port = NWEndpoint.Port(rawValue: UInt16(proxy.port)) else {
-                return value
-            }
-            let endpoint = NWEndpoint.hostPort(
-                host: NWEndpoint.Host(proxy.host),
-                port: port
-            )
-            value.proxyConfigurations = [ProxyConfiguration(socksv5Proxy: endpoint)]
-        }
-        return value
+        configuration.routed(through: access.socksProxy)
     }
 }
 

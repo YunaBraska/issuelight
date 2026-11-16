@@ -3,19 +3,20 @@ import SwiftUI
 import IssueLightCore
 
 struct StatusMenuLabel: View {
-    let symbol: String
+    let state: IssueLightBeaconState
     let counts: MenuBarIssueCounts
     let accessibilityText: String
 
     var body: some View {
-        HStack(spacing: 3) {
-            Image(systemName: symbol)
-            if !counts.compactText.isEmpty {
-                Text(verbatim: counts.compactText)
-                    .monospacedDigit()
-            }
+        if counts.compactText.isEmpty {
+            IssueLightBeaconGlyph(state: state)
+                .frame(width: 17, height: 17)
+                .accessibilityLabel(accessibilityText)
+        } else {
+            Text(verbatim: counts.compactText)
+                .monospacedDigit()
+                .accessibilityLabel(accessibilityText)
         }
-        .accessibilityLabel(accessibilityText)
     }
 }
 
@@ -47,9 +48,9 @@ struct MenuBarIssueCounts: Equatable {
 struct StatusMenuView: View {
     @ObservedObject var model: IssueLightModel
     @ObservedObject var externalActions: ExternalActionCoordinator
+    @ObservedObject var filters: PanelFilterSettings
     @Environment(\.openSettings) private var openSettings
     @State private var pendingAction: PendingIssueAction?
-    @StateObject private var filters = PanelFilterSettings()
 
     var body: some View {
         StatusMenuContent(
@@ -184,6 +185,7 @@ struct StatusMenuContent: View {
                 Button(action: openSettings) {
                     Image(systemName: "gearshape")
                         .frame(width: 28, height: 28)
+                        .pointerHoverFeedback()
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.borderless)
@@ -194,6 +196,7 @@ struct StatusMenuContent: View {
                 Button(action: quitApplication) {
                     Image(systemName: "power")
                         .frame(width: 28, height: 28)
+                        .pointerHoverFeedback()
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.borderless)
@@ -323,6 +326,36 @@ struct StatusMenuContent: View {
                 Text(verbatim: AppLocalization.string("Benötigt Aufmerksamkeit", locale: locale)).tag(PanelCoverageFilter.attention)
                 Text(verbatim: AppLocalization.string("Quittiert oder in Wartungszeit", locale: locale)).tag(PanelCoverageFilter.covered)
             }
+            if !hostOptions.isEmpty {
+                Menu {
+                    Toggle(
+                        isOn: Binding(
+                            get: { filters.hostSelections.isEmpty },
+                            set: { if $0 { filters.clearHosts() } }
+                        )
+                    ) {
+                        Text(verbatim: AppLocalization.string("Alle Hosts", locale: locale))
+                    }
+                    Divider()
+                    ForEach(hostOptions) { selection in
+                        Toggle(
+                            isOn: Binding(
+                                get: { filters.isHostSelected(selection) },
+                                set: { filters.setHost(selection, selected: $0) }
+                            )
+                        ) {
+                            Text(
+                                verbatim: sourceNames[selection.sourceID].map {
+                                    "\(selection.hostName) · \($0)"
+                                } ?? selection.hostName
+                            )
+                        }
+                    }
+                } label: {
+                    Text(verbatim: AppLocalization.string("Host", locale: locale))
+                }
+                .accessibilityIdentifier("host-filter")
+            }
             if filters.isActive {
                 Divider()
                 Button(AppLocalization.string("Filter zurücksetzen", locale: locale)) {
@@ -340,6 +373,21 @@ struct StatusMenuContent: View {
         .help(AppLocalization.string("Filter", locale: locale))
         .accessibilityLabel(AppLocalization.string("Filter", locale: locale))
         .accessibilityIdentifier("issue-filter")
+    }
+
+    private var hostOptions: [PanelHostSelection] {
+        let visibleHosts = Set(
+            (actionableIssues + coveredIssues).map(PanelHostSelection.init(issue:))
+        )
+        return visibleHosts.union(filters.hostSelections).sorted { lhs, rhs in
+            let lhsSource = sourceNames[lhs.sourceID] ?? ""
+            let rhsSource = sourceNames[rhs.sourceID] ?? ""
+            let sourceOrder = lhsSource.localizedCaseInsensitiveCompare(rhsSource)
+            if sourceOrder != .orderedSame {
+                return sourceOrder == .orderedAscending
+            }
+            return lhs.hostName.localizedCaseInsensitiveCompare(rhs.hostName) == .orderedAscending
+        }
     }
 
     @ViewBuilder
@@ -436,20 +484,17 @@ private struct StatusPanelSourceFailureRow: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            Image(systemName: "wifi.exclamationmark")
-                .foregroundStyle(.red)
-                .frame(width: 20)
             Text(verbatim: failure.source.name)
-                .font(.caption2.weight(.semibold))
+                .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
-                .frame(width: 82, alignment: .leading)
+                .frame(width: 100, alignment: .leading)
             Text(verbatim: AppLocalization.string("Status konnte nicht geladen werden", locale: locale))
-                .font(.caption.weight(.medium))
+                .font(.callout.weight(.medium))
                 .lineLimit(1)
-                .frame(width: 204, alignment: .leading)
+                .frame(width: 214, alignment: .leading)
             Text(verbatim: failure.message)
-                .font(.caption)
+                .font(.callout)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -462,7 +507,7 @@ private struct StatusPanelSourceFailureRow: View {
                 .fill(Color.red)
                 .frame(width: 3)
         }
-        .overlay(alignment: .bottom) { Divider().padding(.leading, 34) }
+        .overlay(alignment: .bottom) { Divider().padding(.leading, 10) }
         .help(hoverText)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(hoverText)
@@ -486,16 +531,18 @@ struct StatusActionErrorBanner: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            Image(systemName: "exclamationmark.circle.fill")
+            IssueLightSignalGlyph(state: .failed)
                 .foregroundStyle(.red)
+                .frame(width: 18, height: 18)
                 .accessibilityHidden(true)
             Text(verbatim: message)
-                .font(.caption)
+                .font(.callout)
                 .lineLimit(2)
                 .frame(maxWidth: .infinity, alignment: .leading)
             Button(action: dismiss) {
                 Image(systemName: "xmark")
                     .frame(width: 24, height: 24)
+                    .pointerHoverFeedback()
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -591,10 +638,10 @@ private struct StatusPanelIssueEntry: View {
         .overlay(alignment: .bottom) { Divider().padding(.leading, 34) }
         .contextMenu {
             if let openSSH {
-                Button("SSH", systemImage: "terminal", action: openSSH)
+                Button("SSH für überwachten Host", systemImage: "terminal", action: openSSH)
             }
             if let openRDP {
-                Button("RDP", systemImage: "rectangle.connected.to.line.below", action: openRDP)
+                Button("RDP für überwachten Host", systemImage: "rectangle.connected.to.line.below", action: openRDP)
             }
         }
     }
@@ -608,12 +655,32 @@ private struct StatusPanelIssueEntry: View {
         Button(action: action) {
             Image(systemName: systemImage)
                 .frame(width: 24, height: 28)
+                .pointerHoverFeedback()
                 .contentShape(Rectangle())
         }
         .buttonStyle(.borderless)
         .disabled(!enabled)
         .help(title)
         .accessibilityLabel(title)
+    }
+}
+
+private struct PointerHoverFeedback: ViewModifier {
+    @State private var isHovering = false
+
+    func body(content: Content) -> some View {
+        content
+            .background(
+                RoundedRectangle(cornerRadius: 5)
+                    .fill(.secondary.opacity(isHovering ? 0.14 : 0))
+            )
+            .onHover { isHovering = $0 }
+    }
+}
+
+private extension View {
+    func pointerHoverFeedback() -> some View {
+        modifier(PointerHoverFeedback())
     }
 }
 
@@ -735,32 +802,29 @@ private struct StatusPanelIssueRow: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            Image(systemName: symbol)
-                .foregroundStyle(color)
-                .frame(width: 20)
             Text(verbatim: sourceName)
-                .font(.caption2.weight(.semibold))
+                .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
-                .frame(width: 82, alignment: .leading)
+                .frame(width: 100, alignment: .leading)
             Text(verbatim: title)
-                .font(.caption.weight(.medium))
+                .font(.callout.weight(.medium))
                 .lineLimit(1)
-                .frame(width: 204, alignment: .leading)
-            Text(verbatim: issue.summary)
-                .font(.caption)
+                .frame(width: 214, alignment: .leading)
+            Text(verbatim: summaryText)
+                .font(.callout)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
                 .frame(maxWidth: .infinity, alignment: .leading)
             if let durationText {
                 Text(verbatim: durationText)
-                    .font(.caption2.monospacedDigit())
+                    .font(.caption.monospacedDigit())
                     .foregroundStyle(.secondary)
                     .frame(width: 58, alignment: .trailing)
             }
             if let attemptText {
                 Text(verbatim: attemptText)
-                    .font(.caption2.monospacedDigit())
+                    .font(.caption.monospacedDigit())
                     .foregroundStyle(.secondary)
                     .frame(width: 30, alignment: .trailing)
             }
@@ -781,21 +845,6 @@ private struct StatusPanelIssueRow: View {
         issue.kind == .host ? issue.displayName : "\(issue.hostName) · \(issue.displayName)"
     }
 
-    private var symbol: String {
-        if issue.kind == .host {
-            return "network.slash"
-        }
-        switch issue.severity {
-        case .critical: return "exclamationmark.octagon.fill"
-        case .unknown: return "questionmark.diamond.fill"
-        case .warning: return "exclamationmark.triangle.fill"
-        }
-    }
-
-    private var color: Color {
-        issue.presentationColor
-    }
-
     private var severityText: String {
         if issue.kind == .host {
             return "DOWN"
@@ -805,6 +854,20 @@ private struct StatusPanelIssueRow: View {
         case .unknown: return AppLocalization.string("Unbekannt", locale: locale)
         case .warning: return AppLocalization.string("Warnung", locale: locale)
         }
+    }
+
+    private var summaryText: String {
+        let summary = issue.summary.trimmingCharacters(in: .whitespacesAndNewlines)
+        let normalizedSummary = summary.lowercased(with: locale)
+        let knownPrefixes = ["CRITICAL", "WARNING", "UNKNOWN", "DOWN", severityText]
+        let alreadyIncludesState = knownPrefixes.contains { prefix in
+            let normalizedPrefix = prefix.lowercased(with: locale)
+            return normalizedSummary == normalizedPrefix
+                || normalizedSummary.hasPrefix("\(normalizedPrefix):")
+                || normalizedSummary.hasPrefix("\(normalizedPrefix) ")
+                || normalizedSummary.hasPrefix("\(normalizedPrefix) ·")
+        }
+        return alreadyIncludesState ? summary : "\(severityText) · \(summary)"
     }
 
     private var durationText: String? {
@@ -843,7 +906,7 @@ private struct StatusPanelIssueRow: View {
     }
 
     private var hoverText: String {
-        [sourceName, title, issue.summary]
+        [sourceName, severityText, title, issue.summary]
             .filter { !$0.isEmpty }
             .joined(separator: "\n")
     }

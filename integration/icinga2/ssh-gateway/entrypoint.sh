@@ -1,8 +1,16 @@
 #!/bin/sh
 set -eu
 
+case "$ISSUELIGHT_SSH_PUBLIC_KEY" in
+  'ssh-ed25519 '*) ;;
+  *)
+    printf 'Missing generated SSH fixture public key.\n' >&2
+    exit 2
+    ;;
+esac
+
 mkdir -p /home/operator/.ssh
-cp /run/issuelight/authorized_key /home/operator/.ssh/authorized_keys
+printf '%s\n' "$ISSUELIGHT_SSH_PUBLIC_KEY" > /home/operator/.ssh/authorized_keys
 chown -R operator:operator /home/operator/.ssh
 chmod 700 /home/operator/.ssh
 chmod 600 /home/operator/.ssh/authorized_keys

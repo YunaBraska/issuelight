@@ -30,8 +30,10 @@ final class KeychainServerCertificateCatalogTests: XCTestCase {
 
         let repeatedDescriptor = try await catalog.importCertificate(at: fileURL)
         let certificate = try await catalog.certificate(id: descriptor.id)
+        let resolvedDescriptor = try await catalog.descriptor(id: descriptor.id)
 
         XCTAssertEqual(repeatedDescriptor, descriptor)
+        XCTAssertEqual(resolvedDescriptor, descriptor)
         XCTAssertEqual(descriptor.displayName, "IssueLight Test Root CA")
         XCTAssertEqual(descriptor.sha256Fingerprint.split(separator: ":").count, 32)
         XCTAssertNotNil(certificate)
@@ -49,6 +51,8 @@ final class KeychainServerCertificateCatalogTests: XCTestCase {
         XCTAssertEqual(cleanupResult, [descriptor.id])
         let removedCertificate = try await catalog.certificate(id: descriptor.id)
         XCTAssertNil(removedCertificate)
+        let removedDescriptor = try await catalog.descriptor(id: descriptor.id)
+        XCTAssertNil(removedDescriptor)
     }
 
     func testReferenceAwareCleanupRetainsCertificateWithoutIssueLightOwnership() async throws {
@@ -131,6 +135,16 @@ final class KeychainServerCertificateCatalogTests: XCTestCase {
             )
         }
 
+        do {
+            try await catalog.deleteCertificate(id: "not base64")
+            XCTFail("Expected invalid delete reference rejection")
+        } catch {
+            XCTAssertEqual(
+                error as? KeychainServerCertificateCatalogError,
+                .invalidPersistentReference
+            )
+        }
+
         let fileURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("IssueLightMalformedCertificate-\(UUID().uuidString).crt")
         try Data("not a certificate".utf8).write(to: fileURL)
@@ -142,6 +156,33 @@ final class KeychainServerCertificateCatalogTests: XCTestCase {
             XCTAssertEqual(
                 error as? KeychainServerCertificateCatalogError,
                 .invalidCertificate
+            )
+        }
+    }
+
+    func testCertificateBundleWithMultipleCertificatesIsRejected() async throws {
+        let fixtureURL = try XCTUnwrap(
+            Bundle.module.url(
+                forResource: "issuelight-test-root",
+                withExtension: "crt",
+                subdirectory: "Fixtures"
+            )
+        )
+        let certificateData = try Data(contentsOf: fixtureURL)
+        var certificateBundle = certificateData
+        certificateBundle.append(certificateData)
+        let fileURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("IssueLightCertificateBundle-\(UUID().uuidString).crt")
+        try certificateBundle.write(to: fileURL)
+        defer { try? FileManager.default.removeItem(at: fileURL) }
+
+        do {
+            _ = try await certificateCatalog().importCertificate(at: fileURL)
+            XCTFail("Expected a multi-certificate bundle rejection")
+        } catch {
+            XCTAssertEqual(
+                error as? KeychainServerCertificateCatalogError,
+                .multipleCertificatesNotSupported
             )
         }
     }

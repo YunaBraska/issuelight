@@ -9,6 +9,9 @@ struct IssueLightApp: App {
     @StateObject private var model: IssueLightModel
     @StateObject private var languageSettings: AppLanguageSettings
     @StateObject private var externalActions: ExternalActionCoordinator
+    @StateObject private var notificationCoordinator: IssueNotificationCoordinator
+    @StateObject private var panelFilters: PanelFilterSettings
+    private let updateController: AppUpdateController
 
     init() {
 #if DEBUG
@@ -22,38 +25,83 @@ struct IssueLightApp: App {
             connectionCoordinator: connectionCoordinator
         )
         let actionCoordinator = ExternalActionCoordinator(tunnelManager: tunnelManager)
+        let issueNotificationCoordinator = IssueNotificationCoordinator(locale: settings.locale)
         actionCoordinator.observeSources(issueModel)
+        issueNotificationCoordinator.observe(issueModel)
+        issueNotificationCoordinator.configureNavigation(
+            issueURL: { [weak issueModel] issue in
+                issueModel?.webTarget(for: issue)?.url
+            },
+            target: { [weak issueModel] sourceID, url in
+                issueModel?.webTarget(sourceID: sourceID, url: url)
+            },
+            open: { [weak issueModel, weak actionCoordinator] target in
+                guard let actionCoordinator else { return }
+                if case .failure(let error) = await actionCoordinator.openWeb(target) {
+                    issueModel?.reportExternalActionError(error)
+                }
+            }
+        )
+        Task {
+            await issueNotificationCoordinator.prepareForSession()
+        }
         _languageSettings = StateObject(wrappedValue: settings)
         _externalActions = StateObject(wrappedValue: actionCoordinator)
+        _notificationCoordinator = StateObject(wrappedValue: issueNotificationCoordinator)
+        _panelFilters = StateObject(wrappedValue: PanelFilterSettings())
         _model = StateObject(wrappedValue: issueModel)
+        updateController = AppUpdateController()
     }
 
     var body: some Scene {
         MenuBarExtra {
-            StatusMenuView(model: model, externalActions: externalActions)
+            StatusMenuView(
+                model: model,
+                externalActions: externalActions,
+                filters: panelFilters
+            )
                 .appLanguageEnvironment(languageSettings)
                 .onChange(of: languageSettings.selection) {
                     model.setLocalizationLocale(languageSettings.locale)
+                    notificationCoordinator.setLocale(languageSettings.locale)
                 }
         } label: {
             StatusMenuLabel(
-                symbol: model.menuBarSymbol,
-                counts: MenuBarIssueCounts(issues: model.actionableIssues),
+                state: menuBarGlyphState,
+                counts: MenuBarIssueCounts(issues: menuBarIssues),
                 accessibilityText: menuBarAccessibilityLabel
             )
         }
         .menuBarExtraStyle(.window)
 
         Settings {
-            IssueLightSettingsView(model: model, languageSettings: languageSettings)
+            IssueLightSettingsView(
+                model: model,
+                languageSettings: languageSettings,
+                notificationCoordinator: notificationCoordinator,
+                updateController: updateController
+            )
                 .appLanguageEnvironment(languageSettings)
                 .onChange(of: languageSettings.selection) {
                     model.setLocalizationLocale(languageSettings.locale)
+                    notificationCoordinator.setLocale(languageSettings.locale)
                 }
         }
+        .windowResizability(.contentMinSize)
         .commands {
             CommandGroup(replacing: .appInfo) {}
         }
+    }
+
+    private var menuBarGlyphState: IssueLightBeaconState {
+        if !model.hasConfiguredSource { return .needsSetup }
+        if !model.hasEnabledSource { return .paused }
+        if case .failed = model.refreshState { return .failed }
+        return model.refreshState == .refreshing ? .refreshing : .current
+    }
+
+    private var menuBarIssues: [MonitoringIssue] {
+        model.actionableIssues.filter(panelFilters.includesHost)
     }
 
     private var menuBarAccessibilityLabel: String {
@@ -69,7 +117,7 @@ struct IssueLightApp: App {
                 locale: languageSettings.locale
             )
         }
-        let count = model.actionableIssues.count
+        let count = menuBarIssues.count
         let attention = IssueCountText.attention(count, locale: languageSettings.locale)
         if case .failed(let message) = model.refreshState {
             let failure = model.hasPartialRefreshFailure

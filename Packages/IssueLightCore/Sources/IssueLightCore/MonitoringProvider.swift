@@ -3,6 +3,7 @@ import Security
 
 public enum ProviderCredential: @unchecked Sendable {
     case password(String)
+    case apiKey(String)
     case clientIdentity(SecIdentity)
 }
 
@@ -88,18 +89,27 @@ public enum MonitoringActionResult: Equatable, Sendable {
 public struct ProviderDescriptor: Equatable, Sendable {
     public let id: ProviderID
     public let displayName: String
+    public let endpointExample: String
     public let capabilities: ProviderCapabilities
 
-    public init(id: ProviderID, displayName: String, capabilities: ProviderCapabilities) {
+    public init(
+        id: ProviderID,
+        displayName: String,
+        endpointExample: String = "",
+        capabilities: ProviderCapabilities
+    ) {
         self.id = id
         self.displayName = displayName
+        self.endpointExample = endpointExample
         self.capabilities = capabilities
     }
 }
 
 public protocol MonitoringProvider: Sendable {
     var descriptor: ProviderDescriptor { get }
+    func endpointCandidates(from hint: String) -> [URL]
     func validate(_ source: MonitoringSource) -> [SourceValidationIssue]
+    func supportedActions(for source: MonitoringSource) -> Set<MonitoringActionKind>
     func testConnection(
         to source: MonitoringSource,
         access: ProviderAccess
@@ -119,8 +129,18 @@ public protocol MonitoringProvider: Sendable {
 }
 
 public extension MonitoringProvider {
+    func endpointCandidates(from hint: String) -> [URL] {
+        let value = hint.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !value.isEmpty, let url = URL(string: value) else { return [] }
+        return [url]
+    }
+
     func defaultWebBaseURL(for source: MonitoringSource) -> URL? {
         nil
+    }
+
+    func supportedActions(for source: MonitoringSource) -> Set<MonitoringActionKind> {
+        descriptor.capabilities.actions
     }
 
     func webURL(for issue: MonitoringIssue, from source: MonitoringSource) -> URL? {
@@ -171,7 +191,17 @@ public struct ProviderRegistry: Sendable {
     }
 
     public static func builtIn() -> ProviderRegistry {
-        let provider = Icinga2Provider()
-        return ProviderRegistry(indexedProviders: [provider.descriptor.id: provider])
+        let checkmk = CheckmkProvider()
+        let icinga = Icinga2Provider()
+        let nagios = NagiosCoreProvider()
+        let thruk = ThrukProvider()
+        return ProviderRegistry(
+            indexedProviders: [
+                checkmk.descriptor.id: checkmk,
+                icinga.descriptor.id: icinga,
+                nagios.descriptor.id: nagios,
+                thruk.descriptor.id: thruk,
+            ]
+        )
     }
 }

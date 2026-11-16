@@ -39,6 +39,9 @@ generate_ssh_fixture_identity() {
   fi
   chmod 600 "$ISSUELIGHT_ICINGA_ARTIFACTS_DIR/ssh-tunnel"
   chmod 644 "$ISSUELIGHT_ICINGA_ARTIFACTS_DIR/ssh-tunnel.pub"
+
+  ISSUELIGHT_SSH_PUBLIC_KEY=$(sed -n '1p' "$ISSUELIGHT_ICINGA_ARTIFACTS_DIR/ssh-tunnel.pub")
+  export ISSUELIGHT_SSH_PUBLIC_KEY
 }
 
 wait_for_ssh_fixture() {
@@ -247,6 +250,14 @@ verify_app_model_multi_source() {
     -destination 'platform=macOS' \
     -derivedDataPath "$live_model_derived_data" \
     CODE_SIGNING_ALLOWED=NO
+
+  test_bundle="$live_model_derived_data/Build/Products/Debug/IssueLightModelTests.xctest"
+  test_frameworks="$test_bundle/Contents/Frameworks"
+  mkdir -p "$test_frameworks"
+  ditto \
+    "$live_model_derived_data/Build/Products/Debug/Sparkle.framework" \
+    "$test_frameworks/Sparkle.framework"
+
   ISSUELIGHT_LIVE_ICINGA_URL="https://localhost:$ISSUELIGHT_ICINGA_PORT" \
   ISSUELIGHT_LIVE_ICINGA_SSH_URL="https://icinga2:5665" \
   ISSUELIGHT_REQUIRE_LIVE_ICINGA=1 \
@@ -257,7 +268,7 @@ verify_app_model_multi_source() {
   ISSUELIGHT_LIVE_SSH_KEY_PATH="$ISSUELIGHT_ICINGA_ARTIFACTS_DIR/ssh-tunnel" \
   ISSUELIGHT_LIVE_SSH_KNOWN_HOSTS_PATH="$ISSUELIGHT_ICINGA_ARTIFACTS_DIR/ssh-known-hosts" \
     xcrun xctest \
-      "$live_model_derived_data/Build/Products/Debug/IssueLightModelTests.xctest"
+      "$test_bundle"
   rm -rf "$live_model_derived_data"
   trap - EXIT HUP INT TERM
 }

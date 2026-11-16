@@ -106,9 +106,13 @@ public actor KeychainIdentityCatalog {
                     &fallbackResult
                 )
                 if fallbackStatus == errSecSuccess, let identities = fallbackResult as? [SecIdentity] {
-                    return identities.first { identity in
+                    let identity = identities.first { identity in
                         (try? persistentReference(for: identity)) == reference
                     }
+                    if interaction == .fail, let identity {
+                        try ClientIdentitySigningAuthorization.requireNonInteractiveAccess(to: identity)
+                    }
+                    return identity
                 }
             }
             return nil
@@ -123,6 +127,9 @@ public actor KeychainIdentityCatalog {
             throw KeychainIdentityCatalogError.malformedKeychainResult
         }
         let identity = unsafeBitCast(result, to: SecIdentity.self)
+        if interaction == .fail {
+            try ClientIdentitySigningAuthorization.requireNonInteractiveAccess(to: identity)
+        }
         return identity
     }
 

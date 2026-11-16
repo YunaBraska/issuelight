@@ -6,6 +6,7 @@ import Security
 final class IssueLightModel: ObservableObject {
     enum AuthenticationChoice: String, CaseIterable, Identifiable {
         case basic
+        case apiKey
         case clientCertificate
 
         var id: String { rawValue }
@@ -14,6 +15,8 @@ final class IssueLightModel: ObservableObject {
             switch self {
             case .basic:
                 return AppLocalization.string("Benutzername & Passwort", locale: locale)
+            case .apiKey:
+                return AppLocalization.string("API-Schlüssel", locale: locale)
             case .clientCertificate:
                 return AppLocalization.string("Client-Zertifikat", locale: locale)
             }
@@ -23,6 +26,8 @@ final class IssueLightModel: ObservableObject {
             switch self {
             case .basic:
                 return .basic
+            case .apiKey:
+                return .apiKey
             case .clientCertificate:
                 return .clientCertificate
             }
@@ -103,8 +108,37 @@ final class IssueLightModel: ObservableObject {
         var web: ConnectionEndpointState = .notTested
     }
 
+    struct ConnectionAttempt: Equatable, Identifiable {
+        let endpoint: String
+        let route: String
+        let outcome: String
+
+        var id: String { "\(endpoint)|\(route)|\(outcome)" }
+    }
+
     @Published var name = ""
-    @Published var endpoint = ""
+    @Published var endpoint = "" {
+        didSet {
+            guard endpoint != oldValue,
+                  var source = selectedSource,
+                  let newEndpoint = URL(
+                      string: endpoint.trimmingCharacters(in: .whitespacesAndNewlines)
+                  ) else {
+                return
+            }
+            if let oldEndpoint = URL(
+                string: oldValue.trimmingCharacters(in: .whitespacesAndNewlines)
+            ) {
+                source.endpoint = oldEndpoint
+            }
+            guard source.updateEndpoint(newEndpoint) else {
+                return
+            }
+            serverTrustChoice = .system
+            selectedServerCertificate = nil
+            pinnedServerCertificateSHA256 = ""
+        }
+    }
     @Published var isSourceEnabled = true
     @Published var selectedProviderID: ProviderID {
         didSet {
@@ -114,11 +148,11 @@ final class IssueLightModel: ObservableObject {
     }
     @Published var authenticationChoice = AuthenticationChoice.basic
     @Published var username = ""
-    @Published var password = ""
+    @Published var credentialSecret = ""
     @Published var selectedIdentityID = ""
     @Published var identities: [ClientIdentityDescriptor] = []
     @Published private(set) var identityLoadError: String?
-    @Published private(set) var hasStoredBasicPassword = false
+    @Published private(set) var hasStoredCredentialSecret = false
     @Published var serverTrustChoice = ServerTrustChoice.system
     @Published private(set) var selectedServerCertificate: ServerCertificateDescriptor?
     @Published private(set) var pinnedServerCertificateSHA256 = ""
@@ -144,6 +178,7 @@ final class IssueLightModel: ObservableObject {
     @Published private(set) var activeActionIssueIDs: Set<String> = []
     @Published private(set) var actionError: ActionError?
     @Published private(set) var connectionStatuses: [UUID: ConnectionStatus] = [:]
+    @Published private(set) var connectionAttempts: [ConnectionAttempt] = []
 
     private var sourceID = UUID()
     private let sourceStore: SourceStore?
@@ -182,7 +217,7 @@ final class IssueLightModel: ObservableObject {
     }
 
     var hasUnsavedChanges: Bool {
-        if !password.isEmpty { return true }
+        if !credentialSecret.isEmpty { return true }
         guard let selectedSource else {
             return !name.isEmpty
                 || !endpoint.isEmpty
@@ -197,6 +232,8 @@ final class IssueLightModel: ObservableObject {
         switch authenticationChoice {
         case .basic:
             authentication = .basic(username: username)
+        case .apiKey:
+            authentication = .apiKey(username: username)
         case .clientCertificate:
             authentication = .clientCertificate(identityID: selectedIdentityID)
         }
@@ -212,12 +249,12 @@ final class IssueLightModel: ObservableObject {
             serverTrust = .disabled
         }
         return name != selectedSource.name
-            || endpoint != selectedSource.endpoint.absoluteString
+            || endpoint != selectedSource.editableEndpoint
             || isSourceEnabled != selectedSource.isEnabled
             || selectedProviderID != selectedSource.providerID
             || authentication != selectedSource.authentication
             || serverTrust != selectedSource.serverTrust
-            || webURL != (selectedSource.web?.baseURL.absoluteString ?? "")
+            || webURL != (selectedSource.web?.editableBaseURL ?? "")
             || sshTunnelHost != ((selectedSource.sshTunnel ?? selectedSource.web?.automaticSSHTunnel)?.bastionHost ?? "")
             || sshTunnelUsername != ((selectedSource.sshTunnel ?? selectedSource.web?.automaticSSHTunnel)?.username ?? "")
             || sshTunnelPort != (
@@ -245,6 +282,10 @@ final class IssueLightModel: ObservableObject {
             ?? selectedProviderID.rawValue
     }
 
+    var endpointPrompt: String {
+        providerRegistry.provider(for: selectedProviderID)?.descriptor.endpointExample ?? ""
+    }
+
     var authenticationChoices: [AuthenticationChoice] {
         guard let methods = providerRegistry
             .provider(for: selectedProviderID)?
@@ -252,6 +293,10 @@ final class IssueLightModel: ObservableObject {
             return []
         }
         return AuthenticationChoice.allCases.filter { methods.contains($0.method) }
+    }
+
+    var apiUsernameIsRequired: Bool {
+        selectedProviderID == CheckmkProvider.id
     }
 
     var serverTrustChoices: [ServerTrustChoice] {
@@ -264,8 +309,9 @@ final class IssueLightModel: ObservableObject {
     }
 
     func supportedActions(for issue: MonitoringIssue) -> Set<MonitoringActionKind> {
-        guard let source = sources.first(where: { $0.id == issue.sourceID }) else { return [] }
-        return providerRegistry.provider(for: source.providerID)?.descriptor.capabilities.actions ?? []
+        guard let source = sources.first(where: { $0.id == issue.sourceID }),
+              let provider = providerRegistry.provider(for: source.providerID) else { return [] }
+        return provider.supportedActions(for: source)
     }
 
     func webTarget(for issue: MonitoringIssue) -> IssueWebTarget? {
@@ -274,6 +320,11 @@ final class IssueLightModel: ObservableObject {
               let url = provider.webURL(for: issue, from: source) else {
             return nil
         }
+        return webTarget(sourceID: source.id, url: url)
+    }
+
+    func webTarget(sourceID: UUID, url: URL) -> IssueWebTarget? {
+        guard let source = sources.first(where: { $0.id == sourceID }) else { return nil }
         return IssueWebTarget(
             sourceID: source.id,
             url: url,
@@ -351,7 +402,7 @@ final class IssueLightModel: ObservableObject {
             return
         }
         guard let provider = providerRegistry.provider(for: source.providerID),
-              provider.descriptor.capabilities.actions.contains(action.kind) else {
+              provider.supportedActions(for: source).contains(action.kind) else {
             actionError = ActionError(
                 message: localized("Diese Aktion wird von der Quelle nicht unterstützt.")
             )
@@ -448,22 +499,6 @@ final class IssueLightModel: ObservableObject {
         return .refreshing
     }
 
-    var menuBarSymbol: String {
-        if !hasConfiguredSource { return "exclamationmark.triangle" }
-        if !hasEnabledSource { return "pause.circle" }
-        switch actionableIssues.map(\.severity).max() {
-        case .critical:
-            return "exclamationmark.octagon.fill"
-        case .unknown:
-            return "questionmark.diamond.fill"
-        case .warning:
-            return "exclamationmark.triangle.fill"
-        case nil:
-            if case .failed = refreshState { return "wifi.exclamationmark" }
-            return refreshState == .refreshing ? "arrow.clockwise" : "checkmark.circle"
-        }
-    }
-
     var deletionMessage: String {
         guard let selectedSource else {
             return localized("Die Quellenkonfiguration wird von diesem Mac entfernt.")
@@ -472,6 +507,8 @@ final class IssueLightModel: ObservableObject {
         switch selectedSource.authentication {
         case .basic:
             credentialMessage = localized("Die Konfiguration und das zugehörige Basic-Passwort werden von diesem Mac entfernt.")
+        case .apiKey:
+            credentialMessage = localized("Die Konfiguration und der zugehörige API-Schlüssel werden von diesem Mac entfernt.")
         case .clientCertificate:
             credentialMessage = localized("Die Konfiguration wird entfernt. Das Client-Zertifikat bleibt im macOS-Schlüsselbund.")
         }
@@ -526,7 +563,9 @@ final class IssueLightModel: ObservableObject {
             identityCatalog: identityCatalog,
             certificateCatalog: certificateCatalog
         )
-        selectedProviderID = providerRegistry.descriptors.first?.id ?? ProviderID(rawValue: "")
+        selectedProviderID = providerRegistry.provider(for: Icinga2Provider.id) == nil
+            ? providerRegistry.descriptors.first?.id ?? ProviderID(rawValue: "")
+            : Icinga2Provider.id
         if startsAutomatically {
             Task { [weak self] in
                 await self?.start()
@@ -610,26 +649,21 @@ final class IssueLightModel: ObservableObject {
         activity = .working(localized("Quelle wird geladen …"))
         selectedSourceID = source.id
         apply(source)
-        password = ""
+        credentialSecret = ""
         do {
-            let hasPassword: Bool
-            if case .basic = source.authentication {
-                hasPassword = try await passwordVault.containsPassword(for: BasicCredentialScope(source: source))
-            } else {
-                hasPassword = false
-            }
+            let hasCredential = try await containsStoredCredential(for: source)
             guard selectedSourceID == source.id else { return }
-            hasStoredBasicPassword = hasPassword
+            hasStoredCredentialSecret = hasCredential
         } catch KeychainPasswordVaultError.interactionNotAllowed {
             guard selectedSourceID == source.id else { return }
-            hasStoredBasicPassword = false
+            hasStoredCredentialSecret = false
             activity = .failure(
-                localized("macOS gibt diesen Schlüsselbund-Eintrag nicht ohne Nachfrage frei. Gib das Passwort in der Quelle erneut ein.")
+                localized("macOS gibt diesen Schlüsselbund-Eintrag nicht ohne Nachfrage frei. Gib das Geheimnis in der Quelle erneut ein.")
             )
         } catch {
             guard selectedSourceID == source.id else { return }
-            hasStoredBasicPassword = false
-            activity = .failure(localized("Das gespeicherte Passwort konnte nicht aus dem Schlüsselbund gelesen werden."))
+            hasStoredCredentialSecret = false
+            activity = .failure(localized("Die gespeicherten Zugangsdaten konnten nicht aus dem Schlüsselbund gelesen werden."))
         }
 
         do {
@@ -656,17 +690,20 @@ final class IssueLightModel: ObservableObject {
     func beginAddingSource() {
         connectionTestID = nil
         isTestingConnection = false
+        connectionAttempts = []
         selectedSourceID = nil
         sourceID = UUID()
         name = ""
         endpoint = ""
         isSourceEnabled = true
-        selectedProviderID = providerRegistry.descriptors.first?.id ?? ProviderID(rawValue: "")
+        selectedProviderID = providerRegistry.provider(for: Icinga2Provider.id) == nil
+            ? providerRegistry.descriptors.first?.id ?? ProviderID(rawValue: "")
+            : Icinga2Provider.id
         authenticationChoice = authenticationChoices.first ?? .basic
         username = ""
-        password = ""
+        credentialSecret = ""
         selectedIdentityID = ""
-        hasStoredBasicPassword = false
+        hasStoredCredentialSecret = false
         serverTrustChoice = .system
         selectedServerCertificate = nil
         pinnedServerCertificateSHA256 = ""
@@ -675,83 +712,163 @@ final class IssueLightModel: ObservableObject {
     }
 
     func testConnection() async {
-        guard let source = sourceFromForm() else { return }
-        guard let provider = providerRegistry.provider(for: source.providerID) else {
+        guard let provider = providerRegistry.provider(for: selectedProviderID) else {
             activity = .failure(localized("Der konfigurierte Monitoring-Typ ist nicht verfügbar."))
             return
         }
-        connectionTestID = source.id
+        let candidates = provider.endpointCandidates(from: endpoint)
+        guard !candidates.isEmpty else {
+            activity = .failure(localized("Die Serveradresse benötigt einen Hostnamen."))
+            return
+        }
+
+        let testedSourceID = sourceID
+        connectionTestID = testedSourceID
         isTestingConnection = true
-        connectionStatuses[source.id] = ConnectionStatus(api: .checking, web: .checking)
+        connectionAttempts = []
+        connectionStatuses[testedSourceID] = ConnectionStatus(api: .checking, web: .checking)
         activity = .working(localized("Verbindung wird geprüft …"))
 
-        var allowsStoredPassword = true
-        if case .basic = source.authentication {
-            let requestedScope = try? BasicCredentialScope(source: source)
-            let selectedScope = try? basicCredentialScope(for: selectedSource)
-            allowsStoredPassword = requestedScope != nil && requestedScope == selectedScope
-            if password.isEmpty && !allowsStoredPassword {
-                await testWebConnection(for: source, provider: provider)
-                guard connectionTestID == source.id else { return }
+        var finalSource: MonitoringSource?
+        var finalResult = ConnectionTestResult.failed(.unreachable)
+        var finalPath = AutomaticConnectionPath.direct
+
+        for (candidateIndex, candidate) in candidates.enumerated() {
+            guard let source = sourceFromForm(endpointOverride: candidate) else {
                 connectionTestID = nil
                 isTestingConnection = false
-                let message = localized("Gib ein Passwort ein.")
-                connectionStatuses[source.id]?.api = .failed(message)
-                connectionStatusSources[source.id] = source
-                activity = .failure(message)
+                connectionStatuses[testedSourceID] = ConnectionStatus()
                 return
             }
-        }
-        let accessResolution = await accessResolver.resolve(
-            source: source,
-            passwordOverride: password,
-            allowsStoredPassword: allowsStoredPassword,
-            keychainInteraction: .allow
-        )
-        guard connectionTestID == source.id else { return }
-        let access: ProviderAccess
-        switch accessResolution {
-        case .resolved(let resolvedAccess):
-            access = resolvedAccess
-        case .failed(let failure):
-            await testWebConnection(for: source, provider: provider)
-            guard connectionTestID == source.id else { return }
-            connectionTestID = nil
-            isTestingConnection = false
-            let message = accessMessage(for: failure)
-            connectionStatuses[source.id]?.api = .failed(message)
-            connectionStatusSources[source.id] = source
-            activity = .failure(message)
-            return
-        }
-        let (result, path) = await connectionCoordinator.performUsingBestAPIPath(
-            source: source,
-            access: access,
-            rediscoverDirect: true,
-            operation: { routedAccess in
-                await provider.testConnection(to: source, access: routedAccess)
-            },
-            isUnreachable: { result in
-                result == .failed(.unreachable)
-            }
-        )
+            finalSource = source
 
-        guard connectionTestID == source.id else { return }
-        if result == .failed(.cancelled) || Task.isCancelled {
-            connectionStatuses[source.id] = ConnectionStatus()
-            connectionStatusSources[source.id] = nil
+            var allowsStoredCredential = true
+            if source.authentication.method != .clientCertificate {
+                let requestedScope = try? credentialScope(for: source)
+                let selectedScope = try? credentialScope(for: selectedSource)
+                allowsStoredCredential = requestedScope != nil && requestedScope == selectedScope
+                if credentialSecret.isEmpty && !allowsStoredCredential {
+                    let detail = source.authentication.method == .apiKey
+                        ? localized("Gib einen API-Schlüssel ein.")
+                        : localized("Gib ein Passwort ein.")
+                    connectionAttempts.append(
+                        ConnectionAttempt(
+                            endpoint: candidate.absoluteString,
+                            route: "—",
+                            outcome: detail
+                        )
+                    )
+                    if candidateIndex < candidates.index(before: candidates.endIndex) {
+                        continue
+                    }
+                    await testWebConnection(for: source, provider: provider)
+                    guard connectionTestID == testedSourceID else { return }
+                    connectionTestID = nil
+                    isTestingConnection = false
+                    connectionStatuses[testedSourceID]?.api = .failed(detail)
+                    connectionStatusSources[testedSourceID] = source
+                    activity = .failure(detail)
+                    return
+                }
+            }
+
+            let accessResolution = await accessResolver.resolve(
+                source: source,
+                credentialOverride: credentialSecret,
+                allowsStoredCredential: allowsStoredCredential,
+                keychainInteraction: .allow
+            )
+            guard connectionTestID == testedSourceID else { return }
+            let access: ProviderAccess
+            switch accessResolution {
+            case .resolved(let resolvedAccess):
+                access = resolvedAccess
+            case .failed(let failure):
+                let detail = accessMessage(for: failure)
+                connectionAttempts.append(
+                    ConnectionAttempt(
+                        endpoint: candidate.absoluteString,
+                        route: "—",
+                        outcome: detail
+                    )
+                )
+                await testWebConnection(for: source, provider: provider)
+                guard connectionTestID == testedSourceID else { return }
+                connectionTestID = nil
+                isTestingConnection = false
+                connectionStatuses[testedSourceID]?.api = .failed(detail)
+                connectionStatusSources[testedSourceID] = source
+                activity = .failure(detail)
+                return
+            }
+
+            let (result, path) = await connectionCoordinator.performUsingBestAPIPath(
+                source: source,
+                access: access,
+                rediscoverDirect: true,
+                operation: { routedAccess in
+                    await provider.testConnection(to: source, access: routedAccess)
+                },
+                isUnreachable: { result in
+                    result == .failed(.unreachable)
+                }
+            )
+            guard connectionTestID == testedSourceID else { return }
+            finalResult = result
+            finalPath = path
+            connectionAttempts.append(connectionAttempt(for: source, result: result, path: path))
+
+            if result == .failed(.cancelled) || Task.isCancelled {
+                connectionStatuses[testedSourceID] = ConnectionStatus()
+                connectionStatusSources[testedSourceID] = nil
+                connectionTestID = nil
+                isTestingConnection = false
+                activity = message(for: .failed(.cancelled))
+                return
+            }
+            if result == .connected {
+                let certificate = selectedServerCertificate
+                endpoint = source.endpoint.absoluteString
+                name = source.name
+                selectedServerCertificate = certificate
+                switch source.serverTrust {
+                case .system:
+                    serverTrustChoice = .system
+                case .customCertificate:
+                    serverTrustChoice = .customCertificate
+                case .pinnedCertificate(let sha256):
+                    serverTrustChoice = .pinnedCertificate
+                    pinnedServerCertificateSHA256 = sha256
+                case .disabled:
+                    serverTrustChoice = .disabled
+                }
+                updateAPIConnectionStatus(for: testedSourceID, result: result, path: path)
+                await testWebConnection(for: source, provider: provider)
+                guard connectionTestID == testedSourceID else { return }
+                connectionStatusSources[testedSourceID] = source
+                connectionTestID = nil
+                isTestingConnection = false
+                activity = message(for: result)
+                return
+            }
+            if !shouldTryNextEndpointCandidate(after: result) {
+                break
+            }
+        }
+
+        guard let finalSource else {
+            connectionStatuses[testedSourceID] = ConnectionStatus()
             connectionTestID = nil
             isTestingConnection = false
-            activity = message(for: .failed(.cancelled))
             return
         }
-        updateAPIConnectionStatus(for: source.id, result: result, path: path)
-        await testWebConnection(for: source, provider: provider)
-        guard connectionTestID == source.id else { return }
-        connectionStatusSources[source.id] = source
+        updateAPIConnectionStatus(for: testedSourceID, result: finalResult, path: finalPath)
+        await testWebConnection(for: finalSource, provider: provider)
+        guard connectionTestID == testedSourceID else { return }
+        connectionStatusSources[testedSourceID] = finalSource
         connectionTestID = nil
         isTestingConnection = false
-        activity = message(for: result)
+        activity = message(for: finalResult)
     }
 
     @discardableResult
@@ -789,56 +906,56 @@ final class IssueLightModel: ObservableObject {
     }
 
     func save() async {
-        guard let source = sourceFromForm(), let sourceStore else { return }
+        let requestedEnabledState = isSourceEnabled
+        guard var source = sourceFromForm(requiresValidConfiguration: false),
+              let sourceStore,
+              let provider = providerRegistry.provider(for: source.providerID) else {
+            return
+        }
         activity = .working(localized("Quelle wird gespeichert …"))
         let previousSource = selectedSource
+        let configurationIssues = provider.validate(source)
+        let previousScope = try? credentialScope(for: previousSource)
+        let newScope = try? credentialScope(for: source)
+        var credentialReady: Bool
+        var credentialStorageFailed = false
+
+        switch source.authentication {
+        case .basic, .apiKey:
+            credentialReady = newScope != nil
+                && newScope == previousScope
+                && hasStoredCredentialSecret
+        case .clientCertificate(let identityID):
+            credentialReady = !identityID.isEmpty
+        }
+        source.isEnabled = requestedEnabledState
+            && configurationIssues.isEmpty
+            && credentialReady
 
         do {
-            let previousScope = try basicCredentialScope(for: previousSource)
-            let newScope = try basicCredentialScope(for: source)
-            let previousPassword: String?
-            if let previousScope, previousScope == newScope {
-                previousPassword = try await passwordVault.password(for: previousScope)
-            } else {
-                previousPassword = nil
-            }
-            var storedNewPassword = false
-            switch source.authentication {
-            case .basic:
-                guard let newScope else {
-                    activity = .failure(localized("Die Zugangsdaten sind ungültig."))
-                    return
-                }
-                if password.isEmpty {
-                    guard previousPassword != nil else {
-                        activity = .failure(localized("Gib ein Passwort ein."))
-                        return
-                    }
-                } else {
-                    try await passwordVault.store(password, for: newScope)
-                    storedNewPassword = true
-                }
-            case .clientCertificate:
-                break
-            }
+            var persistedSources = try await sourceStore.upsert(source)
 
-            let persistedSources: [MonitoringSource]
-            do {
-                persistedSources = try await sourceStore.upsert(source)
-            } catch {
-                if storedNewPassword, let newScope {
-                    if newScope == previousScope, let previousPassword {
-                        try? await passwordVault.store(previousPassword, for: newScope)
-                    } else {
-                        try? await passwordVault.deletePassword(for: newScope)
-                    }
+            if source.authentication.method != .clientCertificate,
+               !credentialSecret.isEmpty,
+               configurationIssues.isEmpty,
+               let newScope {
+                do {
+                    try await storeCredential(credentialSecret, for: newScope)
+                    credentialReady = true
+                    source.isEnabled = requestedEnabledState && configurationIssues.isEmpty
+                    persistedSources = try await sourceStore.upsert(source)
+                    credentialSecret = ""
+                } catch {
+                    credentialStorageFailed = true
+                    source.isEnabled = false
+                    persistedSources = try await sourceStore.upsert(source)
                 }
-                throw error
             }
 
             let connectionChanged = previousSource.map {
                 $0.providerID != source.providerID
                     || $0.endpoint != source.endpoint
+                    || $0.endpointInput != source.endpointInput
                     || $0.authentication != source.authentication
                     || $0.serverTrust != source.serverTrust
                     || $0.sshTunnel != source.sshTunnel
@@ -857,16 +974,26 @@ final class IssueLightModel: ObservableObject {
             connectionCoordinator.reconcileSources(sources)
             selectedSourceID = source.id
             sourceID = source.id
-            password = ""
-            hasStoredBasicPassword = newScope != nil
+            name = source.name
+            endpoint = source.editableEndpoint
+            webURL = source.web?.editableBaseURL ?? ""
+            isSourceEnabled = source.isEnabled
+            hasStoredCredentialSecret = credentialReady && newScope != nil
             if source.customServerCertificateID == nil {
                 selectedServerCertificate = nil
             }
 
             var cleanupFailed = false
-            if let previousScope, previousScope != newScope {
+            let changedAwayFromPreviousCredential: Bool
+            switch source.authentication {
+            case .basic, .apiKey:
+                changedAwayFromPreviousCredential = credentialReady && previousScope != newScope
+            case .clientCertificate:
+                changedAwayFromPreviousCredential = credentialReady
+            }
+            if changedAwayFromPreviousCredential, let previousScope {
                 do {
-                    try await passwordVault.deletePassword(for: previousScope)
+                    try await deleteCredential(for: previousScope)
                 } catch {
                     cleanupFailed = true
                 }
@@ -885,13 +1012,20 @@ final class IssueLightModel: ObservableObject {
                     refreshLoopTask = nil
                 }
             }
-            activity = cleanupFailed
-                ? .failure(localized("Quelle gespeichert, aber nicht mehr verwendete Schlüsselbund-Einträge konnten nicht vollständig entfernt werden."))
-                : .success(localized("Quelle gespeichert. Geheimnisse bleiben im macOS-Schlüsselbund."))
-        } catch KeychainPasswordVaultError.interactionNotAllowed {
-            activity = .failure(
-                localized("macOS gibt diesen Schlüsselbund-Eintrag nicht ohne Nachfrage frei. Entferne den alten IssueLight-Eintrag in der Schlüsselbundverwaltung und speichere die Quelle erneut.")
-            )
+
+            if credentialStorageFailed {
+                activity = .failure(
+                    localized("Entwurf gespeichert. Die Zugangsdaten konnten nicht im macOS-Schlüsselbund gespeichert werden; die Quelle bleibt pausiert.")
+                )
+            } else if !configurationIssues.isEmpty || !credentialReady {
+                activity = .success(
+                    localized("Entwurf gespeichert. Vervollständige und teste die Verbindung, bevor du die Quelle aktivierst.")
+                )
+            } else if cleanupFailed {
+                activity = .failure(localized("Quelle gespeichert, aber nicht mehr verwendete Schlüsselbund-Einträge konnten nicht vollständig entfernt werden."))
+            } else {
+                activity = .success(localized("Quelle gespeichert. Geheimnisse bleiben im macOS-Schlüsselbund."))
+            }
         } catch {
             activity = .failure(localized("Die Quelle konnte nicht gespeichert werden: \(error.localizedDescription)"))
         }
@@ -925,9 +1059,10 @@ final class IssueLightModel: ObservableObject {
         }
 
         var cleanupFailed = false
-        if case .basic = source.authentication {
+        if source.authentication.method != .clientCertificate,
+           let scope = try? credentialScope(for: source) {
             do {
-                try await passwordVault.deletePassword(for: BasicCredentialScope(source: source))
+                try await deleteCredential(for: scope)
             } catch {
                 cleanupFailed = true
             }
@@ -952,6 +1087,8 @@ final class IssueLightModel: ObservableObject {
             switch source.authentication {
             case .basic:
                 message = localized("Quelle und gespeichertes Basic-Passwort wurden entfernt.")
+            case .apiKey:
+                message = localized("Quelle und gespeicherter API-Schlüssel wurden entfernt.")
             case .clientCertificate:
                 message = localized("Quelle entfernt. Das Client-Zertifikat bleibt im macOS-Schlüsselbund.")
             }
@@ -1074,22 +1211,27 @@ final class IssueLightModel: ObservableObject {
         return lhs.id.localizedCaseInsensitiveCompare(rhs.id) == .orderedAscending
     }
 
-    private func sourceFromForm() -> MonitoringSource? {
-        guard let url = URL(string: endpoint.trimmingCharacters(in: .whitespacesAndNewlines)) else {
-            activity = .failure(localized("Die Serveradresse ist keine gültige URL."))
-            return nil
-        }
-        let trimmedWebURL = webURL.trimmingCharacters(in: .whitespacesAndNewlines)
+    private func sourceFromForm(
+        endpointOverride: URL? = nil,
+        requiresValidConfiguration: Bool = true
+    ) -> MonitoringSource? {
+        let endpointValue = urlInputWithoutEmbeddedCredentials(
+            endpoint.trimmingCharacters(in: .whitespacesAndNewlines)
+        )
+        let url = endpointOverride ?? URL(string: endpointValue) ?? MonitoringSource.unresolvedEndpoint
+        let endpointInput = endpointOverride == nil ? endpointValue : nil
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let resolvedName = trimmedName.isEmpty
+            ? (url.host ?? providerDisplayName)
+            : trimmedName
         let webConfiguration = navigationWebConfiguration()
-        if !trimmedWebURL.isEmpty, webConfiguration == nil {
-            activity = .failure(localized("Gib eine gültige Web-URL ohne Zugangsdaten, Abfrage oder Fragment ein."))
-            return nil
-        }
 
         let authentication: AuthenticationConfiguration
         switch authenticationChoice {
         case .basic:
             authentication = .basic(username: username)
+        case .apiKey:
+            authentication = .apiKey(username: username)
         case .clientCertificate:
             authentication = .clientCertificate(identityID: selectedIdentityID)
         }
@@ -1108,16 +1250,12 @@ final class IssueLightModel: ObservableObject {
 
         var source: MonitoringSource
         if var existingSource = selectedSource {
-            existingSource.name = name
+            existingSource.name = resolvedName
             existingSource.providerID = selectedProviderID
             existingSource.isEnabled = isSourceEnabled
             existingSource.authentication = authentication
-            if existingSource.updateEndpoint(url) {
-                serverTrustChoice = .system
-                selectedServerCertificate = nil
-                pinnedServerCertificateSHA256 = ""
-                serverTrust = .system
-            }
+            _ = existingSource.updateEndpoint(url)
+            existingSource.endpointInput = endpointInput
             existingSource.serverTrust = serverTrust
             existingSource.sshTunnel = AppDistribution.supportsSSHTunnels ? sshTunnelOverrides() : nil
             existingSource.web = webConfiguration
@@ -1128,9 +1266,10 @@ final class IssueLightModel: ObservableObject {
         } else {
             source = MonitoringSource(
                 id: sourceID,
-                name: name,
+                name: resolvedName,
                 providerID: selectedProviderID,
                 endpoint: url,
+                endpointInput: endpointInput,
                 isEnabled: isSourceEnabled,
                 authentication: authentication,
                 serverTrust: serverTrust,
@@ -1146,16 +1285,54 @@ final class IssueLightModel: ObservableObject {
             return nil
         }
         let issues = provider.validate(source)
-        guard issues.isEmpty else {
+        guard issues.isEmpty || !requiresValidConfiguration else {
             activity = .failure(validationMessage(issues))
             return nil
+        }
+        if !issues.isEmpty {
+            source.isEnabled = false
         }
         return source
     }
 
-    private func basicCredentialScope(for source: MonitoringSource?) throws -> BasicCredentialScope? {
-        guard let source, case .basic = source.authentication else { return nil }
-        return try BasicCredentialScope(source: source)
+    private func credentialScope(for source: MonitoringSource?) throws -> StoredCredentialScope? {
+        guard let source else { return nil }
+        switch source.authentication {
+        case .basic:
+            return .basic(try BasicCredentialScope(source: source))
+        case .apiKey:
+            return .apiKey(try APIKeyCredentialScope(source: source))
+        case .clientCertificate:
+            return nil
+        }
+    }
+
+    private func containsStoredCredential(for source: MonitoringSource) async throws -> Bool {
+        guard let scope = try credentialScope(for: source) else { return false }
+        switch scope {
+        case .basic(let basicScope):
+            return try await passwordVault.containsPassword(for: basicScope)
+        case .apiKey(let apiKeyScope):
+            return try await passwordVault.containsAPIKey(for: apiKeyScope)
+        }
+    }
+
+    private func storeCredential(_ secret: String, for scope: StoredCredentialScope) async throws {
+        switch scope {
+        case .basic(let basicScope):
+            try await passwordVault.store(secret, for: basicScope)
+        case .apiKey(let apiKeyScope):
+            try await passwordVault.store(secret, for: apiKeyScope)
+        }
+    }
+
+    private func deleteCredential(for scope: StoredCredentialScope) async throws {
+        switch scope {
+        case .basic(let basicScope):
+            try await passwordVault.deletePassword(for: basicScope)
+        case .apiKey(let apiKeyScope):
+            try await passwordVault.deleteAPIKey(for: apiKeyScope)
+        }
     }
 
     private func startRefreshLoop() {
@@ -1221,9 +1398,10 @@ final class IssueLightModel: ObservableObject {
     }
 
     private func apply(_ source: MonitoringSource) {
+        connectionAttempts = []
         sourceID = source.id
         name = source.name
-        endpoint = source.endpoint.absoluteString
+        endpoint = source.editableEndpoint
         isSourceEnabled = source.isEnabled
         selectedProviderID = source.providerID
         username = ""
@@ -1233,6 +1411,9 @@ final class IssueLightModel: ObservableObject {
         switch source.authentication {
         case .basic(let storedUsername):
             authenticationChoice = .basic
+            username = storedUsername
+        case .apiKey(let storedUsername):
+            authenticationChoice = .apiKey
             username = storedUsername
         case .clientCertificate(let identityID):
             authenticationChoice = .clientCertificate
@@ -1249,7 +1430,7 @@ final class IssueLightModel: ObservableObject {
         case .disabled:
             serverTrustChoice = .disabled
         }
-        webURL = source.web?.baseURL.absoluteString ?? ""
+        webURL = source.web?.editableBaseURL ?? ""
         let tunnel = source.sshTunnel ?? source.web?.automaticSSHTunnel
         sshTunnelHost = tunnel?.bastionHost ?? ""
         sshTunnelUsername = tunnel?.username ?? ""
@@ -1329,9 +1510,12 @@ final class IssueLightModel: ObservableObject {
     }
 
     private func navigationWebConfiguration() -> MonitoringWebConfiguration? {
-        let value = webURL.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !value.isEmpty, let url = URL(string: value) else { return nil }
-        return MonitoringWebConfiguration(baseURL: url)
+        let value = urlInputWithoutEmbeddedCredentials(
+            webURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        )
+        guard !value.isEmpty else { return nil }
+        let url = URL(string: value) ?? MonitoringSource.unresolvedEndpoint
+        return MonitoringWebConfiguration(baseURL: url, baseURLInput: value)
     }
 
     private func resolvedSSHTunnelConfiguration(for source: MonitoringSource) -> SSHTunnelConfiguration {
@@ -1410,6 +1594,28 @@ final class IssueLightModel: ObservableObject {
         let path = await connectionCoordinator.checkWeb(source: source, url: url)
         guard connectionTestID == source.id else { return }
         connectionStatuses[source.id]?.web = connectionState(for: path)
+        switch path {
+        case .direct:
+            connectionAttempts.append(
+                ConnectionAttempt(
+                    endpoint: url.absoluteString,
+                    route: "Web · \(localized("Direkt"))",
+                    outcome: "OK"
+                )
+            )
+        case .ssh:
+            connectionAttempts.append(
+                ConnectionAttempt(endpoint: url.absoluteString, route: "Web · SSH", outcome: "OK")
+            )
+        case .unavailable:
+            connectionAttempts.append(
+                ConnectionAttempt(
+                    endpoint: url.absoluteString,
+                    route: "Web",
+                    outcome: localized("Der Server ist nicht erreichbar.")
+                )
+            )
+        }
     }
 
     private func updateAPIConnectionStatus(
@@ -1468,14 +1674,59 @@ final class IssueLightModel: ObservableObject {
         }
     }
 
+    private func shouldTryNextEndpointCandidate(after result: ConnectionTestResult) -> Bool {
+        switch result {
+        case .failed(.unreachable), .failed(.incompatibleResponse), .failed(.http(statusCode: 404)),
+             .failed(.server(statusCode: 404)):
+            return true
+        default:
+            return false
+        }
+    }
+
+    private func connectionAttempt(
+        for source: MonitoringSource,
+        result: ConnectionTestResult,
+        path: AutomaticConnectionPath
+    ) -> ConnectionAttempt {
+        let route: String
+        switch path {
+        case .direct:
+            route = localized("Direkt")
+        case .ssh:
+            route = "SSH"
+        case .unavailable:
+            route = "—"
+        }
+
+        let outcome: String
+        switch result {
+        case .connected:
+            outcome = localized("\(providerDisplayName) ist erreichbar. Host- und Servicezugriff funktionieren.")
+        case .failed(let failure):
+            outcome = refreshMessage(for: failure)
+        }
+        return ConnectionAttempt(
+            endpoint: source.endpoint.absoluteString,
+            route: route,
+            outcome: outcome
+        )
+    }
+
     private func accessMessage(for failure: ProviderAccessFailure) -> String {
         switch failure {
         case .passwordNotAvailable:
             return localized("Das Passwort ist nicht mehr im Schlüsselbund verfügbar.")
         case .passwordAccessFailed:
             return localized("macOS gibt das Passwort im Hintergrund nicht ohne Nachfrage frei. Öffne die Quelle und gib es erneut ein.")
+        case .apiKeyNotAvailable:
+            return localized("Der API-Schlüssel ist nicht mehr im Schlüsselbund verfügbar.")
+        case .apiKeyAccessFailed:
+            return localized("macOS gibt den API-Schlüssel im Hintergrund nicht frei. Öffne die Quelle und gib ihn erneut ein.")
         case .clientIdentityNotAvailable:
             return localized("Das Client-Zertifikat ist nicht mehr im Schlüsselbund verfügbar.")
+        case .clientIdentityInteractionRequired:
+            return localized("macOS benötigt deine Freigabe für den privaten Schlüssel. Öffne die Quelle und starte „Verbindung testen“.")
         case .clientIdentityAccessFailed:
             return localized("Das Client-Zertifikat konnte nicht aus dem Schlüsselbund gelesen werden.")
         case .serverCertificateNotAvailable:
@@ -1540,4 +1791,25 @@ final class IssueLightModel: ObservableObject {
             return localized("Die Aktualisierung wurde abgebrochen.")
         }
     }
+}
+
+private enum StoredCredentialScope: Equatable {
+    case basic(BasicCredentialScope)
+    case apiKey(APIKeyCredentialScope)
+}
+
+private func urlInputWithoutEmbeddedCredentials(_ value: String) -> String {
+    guard !value.isEmpty else { return value }
+    if var components = URLComponents(string: value),
+       components.user != nil || components.password != nil {
+        components.user = nil
+        components.password = nil
+        return components.string ?? ""
+    }
+    guard !value.contains("?"),
+          !value.contains("#"),
+          let separator = value.lastIndex(of: "@") else {
+        return value
+    }
+    return String(value[value.index(after: separator)...])
 }

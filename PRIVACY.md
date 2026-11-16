@@ -6,12 +6,12 @@ contains no analytics, advertising, crash-reporting SDK, or telemetry.
 
 ## Data sent over the network
 
-IssueLight reads Icinga 2 host and service state from configured sources and
-can send an operator-initiated recheck, acknowledgement, or fixed downtime to
-the selected object. Action requests include the entered author and comment.
-Requests may contain the API username and password or use a selected client
-identity. The configured TLS policy applies independently to each source and
-credentials are not forwarded to another origin.
+IssueLight reads host and service state from configured Icinga 2 or Thruk
+sources and can send an operator-initiated recheck, acknowledgement, or fixed
+downtime to the selected object. Action requests include the entered author and
+comment. Requests may contain Basic credentials, a Thruk API key, or a selected
+client identity. The configured TLS policy applies independently to each source
+and credentials are not forwarded to another origin.
 
 Opening an issue can contact its configured monitoring-web host directly. If
 the optional automatic HTTP tunnel is enabled and that host is unreachable,
@@ -23,6 +23,13 @@ infrastructure such as DNS resolvers, proxies, and VPNs. Disabling certificate
 verification removes server-identity protection for that source and is not the
 default.
 
+The direct-download edition periodically checks the signed update feed hosted
+with the project's GitHub Releases. GitHub can receive ordinary connection
+metadata such as the IP address and request time. IssueLight sends no monitoring
+configuration, credentials, issue data, or analytics with this request. The
+Mac App Store edition does not contain this updater and uses Apple's update
+channel.
+
 ## Data stored on the Mac
 
 - Public source configuration is stored in
@@ -32,20 +39,25 @@ default.
   selected server leaf's public SHA-256 fingerprint in this file. Optional web,
   bastion, remote-login, port, and selected SSH identity-file path settings are
   public source configuration and can reveal additional infrastructure names.
-- Passwords and client identities remain in macOS Keychain. Source
+- Passwords, API keys, and client identities remain in macOS Keychain. Source
   configuration stores references, not secret values or private keys.
 - Imported private CA certificates are public certificates stored in Keychain.
   IssueLight removes a certificate automatically only when the same app
   profile created it and no saved source references it.
 - Monitoring snapshots are held in memory and are not persisted by IssueLight.
-- The selected app-language identifier and compact panel filters are stored in
-  macOS preferences. System Default stores no inferred language profile and
-  follows the current macOS app language.
+- The selected app-language identifier, compact panel filters, and explicit
+  per-source notification policies are stored in macOS preferences. System
+  Default stores no inferred language profile and follows the current macOS app
+  language.
+- When enabled, macOS Notification Center stores IssueLight's aggregate
+  notification title and body until recovery, app relaunch, or user removal.
+  This content contains no source, host, service, provider output, credential,
+  or navigation URL. Current-session navigation targets remain only in memory.
 
-Removing a source removes its saved Basic password. Client identities and
-shared or externally managed certificates remain in Keychain because other
-applications or sources may use them. They can be reviewed and removed with
-Keychain Access.
+Removing a source removes its saved Basic password or API key. Client
+identities and shared or externally managed certificates remain in Keychain
+because other applications or sources may use them. They can be reviewed and
+removed with Keychain Access.
 
 ## Diagnostics and issue reports
 

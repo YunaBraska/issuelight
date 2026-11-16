@@ -137,8 +137,8 @@ services:
       context: ./ssh-gateway
     ports:
       - "127.0.0.1:${ISSUELIGHT_SSH_PORT:-2222}:22"
-    volumes:
-      - ${ISSUELIGHT_ICINGA_ARTIFACTS_DIR:?set in .env.local}/ssh-tunnel.pub:/run/issuelight/authorized_key:ro
+    environment:
+      ISSUELIGHT_SSH_PUBLIC_KEY: ${ISSUELIGHT_SSH_PUBLIC_KEY:-not-configured}
     healthcheck:
       test: ["CMD", "nc", "-z", "127.0.0.1", "22"]
       interval: 2s

@@ -7,7 +7,7 @@ description: Build and run the current IssueLight source on macOS.
 <section class="page-hero shell">
   <p class="eyebrow"><span></span>Current distribution</p>
   <h1>Build it from source today.</h1>
-  <p>IssueLight does not have a notarized public download yet. The repository is usable for development and evaluation, while the release remains explicitly pre-production.</p>
+  <p>IssueLight does not have a notarized public download yet. The repository is usable for development and evaluation, while the release remains explicitly pre-production. Published direct releases will use signed Sparkle updates; App Store installations will use Apple's update channel.</p>
 </section>
 
 <section class="steps shell">

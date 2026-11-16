@@ -77,6 +77,31 @@ provider confirms the command.
   A failed action MUST remain dismissible inside the panel without presenting
   a modal alert or closing the panel.
 
+### Notifications
+
+- `NOTIFY-001` Notifications MUST be disabled by default. IssueLight MUST ask
+  macOS for notification access only after a person enables a source policy.
+- `NOTIFY-002` The first successful snapshot in an app session MUST establish
+  a baseline without notifying. A later newly actionable issue or severity
+  escalation MAY notify according to that source's selected policy.
+- `NOTIFY-003` IssueLight MUST use one stable notification identifier per
+  source, MUST NOT repeat unchanged issues, and MUST remove the delivered
+  source summary after full recovery, source removal, source disablement, or
+  policy disablement.
+- `NOTIFY-004` Banner content MUST NOT contain source names, host names, service
+  names, provider output, credentials, or navigation URLs. Critical summaries
+  MAY use an active interruption level. Other summaries MUST be passive. No
+  IssueLight notification may request a sound.
+- `NOTIFY-005` A notification click MUST use the same provider-built web target
+  and direct-first SSH-tunnel behavior as an issue-row click. Navigation
+  targets MUST remain in memory and MUST NOT be added to notification metadata.
+- `NOTIFY-006` Notification policies MUST be source-scoped, survive relaunch,
+  and be removed when their source is deleted. An unauthoritative empty source
+  list during startup MUST NOT erase stored policy.
+- `NOTIFY-007` IssueLight MUST clear its previously delivered summaries at app
+  startup before establishing the new baseline. It MUST read existing macOS
+  authorization without prompting.
+
 ## Acceptance evidence
 
 | Requirement | Public boundary | Current evidence |
@@ -85,3 +110,4 @@ provider confirms the command.
 | REF-001 | Icinga snapshot loader | Shared transport tests and a real Icinga 2 Basic-auth query both pass; a 5,000-problem synthetic Icinga response traverses request handling, decoding, provider-neutral mapping, and sorting under a five-second regression limit |
 | REF-002..006 | app refresh model | App-model tests cover initial and manual refresh, replacement cancellation, stale retention, and source removal with persisted source and Keychain boundaries; an installed signed app retained its last successful Icinga snapshot after exact password revocation and exposed the missing credential after relaunch |
 | MENU-001..011 | running menu-bar app | Empty setup, loading, deterministic two-problem, compact source-failure row, recovery, and all-paused states pass automated rendering; pointer tests exercise Settings, row opening, all three quick actions, and inline error dismissal; successful actions have a model-level no-modal regression test; filter tests cover persistence and source removal; an installed review app connects to the real Icinga lab; the searchable 5,000-row menu panel renders lazily within five seconds |
+| NOTIFY-001..007 | notification coordinator and settings | Coordinator tests cover explicit permission, first-snapshot suppression, new issues, threshold crossings, escalation, deduplication, recovery, disablement, deleted-source policy cleanup, startup lifecycle, private content, and navigation through the shared web-access path; screenshot tests render the production notification settings |

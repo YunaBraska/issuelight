@@ -21,6 +21,8 @@ script_directory=$(CDPATH='' cd "$(dirname "$0")" && pwd -P)
 repository_root=$(CDPATH='' cd "$script_directory/.." && pwd -P)
 identity=${MACOS_SIGNING_IDENTITY:--}
 notary_profile=${MACOS_NOTARY_PROFILE:-}
+update_private_key=${MACOS_UPDATE_PRIVATE_KEY:-}
+update_public_key=${MACOS_UPDATE_PUBLIC_KEY:-}
 build_number=${GITHUB_RUN_ID:-1}
 signing_flags=
 case "$build_number" in
@@ -30,9 +32,40 @@ if test -n "$notary_profile" && test "$identity" = -; then
     echo "Notarization requires a Developer ID signing identity." >&2
     exit 65
 fi
+if test -n "$update_public_key" || test -n "$update_private_key"; then
+    test -n "$update_public_key" || {
+        echo "MACOS_UPDATE_PUBLIC_KEY is required with MACOS_UPDATE_PRIVATE_KEY." >&2
+        exit 65
+    }
+    test -n "$update_private_key" || {
+        echo "MACOS_UPDATE_PRIVATE_KEY is required with MACOS_UPDATE_PUBLIC_KEY." >&2
+        exit 65
+    }
+    for update_key_value in "$update_public_key" "$update_private_key"; do
+        case "$update_key_value" in
+            *[!A-Za-z0-9+/=]*)
+                echo "Update keys must be 32-byte Base64 values." >&2
+                exit 65
+                ;;
+            *=) ;;
+            *)
+                echo "Update keys must be 32-byte Base64 values." >&2
+                exit 65
+                ;;
+        esac
+        test "${#update_key_value}" -eq 44 || {
+            echo "Update keys must be 32-byte Base64 values." >&2
+            exit 65
+        }
+    done
+fi
 if test "$identity" != -; then
     test -n "$notary_profile" || {
         echo "A publishable Developer ID build requires notarization." >&2
+        exit 65
+    }
+    test -n "$update_public_key" && test -n "$update_private_key" || {
+        echo "A publishable direct release requires signed-update keys." >&2
         exit 65
     }
     signing_flags=--timestamp
@@ -55,9 +88,34 @@ cleanup() {
 }
 trap cleanup EXIT HUP INT TERM
 
+if test -n "$update_private_key"; then
+    update_private_key_raw="$package_work_directory/update-private-key.raw"
+    update_public_key_raw="$package_work_directory/update-public-key.raw"
+    printf '%s' "$update_private_key" | base64 -D > "$update_private_key_raw"
+    printf '%s' "$update_public_key" | base64 -D > "$update_public_key_raw"
+    test "$(wc -c < "$update_private_key_raw" | tr -d ' ')" -eq 32
+    test "$(wc -c < "$update_public_key_raw" | tr -d ' ')" -eq 32
+    update_key_der="$package_work_directory/update-key.der"
+    {
+        printf '\060\056\002\001\000\060\005\006\003\053\145\160\004\042\004\040'
+        dd if="$update_private_key_raw" bs=32 count=1 2>/dev/null
+    } > "$update_key_der"
+    derived_update_public_key=$(openssl pkey \
+        -inform DER \
+        -in "$update_key_der" \
+        -pubout \
+        -outform DER \
+        | tail -c 32 \
+        | base64)
+    test "$derived_update_public_key" = "$update_public_key" || {
+        echo "MACOS_UPDATE_PUBLIC_KEY does not match MACOS_UPDATE_PRIVATE_KEY." >&2
+        exit 65
+    }
+fi
+
 derived_data_path="$package_work_directory/DerivedData"
 cd "$repository_root"
-xcodebuild build \
+set -- xcodebuild build \
     -project IssueLight/IssueLight.xcodeproj \
     -scheme IssueLight \
     -configuration Release \
@@ -72,12 +130,37 @@ xcodebuild build \
     CODE_SIGN_STYLE=Manual \
     CODE_SIGN_IDENTITY="$identity" \
     OTHER_CODE_SIGN_FLAGS="$signing_flags"
+"$@"
 
 app_path="$derived_data_path/Build/Products/Release/IssueLight.app"
 test -d "$app_path" || {
     echo "Release app was not built." >&2
     exit 66
 }
+test -d "$app_path/Contents/Frameworks/Sparkle.framework" || {
+    echo "Direct release app is missing Sparkle.framework." >&2
+    exit 66
+}
+test -f "$app_path/Contents/Resources/Sparkle-LICENSE.txt" || {
+    echo "Direct release app is missing the Sparkle license notice." >&2
+    exit 66
+}
+if test -n "$update_public_key"; then
+    info_plist="$app_path/Contents/Info.plist"
+    /usr/libexec/PlistBuddy -c \
+        'Add :SUFeedURL string https://github.com/YunaBraska/issuelight/releases/latest/download/appcast.xml' \
+        "$info_plist"
+    /usr/libexec/PlistBuddy -c "Add :SUPublicEDKey string $update_public_key" "$info_plist"
+    /usr/libexec/PlistBuddy -c 'Add :SUEnableAutomaticChecks bool true' "$info_plist"
+    /usr/libexec/PlistBuddy -c 'Add :SUAutomaticallyUpdate bool false' "$info_plist"
+    /usr/libexec/PlistBuddy -c 'Add :SUVerifyUpdateBeforeExtraction bool true' "$info_plist"
+    /usr/libexec/PlistBuddy -c 'Add :SURequireSignedFeed bool true' "$info_plist"
+    if test "$identity" = -; then
+        codesign --force --sign - --options runtime --timestamp=none "$app_path"
+    else
+        codesign --force --sign "$identity" --options runtime --timestamp "$app_path"
+    fi
+fi
 codesign --verify --deep --strict "$app_path"
 
 if test -n "$notary_profile"; then
@@ -216,9 +299,47 @@ if test -n "$notary_profile"; then
     spctl --assess --type open --context context:primary-signature --verbose=2 "$dmg_path"
 fi
 
+if test -n "$update_public_key"; then
+    update_stage="$package_work_directory/SparkleUpdate"
+    update_key="$update_stage/private-key"
+    mkdir "$update_stage"
+    (umask 077; printf '%s' "$update_private_key" > "$update_key")
+    cp "$dmg_path" "$update_stage/"
+    generate_appcast=$(find "$derived_data_path/SourcePackages" \
+        -type f -name generate_appcast -print -quit)
+    sign_update=$(find "$derived_data_path/SourcePackages" \
+        -type f -name sign_update -print -quit)
+    test -n "$generate_appcast" || {
+        echo "Sparkle generate_appcast tool was not resolved." >&2
+        exit 66
+    }
+    test -n "$sign_update" || {
+        echo "Sparkle sign_update tool was not resolved." >&2
+        exit 66
+    }
+    "$generate_appcast" \
+        --ed-key-file "$update_key" \
+        --download-url-prefix "https://github.com/YunaBraska/issuelight/releases/download/$version/" \
+        --maximum-versions 1 \
+        --disable-signing-warning \
+        -o "$dist_directory/appcast.xml" \
+        "$update_stage"
+    "$sign_update" \
+        --ed-key-file "$update_key" \
+        "$dist_directory/appcast.xml" \
+        --disable-signing-warning
+    "$sign_update" \
+        --ed-key-file "$update_key" \
+        --verify "$dist_directory/appcast.xml"
+fi
+
 (
     cd "$dist_directory"
-    shasum -a 256 ./*.zip ./*.dmg ./*.spdx.json > SHA256SUMS
+    set -- ./*.zip ./*.dmg ./*.spdx.json
+    if test -f appcast.xml; then
+        set -- "$@" appcast.xml
+    fi
+    shasum -a 256 "$@" > SHA256SUMS
     shasum -a 256 -c SHA256SUMS
 )
 

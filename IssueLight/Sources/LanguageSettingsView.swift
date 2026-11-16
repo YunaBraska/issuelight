@@ -1,25 +1,34 @@
 import AppKit
+import IssueLightCore
 import SwiftUI
 
+@MainActor
 struct IssueLightSettingsView: View {
     enum Tab: Hashable {
         case sources
+        case notifications
         case language
         case about
     }
 
     @ObservedObject var model: IssueLightModel
     @ObservedObject var languageSettings: AppLanguageSettings
+    @ObservedObject var notificationCoordinator: IssueNotificationCoordinator
+    let updateController: AppUpdateController
     @Environment(\.locale) private var locale
     @State private var selection: Tab
 
     init(
         model: IssueLightModel,
         languageSettings: AppLanguageSettings,
+        notificationCoordinator: IssueNotificationCoordinator,
+        updateController: AppUpdateController,
         initialSelection: Tab = .sources
     ) {
         self.model = model
         self.languageSettings = languageSettings
+        self.notificationCoordinator = notificationCoordinator
+        self.updateController = updateController
         _selection = State(initialValue: initialSelection)
     }
 
@@ -35,6 +44,19 @@ struct IssueLightSettingsView: View {
                 }
                 .tag(Tab.sources)
 
+            NotificationSettingsView(
+                model: model,
+                coordinator: notificationCoordinator
+            )
+                .tabItem {
+                    Label {
+                        Text(verbatim: AppLocalization.string("Benachrichtigungen", locale: locale))
+                    } icon: {
+                        Image(systemName: "bell")
+                    }
+                }
+                .tag(Tab.notifications)
+
             LanguageSettingsView(languageSettings: languageSettings)
                 .tabItem {
                     Label {
@@ -45,7 +67,7 @@ struct IssueLightSettingsView: View {
                 }
                 .tag(Tab.language)
 
-            AboutSettingsView()
+            AboutSettingsView(updateController: updateController)
                 .tabItem {
                     Label {
                         Text(verbatim: AppLocalization.string("Über IssueLight", locale: locale))
@@ -56,7 +78,233 @@ struct IssueLightSettingsView: View {
                 .tag(Tab.about)
         }
         .padding(16)
-        .frame(width: 820, height: 600)
+        .frame(
+            minWidth: 760,
+            maxWidth: .infinity,
+            minHeight: 560,
+            maxHeight: .infinity
+        )
+        .background(SettingsWindowConfigurator())
+    }
+}
+
+struct SettingsWindowConfigurator: NSViewRepresentable {
+    func makeNSView(context: Context) -> SettingsWindowConfigurationView {
+        SettingsWindowConfigurationView()
+    }
+
+    func updateNSView(_ view: SettingsWindowConfigurationView, context _: Context) {
+        view.configureWindow()
+    }
+}
+
+final class SettingsWindowConfigurationView: NSView {
+    private var deferredConfiguration: DispatchWorkItem?
+
+    override func viewWillMove(toWindow newWindow: NSWindow?) {
+        deferredConfiguration?.cancel()
+        deferredConfiguration = nil
+        super.viewWillMove(toWindow: newWindow)
+    }
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        configureWindow()
+        let workItem = DispatchWorkItem { [weak self] in
+            self?.configureWindow()
+        }
+        deferredConfiguration = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2, execute: workItem)
+    }
+
+    func configureWindow() {
+        guard let window else { return }
+        if !window.styleMask.contains(.resizable) {
+            window.styleMask.insert(.resizable)
+        }
+        let minimumSize = NSSize(width: 760, height: 560)
+        if window.contentMinSize != minimumSize {
+            window.contentMinSize = minimumSize
+        }
+        let maximumSize = NSSize(
+            width: CGFloat.greatestFiniteMagnitude,
+            height: CGFloat.greatestFiniteMagnitude
+        )
+        if window.contentMaxSize != maximumSize {
+            window.contentMaxSize = maximumSize
+        }
+    }
+
+}
+
+@MainActor
+struct NotificationSettingsView: View {
+    @ObservedObject var model: IssueLightModel
+    @ObservedObject var coordinator: IssueNotificationCoordinator
+    @ObservedObject private var policyStore: IssueNotificationPolicyStore
+    @Environment(\.locale) private var locale
+
+    init(model: IssueLightModel, coordinator: IssueNotificationCoordinator) {
+        self.model = model
+        self.coordinator = coordinator
+        _policyStore = ObservedObject(wrappedValue: coordinator.policyStore)
+    }
+
+    var body: some View {
+        NotificationSettingsContent(
+            sources: model.sources,
+            authorization: coordinator.authorization,
+            policy: policyStore.policy,
+            setPolicy: { policy, sourceID in
+                Task { await coordinator.setPolicy(policy, for: sourceID) }
+            },
+            requestAuthorization: {
+                Task { await coordinator.requestAuthorization() }
+            }
+        )
+        .task {
+            await coordinator.refreshAuthorizationStatus()
+        }
+    }
+}
+
+struct NotificationSettingsContent: View {
+    let sources: [MonitoringSource]
+    let authorization: IssueNotificationAuthorization
+    let policy: (UUID) -> IssueNotificationPolicy
+    let setPolicy: (IssueNotificationPolicy, UUID) -> Void
+    let requestAuthorization: () -> Void
+    @Environment(\.locale) private var locale
+
+    var body: some View {
+        Form {
+            Section {
+                HStack(spacing: 10) {
+                    Label {
+                        Text(verbatim: authorizationTitle)
+                    } icon: {
+                        Image(systemName: authorizationSymbol)
+                            .foregroundStyle(authorizationColor)
+                    }
+                    Spacer()
+                    if authorization == .notDetermined {
+                        Button {
+                            requestAuthorization()
+                        } label: {
+                            Text(verbatim: AppLocalization.string("Erlauben …", locale: locale))
+                        }
+                        .accessibilityIdentifier("allow-notifications-button")
+                    }
+                }
+                if authorization == .denied {
+                    Text(
+                        verbatim: AppLocalization.string(
+                            "Aktiviere IssueLight unter Systemeinstellungen › Mitteilungen.",
+                            locale: locale
+                        )
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                }
+            } header: {
+                Text(verbatim: AppLocalization.string("Systemzugriff", locale: locale))
+            }
+
+            Section {
+                if sources.isEmpty {
+                    ContentUnavailableView {
+                        Label {
+                            Text(verbatim: AppLocalization.string("Keine Quellen", locale: locale))
+                        } icon: {
+                            Image(systemName: "server.rack")
+                        }
+                    } description: {
+                        Text(
+                            verbatim: AppLocalization.string(
+                                "Füge zuerst eine Monitoring-Quelle hinzu.",
+                                locale: locale
+                            )
+                        )
+                    }
+                } else {
+                    ForEach(sources) { source in
+                        LabeledContent {
+                            Picker("", selection: Binding(
+                                get: { policy(source.id) },
+                                set: { setPolicy($0, source.id) }
+                            )) {
+                                ForEach(IssueNotificationPolicy.allCases, id: \.self) { value in
+                                    Text(verbatim: value.displayName(locale: locale)).tag(value)
+                                }
+                            }
+                            .labelsHidden()
+                            .frame(width: 220)
+                            .accessibilityLabel(
+                                Text(
+                                    verbatim: AppLocalization.string(
+                                        "Benachrichtigungen für \(source.name)",
+                                        locale: locale
+                                    )
+                                )
+                            )
+                        } label: {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(verbatim: source.name)
+                                if !source.isEnabled {
+                                    Text(verbatim: AppLocalization.string("Pausiert", locale: locale))
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                        }
+                    }
+                }
+            } header: {
+                Text(verbatim: AppLocalization.string("Quellen", locale: locale))
+            } footer: {
+                Text(
+                    verbatim: AppLocalization.string(
+                        "Nur neue oder verschärfte Probleme werden gemeldet. Mitteilungen verbergen Monitoring-Details.",
+                        locale: locale
+                    )
+                )
+            }
+        }
+        .formStyle(.grouped)
+        .accessibilityIdentifier("notification-settings")
+    }
+
+    private var authorizationTitle: String {
+        switch authorization {
+        case .notDetermined:
+            return AppLocalization.string("Noch nicht erlaubt", locale: locale)
+        case .authorized:
+            return AppLocalization.string("Erlaubt", locale: locale)
+        case .denied:
+            return AppLocalization.string("In macOS deaktiviert", locale: locale)
+        }
+    }
+
+    private var authorizationSymbol: String {
+        switch authorization {
+        case .notDetermined:
+            return "bell.badge"
+        case .authorized:
+            return "checkmark.circle.fill"
+        case .denied:
+            return "exclamationmark.triangle.fill"
+        }
+    }
+
+    private var authorizationColor: Color {
+        switch authorization {
+        case .notDetermined:
+            return .secondary
+        case .authorized:
+            return .green
+        case .denied:
+            return .orange
+        }
     }
 }
 
@@ -107,6 +355,7 @@ struct LanguageSettingsView: View {
     }
 }
 
+@MainActor
 struct AboutSettingsView: View {
     private static let messages: [LocalizedStringResource] = [
         "Alerts multiply. Attention does not.\nIssueLight sorts the signal before it reaches you.\nA star helps. Coffee keeps the beacon lit.",
@@ -120,6 +369,7 @@ struct AboutSettingsView: View {
     let version: String
     let build: String
     let copyrightText: String
+    let updateController: AppUpdateController
     @State private var messageIndex: Int
 
     private let repositoryURL = URL(string: "https://github.com/YunaBraska/issuelight")!
@@ -133,19 +383,21 @@ struct AboutSettingsView: View {
     private let nagBarURL = URL(string: "https://github.com/volendavidov/NagBar")!
 
     init(
-        icon: NSImage = NSApp.applicationIconImage,
+        icon: NSImage? = nil,
         version: String? = nil,
         build: String? = nil,
         copyrightText: String? = nil,
+        updateController: AppUpdateController,
         messageIndex: Int? = nil
     ) {
-        self.icon = icon
+        self.icon = icon ?? NSApp.applicationIconImage
         let info = Bundle.main.infoDictionary
         self.version = version ?? (info?["CFBundleShortVersionString"] as? String ?? "Development")
         self.build = build ?? (info?["CFBundleVersion"] as? String ?? "Local")
         self.copyrightText = copyrightText
             ?? Bundle.main.object(forInfoDictionaryKey: "NSHumanReadableCopyright") as? String
             ?? "Copyright © 2026 Yuna Morgenstern and IssueLight contributors."
+        self.updateController = updateController
         _messageIndex = State(
             initialValue: messageIndex.map { abs($0) % Self.messages.count }
                 ?? Int.random(in: Self.messages.indices)
@@ -183,6 +435,8 @@ struct AboutSettingsView: View {
 
                 Divider()
 
+                updateAction
+
                 links
 
                 Text(verbatim: copyrightText)
@@ -196,6 +450,32 @@ struct AboutSettingsView: View {
             .padding(.vertical, 4)
         }
         .accessibilityIdentifier("about-settings")
+    }
+
+    @ViewBuilder
+    private var updateAction: some View {
+        if AppDistribution.usesAppStoreUpdates {
+            Link(destination: URL(string: "macappstore://showUpdatesPage")!) {
+                Label {
+                    Text(verbatim: AppLocalization.string("Open App Store Updates…", locale: locale))
+                } icon: {
+                    Image(systemName: "arrow.triangle.2.circlepath")
+                }
+            }
+            .buttonStyle(.link)
+        } else if updateController.canCheckForUpdates {
+            Button {
+                updateController.checkForUpdates()
+            } label: {
+                Label {
+                    Text(verbatim: AppLocalization.string("Check for Updates…", locale: locale))
+                } icon: {
+                    Image(systemName: "arrow.triangle.2.circlepath")
+                }
+            }
+            .buttonStyle(.link)
+            .accessibilityIdentifier("check-for-updates-button")
+        }
     }
 
     private var links: some View {

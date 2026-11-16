@@ -9,16 +9,19 @@ options:
 packages:
   IssueLightCore:
     path: ../Packages/IssueLightCore
+  Sparkle:
+    url: https://github.com/sparkle-project/Sparkle
+    exactVersion: 2.10.0
 
-targets:
-  IssueLight:
+targetTemplates:
+  IssueLightApplication:
     type: application
     platform: macOS
     sources:
       - Sources
-      - Resources
-    dependencies:
-      - package: IssueLightCore
+      - path: Resources
+        excludes:
+          - Sparkle-LICENSE.txt
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: berlin.yuna.issuelight
@@ -43,6 +46,26 @@ targets:
           CODE_SIGN_INJECT_BASE_ENTITLEMENTS: NO
           ENABLE_CODE_COVERAGE: NO
 
+targets:
+  IssueLight:
+    templates:
+      - IssueLightApplication
+    sources:
+      - path: Resources/Sparkle-LICENSE.txt
+        buildPhase: resources
+    dependencies:
+      - package: IssueLightCore
+      - package: Sparkle
+
+  IssueLightAppStore:
+    templates:
+      - IssueLightApplication
+    dependencies:
+      - package: IssueLightCore
+    settings:
+      base:
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: $(inherited) ISSUELIGHT_APP_STORE
+
   IssueLightModelTests:
     type: bundle.unit-test
     platform: macOS
@@ -50,10 +73,13 @@ targets:
       - Tests
       - Sources/AppLanguage.swift
       - Sources/AppDistribution.swift
+      - Sources/AppUpdateController.swift
       - Sources/ExternalActionCoordinator.swift
       - Sources/LanguageSettingsView.swift
       - Sources/IssueLightModel.swift
+      - Sources/IssueLightGlyphs.swift
       - Sources/IssueCountText.swift
+      - Sources/IssueNotificationCoordinator.swift
       - Sources/PanelFilterSettings.swift
       - Sources/SourceSetupView.swift
       - Sources/StatusMenuView.swift
@@ -79,5 +105,11 @@ schemes:
       config: Debug
       targets:
         - IssueLightModelTests
+    archive:
+      config: Release
+  IssueLightAppStore:
+    build:
+      targets:
+        IssueLightAppStore: all
     archive:
       config: Release

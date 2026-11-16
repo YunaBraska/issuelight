@@ -1,9 +1,56 @@
+import AppKit
 import IssueLightCore
 import SwiftUI
 import XCTest
 
 @MainActor
 final class StatusMenuInteractionTests: XCTestCase {
+    func testMenuBarShowsGlyphOnlyWhenThereAreNoIssueCounts() {
+        let issue = MonitoringIssue(
+            sourceID: UUID(),
+            nativeID: "critical-service",
+            kind: .service,
+            hostName: "api-01",
+            serviceName: "Health",
+            displayName: "Health",
+            severity: .critical,
+            summary: "Unavailable",
+            isAcknowledged: false,
+            isInDowntime: false
+        )
+        let counts = MenuBarIssueCounts(issues: [issue])
+        let maximumSize = CGSize(width: 200, height: 40)
+        let labelSize = NativeViewRenderer.fittingSize(
+            for: StatusMenuLabel(
+                state: .current,
+                counts: counts,
+                accessibilityText: "One critical issue"
+            )
+            .font(.system(size: 14)),
+            maximumSize: maximumSize
+        )
+        let countOnlySize = NativeViewRenderer.fittingSize(
+            for: Text(verbatim: counts.compactText)
+                .monospacedDigit()
+                .font(.system(size: 14)),
+            maximumSize: maximumSize
+        )
+        let emptySize = NativeViewRenderer.fittingSize(
+            for: StatusMenuLabel(
+                state: .current,
+                counts: MenuBarIssueCounts(issues: []),
+                accessibilityText: "All clear"
+            )
+            .font(.system(size: 14)),
+            maximumSize: maximumSize
+        )
+
+        XCTAssertEqual(labelSize.width, countOnlySize.width, accuracy: 0.5)
+        XCTAssertEqual(labelSize.height, countOnlySize.height, accuracy: 0.5)
+        XCTAssertGreaterThanOrEqual(emptySize.width, 17)
+        XCTAssertGreaterThanOrEqual(emptySize.height, 17)
+    }
+
     func testSSHSettingsDisclosureRespondsAcrossTheEntireRow() {
         var isExpanded = false
         let view = SSHSettingsDisclosureRow(
@@ -33,6 +80,25 @@ final class StatusMenuInteractionTests: XCTestCase {
             PortNumberField.format.locale(Locale(identifier: "sv_SE")).format(22_222),
             "22222"
         )
+    }
+
+    func testSettingsWindowConfigurationRestoresNativeResizeBehavior() {
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 900, height: 648),
+            styleMask: [.titled, .closable],
+            backing: .buffered,
+            defer: false
+        )
+        let configurationView = SettingsWindowConfigurationView()
+        window.contentView = configurationView
+
+        window.styleMask.remove(.resizable)
+        RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.25))
+
+        XCTAssertTrue(window.styleMask.contains(.resizable))
+        XCTAssertEqual(window.contentMinSize, NSSize(width: 760, height: 560))
+        XCTAssertEqual(window.contentMaxSize.width, CGFloat.greatestFiniteMagnitude)
+        XCTAssertEqual(window.contentMaxSize.height, CGFloat.greatestFiniteMagnitude)
     }
 
     func testSettingsButtonRespondsToPointerClick() {
@@ -187,6 +253,78 @@ final class StatusMenuInteractionTests: XCTestCase {
         XCTAssertEqual(rechecked, 1)
         XCTAssertEqual(acknowledged, 1)
         XCTAssertEqual(scheduledDowntime, 1)
+    }
+
+    func testHostMultiSelectionFiltersPanelRowsAndMenuBarCountsTogether() {
+        let sourceID = UUID()
+        let hiddenIssue = MonitoringIssue(
+            sourceID: sourceID,
+            nativeID: "api-01!Health",
+            kind: .service,
+            hostName: "api-01",
+            serviceName: "Health",
+            displayName: "Health",
+            severity: .critical,
+            summary: "CRITICAL: unavailable",
+            isAcknowledged: false,
+            isInDowntime: false
+        )
+        let selectedIssue = MonitoringIssue(
+            sourceID: sourceID,
+            nativeID: "database-01!Replication",
+            kind: .service,
+            hostName: "database-01",
+            serviceName: "Replication",
+            displayName: "Replication",
+            severity: .warning,
+            summary: "WARNING: delayed",
+            isAcknowledged: false,
+            isInDowntime: false
+        )
+        let suiteName = "StatusMenuHostFilterTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        addTeardownBlock { defaults.removePersistentDomain(forName: suiteName) }
+        let filters = PanelFilterSettings(defaults: defaults)
+        filters.setHost(PanelHostSelection(issue: selectedIssue), selected: true)
+        var openedIssueID: String?
+        let view = StatusMenuContent(
+            hasConfiguredSource: true,
+            hasEnabledSource: true,
+            hasActiveSnapshot: true,
+            actionableIssues: [hiddenIssue, selectedIssue],
+            coveredIssues: [],
+            sourceNames: [sourceID: "Production"],
+            sourceFailures: [],
+            filters: filters,
+            refreshState: .current,
+            actionError: nil,
+            supportedActions: { _ in [] },
+            activeActionIssueIDs: [],
+            openSettings: {},
+            quitApplication: {},
+            openIssue: { openedIssueID = $0.id },
+            openSSH: { _ in },
+            openRDP: { _ in },
+            hasSSH: { _ in false },
+            hasRDP: { _ in false },
+            performRecheck: { _ in },
+            requestAcknowledgement: { _ in },
+            requestDowntime: { _ in },
+            dismissActionError: {}
+        )
+        .environment(\.locale, Locale(identifier: "en_US"))
+        .environment(\.colorScheme, .light)
+
+        let fittedSize = NativeViewRenderer.fittingSize(
+            for: view,
+            maximumSize: CGSize(width: 720, height: 520)
+        )
+        NativeViewRenderer.click(CGPoint(x: 300, y: 19), in: view, size: fittedSize)
+        let visibleMenuIssues = [hiddenIssue, selectedIssue].filter(filters.includesHost)
+
+        XCTAssertEqual(fittedSize.height, 88, accuracy: 1)
+        XCTAssertEqual(openedIssueID, selectedIssue.id)
+        XCTAssertEqual(MenuBarIssueCounts(issues: visibleMenuIssues).compactText, "W:1")
     }
 
     func testFailedSourceRendersAsCompactPanelRowWithoutSnapshot() {
