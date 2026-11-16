@@ -7,6 +7,7 @@
 - `integration/icinga2/`: real external-system test lab
 - `integration/thruk/`: real OMD, Thruk, and Naemon compatibility lab
 - `integration/checkmk/`: real Checkmk compatibility lab
+- `integration/nagioscore/`: real Nagios Core CGI compatibility lab
 - `docs/spec/`: accepted observable behavior
 - `docs/adr/`: lasting architecture decisions
 
@@ -27,7 +28,9 @@ real Icinga compatibility matrix and
 [`../integration/thruk/README.md`](../integration/thruk/README.md) for the
 real Thruk provider run, and
 [`../integration/checkmk/README.md`](../integration/checkmk/README.md) for the
-real Checkmk provider run.
+real Checkmk provider run, and
+[`../integration/nagioscore/README.md`](../integration/nagioscore/README.md) for
+the real Nagios Core provider run.
 
 Use a stable Apple Development identity and the fixed bundle identifier
 `berlin.yuna.issuelight` for permission-sensitive installed-app tests.

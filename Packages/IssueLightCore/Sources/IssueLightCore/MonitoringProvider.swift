@@ -193,11 +193,13 @@ public struct ProviderRegistry: Sendable {
     public static func builtIn() -> ProviderRegistry {
         let checkmk = CheckmkProvider()
         let icinga = Icinga2Provider()
+        let nagios = NagiosCoreProvider()
         let thruk = ThrukProvider()
         return ProviderRegistry(
             indexedProviders: [
                 checkmk.descriptor.id: checkmk,
                 icinga.descriptor.id: icinga,
+                nagios.descriptor.id: nagios,
                 thruk.descriptor.id: thruk,
             ]
         )

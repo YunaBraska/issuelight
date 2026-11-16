@@ -1,18 +1,20 @@
 # Project status
 
-IssueLight is pre-production. It is not yet a complete NagBar successor.
+IssueLight is pre-production pending installed-app and signed-release evidence.
 
 ## Implemented
 
 - Native macOS menu-bar status with severity counters and issue rows.
-- Multiple independently refreshed Icinga 2, Thruk, and Checkmk sources.
+- Multiple independently refreshed Icinga 2, Thruk, Checkmk, and Nagios Core
+  sources.
 - Basic authentication, Thruk and Checkmk API keys, and mTLS identities from macOS
   Keychain. Passwords and API keys have separate source-scoped entries.
 - System trust, source-specific private CA trust, exact certificate pinning,
   and an explicit per-source certificate-verification bypass.
-- Provider-owned actions through the Icinga 2, Thruk, and Checkmk APIs.
-  Checkmk exposes acknowledgement and fixed downtime. Acknowledgement and
-  downtime require an author and comment.
+- Provider-owned actions through the Icinga 2, Thruk, Checkmk, and Nagios Core
+  interfaces. Checkmk exposes acknowledgement and fixed downtime. The other
+  providers also expose recheck. Acknowledgement and downtime require an author
+  and comment.
 - Compact single-line issue rows with source names, persistent source/severity/
   coverage filters, direct quick actions, and Icinga Web row navigation.
 - Optional SSH and RDP host actions plus direct-first, source-wide SSH fallback
@@ -44,14 +46,14 @@ IssueLight is pre-production. It is not yet a complete NagBar successor.
 - `sh scripts/checkmk_lab.sh test` runs the built-in Checkmk provider against
   the pinned official Checkmk Community image. It covers discovery, snapshots,
   acknowledgement, downtime, API-key authentication, and rejected credentials.
+- `sh scripts/nagioscore_lab.sh test` builds the pinned official Nagios Core
+  4.5.14 source release and verifies discovery, Basic authentication, snapshots,
+  recheck, acknowledgement, downtime, and command-CGI CSRF handling.
 - Screenshot tests render the production SwiftUI views used by the product
   page.
 
 ## Remaining release gates
 
-- Add a complete direct Nagios Core provider journey. A Thruk source
-  already covers Nagios-compatible backends exposed through Thruk without HTML
-  parsing.
 - Run the installed-app protected-private-key case described in
   `docs/DEVELOPMENT.md`. Background refresh must fail without authentication UI
   and retain the previous snapshot.

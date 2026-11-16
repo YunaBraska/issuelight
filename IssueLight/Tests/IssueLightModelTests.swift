@@ -650,7 +650,7 @@ final class IssueLightModelTests: XCTestCase {
         XCTAssertNil(deletedAPIKey)
     }
 
-    func testCheckmkUsesRequiredAPIUsernameAndIcingaRemainsTheNewSourceDefault() async throws {
+    func testProviderAuthenticationChoicesAndIcingaNewSourceDefault() async throws {
         let model = IssueLightModel(
             sourceStore: nil,
             providerRegistry: .builtIn(),
@@ -669,6 +669,11 @@ final class IssueLightModelTests: XCTestCase {
         XCTAssertEqual(model.authenticationChoices, [.apiKey])
         XCTAssertEqual(model.authenticationChoice, .apiKey)
         XCTAssertTrue(model.apiUsernameIsRequired)
+
+        model.selectedProviderID = NagiosCoreProvider.id
+        XCTAssertEqual(model.authenticationChoices, [.basic])
+        XCTAssertEqual(model.authenticationChoice, .basic)
+        XCTAssertFalse(model.apiUsernameIsRequired)
     }
 
     func testSelectingPinnedSourceLoadsReviewedFingerprint() async throws {

@@ -11,7 +11,7 @@ final class CheckmkProviderTests: XCTestCase {
 
         XCTAssertEqual(
             registry.descriptors.map(\.displayName),
-            ["Checkmk", "Icinga 2", "Thruk"]
+            ["Checkmk", "Icinga 2", "Nagios Core", "Thruk"]
         )
         XCTAssertEqual(provider.descriptor.endpointExample, "monitoring.example/cmk")
         XCTAssertEqual(provider.descriptor.capabilities.authenticationMethods, [.apiKey])

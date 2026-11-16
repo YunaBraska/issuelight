@@ -6,8 +6,8 @@ Status: Accepted for iterative implementation.
 
 IssueLight provides a native macOS setup journey that connects to a real
 monitoring source without exposing credentials or hiding transport failures.
-Icinga 2, Thruk, and Checkmk use the same source lifecycle without leaking their protocol
-details into shared UI or persistence.
+Icinga 2, Thruk, Checkmk, and Nagios Core use the same source lifecycle without
+leaking their protocol details into shared UI or persistence.
 
 ## Scope
 
@@ -15,15 +15,15 @@ This specification owns source identity, endpoint validation, authentication,
 server trust, connection testing, and the boundary between the host app and a
 monitoring provider.
 
-The current increment includes Icinga 2, Thruk, and Checkmk, HTTP Basic authentication,
-Thruk and Checkmk API-key authentication, X.509 client-certificate authentication, macOS
-Keychain storage, and source-specific TLS policy. It does not own
-monitoring-state presentation or notifications.
+The current increment includes Icinga 2, Thruk, Checkmk, and Nagios Core, HTTP
+Basic authentication, Thruk and Checkmk API-key authentication, X.509
+client-certificate authentication, macOS Keychain storage, and source-specific
+TLS policy. It does not own monitoring-state presentation or notifications.
 
 ## Decisions
 
-- Icinga 2 is the compatibility baseline. Thruk and Checkmk validate that the
-  shared model has no Icinga-only state.
+- Icinga 2 is the compatibility baseline. Thruk, Checkmk, and Nagios Core
+  validate that the shared model has no Icinga-only state.
 - Provider discovery uses one built-in registry. Third-party plug-ins are not a
   current requirement.
 - Thruk Basic authentication is read-only. IssueLight exposes Thruk write
@@ -112,6 +112,10 @@ monitoring-state presentation or notifications.
 - `PRV-007` The Checkmk provider MUST accept only REST roots ending in
   `/check_mk/api/v1` or `/check_mk/api/1.0`. It MUST own Checkmk Bearer
   authentication, status queries, actions, and web object URLs.
+- `PRV-008` The Nagios Core provider MUST own Basic authentication, JSON status
+  queries, command-CGI CSRF state, actions, and classic-web object URLs. It MUST
+  reject successful-looking HTML and JSON responses that are not the expected
+  Nagios CGI contract.
 
 ### Credentials
 
@@ -192,6 +196,11 @@ monitoring-state presentation or notifications.
 - `CONN-011` Checkmk discovery MUST accept a hostname, site URL, REST URL, or
   pasted Checkmk web URL and confirm version, host, and service endpoints before
   canonicalizing it. Plain HTTP requires an explicit scheme.
+- `CONN-012` Nagios Core discovery MUST accept a hostname, web URL, or pasted
+  CGI URL and confirm program, host, and service JSON responses before
+  canonicalizing it to `statusjson.cgi`. A hint without a scheme MUST try HTTPS
+  only, except loopback development hosts. Plain HTTP otherwise requires an
+  explicit scheme.
 
 ### Navigation
 
@@ -236,10 +245,10 @@ monitoring-state presentation or notifications.
 | Requirement | Public boundary | Evidence |
 | --- | --- | --- |
 | SRC-001..004 | `MonitoringSource` | Package tests for validation, encoding, and authority changes |
-| PRV-001..007 | provider registry and adapters | Package tests cover every adapter's discovery, capabilities, endpoint rules, provider-neutral snapshot dispatch, actions, and web links; the Icinga, Thruk, and Checkmk live matrices cross the same registry boundary against pinned real systems |
+| PRV-001..008 | provider registry and adapters | Package tests cover every adapter's discovery, capabilities, endpoint rules, provider-neutral snapshot dispatch, actions, and web links; the Icinga, Thruk, Checkmk, and Nagios Core live matrices cross the same registry boundary against pinned real systems |
 | AUTH-001, AUTH-007..009 | `KeychainPasswordVault` and API-key providers | Temporary real-Keychain tests prove independent Basic-password and API-key storage, replacement, lookup, and cleanup; real Thruk and Checkmk tests prove reads, commands, wrong-secret rejection, and provider-specific action availability |
 | AUTH-002, AUTH-004 | Keychain identity catalog and connection test | Real PKCS#12 import, persistent-reference resolution, accepted and rejected live Icinga mTLS, and exact cleanup |
 | AUTH-003, AUTH-005 | source setup journey | Password availability uses only non-secret ownership metadata; a real foreign legacy Keychain item is rejected without reading its secret; background password and exact-identity reads use a non-interactive authentication context; broad identity searches silently skip protected items; missing identities fail explicitly; installed protected-private-key denial still needs running-app evidence |
 | TLS-001..006 | connection test and source lifecycle | Default, source-specific private CA, exact leaf pinning, and unchecked trust implemented; the live matrix accepts the configured CA and exact leaf, rejects an unrelated CA, mismatched leaf, and exact leaf under the wrong hostname; Apple trust evaluation preserves certificate validity policy; authority changes reset custom trust; real Keychain tests cover ownership-aware CA cleanup after the final source reference; pin replacement remains an explicit user action |
-| CONN-001..011 | connection test | Real containerized Icinga 2 Basic and mTLS success, real OMD/Thruk Basic and API-key success, real Checkmk API-key success, distinct authentication, authorization, and trust failures, unit coverage for direct-first routing and independent settings status, plus running-UI cancellation evidence |
+| CONN-001..012 | connection test | Real containerized Icinga 2 Basic and mTLS success, real OMD/Thruk Basic and API-key success, real Checkmk API-key success, source-built Nagios Core Basic-auth and CGI success, distinct authentication, authorization, and trust failures, unit coverage for direct-first routing and independent settings status, plus running-UI cancellation evidence |
 | NAV-001..005 | issue row and source settings | Core tests cover classic and Icinga DB Web host/service links plus escaped SSH/RDP URLs; app tests cover source-wide SSH persistence, safe OpenSSH commands, direct opening, row clicks, and source-owned cleanup; real OpenSSH integration tests verify HTTP forwarding and an Icinga API request through SOCKS5 before closing owned ports |

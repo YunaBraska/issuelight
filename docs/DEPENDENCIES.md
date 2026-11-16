@@ -11,14 +11,16 @@
 | Nginx container image | Loopback-only authentication gateway for manual Icinga Web review | Development only, not shipped |
 | Official OMD Labs Debian image | Real Thruk and Naemon compatibility tests | Development and CI only, not shipped |
 | Official Checkmk Community image | Real Checkmk REST API and monitoring-core compatibility tests | Development and CI only, not shipped |
+| Official Nagios Core source release | Real JSON and command CGI compatibility tests | Development and CI only, not shipped |
 
-Thruk support uses its HTTP REST API and adds no runtime dependency. A pinned
-official OMD Labs fixture qualifies the adapter against Thruk 3.30 and its real
-Livestatus and command responses.
+Thruk and Nagios Core support use HTTP interfaces and add no runtime dependency.
+Pinned official fixtures qualify Thruk 3.30 against real Livestatus and command
+responses and Nagios Core 4.5.14 against its JSON and command CGIs.
 
 The exact integration image versions and digests are pinned in
 `integration/icinga2/compose.yaml`, `scripts/thruk_lab.sh`, and
-`scripts/checkmk_lab.sh`. Any new runtime dependency requires a
+`scripts/checkmk_lab.sh`, and `integration/nagioscore/Dockerfile`. Any new
+runtime dependency requires a
 purpose, license review, provenance record, and removal plan before it is added.
 Sparkle's complete distribution license is shipped as
 `IssueLight/Resources/Sparkle-LICENSE.txt` in direct builds.

@@ -14,6 +14,11 @@ enum ProviderHTTPAuthentication {
 struct ProviderHTTPResponse {
     let data: Data
     let statusCode: Int
+    let headers: [String: String]
+
+    func headerValue(_ name: String) -> String? {
+        headers.first { $0.key.caseInsensitiveCompare(name) == .orderedSame }?.value
+    }
 }
 
 final class ProviderHTTPSession {
@@ -70,7 +75,16 @@ final class ProviderHTTPSession {
             guard let httpResponse = response as? HTTPURLResponse else {
                 throw ProviderHTTPError.failure(.incompatibleResponse)
             }
-            return ProviderHTTPResponse(data: data, statusCode: httpResponse.statusCode)
+            let headers = httpResponse.allHeaderFields.reduce(into: [String: String]()) { values, field in
+                guard let name = field.key as? String,
+                      let value = field.value as? String else { return }
+                values[name] = value
+            }
+            return ProviderHTTPResponse(
+                data: data,
+                statusCode: httpResponse.statusCode,
+                headers: headers
+            )
         } catch let error as ProviderHTTPError {
             throw error
         } catch {

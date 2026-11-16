@@ -6,14 +6,14 @@ description: IssueLight keeps infrastructure problems in the macOS menu bar and 
 
 <section class="hero shell">
   <div class="hero-copy">
-    <p class="eyebrow"><span></span>Icinga 2, Thruk and Checkmk, without the dashboard detour</p>
+    <p class="eyebrow"><span></span>Icinga 2, Thruk, Checkmk and Nagios Core, without the dashboard detour</p>
     <h1>See what needs you. Ignore the rest.</h1>
     <p class="lead">IssueLight turns monitoring state into a small, native macOS signal. Healthy systems stay out of the way. Problems arrive ordered by attention, across every source you configured.</p>
     <div class="actions">
       <a class="button" href="{{ '/install.html' | relative_url }}">Build IssueLight</a>
       <a class="button secondary" href="{{ site.repository }}">View the source</a>
     </div>
-    <p class="release-note"><span>Open-source preview</span> macOS 14+ · Icinga 2 baseline · Thruk and Checkmk supported</p>
+    <p class="release-note"><span>Open-source preview</span> macOS 14+ · Icinga 2 baseline · Thruk, Checkmk and Nagios Core supported</p>
   </div>
   <figure class="hero-shot app-window">
     <div class="window-bar"><span></span><span></span><span></span><strong>Menu bar status</strong></div>
@@ -118,20 +118,22 @@ description: IssueLight keeps infrastructure problems in the macOS menu bar and 
       <span role="listitem">Naemon</span>
       <span role="listitem">API-key commands</span>
       <span role="listitem">Checkmk 2.5</span>
+      <span role="listitem">Nagios Core 4.5</span>
+      <span role="listitem">Command CGI CSRF</span>
     </div>
-    <p class="evidence-note">The pinned Icinga, OMD Labs and Checkmk containers drive the same public provider paths used by the app. Unit tests cover deterministic domain behavior. The screenshot test renders the production SwiftUI views shown on this page.</p>
+    <p class="evidence-note">The pinned Icinga, OMD Labs and Checkmk containers plus a source-built Nagios Core drive the same public provider paths used by the app. Unit tests cover deterministic domain behavior. The screenshot test renders the production SwiftUI views shown on this page.</p>
   </div>
 </section>
 
 <section class="section shell scope-section">
   <div class="section-heading">
     <p class="eyebrow"><span></span>Scope you can reason about</p>
-    <h2>Icinga 2 baseline. Thruk and Checkmk through one boundary.</h2>
-    <p>Icinga 2 is the current compatibility baseline. Thruk and Checkmk cross the same provider boundary and are verified against pinned official images. Provider capabilities decide which commands are available. Direct Nagios Core remains open.</p>
+    <h2>Icinga 2 baseline. Four systems through one boundary.</h2>
+    <p>Icinga 2 is the current compatibility baseline. Thruk, Checkmk and Nagios Core cross the same provider boundary and are verified against pinned official releases. Provider capabilities decide which commands are available.</p>
   </div>
   <div class="scope-grid">
     <div><strong>Available now</strong><p>Multiple sources, refresh, attention ordering, quiet notifications, strict TLS options, Keychain credentials, recheck, acknowledgement, fixed downtime and stale-state retention.</p></div>
-    <div><strong>Still required</strong><p>A direct Nagios Core provider remains a production blocker. Provider-built web deep links are implemented.</p></div>
+    <div><strong>Still required</strong><p>Installed-app protected-key evidence and a signed, notarized replacement-cycle release remain production blockers.</p></div>
     <div><strong>Release status</strong><p>The code is public and the unsigned packaging path is tested. A notarized public binary is not available yet, so this page does not pretend otherwise.</p></div>
   </div>
 </section>

@@ -1,0 +1,27 @@
+name: Nagios Core live compatibility
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/nagioscore-live.yml"
+      - "integration/nagioscore/**"
+      - "scripts/nagioscore_lab.sh"
+      - "Packages/IssueLightCore/Sources/IssueLightCore/NagiosCoreProvider.swift"
+      - "Packages/IssueLightCore/Sources/IssueLightCore/NagiosCoreSnapshotDecoder.swift"
+      - "Packages/IssueLightCore/Sources/IssueLightCore/NagiosCoreTransport.swift"
+      - "Packages/IssueLightCore/Sources/IssueLightCore/ProviderHTTPSession.swift"
+      - "Packages/IssueLightCore/Tests/IssueLightCoreTests/NagiosCoreLiveConnectionTests.swift"
+      - "Packages/IssueLightCore/Tests/IssueLightCoreTests/NagiosCoreProviderTests.swift"
+
+permissions:
+  contents: read
+
+jobs:
+  cgi-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+      - name: Verify the pinned Nagios Core CGI contract
+        run: scripts/nagioscore_lab.sh api-test

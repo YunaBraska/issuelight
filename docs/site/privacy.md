@@ -11,7 +11,7 @@ description: How IssueLight handles monitoring data, credentials and local confi
 </section>
 
 <section class="privacy-grid shell">
-  <article><h2>Network</h2><p>The app reads host and service state directly from configured Icinga 2, Thruk or Checkmk sources. Operator-initiated actions return to the same source under its selected TLS policy.</p></article>
+  <article><h2>Network</h2><p>The app reads host and service state directly from configured Icinga 2, Thruk, Checkmk or Nagios Core sources. Operator-initiated actions return to the same source under its selected TLS policy.</p></article>
   <article><h2>Credentials</h2><p>Passwords, API keys and selected client identities stay in macOS Keychain. Source configuration stores references instead of secret values or private keys.</p></article>
   <article><h2>Local state</h2><p>Names, endpoints, public certificate fingerprints, and optional web or remote-access settings are stored in the user's Application Support directory. A selected SSH identity is stored as a file path, never as copied key material. Monitoring snapshots remain in memory and are not persisted by IssueLight.</p></article>
   <article><h2>Notifications</h2><p>Per-source notification policies are stored in macOS preferences. When enabled, Notification Center receives only an aggregate title and body. Source, host, service, provider output, credentials and navigation URLs are omitted. Current-session navigation targets stay in memory.</p></article>
