@@ -295,6 +295,10 @@ final class IssueLightModel: ObservableObject {
         return AuthenticationChoice.allCases.filter { methods.contains($0.method) }
     }
 
+    var apiUsernameIsRequired: Bool {
+        selectedProviderID == CheckmkProvider.id
+    }
+
     var serverTrustChoices: [ServerTrustChoice] {
         guard let methods = providerRegistry
             .provider(for: selectedProviderID)?
@@ -566,7 +570,9 @@ final class IssueLightModel: ObservableObject {
             identityCatalog: identityCatalog,
             certificateCatalog: certificateCatalog
         )
-        selectedProviderID = providerRegistry.descriptors.first?.id ?? ProviderID(rawValue: "")
+        selectedProviderID = providerRegistry.provider(for: Icinga2Provider.id) == nil
+            ? providerRegistry.descriptors.first?.id ?? ProviderID(rawValue: "")
+            : Icinga2Provider.id
         if startsAutomatically {
             Task { [weak self] in
                 await self?.start()
@@ -697,7 +703,9 @@ final class IssueLightModel: ObservableObject {
         name = ""
         endpoint = ""
         isSourceEnabled = true
-        selectedProviderID = providerRegistry.descriptors.first?.id ?? ProviderID(rawValue: "")
+        selectedProviderID = providerRegistry.provider(for: Icinga2Provider.id) == nil
+            ? providerRegistry.descriptors.first?.id ?? ProviderID(rawValue: "")
+            : Icinga2Provider.id
         authenticationChoice = authenticationChoices.first ?? .basic
         username = ""
         credentialSecret = ""

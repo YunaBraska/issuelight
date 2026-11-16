@@ -1,0 +1,26 @@
+name: Checkmk live compatibility
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/checkmk-live.yml"
+      - "scripts/checkmk_lab.sh"
+      - "Packages/IssueLightCore/Sources/IssueLightCore/CheckmkProvider.swift"
+      - "Packages/IssueLightCore/Sources/IssueLightCore/CheckmkSnapshotDecoder.swift"
+      - "Packages/IssueLightCore/Sources/IssueLightCore/CheckmkTransport.swift"
+      - "Packages/IssueLightCore/Sources/IssueLightCore/ProviderHTTPSession.swift"
+      - "Packages/IssueLightCore/Tests/IssueLightCoreTests/CheckmkLiveConnectionTests.swift"
+      - "Packages/IssueLightCore/Tests/IssueLightCoreTests/CheckmkProviderTests.swift"
+
+permissions:
+  contents: read
+
+jobs:
+  api-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+      - name: Verify the pinned Checkmk REST API
+        run: scripts/checkmk_lab.sh api-test

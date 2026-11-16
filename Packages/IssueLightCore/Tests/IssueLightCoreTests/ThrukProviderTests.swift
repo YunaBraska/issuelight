@@ -11,7 +11,7 @@ final class ThrukProviderTests: XCTestCase {
 
         XCTAssertEqual(
             registry.descriptors.map(\.displayName),
-            ["Icinga 2", "Thruk"]
+            ["Checkmk", "Icinga 2", "Thruk"]
         )
         XCTAssertEqual(provider.descriptor.endpointExample, "monitoring.example/thruk")
         XCTAssertEqual(provider.descriptor.capabilities.authenticationMethods, [.basic, .apiKey])

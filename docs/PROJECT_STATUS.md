@@ -5,13 +5,14 @@ IssueLight is pre-production. It is not yet a complete NagBar successor.
 ## Implemented
 
 - Native macOS menu-bar status with severity counters and issue rows.
-- Multiple independently refreshed Icinga 2 and Thruk sources.
-- Basic authentication, Thruk API keys, and mTLS identities from macOS
+- Multiple independently refreshed Icinga 2, Thruk, and Checkmk sources.
+- Basic authentication, Thruk and Checkmk API keys, and mTLS identities from macOS
   Keychain. Passwords and API keys have separate source-scoped entries.
 - System trust, source-specific private CA trust, exact certificate pinning,
   and an explicit per-source certificate-verification bypass.
-- Recheck, acknowledgement, and fixed downtime through the Icinga 2 and Thruk
-  action APIs. Acknowledgement and downtime require an author and comment.
+- Provider-owned actions through the Icinga 2, Thruk, and Checkmk APIs.
+  Checkmk exposes acknowledgement and fixed downtime. Acknowledgement and
+  downtime require an author and comment.
 - Compact single-line issue rows with source names, persistent source/severity/
   coverage filters, direct quick actions, and Icinga Web row navigation.
 - Optional SSH and RDP host actions plus direct-first, source-wide SSH fallback
@@ -40,12 +41,15 @@ IssueLight is pre-production. It is not yet a complete NagBar successor.
   pinned official OMD Labs image. It covers Basic and API-key authentication,
   strict and disabled trust, snapshots, recheck, acknowledgement, downtime,
   and the API-key requirement for write actions.
+- `sh scripts/checkmk_lab.sh test` runs the built-in Checkmk provider against
+  the pinned official Checkmk Community image. It covers discovery, snapshots,
+  acknowledgement, downtime, API-key authentication, and rejected credentials.
 - Screenshot tests render the production SwiftUI views used by the product
   page.
 
 ## Remaining release gates
 
-- Add complete direct Nagios Core and Checkmk provider journeys. A Thruk source
+- Add a complete direct Nagios Core provider journey. A Thruk source
   already covers Nagios-compatible backends exposed through Thruk without HTML
   parsing.
 - Run the installed-app protected-private-key case described in

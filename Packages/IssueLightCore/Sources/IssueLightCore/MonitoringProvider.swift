@@ -191,10 +191,12 @@ public struct ProviderRegistry: Sendable {
     }
 
     public static func builtIn() -> ProviderRegistry {
+        let checkmk = CheckmkProvider()
         let icinga = Icinga2Provider()
         let thruk = ThrukProvider()
         return ProviderRegistry(
             indexedProviders: [
+                checkmk.descriptor.id: checkmk,
                 icinga.descriptor.id: icinga,
                 thruk.descriptor.id: thruk,
             ]

@@ -3,9 +3,10 @@
 ## Repository layout
 
 - `IssueLight/`: native macOS app and XcodeGen specification
-- `Packages/IssueLightCore/`: provider-neutral domain plus Icinga 2 and Thruk adapters
+- `Packages/IssueLightCore/`: provider-neutral domain plus built-in monitoring adapters
 - `integration/icinga2/`: real external-system test lab
 - `integration/thruk/`: real OMD, Thruk, and Naemon compatibility lab
+- `integration/checkmk/`: real Checkmk compatibility lab
 - `docs/spec/`: accepted observable behavior
 - `docs/adr/`: lasting architecture decisions
 
@@ -24,7 +25,9 @@ import test client identities. See
 [`../integration/icinga2/README.md`](../integration/icinga2/README.md) for the
 real Icinga compatibility matrix and
 [`../integration/thruk/README.md`](../integration/thruk/README.md) for the
-real Thruk provider run.
+real Thruk provider run, and
+[`../integration/checkmk/README.md`](../integration/checkmk/README.md) for the
+real Checkmk provider run.
 
 Use a stable Apple Development identity and the fixed bundle identifier
 `berlin.yuna.issuelight` for permission-sensitive installed-app tests.

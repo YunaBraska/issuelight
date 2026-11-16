@@ -650,6 +650,27 @@ final class IssueLightModelTests: XCTestCase {
         XCTAssertNil(deletedAPIKey)
     }
 
+    func testCheckmkUsesRequiredAPIUsernameAndIcingaRemainsTheNewSourceDefault() async throws {
+        let model = IssueLightModel(
+            sourceStore: nil,
+            providerRegistry: .builtIn(),
+            passwordVault: KeychainPasswordVault(keychainContext: testKeychain.context),
+            identityCatalog: KeychainIdentityCatalog(),
+            certificateCatalog: certificateCatalog(),
+            startsAutomatically: false,
+            localizationLocale: Locale(identifier: "en")
+        )
+
+        model.beginAddingSource()
+        XCTAssertEqual(model.selectedProviderID, Icinga2Provider.id)
+        XCTAssertFalse(model.apiUsernameIsRequired)
+
+        model.selectedProviderID = CheckmkProvider.id
+        XCTAssertEqual(model.authenticationChoices, [.apiKey])
+        XCTAssertEqual(model.authenticationChoice, .apiKey)
+        XCTAssertTrue(model.apiUsernameIsRequired)
+    }
+
     func testSelectingPinnedSourceLoadsReviewedFingerprint() async throws {
         let script = SnapshotScript()
         let fingerprint = String(repeating: "AA:", count: 31) + "AA"

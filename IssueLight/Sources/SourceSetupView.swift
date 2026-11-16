@@ -174,8 +174,13 @@ struct SourceSetupView: View {
                             .foregroundStyle(.secondary)
                         }
                     } else if model.authenticationChoice == .apiKey {
-                        TextField("API-Benutzer (optional)", text: $model.username)
-                        .textContentType(.username)
+                        if model.apiUsernameIsRequired {
+                            TextField("Benutzername", text: $model.username)
+                                .textContentType(.username)
+                        } else {
+                            TextField("API-Benutzer (optional)", text: $model.username)
+                                .textContentType(.username)
+                        }
                         SecureField("API-Schlüssel", text: $model.credentialSecret)
                             .textContentType(.password)
                         Text(

@@ -10,7 +10,7 @@ final class Icinga2ProviderTests: XCTestCase {
         let registry = ProviderRegistry.builtIn()
         let provider = try XCTUnwrap(registry.provider(for: Icinga2Provider.id))
 
-        XCTAssertEqual(registry.descriptors.map(\.displayName), ["Icinga 2", "Thruk"])
+        XCTAssertEqual(registry.descriptors.map(\.displayName), ["Checkmk", "Icinga 2", "Thruk"])
         XCTAssertEqual(provider.descriptor.endpointExample, "https://icinga.example:5665")
         XCTAssertEqual(provider.descriptor.capabilities.authenticationMethods, [.basic, .clientCertificate])
         XCTAssertEqual(

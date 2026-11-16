@@ -19,11 +19,11 @@ deliberate omissions.
 | Issue row details | Done | Mostly done | Always show source, host, service, state, state duration, check attempt, first output line, acknowledgement, and downtime. Add check age later as a stale-data signal instead of another timestamp column. |
 | Nagios Core and Icinga Classic | Done | Partial through Thruk | Thruk-backed installations use its documented REST API. Direct legacy support still needs a complete compatibility slice without reviving the original app's brittle HTML parser. |
 | Thruk | Done | Done | The REST adapter owns discovery, Basic and API-key authentication, snapshots, commands, and web links. The pinned official OMD Labs image verifies real Thruk and Naemon behavior. Basic sources are read-only; API-key sources expose commands. |
-| Checkmk | Done | Missing | Implement a versioned Checkmk adapter with explicit API-version compatibility and token support. |
+| Checkmk | Done | Done | The REST adapter owns versioned endpoint discovery, API-key authentication, snapshots, acknowledgement, downtime, and web links. The pinned official Checkmk Community image verifies the real API and monitoring core. |
 | Text search | Partial | Done | Keep search in the panel's first row and match display name, host, output, and source. |
 | State and property filters | Done | Done | Persist the compact source, severity, and coverage filters. Do not reproduce NagBar's large filter matrix. |
-| Acknowledge, recheck, and downtime | Done | Implemented for Icinga 2 and Thruk | Provider capabilities expose the supported commands. Acknowledgement and downtime require explicit input; every confirmed command refreshes its source. |
-| Open object in monitoring web UI | Done | Implemented for Icinga 2 and Thruk | A row click opens the provider-built object URL. Each source may override the provider default. |
+| Acknowledge, recheck, and downtime | Done | Implemented per provider capability | Icinga 2 and Thruk expose all three commands. Checkmk exposes acknowledgement and downtime because its supported REST API has no recheck action. Every confirmed command refreshes its source. |
+| Open object in monitoring web UI | Done | Implemented for all built-in providers | A row click opens the provider-built object URL. Each source may override the provider default. |
 | SSH and RDP target actions | Done | Done | Keep them optional per source and use the operating system's registered URL handlers. |
 | SSH port forwarding | Partial | Done for API and reachability checks, plus HTTP web targets | Try direct first, then reuse one source-owned OpenSSH SOCKS5 session. API TLS keeps its original hostname. External-browser HTTPS remains direct-only because rewriting the hostname would invalidate certificate identity checks. |
 | Native notifications | Done | Done | Disabled by default, explicit per-source severity policies, first-snapshot suppression, escalation detection, stable source summaries, recovery cleanup, and private banner content. |
@@ -41,10 +41,9 @@ deliberate omissions.
 ## Current parity conclusion
 
 IssueLight covers NagBar's central Icinga 2 journey and implements the same
-provider-neutral journey for Thruk. It improves multiple-source isolation,
+provider-neutral journey for Thruk and Checkmk. It improves multiple-source isolation,
 failure handling, credential storage, and TLS trust. It is not functionally
-equivalent to NagBar today because direct Nagios Core and Checkmk providers are
-still absent.
+equivalent to NagBar today because a direct Nagios Core provider is still absent.
 
 Claiming full parity or production readiness before those capabilities exist
 would be inaccurate.
@@ -53,7 +52,7 @@ would be inaccurate.
 
 1. Close the protected-key and signed-app verification gaps without weakening
    background security.
-2. Add Nagios Core and Checkmk without introducing a binary plug-in SDK.
+2. Add Nagios Core without introducing a binary plug-in SDK.
 
 The existing visual hierarchy should remain. New actions belong in row context
 menus or a small detail surface. Settings should describe sources and policies,
