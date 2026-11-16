@@ -117,7 +117,11 @@ struct SourceSetupView: View {
                     .pickerStyle(.menu)
                     .accessibilityIdentifier("source-provider-picker")
                     TextField("Name", text: $model.name, prompt: Text("Produktion"))
-                    TextField("Server", text: $model.endpoint, prompt: Text("https://icinga.example:5665"))
+                    TextField(
+                        "Server",
+                        text: $model.endpoint,
+                        prompt: Text(verbatim: model.endpointPrompt)
+                    )
                         .textContentType(.URL)
                 } header: {
                     if model.isCreatingSource {
@@ -140,16 +144,34 @@ struct SourceSetupView: View {
                     if model.authenticationChoice == .basic {
                         TextField("Benutzername", text: $model.username)
                             .textContentType(.username)
-                        SecureField("Passwort", text: $model.password)
+                        SecureField("Passwort", text: $model.credentialSecret)
                             .textContentType(.password)
                         Text(
-                            model.hasStoredBasicPassword
+                            model.hasStoredCredentialSecret
                                 ? AppLocalization.string(
                                     "Leer lassen, um das vorhandene Passwort bei unveränderten Zugangsdaten beizubehalten.",
                                     locale: locale
                                 )
                                 : AppLocalization.string(
                                     "Das Passwort wird ausschließlich im macOS-Schlüsselbund gespeichert.",
+                                    locale: locale
+                                )
+                        )
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    } else if model.authenticationChoice == .apiKey {
+                        TextField("API-Benutzer (optional)", text: $model.username)
+                        .textContentType(.username)
+                        SecureField("API-Schlüssel", text: $model.credentialSecret)
+                            .textContentType(.password)
+                        Text(
+                            model.hasStoredCredentialSecret
+                                ? AppLocalization.string(
+                                    "Leer lassen, um den vorhandenen API-Schlüssel bei unveränderten Zugangsdaten beizubehalten.",
+                                    locale: locale
+                                )
+                                : AppLocalization.string(
+                                    "Der API-Schlüssel wird ausschließlich im macOS-Schlüsselbund gespeichert.",
                                     locale: locale
                                 )
                         )
@@ -334,7 +356,7 @@ struct SourceSetupView: View {
                     Text(verbatim: "API / Web")
                 } footer: {
                     if !AppDistribution.supportsSSHTunnels {
-                        Text("Die App-Store-Ausgabe verbindet sich direkt mit Icinga. SSH-Tunnel sowie SSH- und RDP-Startaktionen stehen in der direkten GitHub-Ausgabe bereit.")
+                        Text("Die App-Store-Ausgabe verbindet sich direkt mit der Monitoring-Quelle. SSH-Tunnel sowie SSH- und RDP-Startaktionen stehen in der direkten GitHub-Ausgabe bereit.")
                     }
                 }
 

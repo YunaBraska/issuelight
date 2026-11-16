@@ -29,8 +29,8 @@ final class ProviderAccessResolverTests: XCTestCase {
 
         let resolution = await resolver.resolve(
             source: source,
-            passwordOverride: "replacement-password",
-            allowsStoredPassword: false
+            credentialOverride: "replacement-password",
+            allowsStoredCredential: false
         )
 
         guard case .resolved(let access) = resolution,
@@ -39,6 +39,55 @@ final class ProviderAccessResolverTests: XCTestCase {
         }
         XCTAssertEqual(password, "replacement-password")
         XCTAssertNil(access.trustedServerCertificate)
+    }
+
+    func testResolverUsesStoredAPIKeyWithoutTreatingItAsBasicPassword() async throws {
+        let source = MonitoringSource(
+            name: "Thruk API key",
+            providerID: ThrukProvider.id,
+            endpoint: URL(string: "https://thruk-api-key.example.test/thruk/r/v1")!,
+            authentication: .apiKey(username: "automation")
+        )
+        let vault = passwordVault()
+        let scope = try APIKeyCredentialScope(source: source)
+        addTeardownBlock {
+            try? await vault.deleteAPIKey(for: scope)
+        }
+        try await vault.store("stored-api-key", for: scope)
+        let resolver = ProviderAccessResolver(
+            passwordVault: vault,
+            identityCatalog: identityCatalog(),
+            certificateCatalog: certificateCatalog()
+        )
+
+        let resolution = await resolver.resolve(source: source)
+
+        guard case .resolved(let access) = resolution,
+              case .apiKey(let value) = access.credential else {
+            return XCTFail("Expected API key provider access")
+        }
+        XCTAssertEqual(value, "stored-api-key")
+    }
+
+    func testResolverReportsMissingStoredAPIKey() async {
+        let source = MonitoringSource(
+            name: "Missing Thruk API key",
+            providerID: ThrukProvider.id,
+            endpoint: URL(string: "https://missing-api-key.example.test/thruk/r/v1")!,
+            authentication: .apiKey(username: "")
+        )
+        let resolver = ProviderAccessResolver(
+            passwordVault: passwordVault(),
+            identityCatalog: identityCatalog(),
+            certificateCatalog: certificateCatalog()
+        )
+
+        let resolution = await resolver.resolve(source: source)
+
+        guard case .failed(let failure) = resolution else {
+            return XCTFail("Expected missing API key failure")
+        }
+        XCTAssertEqual(failure, .apiKeyNotAvailable)
     }
 
     func testResolverDoesNotReadStoredPasswordWhenAccessIsDisabled() async throws {
@@ -62,7 +111,7 @@ final class ProviderAccessResolverTests: XCTestCase {
 
         let resolution = await resolver.resolve(
             source: source,
-            allowsStoredPassword: false
+            allowsStoredCredential: false
         )
 
         guard case .failed(let failure) = resolution else {
@@ -130,7 +179,7 @@ final class ProviderAccessResolverTests: XCTestCase {
 
         let resolution = await resolver.resolve(
             source: source,
-            passwordOverride: "must-not-hide-invalid-ca"
+            credentialOverride: "must-not-hide-invalid-ca"
         )
 
         guard case .failed(let failure) = resolution else {
@@ -220,7 +269,7 @@ final class ProviderAccessResolverTests: XCTestCase {
 
         let resolution = await resolver.resolve(
             source: source,
-            passwordOverride: "must-not-hide-missing-ca"
+            credentialOverride: "must-not-hide-missing-ca"
         )
 
         guard case .failed(let failure) = resolution else {

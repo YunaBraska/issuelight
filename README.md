@@ -11,26 +11,28 @@ IssueLight is a native macOS menu bar client for infrastructure monitoring. It
 stays quiet when systems are healthy and brings actionable problems forward
 when attention is required.
 
-Icinga 2 is the first supported provider. The core keeps provider-specific
-transport, authentication, and response handling behind a small built-in
-provider boundary so future providers do not leak into shared UI or storage.
+Icinga 2 is the compatibility baseline. A second built-in Thruk adapter now
+implements its documented REST API. The core keeps provider-specific transport,
+authentication, discovery, and response handling behind one provider boundary
+so new providers do not leak into shared UI or storage.
 
 IssueLight is under active development. Source setup, macOS Keychain-backed
 credentials, strict-by-default TLS, source-specific private CAs, optional
 exact server-certificate pinning, optional per-source certificate bypass, and a
 real containerized Icinga 2 compatibility lab are implemented. The menu-bar
-panel aggregates independently refreshed sources and exposes explicit Icinga 2
-recheck, acknowledgement, and fixed-downtime actions per issue. Persistent
-panel filters, Icinga Web deep links, SSH/RDP host actions, and automatic
+panel aggregates independently refreshed sources and exposes provider-owned
+recheck, acknowledgement, and fixed-downtime actions per issue. Thruk supports
+Basic authentication and API keys stored separately in Keychain. Persistent
+panel filters, provider-built web deep links, SSH/RDP host actions, and automatic
 direct-first SSH fallback for API and reachability checks are available per
 source. Without an override, Icinga DB Web is inferred as
 `/icingaweb2/icingadb` on the API host. Classic Monitoring remains available
-through an explicit base URL ending in `/monitoring`. Native notifications,
-Nagios Core, Thruk, and Checkmk providers are not yet implemented and block a
-claim of full NagBar compatibility. The universal
-ZIP/DMG/SBOM workflow is ready for signing credentials. Direct releases use a
-signed Sparkle feed for updates. The App Store target uses Apple's update
-channel and contains no Sparkle runtime.
+through an explicit base URL ending in `/monitoring`. Native notifications are
+not implemented. The Thruk adapter still needs a real-system compatibility run.
+Direct Nagios Core and Checkmk providers are not yet implemented and block a
+claim of full NagBar compatibility. The universal ZIP/DMG/SBOM workflow is ready
+for signing credentials. Direct releases use a signed Sparkle feed for updates.
+The App Store target uses Apple's update channel and contains no Sparkle runtime.
 
 ## Requirements
 

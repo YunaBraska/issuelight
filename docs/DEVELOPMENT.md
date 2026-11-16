@@ -3,7 +3,7 @@
 ## Repository layout
 
 - `IssueLight/`: native macOS app and XcodeGen specification
-- `Packages/IssueLightCore/`: provider-neutral domain and Icinga 2 adapter
+- `Packages/IssueLightCore/`: provider-neutral domain plus Icinga 2 and Thruk adapters
 - `integration/icinga2/`: real external-system test lab
 - `docs/spec/`: accepted observable behavior
 - `docs/adr/`: lasting architecture decisions

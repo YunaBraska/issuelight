@@ -4,10 +4,10 @@ Status: Accepted for iterative implementation.
 
 ## Outcome
 
-IssueLight provides a native macOS setup journey that connects to a real monitoring
-source without exposing credentials or hiding transport failures. Icinga 2 is
-the first provider. Additional providers use the same source lifecycle without
-leaking their protocol details into shared UI or persistence.
+IssueLight provides a native macOS setup journey that connects to a real
+monitoring source without exposing credentials or hiding transport failures.
+Icinga 2 and Thruk use the same source lifecycle without leaking their protocol
+details into shared UI or persistence.
 
 ## Scope
 
@@ -15,13 +15,15 @@ This specification owns source identity, endpoint validation, authentication,
 server trust, connection testing, and the boundary between the host app and a
 monitoring provider.
 
-The current increment includes Icinga 2, HTTP Basic authentication, X.509 client
-certificate authentication, macOS Keychain storage, and source-specific TLS
-policy. It does not own monitoring-state presentation or notifications.
+The current increment includes Icinga 2 and Thruk, HTTP Basic authentication,
+Thruk API-key authentication, X.509 client-certificate authentication, macOS
+Keychain storage, and source-specific TLS policy. It does not own
+monitoring-state presentation or notifications.
 
 ## Decisions
 
-- Icinga 2 is the first built-in provider, not a special case in shared models.
+- Icinga 2 is the compatibility baseline. Thruk is the second built-in provider
+  and validates that the shared model has no Icinga-only state.
 - Provider discovery uses one built-in registry. Third-party plug-ins are not a
   current requirement.
 - Source records contain references and public configuration only. Passwords
@@ -38,7 +40,7 @@ policy. It does not own monitoring-state presentation or notifications.
 - Changing a source's scheme, host, or port resets every source-specific trust
   exception to system trust.
 - The app stores only public source configuration. Its Keychain items remain
-  the authority for passwords and client identities.
+  the authority for passwords, API keys, and client identities.
 - A source may store a monitoring-web base URL, source-wide SSH overrides, and
   optional SSH and RDP host actions. These are provider-neutral public
   configuration.
@@ -101,6 +103,9 @@ policy. It does not own monitoring-state presentation or notifications.
 - `PRV-005` A provider MUST own candidate generation and canonicalization for
   its endpoint hints. Shared setup code MUST NOT contain Icinga-specific ports,
   paths, or response rules.
+- `PRV-006` The Thruk provider MUST accept only REST roots ending in `/thruk/r`
+  or `/thruk/r/v1`. It MUST own Thruk authentication headers, Livestatus
+  fields, commands, and classic-web object URLs.
 
 ### Credentials
 
@@ -119,6 +124,9 @@ policy. It does not own monitoring-state presentation or notifications.
 - `AUTH-006` Background refresh and operator actions MUST fail rather than show
   Keychain authentication UI. A user-initiated connection test MAY request
   access to a protected client-identity private key.
+- `AUTH-007` Thruk API keys MUST be stored in source-scoped Keychain entries
+  distinct from Basic passwords. Source JSON MAY contain the optional public
+  user context but MUST NOT contain the key.
 
 ### Server trust
 
@@ -165,6 +173,11 @@ policy. It does not own monitoring-state presentation or notifications.
 - `CONN-009` A connection test MUST expose the attempted endpoint and route for
   each API and web result without including a password, token, private-key
   path, or Keychain value.
+- `CONN-010` Thruk discovery MUST accept a hostname, REST URL, or pasted Thruk
+  web URL, preserve a deployment prefix, and confirm the instance plus readable
+  host and service endpoints before canonicalizing it to `/thruk/r/v1`. A hint
+  without a scheme MUST try HTTPS only. Plain HTTP requires an explicit scheme
+  so discovery never silently downgrades credentials.
 
 ### Navigation
 
@@ -191,12 +204,13 @@ policy. It does not own monitoring-state presentation or notifications.
 
 ## First journey
 
-1. The user adds an Icinga 2 source and enters a hostname, IP address, or URL
+1. The user selects Icinga 2 or Thruk and enters a hostname, IP address, or URL
    hint. Every field that can be derived remains optional.
 2. When the user saves, IssueLight persists the public fields as a disabled
    draft.
-3. The user selects Basic authentication or a Keychain client identity.
-4. IssueLight stores a Basic password in Keychain or retains the identity reference.
+3. The user selects an authentication method supported by that provider.
+4. IssueLight stores a Basic password or API key in Keychain, or retains the
+   client-identity reference.
 5. The user tests the connection. IssueLight tries provider-owned endpoint
    candidates directly and then through configured SSH transport when allowed.
 6. A real provider success updates the draft to the canonical endpoint, fills
@@ -208,8 +222,8 @@ policy. It does not own monitoring-state presentation or notifications.
 | Requirement | Public boundary | Evidence |
 | --- | --- | --- |
 | SRC-001..004 | `MonitoringSource` | Package tests for validation, encoding, and authority changes |
-| PRV-001..004 | provider registry and Icinga 2 adapter | Package tests cover discovery, capabilities, endpoint rules, and provider-neutral snapshot dispatch; the live matrix crosses the same registry boundary |
-| AUTH-001 | `KeychainPasswordVault` | Integration test against a temporary real Keychain item with cleanup |
+| PRV-001..006 | provider registry and adapters | Package tests cover both adapters' discovery, capabilities, endpoint rules, provider-neutral snapshot dispatch, actions, and web links; the Icinga live matrix crosses the same registry boundary; real Thruk compatibility remains open |
+| AUTH-001, AUTH-007 | `KeychainPasswordVault` | Temporary real-Keychain tests prove independent Basic-password and API-key storage, replacement, lookup, and cleanup |
 | AUTH-002, AUTH-004 | Keychain identity catalog and connection test | Real PKCS#12 import, persistent-reference resolution, accepted and rejected live Icinga mTLS, and exact cleanup |
 | AUTH-003, AUTH-005 | source setup journey | Password availability uses only non-secret ownership metadata; a real foreign legacy Keychain item is rejected without reading its secret; background password and exact-identity reads use a non-interactive authentication context; broad identity searches silently skip protected items; missing identities fail explicitly; installed protected-private-key denial still needs running-app evidence |
 | TLS-001..006 | connection test and source lifecycle | Default, source-specific private CA, exact leaf pinning, and unchecked trust implemented; the live matrix accepts the configured CA and exact leaf, rejects an unrelated CA, mismatched leaf, and exact leaf under the wrong hostname; Apple trust evaluation preserves certificate validity policy; authority changes reset custom trust; real Keychain tests cover ownership-aware CA cleanup after the final source reference; pin replacement remains an explicit user action |

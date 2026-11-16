@@ -3,6 +3,7 @@ import Security
 
 public enum ProviderCredential: @unchecked Sendable {
     case password(String)
+    case apiKey(String)
     case clientIdentity(SecIdentity)
 }
 
@@ -88,11 +89,18 @@ public enum MonitoringActionResult: Equatable, Sendable {
 public struct ProviderDescriptor: Equatable, Sendable {
     public let id: ProviderID
     public let displayName: String
+    public let endpointExample: String
     public let capabilities: ProviderCapabilities
 
-    public init(id: ProviderID, displayName: String, capabilities: ProviderCapabilities) {
+    public init(
+        id: ProviderID,
+        displayName: String,
+        endpointExample: String = "",
+        capabilities: ProviderCapabilities
+    ) {
         self.id = id
         self.displayName = displayName
+        self.endpointExample = endpointExample
         self.capabilities = capabilities
     }
 }
@@ -178,7 +186,13 @@ public struct ProviderRegistry: Sendable {
     }
 
     public static func builtIn() -> ProviderRegistry {
-        let provider = Icinga2Provider()
-        return ProviderRegistry(indexedProviders: [provider.descriptor.id: provider])
+        let icinga = Icinga2Provider()
+        let thruk = ThrukProvider()
+        return ProviderRegistry(
+            indexedProviders: [
+                icinga.descriptor.id: icinga,
+                thruk.descriptor.id: thruk,
+            ]
+        )
     }
 }

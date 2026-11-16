@@ -1,5 +1,4 @@
 import Foundation
-import Network
 
 public struct Icinga2Provider: MonitoringProvider {
     public static let id = ProviderID(rawValue: "icinga2")
@@ -10,6 +9,7 @@ public struct Icinga2Provider: MonitoringProvider {
     public let descriptor = ProviderDescriptor(
         id: Icinga2Provider.id,
         displayName: "Icinga 2",
+        endpointExample: "https://icinga.example:5665",
         capabilities: ProviderCapabilities(
             authenticationMethods: [.basic, .clientCertificate],
             serverTrustMethods: [.system, .customCertificate, .pinnedCertificate, .disabled],
@@ -85,6 +85,10 @@ public struct Icinga2Provider: MonitoringProvider {
     public func validate(_ source: MonitoringSource) -> [SourceValidationIssue] {
         var issues = MonitoringSourceValidator.validateSharedFields(source)
         let components = URLComponents(url: source.endpoint, resolvingAgainstBaseURL: false)
+
+        if !descriptor.capabilities.authenticationMethods.contains(source.authentication.method) {
+            issues.append(.unsupportedAuthentication(source.authentication.method))
+        }
 
         if components?.scheme?.lowercased() == "http" {
             issues.append(.unsupportedScheme("http"))
@@ -177,10 +181,12 @@ public struct Icinga2Provider: MonitoringProvider {
                 clientIdentity: identity,
                 trustedServerCertificate: access.trustedServerCertificate
             )
-        case (.basic, .clientIdentity):
+        case (.basic, .clientIdentity), (.basic, .apiKey):
             return .failed(.authentication)
-        case (.clientCertificate, .password):
+        case (.clientCertificate, .password), (.clientCertificate, .apiKey):
             return .failed(.clientCertificateNotAvailable)
+        case (.apiKey, _):
+            return .failed(.invalidConfiguration([.unsupportedAuthentication(.apiKey)]))
         }
     }
 
@@ -205,10 +211,12 @@ public struct Icinga2Provider: MonitoringProvider {
                 clientIdentity: identity,
                 trustedServerCertificate: access.trustedServerCertificate
             )
-        case (.basic, .clientIdentity):
+        case (.basic, .clientIdentity), (.basic, .apiKey):
             return .failed(.authentication)
-        case (.clientCertificate, .password):
+        case (.clientCertificate, .password), (.clientCertificate, .apiKey):
             return .failed(.clientCertificateNotAvailable)
+        case (.apiKey, _):
+            return .failed(.invalidConfiguration([.unsupportedAuthentication(.apiKey)]))
         }
     }
 
@@ -239,10 +247,12 @@ public struct Icinga2Provider: MonitoringProvider {
                     trustedServerCertificate: access.trustedServerCertificate,
                     configuration: sessionConfiguration(for: access)
                 )
-            case (.basic, .clientIdentity):
+            case (.basic, .clientIdentity), (.basic, .apiKey):
                 return .failed(.authentication)
-            case (.clientCertificate, .password):
+            case (.clientCertificate, .password), (.clientCertificate, .apiKey):
                 return .failed(.clientCertificateNotAvailable)
+            case (.apiKey, _):
+                return .failed(.invalidConfiguration([.unsupportedAuthentication(.apiKey)]))
             }
             defer { transport.close() }
             let request = try transport.actionRequest(action, issue: issue)
@@ -267,20 +277,7 @@ public struct Icinga2Provider: MonitoringProvider {
     }
 
     private func sessionConfiguration(for access: ProviderAccess) -> URLSessionConfiguration {
-        let value = configuration.copy() as! URLSessionConfiguration
-        guard let proxy = access.socksProxy else { return value }
-        if #available(macOS 14.0, *) {
-            guard (1...65_535).contains(proxy.port),
-                  let port = NWEndpoint.Port(rawValue: UInt16(proxy.port)) else {
-                return value
-            }
-            let endpoint = NWEndpoint.hostPort(
-                host: NWEndpoint.Host(proxy.host),
-                port: port
-            )
-            value.proxyConfigurations = [ProxyConfiguration(socksv5Proxy: endpoint)]
-        }
-        return value
+        configuration.routed(through: access.socksProxy)
     }
 }
 

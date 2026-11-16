@@ -55,6 +55,41 @@ final class KeychainPasswordVaultTests: XCTestCase {
         try await vault.deletePassword(for: secondScope)
     }
 
+    func testRealKeychainAPIKeyLifecycleIsSeparateFromBasicPassword() async throws {
+        let sourceID = UUID()
+        let basicSource = source(id: sourceID, account: "operator")
+        let apiKeySource = MonitoringSource(
+            id: sourceID,
+            name: "Thruk",
+            providerID: ThrukProvider.id,
+            endpoint: URL(string: "https://keychain-test.invalid/thruk/r/v1")!,
+            authentication: .apiKey(username: "automation")
+        )
+        let basicScope = try BasicCredentialScope(source: basicSource)
+        let apiKeyScope = try APIKeyCredentialScope(source: apiKeySource)
+        let vault = KeychainPasswordVault(keychainContext: testKeychain.context)
+        addTeardownBlock {
+            try? await vault.deletePassword(for: basicScope)
+            try? await vault.deleteAPIKey(for: apiKeyScope)
+        }
+
+        try await vault.store("basic-secret", for: basicScope)
+        try await vault.store("api-key-secret", for: apiKeyScope)
+
+        let storedPassword = try await vault.password(for: basicScope)
+        let storedAPIKey = try await vault.apiKey(for: apiKeyScope)
+        let containsAPIKey = try await vault.containsAPIKey(for: apiKeyScope)
+        XCTAssertEqual(storedPassword, "basic-secret")
+        XCTAssertEqual(storedAPIKey, "api-key-secret")
+        XCTAssertTrue(containsAPIKey)
+
+        try await vault.deleteAPIKey(for: apiKeyScope)
+        let deletedAPIKey = try await vault.apiKey(for: apiKeyScope)
+        let retainedPassword = try await vault.password(for: basicScope)
+        XCTAssertNil(deletedAPIKey)
+        XCTAssertEqual(retainedPassword, "basic-secret")
+    }
+
     func testForeignLegacyCredentialFailsWithoutRequestingItsSecret() async throws {
         let source = source(id: UUID(), account: "foreign-operator")
         let scope = try BasicCredentialScope(source: source)
@@ -111,6 +146,19 @@ final class KeychainPasswordVaultTests: XCTestCase {
 
         XCTAssertThrowsError(try BasicCredentialScope(source: source)) { error in
             XCTAssertEqual(error as? CredentialScopeError, .basicAuthenticationRequired)
+        }
+    }
+
+    func testAPIKeyScopeRequiresAPIKeyAuthentication() {
+        let source = MonitoringSource(
+            name: "Basic",
+            providerID: ThrukProvider.id,
+            endpoint: URL(string: "https://keychain-test.invalid/thruk/r/v1")!,
+            authentication: .basic(username: "operator")
+        )
+
+        XCTAssertThrowsError(try APIKeyCredentialScope(source: source)) { error in
+            XCTAssertEqual(error as? CredentialScopeError, .apiKeyAuthenticationRequired)
         }
     }
 

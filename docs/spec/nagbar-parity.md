@@ -16,19 +16,19 @@ notification journeys remain release blockers rather than deliberate omissions.
 | Multiple monitoring sources | Done | Done | Independent credentials, refresh, stale state, and failure reporting. |
 | Icinga 2 API | Done | Done | First fully supported provider and current compatibility baseline. |
 | Issue row details | Done | Mostly done | Always show source, host, service, state, state duration, check attempt, first output line, acknowledgement, and downtime. Add check age later as a stale-data signal instead of another timestamp column. |
-| Nagios Core and Icinga Classic | Done | Missing | Add a complete compatibility slice without reviving the original app's brittle HTML parser. Direct Icinga Classic support may be covered through Thruk where available. |
-| Thruk | Done | Missing | Implement the documented REST API first. It covers multiple Nagios-compatible backends and supports the required commands without HTML scraping. |
+| Nagios Core and Icinga Classic | Done | Partial through Thruk | Thruk-backed installations use its documented REST API. Direct legacy support still needs a complete compatibility slice without reviving the original app's brittle HTML parser. |
+| Thruk | Done | Implemented, real-system verification open | The REST adapter owns discovery, Basic and API-key authentication, snapshots, commands, and web links. It is not release-qualified until a real installation passes. |
 | Checkmk | Done | Missing | Implement a versioned Checkmk adapter with explicit API-version compatibility and token support. |
 | Text search | Partial | Done | Keep search in the panel's first row and match display name, host, output, and source. |
 | State and property filters | Done | Done | Persist the compact source, severity, and coverage filters. Do not reproduce NagBar's large filter matrix. |
-| Acknowledge, recheck, and downtime | Done | Done for Icinga 2 | Provider capabilities expose the supported commands. Acknowledgement and downtime require explicit input; every confirmed command refreshes its source. |
-| Open object in monitoring web UI | Done | Done for Icinga 2 | A row click opens the provider-built object URL. The API host supplies the default Icinga Web address, while each source may override it. Classic Monitoring and Icinga DB Web routes are supported. |
+| Acknowledge, recheck, and downtime | Done | Implemented for Icinga 2 and Thruk | Provider capabilities expose the supported commands. Acknowledgement and downtime require explicit input; every confirmed command refreshes its source. |
+| Open object in monitoring web UI | Done | Implemented for Icinga 2 and Thruk | A row click opens the provider-built object URL. Each source may override the provider default. |
 | SSH and RDP target actions | Done | Done | Keep them optional per source and use the operating system's registered URL handlers. |
 | SSH port forwarding | Partial | Done for API and reachability checks, plus HTTP web targets | Try direct first, then reuse one source-owned OpenSSH SOCKS5 session. API TLS keeps its original hostname. External-browser HTTPS remains direct-only because rewriting the hostname would invalidate certificate identity checks. |
 | Native notifications | Done | Planned | Quiet defaults, per-source severity policy, deduplication, and recovery behavior. |
 | Audible alarms and status flashing | Done | Dismissed | They create noise and accessibility problems. Native notifications are the replacement. |
 | Configurable refresh interval | Done | Partial | IssueLight owns one conservative refresh loop. A small preset choice is reasonable only if measured deployments need it. |
-| Keychain credentials | Partial | Done | Passwords and identity references remain in macOS Keychain. Public source JSON contains no secrets. |
+| Keychain credentials | Partial | Done | Passwords, API keys, and identity references remain in macOS Keychain. Public source JSON contains no secrets. |
 | TLS verification controls | Partial | Done | System trust by default, private CA, exact leaf pin, and an explicit per-source insecure mode. |
 | Protected mTLS private keys | Partial | Partial | Normal mTLS, non-interactive lookup, locked-Keychain skipping, and prompt-free test isolation pass. Deterministic installed-app denial during protected-key signing remains open. |
 | Stale and partial failure state | Partial | Done | Keep the last successful snapshot and identify the failing source instead of replacing status with one global error. |
@@ -39,11 +39,11 @@ notification journeys remain release blockers rather than deliberate omissions.
 
 ## Current parity conclusion
 
-IssueLight covers NagBar's central Icinga 2 monitoring, navigation, filtering,
-remote-login, and operator-action journeys and improves multiple-source
-isolation, failure handling, credential storage, and TLS trust. It is not
-functionally equivalent to NagBar today because notifications and four legacy
-provider families are absent.
+IssueLight covers NagBar's central Icinga 2 journey and implements the same
+provider-neutral journey for Thruk. It improves multiple-source isolation,
+failure handling, credential storage, and TLS trust. It is not functionally
+equivalent to NagBar today because notifications, direct Nagios Core, Checkmk,
+and real-system Thruk qualification are still absent.
 
 Claiming full parity or production readiness before those capabilities exist
 would be inaccurate.
@@ -52,8 +52,7 @@ would be inaccurate.
 
 1. Close the protected-key and signed-app verification gaps without weakening
    background security.
-2. Add Thruk as the second complete provider slice and use it to validate the
-   existing provider boundary.
+2. Qualify the Thruk adapter against a pinned real installation.
 3. Add Nagios Core and Checkmk without introducing a binary plug-in SDK.
 4. Add quiet native notifications with deduplication and recovery semantics.
 

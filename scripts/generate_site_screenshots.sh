@@ -23,6 +23,9 @@ xcodebuild build-for-testing \
     CODE_SIGNING_ALLOWED=NO
 
 test_bundle="$derived_data/Build/Products/Debug/IssueLightModelTests.xctest"
+ditto \
+    "$derived_data/Build/Products/Debug/Sparkle.framework" \
+    "$derived_data/Build/Products/Debug/PackageFrameworks/Sparkle.framework"
 ISSUELIGHT_SCREENSHOT_OUTPUT_DIR="$output_directory" \
     xcrun xctest \
     -XCTest IssueLightModelTests.LandingPageScreenshotTests/testLandingPageScreenshotsRenderFromProductionViews \

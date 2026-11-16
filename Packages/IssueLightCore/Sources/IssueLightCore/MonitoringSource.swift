@@ -10,12 +10,15 @@ public struct ProviderID: RawRepresentable, Codable, Hashable, Sendable {
 
 public enum AuthenticationConfiguration: Codable, Equatable, Sendable {
     case basic(username: String)
+    case apiKey(username: String)
     case clientCertificate(identityID: String)
 
     public var method: AuthenticationMethod {
         switch self {
         case .basic:
             return .basic
+        case .apiKey:
+            return .apiKey
         case .clientCertificate:
             return .clientCertificate
         }
@@ -24,6 +27,7 @@ public enum AuthenticationConfiguration: Codable, Equatable, Sendable {
 
 public enum AuthenticationMethod: String, Codable, CaseIterable, Sendable {
     case basic
+    case apiKey
     case clientCertificate
 }
 
@@ -284,6 +288,8 @@ public enum MonitoringSourceValidator {
             } else if username.contains(":") {
                 issues.append(.invalidUsername)
             }
+        case .apiKey:
+            break
         case .clientCertificate(let identityID):
             if identityID.isEmpty {
                 issues.append(.missingClientIdentity)

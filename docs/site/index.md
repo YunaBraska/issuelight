@@ -1,19 +1,19 @@
 ---
 layout: default
-title: Attention-first Icinga monitoring
-description: IssueLight keeps Icinga 2 problems in the macOS menu bar and stays quiet when everything is healthy.
+title: Attention-first infrastructure monitoring
+description: IssueLight keeps infrastructure problems in the macOS menu bar and stays quiet when everything is healthy.
 ---
 
 <section class="hero shell">
   <div class="hero-copy">
-    <p class="eyebrow"><span></span>Icinga 2, without the dashboard detour</p>
+    <p class="eyebrow"><span></span>Icinga 2 and Thruk, without the dashboard detour</p>
     <h1>See what needs you. Ignore the rest.</h1>
     <p class="lead">IssueLight turns monitoring state into a small, native macOS signal. Healthy systems stay out of the way. Problems arrive ordered by attention, across every source you configured.</p>
     <div class="actions">
       <a class="button" href="{{ '/install.html' | relative_url }}">Build IssueLight</a>
       <a class="button secondary" href="{{ site.repository }}">View the source</a>
     </div>
-    <p class="release-note"><span>Open-source preview</span> macOS 14+ · Icinga 2 first</p>
+    <p class="release-note"><span>Open-source preview</span> macOS 14+ · Icinga 2 baseline · Thruk preview</p>
   </div>
   <figure class="hero-shot app-window">
     <div class="window-bar"><span></span><span></span><span></span><strong>Menu bar status</strong></div>
@@ -73,10 +73,10 @@ description: IssueLight keeps Icinga 2 problems in the macOS menu bar and stays 
     <h2>Real infrastructure deserves real trust controls.</h2>
     <p>Credentials belong in macOS Keychain. Certificate verification stays enabled unless you make a source-specific exception.</p>
     <ul class="check-list">
-      <li><strong>Authentication</strong><span>Basic credentials or a selected client certificate.</span></li>
+      <li><strong>Authentication</strong><span>Basic credentials, Thruk API keys or a selected client certificate.</span></li>
       <li><strong>Server trust</strong><span>macOS system trust, a private CA or an exact server-certificate pin.</span></li>
       <li><strong>Homelab escape hatch</strong><span>Certificate verification can be disabled per source, with an explicit warning.</span></li>
-      <li><strong>No secret config files</strong><span>Source records keep references. Passwords and private keys stay in Keychain.</span></li>
+      <li><strong>No secret config files</strong><span>Source records keep references. Passwords, API keys and private keys stay in Keychain.</span></li>
     </ul>
   </div>
 </section>
@@ -104,13 +104,13 @@ description: IssueLight keeps Icinga 2 problems in the macOS menu bar and stays 
 <section class="section shell scope-section">
   <div class="section-heading">
     <p class="eyebrow"><span></span>Scope you can reason about</p>
-    <h2>Icinga 2 first. Provider-neutral where it matters.</h2>
-    <p>The currently supported provider is Icinga 2. Provider-specific transport, authentication and decoding stop at a small core boundary. Nagios Core, Thruk and Checkmk still need complete adapters before IssueLight can claim NagBar compatibility.</p>
+    <h2>Icinga 2 baseline. Thruk as the second adapter.</h2>
+    <p>Icinga 2 is the current compatibility baseline. Thruk now crosses the same provider boundary with its documented REST API, Basic authentication and API keys. The Thruk adapter still needs a real-system qualification run. Direct Nagios Core and Checkmk adapters remain open.</p>
   </div>
   <div class="scope-grid">
     <div><strong>Available now</strong><p>Multiple sources, refresh, attention ordering, strict TLS options, Keychain credentials, recheck, acknowledgement, fixed downtime and stale-state retention.</p></div>
-    <div><strong>Still required</strong><p>Native notifications and the Nagios Core, Thruk and Checkmk providers remain production blockers. Icinga Web deep links are already implemented.</p></div>
-    <div><strong>Release status</strong><p>The code is public and the release path is tested. A notarized public binary is not available yet, so this page does not pretend otherwise.</p></div>
+    <div><strong>Still required</strong><p>Native notifications, real-system Thruk qualification, and direct Nagios Core and Checkmk providers remain production blockers. Provider-built web deep links are implemented.</p></div>
+    <div><strong>Release status</strong><p>The code is public and the unsigned packaging path is tested. A notarized public binary is not available yet, so this page does not pretend otherwise.</p></div>
   </div>
 </section>
 

@@ -264,7 +264,7 @@ final class IssueLightModelTests: XCTestCase {
         harness.model.name = "New source"
         harness.model.endpoint = "https://new-source.example.test"
         harness.model.username = "operator"
-        harness.model.password = "test-only-new-password"
+        harness.model.credentialSecret = "test-only-new-password"
         XCTAssertTrue(harness.model.hasUnsavedChanges)
         let sourcesBeforeSave = try await harness.store.load()
         XCTAssertEqual(sourcesBeforeSave, harness.sources)
@@ -320,7 +320,7 @@ final class IssueLightModelTests: XCTestCase {
         harness.model.beginAddingSource()
         harness.model.endpoint = "https://draft.example.test:5665"
         harness.model.username = ""
-        harness.model.password = "not-stored"
+        harness.model.credentialSecret = "not-stored"
 
         await harness.model.save()
 
@@ -330,7 +330,7 @@ final class IssueLightModelTests: XCTestCase {
         let storedPassword = try await harness.vault.password(for: scope)
         XCTAssertFalse(draft.isEnabled)
         XCTAssertNil(storedPassword)
-        XCTAssertEqual(harness.model.password, "not-stored")
+        XCTAssertEqual(harness.model.credentialSecret, "not-stored")
     }
 
     func testSavingDraftRemovesEmbeddedURLCredentialsFromPublicConfiguration() async throws {
@@ -466,7 +466,7 @@ final class IssueLightModelTests: XCTestCase {
         harness.model.beginAddingSource()
         harness.model.endpoint = "monitoring-discovery.example.test/v2/"
         harness.model.username = "operator"
-        harness.model.password = "test-only-password"
+        harness.model.credentialSecret = "test-only-password"
 
         await harness.model.testConnection()
 
@@ -509,7 +509,7 @@ final class IssueLightModelTests: XCTestCase {
         let sourceID = try XCTUnwrap(harness.model.selectedSourceID)
         harness.model.endpoint = "https://127.0.0.1:5665/v1"
         harness.model.serverTrustChoice = .disabled
-        harness.model.password = "test-only-password-1"
+        harness.model.credentialSecret = "test-only-password-1"
 
         await harness.model.testConnection()
         let testedTrust = await script.lastConnectionTrust(for: sourceID)
@@ -588,8 +588,66 @@ final class IssueLightModelTests: XCTestCase {
         XCTAssertEqual(harness.model.name, "Source 2")
         XCTAssertEqual(harness.model.endpoint, harness.sources[1].endpoint.absoluteString)
         XCTAssertEqual(harness.model.username, "operator-2")
-        XCTAssertTrue(harness.model.hasStoredBasicPassword)
+        XCTAssertTrue(harness.model.hasStoredCredentialSecret)
         XCTAssertFalse(harness.model.hasUnsavedChanges)
+    }
+
+    func testThrukAPIKeyCanBeSavedLoadedAndDeletedWithoutNetworkAccess() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("IssueLightThrukModelTests-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let store = SourceStore(fileURL: directory.appendingPathComponent("sources.json"))
+        let vault = KeychainPasswordVault(keychainContext: testKeychain.context)
+        let model = IssueLightModel(
+            sourceStore: store,
+            providerRegistry: .builtIn(),
+            passwordVault: vault,
+            identityCatalog: KeychainIdentityCatalog(),
+            certificateCatalog: certificateCatalog(),
+            startsAutomatically: false,
+            localizationLocale: Locale(identifier: "de")
+        )
+        addTeardownBlock {
+            try? FileManager.default.removeItem(at: directory)
+        }
+
+        model.beginAddingSource()
+        model.selectedProviderID = ThrukProvider.id
+        model.authenticationChoice = .apiKey
+        model.name = "Thruk Production"
+        model.endpoint = "https://monitoring.example.test/thruk/r/v1"
+        model.username = "automation"
+        model.credentialSecret = "test-only-api-key"
+        model.isSourceEnabled = false
+        await model.save()
+
+        let persistedSources = try await store.load()
+        let source = try XCTUnwrap(persistedSources.first)
+        let scope = try APIKeyCredentialScope(source: source)
+        addTeardownBlock {
+            try? await vault.deleteAPIKey(for: scope)
+        }
+        let storedAPIKey = try await vault.apiKey(for: scope)
+        let persistedConfiguration = try Data(
+            contentsOf: directory.appendingPathComponent("sources.json")
+        )
+        XCTAssertEqual(source.authentication, .apiKey(username: "automation"))
+        XCTAssertEqual(storedAPIKey, "test-only-api-key")
+        XCTAssertFalse(
+            String(decoding: persistedConfiguration, as: UTF8.self)
+                .contains("test-only-api-key")
+        )
+        XCTAssertEqual(model.authenticationChoices, [.basic, .apiKey])
+        XCTAssertTrue(model.hasStoredCredentialSecret)
+
+        await model.selectSource(id: source.id)
+        XCTAssertEqual(model.authenticationChoice, .apiKey)
+        XCTAssertEqual(model.username, "automation")
+        XCTAssertTrue(model.hasStoredCredentialSecret)
+
+        await model.deleteSource()
+        let deletedAPIKey = try await vault.apiKey(for: scope)
+        XCTAssertNil(deletedAPIKey)
     }
 
     func testSelectingPinnedSourceLoadsReviewedFingerprint() async throws {

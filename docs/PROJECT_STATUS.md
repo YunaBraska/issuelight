@@ -5,12 +5,13 @@ IssueLight is pre-production. It is not yet a complete NagBar successor.
 ## Implemented
 
 - Native macOS menu-bar status with severity counters and issue rows.
-- Multiple independently refreshed Icinga 2 sources.
-- Basic authentication and mTLS identities from macOS Keychain.
+- Multiple independently refreshed Icinga 2 and Thruk sources.
+- Basic authentication, Thruk API keys, and mTLS identities from macOS
+  Keychain. Passwords and API keys have separate source-scoped entries.
 - System trust, source-specific private CA trust, exact certificate pinning,
   and an explicit per-source certificate-verification bypass.
-- Recheck, acknowledgement, and fixed downtime through the Icinga 2 action
-  API. Acknowledgement and downtime require an author and comment.
+- Recheck, acknowledgement, and fixed downtime through the Icinga 2 and Thruk
+  action APIs. Acknowledgement and downtime require an author and comment.
 - Compact single-line issue rows with source names, persistent source/severity/
   coverage filters, direct quick actions, and Icinga Web row navigation.
 - Optional SSH and RDP host actions plus direct-first, source-wide SSH fallback
@@ -36,11 +37,13 @@ IssueLight is pre-production. It is not yet a complete NagBar successor.
 
 ## Remaining release gates
 
-- Add complete Nagios Core, Thruk, and Checkmk provider journeys. Each provider
-  needs discovery, authentication, snapshot loading, web navigation, supported
-  actions, diagnostics, and a real-system compatibility test. Thruk is the
-  next vertical slice because one adapter covers multiple Nagios-compatible
-  monitoring cores without parsing HTML.
+- Run the Thruk adapter against a real installation. Its discovery, Basic and
+  API-key authentication, snapshots, web navigation, actions, diagnostics, and
+  Keychain lifecycle pass deterministic public-boundary tests, but the adapter
+  is not release-qualified without real-system evidence.
+- Add complete direct Nagios Core and Checkmk provider journeys. A Thruk source
+  already covers Nagios-compatible backends exposed through Thruk without HTML
+  parsing.
 - Add quiet native notifications with deduplication, recovery handling, and
   per-source policy.
 - Run the installed-app protected-private-key case described in

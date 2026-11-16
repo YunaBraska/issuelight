@@ -6,12 +6,12 @@ contains no analytics, advertising, crash-reporting SDK, or telemetry.
 
 ## Data sent over the network
 
-IssueLight reads Icinga 2 host and service state from configured sources and
-can send an operator-initiated recheck, acknowledgement, or fixed downtime to
-the selected object. Action requests include the entered author and comment.
-Requests may contain the API username and password or use a selected client
-identity. The configured TLS policy applies independently to each source and
-credentials are not forwarded to another origin.
+IssueLight reads host and service state from configured Icinga 2 or Thruk
+sources and can send an operator-initiated recheck, acknowledgement, or fixed
+downtime to the selected object. Action requests include the entered author and
+comment. Requests may contain Basic credentials, a Thruk API key, or a selected
+client identity. The configured TLS policy applies independently to each source
+and credentials are not forwarded to another origin.
 
 Opening an issue can contact its configured monitoring-web host directly. If
 the optional automatic HTTP tunnel is enabled and that host is unreachable,
@@ -39,7 +39,7 @@ channel.
   selected server leaf's public SHA-256 fingerprint in this file. Optional web,
   bastion, remote-login, port, and selected SSH identity-file path settings are
   public source configuration and can reveal additional infrastructure names.
-- Passwords and client identities remain in macOS Keychain. Source
+- Passwords, API keys, and client identities remain in macOS Keychain. Source
   configuration stores references, not secret values or private keys.
 - Imported private CA certificates are public certificates stored in Keychain.
   IssueLight removes a certificate automatically only when the same app
@@ -49,10 +49,10 @@ channel.
   macOS preferences. System Default stores no inferred language profile and
   follows the current macOS app language.
 
-Removing a source removes its saved Basic password. Client identities and
-shared or externally managed certificates remain in Keychain because other
-applications or sources may use them. They can be reviewed and removed with
-Keychain Access.
+Removing a source removes its saved Basic password or API key. Client
+identities and shared or externally managed certificates remain in Keychain
+because other applications or sources may use them. They can be reviewed and
+removed with Keychain Access.
 
 ## Diagnostics and issue reports
 

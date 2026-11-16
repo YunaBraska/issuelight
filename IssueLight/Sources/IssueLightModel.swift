@@ -6,6 +6,7 @@ import Security
 final class IssueLightModel: ObservableObject {
     enum AuthenticationChoice: String, CaseIterable, Identifiable {
         case basic
+        case apiKey
         case clientCertificate
 
         var id: String { rawValue }
@@ -14,6 +15,8 @@ final class IssueLightModel: ObservableObject {
             switch self {
             case .basic:
                 return AppLocalization.string("Benutzername & Passwort", locale: locale)
+            case .apiKey:
+                return AppLocalization.string("API-Schlüssel", locale: locale)
             case .clientCertificate:
                 return AppLocalization.string("Client-Zertifikat", locale: locale)
             }
@@ -23,6 +26,8 @@ final class IssueLightModel: ObservableObject {
             switch self {
             case .basic:
                 return .basic
+            case .apiKey:
+                return .apiKey
             case .clientCertificate:
                 return .clientCertificate
             }
@@ -143,11 +148,11 @@ final class IssueLightModel: ObservableObject {
     }
     @Published var authenticationChoice = AuthenticationChoice.basic
     @Published var username = ""
-    @Published var password = ""
+    @Published var credentialSecret = ""
     @Published var selectedIdentityID = ""
     @Published var identities: [ClientIdentityDescriptor] = []
     @Published private(set) var identityLoadError: String?
-    @Published private(set) var hasStoredBasicPassword = false
+    @Published private(set) var hasStoredCredentialSecret = false
     @Published var serverTrustChoice = ServerTrustChoice.system
     @Published private(set) var selectedServerCertificate: ServerCertificateDescriptor?
     @Published private(set) var pinnedServerCertificateSHA256 = ""
@@ -212,7 +217,7 @@ final class IssueLightModel: ObservableObject {
     }
 
     var hasUnsavedChanges: Bool {
-        if !password.isEmpty { return true }
+        if !credentialSecret.isEmpty { return true }
         guard let selectedSource else {
             return !name.isEmpty
                 || !endpoint.isEmpty
@@ -227,6 +232,8 @@ final class IssueLightModel: ObservableObject {
         switch authenticationChoice {
         case .basic:
             authentication = .basic(username: username)
+        case .apiKey:
+            authentication = .apiKey(username: username)
         case .clientCertificate:
             authentication = .clientCertificate(identityID: selectedIdentityID)
         }
@@ -273,6 +280,10 @@ final class IssueLightModel: ObservableObject {
     var providerDisplayName: String {
         providerRegistry.provider(for: selectedProviderID)?.descriptor.displayName
             ?? selectedProviderID.rawValue
+    }
+
+    var endpointPrompt: String {
+        providerRegistry.provider(for: selectedProviderID)?.descriptor.endpointExample ?? ""
     }
 
     var authenticationChoices: [AuthenticationChoice] {
@@ -493,6 +504,8 @@ final class IssueLightModel: ObservableObject {
         switch selectedSource.authentication {
         case .basic:
             credentialMessage = localized("Die Konfiguration und das zugehörige Basic-Passwort werden von diesem Mac entfernt.")
+        case .apiKey:
+            credentialMessage = localized("Die Konfiguration und der zugehörige API-Schlüssel werden von diesem Mac entfernt.")
         case .clientCertificate:
             credentialMessage = localized("Die Konfiguration wird entfernt. Das Client-Zertifikat bleibt im macOS-Schlüsselbund.")
         }
@@ -631,26 +644,21 @@ final class IssueLightModel: ObservableObject {
         activity = .working(localized("Quelle wird geladen …"))
         selectedSourceID = source.id
         apply(source)
-        password = ""
+        credentialSecret = ""
         do {
-            let hasPassword: Bool
-            if case .basic = source.authentication {
-                hasPassword = try await passwordVault.containsPassword(for: BasicCredentialScope(source: source))
-            } else {
-                hasPassword = false
-            }
+            let hasCredential = try await containsStoredCredential(for: source)
             guard selectedSourceID == source.id else { return }
-            hasStoredBasicPassword = hasPassword
+            hasStoredCredentialSecret = hasCredential
         } catch KeychainPasswordVaultError.interactionNotAllowed {
             guard selectedSourceID == source.id else { return }
-            hasStoredBasicPassword = false
+            hasStoredCredentialSecret = false
             activity = .failure(
-                localized("macOS gibt diesen Schlüsselbund-Eintrag nicht ohne Nachfrage frei. Gib das Passwort in der Quelle erneut ein.")
+                localized("macOS gibt diesen Schlüsselbund-Eintrag nicht ohne Nachfrage frei. Gib das Geheimnis in der Quelle erneut ein.")
             )
         } catch {
             guard selectedSourceID == source.id else { return }
-            hasStoredBasicPassword = false
-            activity = .failure(localized("Das gespeicherte Passwort konnte nicht aus dem Schlüsselbund gelesen werden."))
+            hasStoredCredentialSecret = false
+            activity = .failure(localized("Die gespeicherten Zugangsdaten konnten nicht aus dem Schlüsselbund gelesen werden."))
         }
 
         do {
@@ -686,9 +694,9 @@ final class IssueLightModel: ObservableObject {
         selectedProviderID = providerRegistry.descriptors.first?.id ?? ProviderID(rawValue: "")
         authenticationChoice = authenticationChoices.first ?? .basic
         username = ""
-        password = ""
+        credentialSecret = ""
         selectedIdentityID = ""
-        hasStoredBasicPassword = false
+        hasStoredCredentialSecret = false
         serverTrustChoice = .system
         selectedServerCertificate = nil
         pinnedServerCertificateSHA256 = ""
@@ -727,13 +735,15 @@ final class IssueLightModel: ObservableObject {
             }
             finalSource = source
 
-            var allowsStoredPassword = true
-            if case .basic = source.authentication {
-                let requestedScope = try? BasicCredentialScope(source: source)
-                let selectedScope = try? basicCredentialScope(for: selectedSource)
-                allowsStoredPassword = requestedScope != nil && requestedScope == selectedScope
-                if password.isEmpty && !allowsStoredPassword {
-                    let detail = localized("Gib ein Passwort ein.")
+            var allowsStoredCredential = true
+            if source.authentication.method != .clientCertificate {
+                let requestedScope = try? credentialScope(for: source)
+                let selectedScope = try? credentialScope(for: selectedSource)
+                allowsStoredCredential = requestedScope != nil && requestedScope == selectedScope
+                if credentialSecret.isEmpty && !allowsStoredCredential {
+                    let detail = source.authentication.method == .apiKey
+                        ? localized("Gib einen API-Schlüssel ein.")
+                        : localized("Gib ein Passwort ein.")
                     connectionAttempts.append(
                         ConnectionAttempt(
                             endpoint: candidate.absoluteString,
@@ -757,8 +767,8 @@ final class IssueLightModel: ObservableObject {
 
             let accessResolution = await accessResolver.resolve(
                 source: source,
-                passwordOverride: password,
-                allowsStoredPassword: allowsStoredPassword,
+                credentialOverride: credentialSecret,
+                allowsStoredCredential: allowsStoredCredential,
                 keychainInteraction: .allow
             )
             guard connectionTestID == testedSourceID else { return }
@@ -898,16 +908,16 @@ final class IssueLightModel: ObservableObject {
         activity = .working(localized("Quelle wird gespeichert …"))
         let previousSource = selectedSource
         let configurationIssues = provider.validate(source)
-        let previousScope = try? basicCredentialScope(for: previousSource)
-        let newScope = try? basicCredentialScope(for: source)
+        let previousScope = try? credentialScope(for: previousSource)
+        let newScope = try? credentialScope(for: source)
         var credentialReady: Bool
-        var passwordStorageFailed = false
+        var credentialStorageFailed = false
 
         switch source.authentication {
-        case .basic:
+        case .basic, .apiKey:
             credentialReady = newScope != nil
                 && newScope == previousScope
-                && hasStoredBasicPassword
+                && hasStoredCredentialSecret
         case .clientCertificate(let identityID):
             credentialReady = !identityID.isEmpty
         }
@@ -918,18 +928,18 @@ final class IssueLightModel: ObservableObject {
         do {
             var persistedSources = try await sourceStore.upsert(source)
 
-            if case .basic = source.authentication,
-               !password.isEmpty,
+            if source.authentication.method != .clientCertificate,
+               !credentialSecret.isEmpty,
                configurationIssues.isEmpty,
                let newScope {
                 do {
-                    try await passwordVault.store(password, for: newScope)
+                    try await storeCredential(credentialSecret, for: newScope)
                     credentialReady = true
                     source.isEnabled = requestedEnabledState && configurationIssues.isEmpty
                     persistedSources = try await sourceStore.upsert(source)
-                    password = ""
+                    credentialSecret = ""
                 } catch {
-                    passwordStorageFailed = true
+                    credentialStorageFailed = true
                     source.isEnabled = false
                     persistedSources = try await sourceStore.upsert(source)
                 }
@@ -961,7 +971,7 @@ final class IssueLightModel: ObservableObject {
             endpoint = source.editableEndpoint
             webURL = source.web?.editableBaseURL ?? ""
             isSourceEnabled = source.isEnabled
-            hasStoredBasicPassword = credentialReady && newScope != nil
+            hasStoredCredentialSecret = credentialReady && newScope != nil
             if source.customServerCertificateID == nil {
                 selectedServerCertificate = nil
             }
@@ -969,14 +979,14 @@ final class IssueLightModel: ObservableObject {
             var cleanupFailed = false
             let changedAwayFromPreviousCredential: Bool
             switch source.authentication {
-            case .basic:
+            case .basic, .apiKey:
                 changedAwayFromPreviousCredential = credentialReady && previousScope != newScope
             case .clientCertificate:
                 changedAwayFromPreviousCredential = credentialReady
             }
             if changedAwayFromPreviousCredential, let previousScope {
                 do {
-                    try await passwordVault.deletePassword(for: previousScope)
+                    try await deleteCredential(for: previousScope)
                 } catch {
                     cleanupFailed = true
                 }
@@ -996,9 +1006,9 @@ final class IssueLightModel: ObservableObject {
                 }
             }
 
-            if passwordStorageFailed {
+            if credentialStorageFailed {
                 activity = .failure(
-                    localized("Entwurf gespeichert. Das Passwort konnte nicht im macOS-Schlüsselbund gespeichert werden; die Quelle bleibt pausiert.")
+                    localized("Entwurf gespeichert. Die Zugangsdaten konnten nicht im macOS-Schlüsselbund gespeichert werden; die Quelle bleibt pausiert.")
                 )
             } else if !configurationIssues.isEmpty || !credentialReady {
                 activity = .success(
@@ -1042,9 +1052,10 @@ final class IssueLightModel: ObservableObject {
         }
 
         var cleanupFailed = false
-        if case .basic = source.authentication {
+        if source.authentication.method != .clientCertificate,
+           let scope = try? credentialScope(for: source) {
             do {
-                try await passwordVault.deletePassword(for: BasicCredentialScope(source: source))
+                try await deleteCredential(for: scope)
             } catch {
                 cleanupFailed = true
             }
@@ -1069,6 +1080,8 @@ final class IssueLightModel: ObservableObject {
             switch source.authentication {
             case .basic:
                 message = localized("Quelle und gespeichertes Basic-Passwort wurden entfernt.")
+            case .apiKey:
+                message = localized("Quelle und gespeicherter API-Schlüssel wurden entfernt.")
             case .clientCertificate:
                 message = localized("Quelle entfernt. Das Client-Zertifikat bleibt im macOS-Schlüsselbund.")
             }
@@ -1210,6 +1223,8 @@ final class IssueLightModel: ObservableObject {
         switch authenticationChoice {
         case .basic:
             authentication = .basic(username: username)
+        case .apiKey:
+            authentication = .apiKey(username: username)
         case .clientCertificate:
             authentication = .clientCertificate(identityID: selectedIdentityID)
         }
@@ -1273,9 +1288,44 @@ final class IssueLightModel: ObservableObject {
         return source
     }
 
-    private func basicCredentialScope(for source: MonitoringSource?) throws -> BasicCredentialScope? {
-        guard let source, case .basic = source.authentication else { return nil }
-        return try BasicCredentialScope(source: source)
+    private func credentialScope(for source: MonitoringSource?) throws -> StoredCredentialScope? {
+        guard let source else { return nil }
+        switch source.authentication {
+        case .basic:
+            return .basic(try BasicCredentialScope(source: source))
+        case .apiKey:
+            return .apiKey(try APIKeyCredentialScope(source: source))
+        case .clientCertificate:
+            return nil
+        }
+    }
+
+    private func containsStoredCredential(for source: MonitoringSource) async throws -> Bool {
+        guard let scope = try credentialScope(for: source) else { return false }
+        switch scope {
+        case .basic(let basicScope):
+            return try await passwordVault.containsPassword(for: basicScope)
+        case .apiKey(let apiKeyScope):
+            return try await passwordVault.containsAPIKey(for: apiKeyScope)
+        }
+    }
+
+    private func storeCredential(_ secret: String, for scope: StoredCredentialScope) async throws {
+        switch scope {
+        case .basic(let basicScope):
+            try await passwordVault.store(secret, for: basicScope)
+        case .apiKey(let apiKeyScope):
+            try await passwordVault.store(secret, for: apiKeyScope)
+        }
+    }
+
+    private func deleteCredential(for scope: StoredCredentialScope) async throws {
+        switch scope {
+        case .basic(let basicScope):
+            try await passwordVault.deletePassword(for: basicScope)
+        case .apiKey(let apiKeyScope):
+            try await passwordVault.deleteAPIKey(for: apiKeyScope)
+        }
     }
 
     private func startRefreshLoop() {
@@ -1354,6 +1404,9 @@ final class IssueLightModel: ObservableObject {
         switch source.authentication {
         case .basic(let storedUsername):
             authenticationChoice = .basic
+            username = storedUsername
+        case .apiKey(let storedUsername):
+            authenticationChoice = .apiKey
             username = storedUsername
         case .clientCertificate(let identityID):
             authenticationChoice = .clientCertificate
@@ -1659,6 +1712,10 @@ final class IssueLightModel: ObservableObject {
             return localized("Das Passwort ist nicht mehr im Schlüsselbund verfügbar.")
         case .passwordAccessFailed:
             return localized("macOS gibt das Passwort im Hintergrund nicht ohne Nachfrage frei. Öffne die Quelle und gib es erneut ein.")
+        case .apiKeyNotAvailable:
+            return localized("Der API-Schlüssel ist nicht mehr im Schlüsselbund verfügbar.")
+        case .apiKeyAccessFailed:
+            return localized("macOS gibt den API-Schlüssel im Hintergrund nicht frei. Öffne die Quelle und gib ihn erneut ein.")
         case .clientIdentityNotAvailable:
             return localized("Das Client-Zertifikat ist nicht mehr im Schlüsselbund verfügbar.")
         case .clientIdentityAccessFailed:
@@ -1725,6 +1782,11 @@ final class IssueLightModel: ObservableObject {
             return localized("Die Aktualisierung wurde abgebrochen.")
         }
     }
+}
+
+private enum StoredCredentialScope: Equatable {
+    case basic(BasicCredentialScope)
+    case apiKey(APIKeyCredentialScope)
 }
 
 private func urlInputWithoutEmbeddedCredentials(_ value: String) -> String {

@@ -10,6 +10,10 @@ final class LandingPageScreenshotTests: XCTestCase {
             for: sourceSetupView,
             size: CGSize(width: 820, height: 600)
         )
+        let thrukSourceData = try NativeViewRenderer.pngData(
+            for: thrukSourceSetupView,
+            size: CGSize(width: 820, height: 600)
+        )
         let menuItemData = try NativeViewRenderer.pngData(
             for: menuItemStatesView,
             size: CGSize(width: 540, height: 92)
@@ -44,6 +48,7 @@ final class LandingPageScreenshotTests: XCTestCase {
         )
 
         XCTAssertGreaterThan(sourceData.count, 50_000)
+        XCTAssertGreaterThan(thrukSourceData.count, 50_000)
         XCTAssertGreaterThan(menuItemData.count, 4_000)
         XCTAssertGreaterThan(germanMenuData.count, 10_000)
         XCTAssertGreaterThan(swedishMenuData.count, 10_000)
@@ -111,6 +116,29 @@ final class LandingPageScreenshotTests: XCTestCase {
         model.endpoint = "https://icinga.example:5665"
         model.username = "monitoring-reader"
         model.authenticationChoice = .basic
+        model.serverTrustChoice = .system
+        return SourceSetupView(model: model)
+            .environment(\.locale, Locale(identifier: "de_DE"))
+            .environment(\.colorScheme, .light)
+    }
+
+    private var thrukSourceSetupView: some View {
+        let model = IssueLightModel(
+            sourceStore: nil,
+            providerRegistry: .builtIn(),
+            passwordVault: KeychainPasswordVault(),
+            identityCatalog: KeychainIdentityCatalog(),
+            certificateCatalog: KeychainServerCertificateCatalog(
+                ownershipScope: "berlin.yuna.issuelight.thruk-screenshot-tests"
+            ),
+            startsAutomatically: false
+        )
+        model.beginAddingSource()
+        model.selectedProviderID = ThrukProvider.id
+        model.name = "Operations"
+        model.endpoint = "monitoring.example/thruk"
+        model.authenticationChoice = .apiKey
+        model.username = "automation"
         model.serverTrustChoice = .system
         return SourceSetupView(model: model)
             .environment(\.locale, Locale(identifier: "de_DE"))
