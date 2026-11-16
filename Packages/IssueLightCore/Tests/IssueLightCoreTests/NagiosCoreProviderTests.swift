@@ -173,8 +173,14 @@ final class NagiosCoreProviderTests: XCTestCase {
         let queries = recorder.requests.compactMap {
             URLComponents(url: $0.url!, resolvingAgainstBaseURL: false)?.queryItems
         }
-        XCTAssertEqual(queries[0].first(where: { $0.name == "hoststatus" })?.value, "down unreachable")
-        XCTAssertEqual(queries[1].first(where: { $0.name == "servicestatus" })?.value, "warning unknown critical")
+        let hostQuery = queries.first {
+            $0.contains(where: { $0.name == "query" && $0.value == "hostlist" })
+        }
+        let serviceQuery = queries.first {
+            $0.contains(where: { $0.name == "query" && $0.value == "servicelist" })
+        }
+        XCTAssertEqual(hostQuery?.first(where: { $0.name == "hoststatus" })?.value, "down unreachable")
+        XCTAssertEqual(serviceQuery?.first(where: { $0.name == "servicestatus" })?.value, "warning unknown critical")
     }
 
     func testSnapshotIgnoresHealthyAndPendingObjectsAndRejectsFailedResults() async {
