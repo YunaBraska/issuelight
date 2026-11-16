@@ -1,12 +1,11 @@
+import Foundation
 import SwiftUI
 
-enum IssueLightBeaconState: Equatable {
-    case needsSetup
-    case paused
-    case refreshing
-    case current
-    case failed
+enum IssueLightResources {
+    static let bundle = Bundle(for: IssueLightResourceBundleToken.self)
 }
+
+private final class IssueLightResourceBundleToken: NSObject {}
 
 enum IssueLightSignalState: Equatable {
     case critical
@@ -14,41 +13,6 @@ enum IssueLightSignalState: Equatable {
     case unknown
     case down
     case failed
-}
-
-struct IssueLightBeaconGlyph: View {
-    let state: IssueLightBeaconState
-
-    var body: some View {
-        ZStack {
-            signal
-            LighthouseBodyShape()
-                .fill(.primary)
-        }
-        .aspectRatio(1, contentMode: .fit)
-        .accessibilityHidden(true)
-    }
-
-    @ViewBuilder
-    private var signal: some View {
-        switch state {
-        case .needsSetup:
-            LighthouseBeamShape()
-                .stroke(.primary, style: StrokeStyle(lineWidth: 1.2, lineCap: .round, lineJoin: .round))
-        case .paused:
-            PausedBeamShape()
-                .fill(.primary)
-        case .refreshing:
-            RefreshingBeamShape()
-                .stroke(.primary, style: StrokeStyle(lineWidth: 1.4, lineCap: .round))
-        case .current:
-            LighthouseBeamShape()
-                .fill(.primary)
-        case .failed:
-            BrokenBeamShape()
-                .fill(.primary)
-        }
-    }
 }
 
 struct IssueLightSignalGlyph: View {
@@ -130,44 +94,6 @@ private struct LighthouseBeamShape: Shape {
         path.addLine(to: point(0.96, 0.55, in: rect))
         path.addLine(to: point(0.57, 0.42, in: rect))
         path.closeSubpath()
-        return path
-    }
-}
-
-private struct PausedBeamShape: Shape {
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        path.addRoundedRect(
-            in: CGRect(
-                x: rect.minX + rect.width * 0.71,
-                y: rect.minY + rect.height * 0.22,
-                width: rect.width * 0.07,
-                height: rect.height * 0.29
-            ),
-            cornerSize: CGSize(width: rect.width * 0.025, height: rect.height * 0.025)
-        )
-        path.addRoundedRect(
-            in: CGRect(
-                x: rect.minX + rect.width * 0.84,
-                y: rect.minY + rect.height * 0.17,
-                width: rect.width * 0.07,
-                height: rect.height * 0.38
-            ),
-            cornerSize: CGSize(width: rect.width * 0.025, height: rect.height * 0.025)
-        )
-        return path
-    }
-}
-
-private struct RefreshingBeamShape: Shape {
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        path.move(to: point(0.59, 0.32, in: rect))
-        path.addLine(to: point(0.93, 0.18, in: rect))
-        path.move(to: point(0.59, 0.42, in: rect))
-        path.addLine(to: point(0.93, 0.54, in: rect))
-        path.move(to: point(0.66, 0.37, in: rect))
-        path.addLine(to: point(0.98, 0.36, in: rect))
         return path
     }
 }

@@ -48,4 +48,32 @@ final class IssueCountTextTests: XCTestCase {
         XCTAssertEqual(MenuBarIssueCounts(issues: issues).compactText, "C:1 W:1 U:1 D:2")
         XCTAssertEqual(MenuBarIssueCounts(issues: []).compactText, "")
     }
+
+    func testUnavailableMonitoringSourcesCountAsUnknownAttention() {
+        let counts = MenuBarIssueCounts(issues: [], unavailableSourceCount: 2)
+
+        XCTAssertEqual(counts.compactText, "U:2")
+        XCTAssertEqual(counts.attentionCount, 2)
+    }
+
+    func testUnavailableSourcesAddToExistingUnknownIssuesAndTotalAttention() {
+        let sourceID = UUID()
+        let issue = MonitoringIssue(
+            sourceID: sourceID,
+            nativeID: "unknown-service",
+            kind: .service,
+            hostName: "api-01",
+            serviceName: "Health",
+            displayName: "Health",
+            severity: .unknown,
+            summary: "UNKNOWN",
+            isAcknowledged: false,
+            isInDowntime: false
+        )
+
+        let counts = MenuBarIssueCounts(issues: [issue], unavailableSourceCount: 1)
+
+        XCTAssertEqual(counts.compactText, "U:2")
+        XCTAssertEqual(counts.attentionCount, 2)
+    }
 }

@@ -5,7 +5,17 @@ import XCTest
 
 @MainActor
 final class StatusMenuInteractionTests: XCTestCase {
-    func testMenuBarShowsGlyphOnlyWhenThereAreNoIssueCounts() {
+    func testMenuBarLighthouseUsesVisibleNativeTemplateImage() throws {
+        let image = try XCTUnwrap(
+            IssueLightResources.bundle
+                .image(forResource: NSImage.Name("MenuBarLighthouse"))
+        )
+
+        XCTAssertTrue(image.isTemplate)
+        XCTAssertEqual(image.size, NSSize(width: 18, height: 18))
+    }
+
+    func testMenuBarShowsLighthouseOnlyWhenThereAreNoIssueCounts() {
         let issue = MonitoringIssue(
             sourceID: UUID(),
             nativeID: "critical-service",
@@ -22,7 +32,6 @@ final class StatusMenuInteractionTests: XCTestCase {
         let maximumSize = CGSize(width: 200, height: 40)
         let labelSize = NativeViewRenderer.fittingSize(
             for: StatusMenuLabel(
-                state: .current,
                 counts: counts,
                 accessibilityText: "One critical issue"
             )
@@ -37,7 +46,6 @@ final class StatusMenuInteractionTests: XCTestCase {
         )
         let emptySize = NativeViewRenderer.fittingSize(
             for: StatusMenuLabel(
-                state: .current,
                 counts: MenuBarIssueCounts(issues: []),
                 accessibilityText: "All clear"
             )
