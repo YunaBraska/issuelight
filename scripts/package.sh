@@ -155,11 +155,31 @@ if test -n "$update_public_key"; then
     /usr/libexec/PlistBuddy -c 'Add :SUAutomaticallyUpdate bool false' "$info_plist"
     /usr/libexec/PlistBuddy -c 'Add :SUVerifyUpdateBeforeExtraction bool true' "$info_plist"
     /usr/libexec/PlistBuddy -c 'Add :SURequireSignedFeed bool true' "$info_plist"
-    if test "$identity" = -; then
-        codesign --force --sign - --options runtime --timestamp=none "$app_path"
-    else
-        codesign --force --sign "$identity" --options runtime --timestamp "$app_path"
+fi
+
+if test "$identity" = -; then
+    codesign --force --sign - --options runtime --timestamp=none "$app_path"
+else
+    framework_directory="$app_path/Contents/Frameworks"
+    if test -d "$framework_directory"; then
+        find "$framework_directory" -type f -perm -111 -print | while IFS= read -r executable; do
+            if file -b "$executable" | grep -q 'Mach-O'; then
+                codesign --force --sign "$identity" --options runtime --timestamp \
+                    --preserve-metadata=identifier,entitlements,flags --generate-entitlement-der "$executable"
+            fi
+        done
+        find "$framework_directory" -type d \
+            \( -name '*.app' -o -name '*.appex' -o -name '*.xpc' \) -depth -print | while IFS= read -r bundle; do
+            codesign --force --sign "$identity" --options runtime --timestamp \
+                --preserve-metadata=identifier,entitlements,flags --generate-entitlement-der "$bundle"
+        done
+        find "$framework_directory" -type d -name '*.framework' -depth -print | while IFS= read -r framework; do
+            codesign --force --sign "$identity" --options runtime --timestamp \
+                --preserve-metadata=identifier,entitlements,flags --generate-entitlement-der "$framework"
+        done
     fi
+    codesign --force --sign "$identity" --options runtime --timestamp \
+        --preserve-metadata=identifier,entitlements,flags --generate-entitlement-der "$app_path"
 fi
 codesign --verify --deep --strict "$app_path"
 
