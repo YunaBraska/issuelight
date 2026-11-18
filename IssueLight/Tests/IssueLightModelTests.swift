@@ -284,6 +284,49 @@ final class IssueLightModelTests: XCTestCase {
         }
     }
 
+    func testSavingSourceStoresCredentialThroughProductionLoginKeychain() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("IssueLightProductionKeychainModelTests-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        addTeardownBlock {
+            try? FileManager.default.removeItem(at: directory)
+        }
+        let store = SourceStore(fileURL: directory.appendingPathComponent("sources.json"))
+        let vault = KeychainPasswordVault()
+        let model = IssueLightModel(
+            sourceStore: store,
+            providerRegistry: .builtIn(),
+            passwordVault: vault,
+            identityCatalog: KeychainIdentityCatalog(accessContext: testKeychain.context),
+            certificateCatalog: certificateCatalog(),
+            startsAutomatically: false,
+            localizationLocale: Locale(identifier: "de")
+        )
+
+        model.beginAddingSource()
+        model.name = "Production Keychain Regression"
+        model.endpoint = "https://keychain-regression-\(UUID().uuidString).invalid:5665"
+        model.username = "operator"
+        model.credentialSecret = "test-only-production-password"
+        model.isSourceEnabled = false
+
+        await model.save()
+
+        let storedSources = try await store.load()
+        let source = try XCTUnwrap(storedSources.first)
+        let scope = try BasicCredentialScope(source: source)
+        addTeardownBlock {
+            try? await vault.deletePassword(for: scope)
+        }
+        let storedPassword = try await vault.password(for: scope)
+        XCTAssertEqual(storedPassword, "test-only-production-password")
+        XCTAssertTrue(model.hasStoredCredentialSecret)
+        XCTAssertEqual(
+            model.activity,
+            .success("Quelle gespeichert. Geheimnisse bleiben im macOS-Schlüsselbund.")
+        )
+    }
+
     func testSavingIncompleteDraftPersistsPublicInputAndKeepsItPaused() async throws {
         let script = SnapshotScript()
         let harness = try await makeHarness(sourceCount: 1, script: script)
