@@ -56,14 +56,35 @@ final class KeychainPasswordVaultTests: XCTestCase {
         try await vault.deletePassword(for: secondScope)
     }
 
-    func testProductionQueriesUseTheDataProtectionKeychainWithoutChangingIsolatedTests() async throws {
+    func testProductionLoginKeychainLifecycleNeedsNoAdditionalEntitlement() async throws {
+        let source = source(id: UUID(), account: "production-login-keychain-test")
+        let scope = try BasicCredentialScope(source: source)
+        let vault = KeychainPasswordVault()
+        addTeardownBlock {
+            try? await vault.deletePassword(for: scope)
+        }
+
+        try await vault.deletePassword(for: scope)
+        try await vault.store("production-test-secret", for: scope)
+
+        let containsStoredPassword = try await vault.containsPassword(for: scope)
+        let storedPassword = try await vault.password(for: scope)
+        XCTAssertTrue(containsStoredPassword)
+        XCTAssertEqual(storedPassword, "production-test-secret")
+
+        try await vault.deletePassword(for: scope)
+        let containsDeletedPassword = try await vault.containsPassword(for: scope)
+        XCTAssertFalse(containsDeletedPassword)
+    }
+
+    func testProductionAndIsolatedQueriesNeedNoAdditionalKeychainEntitlement() async throws {
         let scope = try BasicCredentialScope(source: source(id: UUID(), account: "operator"))
         let productionQuery = await KeychainPasswordVault().keychainQuery(for: scope)
         let isolatedQuery = await KeychainPasswordVault(
             keychainContext: testKeychain.context
         ).keychainQuery(for: scope)
 
-        XCTAssertEqual(productionQuery[kSecUseDataProtectionKeychain as String] as? Bool, true)
+        XCTAssertNil(productionQuery[kSecUseDataProtectionKeychain as String])
         XCTAssertNil(isolatedQuery[kSecUseDataProtectionKeychain as String])
     }
 
