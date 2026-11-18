@@ -1,6 +1,7 @@
 # Project status
 
-IssueLight is pre-production pending installed-app and signed-release evidence.
+IssueLight has signed direct-release and App Store package evidence. Remaining
+validation focuses on installed-app behavior and protected-key recovery.
 
 ## Implemented
 
@@ -55,13 +56,11 @@ IssueLight is pre-production pending installed-app and signed-release evidence.
   temporary Keychains. Background access proves fail-closed behavior without
   authentication UI before a provider starts TLS.
 
-## Remaining release gates
+## Remaining product validation
 
 - Run the final approve, deny, and recovery sequence for a protected private
   key in the stable signed app as described in `docs/DEVELOPMENT.md`. The
   background no-prompt path already has deterministic regression coverage.
-- Add the repository signing, notarization, and App Store signing secrets, run
-  the release workflow, then verify direct stapling, Gatekeeper assessment,
-  Store package upload, and installation on clean macOS accounts.
-- Configure the Sparkle private-key secret and matching public-key repository
-  variable, then verify one published update and replacement cycle.
+- Repeat direct and App Store installation on clean macOS accounts after a
+  runtime or packaging change. CI already verifies direct notarization,
+  Gatekeeper assessment, Store-package upload and the signed Sparkle appcast.
