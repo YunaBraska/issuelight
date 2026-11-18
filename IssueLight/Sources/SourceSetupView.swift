@@ -393,49 +393,14 @@ struct SourceSetupView: View {
                         SSHSettingsDisclosureRow(isExpanded: $isShowingSSHOverrides)
                     }
                     if AppDistribution.supportsSSHTunnels && isShowingSSHOverrides {
-                        TextField(
-                            "Bastion",
-                            text: $model.sshTunnelHost,
-                            prompt: Text(verbatim: automaticSSHHost)
-                        )
-                        TextField(
-                            "Benutzername",
-                            text: $model.sshTunnelUsername,
-                            prompt: Text(verbatim: "OpenSSH")
-                        )
-                            .textContentType(.username)
-                        TextField("SSH-Port", text: $model.sshTunnelPort, prompt: Text(verbatim: "22"))
-                        LabeledContent("SSH-Schlüssel") {
-                            HStack(spacing: 8) {
-                                if model.sshTunnelIdentityFilePath.isEmpty {
-                                    Text(verbatim: "~/.ssh/config / SSH agent")
-                                        .foregroundStyle(.tertiary)
-                                        .lineLimit(1)
-                                } else {
-                                    Text(URL(fileURLWithPath: model.sshTunnelIdentityFilePath).lastPathComponent)
-                                        .foregroundStyle(.secondary)
-                                        .lineLimit(1)
-                                    Button {
-                                        model.sshTunnelIdentityFilePath = ""
-                                    } label: {
-                                        Image(systemName: "xmark.circle.fill")
-                                            .frame(width: 24, height: 24)
-                                            .pointerHoverFeedback()
-                                            .contentShape(Rectangle())
-                                    }
-                                    .buttonStyle(.borderless)
-                                    .help("Ausgewählten Schlüssel entfernen")
-                                }
-                                Button("Auswählen …") {
-                                    chooseSSHIdentity()
-                                }
-                                .buttonStyle(.bordered)
-                                .pointerHoverFeedback(cornerRadius: 7)
-                            }
-                        }
-                        TextField(
-                            "Bevorzugter lokaler Port",
-                            text: $model.sshTunnelPreferredLocalPort
+                        SSHTunnelSettingsView(
+                            host: $model.sshTunnelHost,
+                            username: $model.sshTunnelUsername,
+                            port: $model.sshTunnelPort,
+                            identityFilePath: $model.sshTunnelIdentityFilePath,
+                            preferredLocalPort: $model.sshTunnelPreferredLocalPort,
+                            automaticHost: model.automaticSSHTunnelHost,
+                            chooseIdentity: chooseSSHIdentity
                         )
                     }
                 } header: {
@@ -563,11 +528,6 @@ struct SourceSetupView: View {
             Label(message, systemImage: "exclamationmark.circle.fill")
                 .foregroundStyle(.red)
         }
-    }
-
-    private var automaticSSHHost: String {
-        URL(string: model.endpoint.trimmingCharacters(in: .whitespacesAndNewlines))?.host
-            ?? "api.example"
     }
 
     private func chooseSSHIdentity() {
@@ -804,6 +764,122 @@ struct SSHSettingsDisclosureRow: View {
         .accessibilityLabel(Text("Quelle über SSH erreichen"))
         .accessibilityAddTraits(isExpanded ? .isSelected : [])
         .accessibilityIdentifier("ssh-settings-disclosure")
+    }
+}
+
+struct SSHTunnelSettingsView: View {
+    @Binding var host: String
+    @Binding var username: String
+    @Binding var port: String
+    @Binding var identityFilePath: String
+    @Binding var preferredLocalPort: String
+    let automaticHost: String
+    let chooseIdentity: () -> Void
+
+    var body: some View {
+        Group {
+            ViewThatFits(in: .horizontal) {
+                LabeledContent("Server") {
+                    HStack(spacing: 10) {
+                        hostField
+                            .frame(minWidth: 150)
+                        Divider()
+                            .frame(height: 18)
+                        Text("SSH-Port")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        portField
+                            .frame(width: 64)
+                    }
+                }
+                VStack(spacing: 10) {
+                    LabeledContent("Server") {
+                        hostField
+                    }
+                    LabeledContent("SSH-Port") {
+                        portField
+                    }
+                }
+            }
+
+            LabeledContent("Benutzername") {
+                TextField(
+                    "Benutzername",
+                    text: $username,
+                    prompt: Text(verbatim: "~/.ssh/config")
+                )
+                .labelsHidden()
+                .textContentType(.username)
+            }
+
+            LabeledContent("SSH-Schlüssel") {
+                HStack(spacing: 8) {
+                    Button(action: chooseIdentity) {
+                        HStack(spacing: 7) {
+                            Image(systemName: "key")
+                                .accessibilityHidden(true)
+                            Text(verbatim: identityLabel)
+                                .foregroundStyle(identityFilePath.isEmpty ? .secondary : .primary)
+                                .lineLimit(1)
+                                .truncationMode(.middle)
+                            Spacer(minLength: 8)
+                            Text("Auswählen …")
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .buttonStyle(.bordered)
+                    .pointerHoverFeedback(cornerRadius: 7)
+                    .help(identityFilePath.isEmpty ? "~/.ssh/config / SSH agent" : identityFilePath)
+
+                    if !identityFilePath.isEmpty {
+                        Button {
+                            identityFilePath = ""
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .frame(width: 24, height: 24)
+                                .pointerHoverFeedback()
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.borderless)
+                        .help("Ausgewählten Schlüssel entfernen")
+                    }
+                }
+            }
+
+            LabeledContent("Bevorzugter lokaler Port") {
+                TextField(
+                    "Bevorzugter lokaler Port",
+                    text: $preferredLocalPort,
+                    prompt: Text(verbatim: "—")
+                )
+                .labelsHidden()
+                .frame(width: 90)
+            }
+        }
+    }
+
+    private var hostField: some View {
+        TextField(
+            "Server",
+            text: $host,
+            prompt: Text(verbatim: automaticHost)
+        )
+        .labelsHidden()
+        .textContentType(.URL)
+    }
+
+    private var portField: some View {
+        TextField(
+            "SSH-Port",
+            text: $port,
+            prompt: Text(verbatim: "22")
+        )
+        .labelsHidden()
+    }
+
+    private var identityLabel: String {
+        guard !identityFilePath.isEmpty else { return "~/.ssh/config · SSH agent" }
+        return URL(fileURLWithPath: identityFilePath).lastPathComponent
     }
 }
 

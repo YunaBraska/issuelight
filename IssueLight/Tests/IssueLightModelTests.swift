@@ -747,6 +747,25 @@ final class IssueLightModelTests: XCTestCase {
         XCTAssertTrue(model.isEndpointUsingTLS)
     }
 
+    func testAutomaticSSHHostUsesProviderEndpointDiscovery() async throws {
+        let model = IssueLightModel(
+            sourceStore: nil,
+            providerRegistry: .builtIn(),
+            passwordVault: KeychainPasswordVault(keychainContext: testKeychain.context),
+            identityCatalog: KeychainIdentityCatalog(accessContext: testKeychain.context),
+            certificateCatalog: certificateCatalog(),
+            startsAutomatically: false
+        )
+
+        model.beginAddingSource()
+        model.endpoint = "monitoring.internal:5665"
+        XCTAssertEqual(model.automaticSSHTunnelHost, "monitoring.internal")
+
+        model.selectedProviderID = CheckmkProvider.id
+        model.endpoint = "https://checkmk.internal/site/check_mk/dashboard.py"
+        XCTAssertEqual(model.automaticSSHTunnelHost, "checkmk.internal")
+    }
+
     func testEffectiveProviderCandidateDeterminesWhetherTLSControlsAreRelevant() async throws {
         let registry = try ProviderRegistry([HTTPOnlyIcingaIdentifierProvider()])
         let model = IssueLightModel(

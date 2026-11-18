@@ -296,6 +296,16 @@ final class IssueLightModel: ObservableObject {
         providerRegistry.provider(for: selectedProviderID)?.descriptor.endpointExample ?? ""
     }
 
+    var automaticSSHTunnelHost: String {
+        let hint = endpoint.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let provider = providerRegistry.provider(for: selectedProviderID) else {
+            return ""
+        }
+        return provider.endpointCandidates(from: hint.isEmpty ? endpointPrompt : hint)
+            .compactMap(\.host)
+            .first ?? ""
+    }
+
     var suggestedSourceName: String {
         SourceNameSuggestion.name(
             rawEndpoint: endpoint,
