@@ -314,6 +314,11 @@ final class IssueLightModel: ObservableObject {
         )
     }
 
+    var draftSourceName: String {
+        let enteredName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        return enteredName.isEmpty ? suggestedSourceName : enteredName
+    }
+
     var isEndpointUsingTLS: Bool {
         if let provider = providerRegistry.provider(for: selectedProviderID),
            let candidate = provider.endpointCandidates(from: endpoint).first {

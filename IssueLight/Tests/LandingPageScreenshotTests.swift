@@ -23,6 +23,14 @@ final class LandingPageScreenshotTests: XCTestCase {
             for: thrukSourceSetupView,
             size: CGSize(width: 820, height: 600)
         )
+        let checkmkSourceData = try NativeViewRenderer.pngData(
+            for: checkmkSourceSetupView,
+            size: CGSize(width: 820, height: 600)
+        )
+        let nagiosCoreSourceData = try NativeViewRenderer.pngData(
+            for: nagiosCoreSourceSetupView,
+            size: CGSize(width: 820, height: 600)
+        )
         let menuItemData = try NativeViewRenderer.pngData(
             for: menuItemStatesView,
             size: CGSize(width: 660, height: 180)
@@ -114,6 +122,8 @@ final class LandingPageScreenshotTests: XCTestCase {
 
         XCTAssertGreaterThan(sourceData.count, 50_000)
         XCTAssertGreaterThan(thrukSourceData.count, 50_000)
+        XCTAssertGreaterThan(checkmkSourceData.count, 50_000)
+        XCTAssertGreaterThan(nagiosCoreSourceData.count, 50_000)
         XCTAssertGreaterThan(menuItemData.count, 4_000)
         XCTAssertGreaterThan(germanMenuData.count, 10_000)
         XCTAssertGreaterThan(swedishMenuData.count, 10_000)
@@ -149,6 +159,14 @@ final class LandingPageScreenshotTests: XCTestCase {
         )
         try thrukSourceData.write(
             to: outputDirectory.appendingPathComponent("source-setup-thruk.png"),
+            options: .atomic
+        )
+        try checkmkSourceData.write(
+            to: outputDirectory.appendingPathComponent("source-setup-checkmk.png"),
+            options: .atomic
+        )
+        try nagiosCoreSourceData.write(
+            to: outputDirectory.appendingPathComponent("source-setup-nagios-core.png"),
             options: .atomic
         )
         try menuItemData.write(
@@ -234,6 +252,52 @@ final class LandingPageScreenshotTests: XCTestCase {
     }
 
     private var sourceSetupView: some View {
+        sourceSetupView(
+            providerID: Icinga2Provider.id,
+            name: "Production",
+            endpoint: "https://icinga.example:5665",
+            authentication: .basic,
+            username: "monitoring-reader"
+        )
+    }
+
+    private var thrukSourceSetupView: some View {
+        sourceSetupView(
+            providerID: ThrukProvider.id,
+            name: "Operations",
+            endpoint: "monitoring.example/thruk",
+            authentication: .apiKey,
+            username: "automation"
+        )
+    }
+
+    private var checkmkSourceSetupView: some View {
+        sourceSetupView(
+            providerID: CheckmkProvider.id,
+            name: "Platform",
+            endpoint: "monitoring.example/cmk",
+            authentication: .apiKey,
+            username: "automation"
+        )
+    }
+
+    private var nagiosCoreSourceSetupView: some View {
+        sourceSetupView(
+            providerID: NagiosCoreProvider.id,
+            name: "Legacy",
+            endpoint: "monitoring.example/nagios",
+            authentication: .basic,
+            username: "monitoring-reader"
+        )
+    }
+
+    private func sourceSetupView(
+        providerID: ProviderID,
+        name: String,
+        endpoint: String,
+        authentication: IssueLightModel.AuthenticationChoice,
+        username: String
+    ) -> some View {
         let model = IssueLightModel(
             sourceStore: nil,
             providerRegistry: .builtIn(),
@@ -245,36 +309,14 @@ final class LandingPageScreenshotTests: XCTestCase {
             startsAutomatically: false
         )
         model.beginAddingSource()
-        model.name = "Produktion"
-        model.endpoint = "https://icinga.example:5665"
-        model.username = "monitoring-reader"
-        model.authenticationChoice = .basic
+        model.selectedProviderID = providerID
+        model.name = name
+        model.endpoint = endpoint
+        model.username = username
+        model.authenticationChoice = authentication
         model.serverTrustChoice = .system
         return SourceSetupView(model: model)
-            .environment(\.locale, Locale(identifier: "de_DE"))
-            .environment(\.colorScheme, .light)
-    }
-
-    private var thrukSourceSetupView: some View {
-        let model = IssueLightModel(
-            sourceStore: nil,
-            providerRegistry: .builtIn(),
-            passwordVault: KeychainPasswordVault(),
-            identityCatalog: KeychainIdentityCatalog(),
-            certificateCatalog: KeychainServerCertificateCatalog(
-                ownershipScope: "berlin.yuna.issuelight.thruk-screenshot-tests"
-            ),
-            startsAutomatically: false
-        )
-        model.beginAddingSource()
-        model.selectedProviderID = ThrukProvider.id
-        model.name = "Operations"
-        model.endpoint = "monitoring.example/thruk"
-        model.authenticationChoice = .apiKey
-        model.username = "automation"
-        model.serverTrustChoice = .system
-        return SourceSetupView(model: model)
-            .environment(\.locale, Locale(identifier: "de_DE"))
+            .environment(\.locale, Locale(identifier: "en_US"))
             .environment(\.colorScheme, .light)
     }
 

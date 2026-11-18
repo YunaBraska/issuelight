@@ -33,6 +33,8 @@ ISSUELIGHT_SCREENSHOT_OUTPUT_DIR="$output_directory" \
 
 test -s "$output_directory/source-setup.png"
 test -s "$output_directory/source-setup-thruk.png"
+test -s "$output_directory/source-setup-checkmk.png"
+test -s "$output_directory/source-setup-nagios-core.png"
 test -s "$output_directory/menu-item-states.png"
 test -s "$output_directory/menu-panel-de.png"
 test -s "$output_directory/menu-panel-sv.png"

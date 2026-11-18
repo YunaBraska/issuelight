@@ -176,20 +176,25 @@ struct StatusMenuContent: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 9) {
-                Image(systemName: "magnifyingglass")
-                    .foregroundStyle(.secondary)
-                TextField(
-                    AppLocalization.string("Probleme durchsuchen", locale: locale),
-                    text: $searchText
-                )
-                .textFieldStyle(.plain)
-                .accessibilityIdentifier("issue-search")
-                .disabled(!hasPanelRows)
+                if hasPanelRows {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundStyle(.secondary)
+                    TextField(
+                        AppLocalization.string("Probleme durchsuchen", locale: locale),
+                        text: $searchText
+                    )
+                    .textFieldStyle(.plain)
+                    .accessibilityIdentifier("issue-search")
+                } else {
+                    Spacer()
+                }
                 if refreshState == .refreshing {
                     ProgressView()
                         .controlSize(.small)
                 }
-                filterButton
+                if hasPanelRows || filters.isActive {
+                    filterButton
+                }
                 Button(action: openSettings) {
                     Image(systemName: "gearshape")
                         .frame(width: 28, height: 28)

@@ -37,10 +37,10 @@ description: Production-rendered IssueLight states for visual review.
     <p>The provider selector keeps one setup journey while exposing only supported authentication and actions.</p>
   </div>
   <div class="provider-grid">
-    <figure class="app-window"><div class="provider-shot"><img src="{{ '/assets/screenshots/source-setup-icinga-window.png' | relative_url }}" alt="Icinga 2 source setup" width="1800" height="1296"></div><figcaption>Icinga 2</figcaption></figure>
-    <figure class="app-window"><div class="provider-shot"><img src="{{ '/assets/screenshots/source-setup-thruk-window.png' | relative_url }}" alt="Thruk source setup" width="1800" height="1296"></div><figcaption>Thruk</figcaption></figure>
-    <figure class="app-window"><div class="provider-shot"><img src="{{ '/assets/screenshots/source-setup-checkmk-window.png' | relative_url }}" alt="Checkmk source setup" width="1800" height="1296"></div><figcaption>Checkmk</figcaption></figure>
-    <figure class="app-window"><div class="provider-shot"><img src="{{ '/assets/screenshots/source-setup-nagios-core-window.png' | relative_url }}" alt="Nagios Core source setup" width="1800" height="1296"></div><figcaption>Nagios Core</figcaption></figure>
+    <figure class="app-window"><div class="provider-shot"><img src="{{ '/assets/screenshots/source-setup.png' | relative_url }}" alt="Icinga 2 source setup" width="1640" height="1200"></div><figcaption>Icinga 2</figcaption></figure>
+    <figure class="app-window"><div class="provider-shot"><img src="{{ '/assets/screenshots/source-setup-thruk.png' | relative_url }}" alt="Thruk source setup" width="1640" height="1200"></div><figcaption>Thruk</figcaption></figure>
+    <figure class="app-window"><div class="provider-shot"><img src="{{ '/assets/screenshots/source-setup-checkmk.png' | relative_url }}" alt="Checkmk source setup" width="1640" height="1200"></div><figcaption>Checkmk</figcaption></figure>
+    <figure class="app-window"><div class="provider-shot"><img src="{{ '/assets/screenshots/source-setup-nagios-core.png' | relative_url }}" alt="Nagios Core source setup" width="1640" height="1200"></div><figcaption>Nagios Core</figcaption></figure>
   </div>
 </section>
 

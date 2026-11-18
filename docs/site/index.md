@@ -84,7 +84,7 @@ description: IssueLight keeps infrastructure problems in the macOS menu bar and 
 <section class="section shell security-section">
   <figure class="setup-shot app-window">
     <div class="window-bar"><span></span><span></span><span></span><strong>Source settings</strong></div>
-    <img src="{{ '/assets/screenshots/source-setup-icinga-window.png' | relative_url }}" alt="Resizable IssueLight source settings with an Icinga 2 source" width="1800" height="1296">
+    <img src="{{ '/assets/screenshots/source-setup.png' | relative_url }}" alt="IssueLight source settings with an Icinga 2 source" width="1640" height="1200">
   </figure>
   <div class="security-copy">
     <p class="eyebrow"><span></span>Secure by default</p>
@@ -107,19 +107,19 @@ description: IssueLight keeps infrastructure problems in the macOS menu bar and 
   </div>
   <div class="provider-grid">
     <figure class="app-window">
-      <div class="provider-shot"><img src="{{ '/assets/screenshots/source-setup-icinga-window.png' | relative_url }}" alt="Icinga 2 source setup with username and password authentication" width="1800" height="1296"></div>
+      <div class="provider-shot"><img src="{{ '/assets/screenshots/source-setup.png' | relative_url }}" alt="Icinga 2 source setup with username and password authentication" width="1640" height="1200"></div>
       <figcaption>Icinga 2 · Basic authentication or client certificate</figcaption>
     </figure>
     <figure class="app-window">
-      <div class="provider-shot"><img src="{{ '/assets/screenshots/source-setup-thruk-window.png' | relative_url }}" alt="Thruk source setup with provider-specific API authentication" width="1800" height="1296"></div>
+      <div class="provider-shot"><img src="{{ '/assets/screenshots/source-setup-thruk.png' | relative_url }}" alt="Thruk source setup with provider-specific API authentication" width="1640" height="1200"></div>
       <figcaption>Thruk · Basic authentication or API key</figcaption>
     </figure>
     <figure class="app-window">
-      <div class="provider-shot"><img src="{{ '/assets/screenshots/source-setup-checkmk-window.png' | relative_url }}" alt="Checkmk source setup with automation user and API key" width="1800" height="1296"></div>
+      <div class="provider-shot"><img src="{{ '/assets/screenshots/source-setup-checkmk.png' | relative_url }}" alt="Checkmk source setup with automation user and API key" width="1640" height="1200"></div>
       <figcaption>Checkmk · Automation user and API key</figcaption>
     </figure>
     <figure class="app-window">
-      <div class="provider-shot"><img src="{{ '/assets/screenshots/source-setup-nagios-core-window.png' | relative_url }}" alt="Nagios Core source setup with username and password authentication" width="1800" height="1296"></div>
+      <div class="provider-shot"><img src="{{ '/assets/screenshots/source-setup-nagios-core.png' | relative_url }}" alt="Nagios Core source setup with username and password authentication" width="1640" height="1200"></div>
       <figcaption>Nagios Core · Status JSON and command CGI</figcaption>
     </figure>
   </div>

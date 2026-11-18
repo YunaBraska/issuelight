@@ -284,6 +284,19 @@ final class IssueLightModelTests: XCTestCase {
         }
     }
 
+    func testDraftSidebarNameUsesEnteredNameBeforeAutomaticSuggestion() async throws {
+        let harness = try await makeHarness(sourceCount: 1, script: SnapshotScript())
+        await harness.model.load()
+        harness.model.beginAddingSource()
+        harness.model.endpoint = "monitoring.example:5665"
+
+        XCTAssertEqual(harness.model.draftSourceName, "Monitoring")
+
+        harness.model.name = "  Production EU  "
+
+        XCTAssertEqual(harness.model.draftSourceName, "Production EU")
+    }
+
     func testSavingIncompleteDraftPersistsPublicInputAndKeepsItPaused() async throws {
         let script = SnapshotScript()
         let harness = try await makeHarness(sourceCount: 1, script: script)

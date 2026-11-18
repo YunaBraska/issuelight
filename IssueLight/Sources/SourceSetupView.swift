@@ -45,7 +45,7 @@ struct SourceSetupView: View {
                 List(selection: sourceSelection) {
                     if model.isCreatingSource {
                         SourceDraftRow(
-                            name: model.suggestedSourceName,
+                            name: model.draftSourceName,
                             providerName: model.providerDisplayName
                         )
                     }
@@ -57,9 +57,9 @@ struct SourceSetupView: View {
                 .overlay {
                     if model.sources.isEmpty && !model.isCreatingSource {
                         ContentUnavailableView(
-                            "Noch keine Quellen",
+                            localized("Noch keine Quellen"),
                             systemImage: "server.rack",
-                            description: Text("Füge deine erste Monitoring-Quelle hinzu.")
+                            description: Text(verbatim: localized("Füge deine erste Monitoring-Quelle hinzu."))
                         )
                     }
                 }
@@ -140,15 +140,23 @@ struct SourceSetupView: View {
     }
 
     private var disabledTrustWarning: Text {
-        Text("Unsicher. Identität und Serverdaten können abgefangen oder verändert werden. Diese Ausnahme gilt nur für diese Quelle.")
+        Text(
+            verbatim: localized(
+                "Unsicher. Identität und Serverdaten können abgefangen oder verändert werden. Diese Ausnahme gilt nur für diese Quelle."
+            )
+        )
+    }
+
+    private func localized(_ resource: LocalizedStringResource) -> String {
+        AppLocalization.string(resource, locale: locale)
     }
 
     private var editor: some View {
         VStack(spacing: 0) {
             Form {
                 Section {
-                    Toggle("Quelle aktiv", isOn: $model.isSourceEnabled)
-                    Picker("Typ", selection: $model.selectedProviderID) {
+                    Toggle(localized("Quelle aktiv"), isOn: $model.isSourceEnabled)
+                    Picker(localized("Typ"), selection: $model.selectedProviderID) {
                         ForEach(model.providers, id: \.id) { provider in
                             Text(provider.displayName).tag(provider.id)
                         }
@@ -156,28 +164,26 @@ struct SourceSetupView: View {
                     .pickerStyle(.menu)
                     .accessibilityIdentifier("source-provider-picker")
                     TextField(
-                        "Name",
+                        localized("Name"),
                         text: $model.name,
                         prompt: Text(verbatim: model.suggestedSourceName)
                     )
                     TextField(
-                        "Server",
+                        localized("Server"),
                         text: $model.endpoint,
                         prompt: Text(verbatim: model.endpointPrompt)
                     )
                         .textContentType(.URL)
                 } header: {
                     if model.isCreatingSource {
-                        Text("Neue Quelle")
+                        Text(verbatim: localized("Neue Quelle"))
                     } else {
-                        Text("Quelle")
+                        Text(verbatim: localized("Quelle"))
                     }
-                } footer: {
-                    Text("IssueLight prüft Hosts und Services über die reale API dieser Quelle.")
                 }
 
-                Section("Authentifizierung") {
-                    Picker("Methode", selection: $model.authenticationChoice) {
+                Section(localized("Authentifizierung")) {
+                    Picker(localized("Methode"), selection: $model.authenticationChoice) {
                         ForEach(model.authenticationChoices) { choice in
                             Text(verbatim: choice.displayName(locale: locale)).tag(choice)
                         }
@@ -185,9 +191,9 @@ struct SourceSetupView: View {
                     .pickerStyle(.segmented)
 
                     if model.authenticationChoice == .basic {
-                        TextField("Benutzername", text: $model.username)
+                        TextField(localized("Benutzername"), text: $model.username)
                             .textContentType(.username)
-                        SecureField("Passwort", text: $model.credentialSecret)
+                        SecureField(localized("Passwort"), text: $model.credentialSecret)
                             .textContentType(.password)
                         Text(
                             model.hasStoredCredentialSecret
@@ -205,14 +211,14 @@ struct SourceSetupView: View {
                     } else if model.authenticationChoice == .apiKey {
                         if model.apiUsernameIsVisible {
                             if model.apiUsernameIsRequired {
-                                TextField("Benutzername", text: $model.username)
+                                TextField(localized("Benutzername"), text: $model.username)
                                     .textContentType(.username)
                             } else {
-                                TextField("API-Benutzer (optional)", text: $model.username)
+                                TextField(localized("API-Benutzer (optional)"), text: $model.username)
                                     .textContentType(.username)
                             }
                         }
-                        SecureField("API-Schlüssel", text: $model.credentialSecret)
+                        SecureField(localized("API-Schlüssel"), text: $model.credentialSecret)
                             .textContentType(.password)
                         Text(
                             model.hasStoredCredentialSecret
@@ -232,13 +238,13 @@ struct SourceSetupView: View {
                             Label(identityLoadError, systemImage: "exclamationmark.circle")
                                 .foregroundStyle(.red)
                         }
-                        Picker("Identität", selection: $model.selectedIdentityID) {
-                            Text("Zertifikat auswählen …").tag("")
+                        Picker(localized("Identität"), selection: $model.selectedIdentityID) {
+                            Text(verbatim: localized("Zertifikat auswählen …")).tag("")
                             ForEach(model.identities) { identity in
                                 Text(identity.displayName).tag(identity.id)
                             }
                         }
-                        Button("PKCS#12 importieren …") {
+                        Button(localized("PKCS#12 importieren …")) {
                             isChoosingIdentity = true
                         }
                         .buttonStyle(.bordered)
@@ -271,7 +277,7 @@ struct SourceSetupView: View {
 
                 if model.isEndpointUsingTLS {
                     Section {
-                        LabeledContent("Serververtrauen") {
+                        LabeledContent(localized("Serververtrauen")) {
                             HStack(spacing: 8) {
                                 Picker("", selection: $model.serverTrustChoice) {
                                     ForEach(model.serverTrustChoices) { choice in
@@ -284,12 +290,12 @@ struct SourceSetupView: View {
                                     Image(systemName: "exclamationmark.triangle.fill")
                                         .foregroundStyle(.orange)
                                         .help(disabledTrustWarning)
-                                        .accessibilityLabel(Text("Zertifikatsprüfung aus"))
+                                        .accessibilityLabel(Text(verbatim: localized("Zertifikatsprüfung aus")))
                                         .accessibilityHint(disabledTrustWarning)
                                 }
 
                                 if model.canReviewBlockedServerCertificate {
-                                    Button("Zertifikat vertrauen") {
+                                    Button(localized("Zertifikat vertrauen")) {
                                         fetchPresentedServerCertificate()
                                     }
                                     .buttonStyle(.bordered)
@@ -307,7 +313,10 @@ struct SourceSetupView: View {
                                     .foregroundStyle(.secondary)
                                     .textSelection(.enabled)
                             } else {
-                                Label("Importiere genau ein CA-Zertifikat.", systemImage: "exclamationmark.circle")
+                                Label(
+                                    localized("Importiere genau ein CA-Zertifikat."),
+                                    systemImage: "exclamationmark.circle"
+                                )
                                     .foregroundStyle(.orange)
                             }
                             Button(
@@ -330,14 +339,21 @@ struct SourceSetupView: View {
                             }
                         } else if model.serverTrustChoice == .pinnedCertificate {
                             if model.pinnedServerCertificateSHA256.isEmpty {
-                                Label("Wähle genau ein Serverzertifikat aus.", systemImage: "exclamationmark.circle")
+                                Label(
+                                    localized("Wähle genau ein Serverzertifikat aus."),
+                                    systemImage: "exclamationmark.circle"
+                                )
                                     .foregroundStyle(.orange)
                             } else {
                                 Text("SHA-256: \(model.pinnedServerCertificateSHA256)")
                                     .font(.caption.monospaced())
                                     .foregroundStyle(.secondary)
                                     .textSelection(.enabled)
-                                Text("Bei einer Zertifikatserneuerung bleibt die Verbindung blockiert, bis du das neue Zertifikat hier geprüft und ausgewählt hast.")
+                                Text(
+                                    verbatim: localized(
+                                        "Bei einer Zertifikatserneuerung bleibt die Verbindung blockiert, bis du das neue Zertifikat hier geprüft und ausgewählt hast."
+                                    )
+                                )
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
@@ -407,33 +423,41 @@ struct SourceSetupView: View {
                     Text(verbatim: "API / Web")
                 } footer: {
                     if !AppDistribution.supportsSSHTunnels {
-                        Text("Die App-Store-Ausgabe verbindet sich direkt mit der Monitoring-Quelle. SSH-Tunnel sowie SSH- und RDP-Startaktionen stehen in der direkten GitHub-Ausgabe bereit.")
+                        Text(
+                            verbatim: localized(
+                                "Die App-Store-Ausgabe verbindet sich direkt mit der Monitoring-Quelle. SSH-Tunnel sowie SSH- und RDP-Startaktionen stehen in der direkten GitHub-Ausgabe bereit."
+                            )
+                        )
                     }
                 }
 
                 if AppDistribution.supportsRemoteAccess {
                     Section {
-                        Toggle("SSH für überwachten Host", isOn: $model.sshActionEnabled)
+                        Toggle(localized("SSH für überwachten Host"), isOn: $model.sshActionEnabled)
                         if model.sshActionEnabled {
                             TextField(
-                                "SSH-Benutzername",
+                                localized("SSH-Benutzername"),
                                 text: $model.sshUsername,
                                 prompt: Text(verbatim: "OpenSSH")
                             )
                             .textContentType(.username)
-                            PortNumberField("SSH-Port", value: $model.sshPort)
+                            PortNumberField(localized("SSH-Port"), value: $model.sshPort)
                         }
 
-                        Toggle("RDP für überwachten Host", isOn: $model.rdpActionEnabled)
+                        Toggle(localized("RDP für überwachten Host"), isOn: $model.rdpActionEnabled)
                         if model.rdpActionEnabled {
-                            TextField("RDP-Benutzername", text: $model.rdpUsername)
+                            TextField(localized("RDP-Benutzername"), text: $model.rdpUsername)
                                 .textContentType(.username)
-                            PortNumberField("RDP-Port", value: $model.rdpPort)
+                            PortNumberField(localized("RDP-Port"), value: $model.rdpPort)
                         }
                     } header: {
                         Text(verbatim: "SSH / RDP")
                     } footer: {
-                        Text("Diese optionalen Aktionen öffnen den in einem Problem genannten Host. Sie sind nicht der SSH-Tunnel zur Monitoring-Quelle.")
+                        Text(
+                            verbatim: localized(
+                                "Diese optionalen Aktionen öffnen den in einem Problem genannten Host. Sie sind nicht der SSH-Tunnel zur Monitoring-Quelle."
+                            )
+                        )
                     }
                 }
 
@@ -448,7 +472,10 @@ struct SourceSetupView: View {
                 activityView
                     .frame(maxWidth: .infinity, alignment: .leading)
                 if !model.connectionAttempts.isEmpty {
-                    DisclosureGroup("Verbindungsversuche", isExpanded: $isShowingConnectionAttempts) {
+                    DisclosureGroup(
+                        localized("Verbindungsversuche"),
+                        isExpanded: $isShowingConnectionAttempts
+                    ) {
                         VStack(alignment: .leading, spacing: 5) {
                             ForEach(model.connectionAttempts) { attempt in
                                 HStack(spacing: 8) {
@@ -472,22 +499,23 @@ struct SourceSetupView: View {
 
                 HStack {
                     if !model.isCreatingSource {
-                        Button("Quelle entfernen", role: .destructive) {
+                        Button(localized("Quelle entfernen"), role: .destructive) {
                             isConfirmingDeletion = true
                         }
                         .buttonStyle(.bordered)
+                        .tint(.red)
                         .pointerHoverFeedback(cornerRadius: 7)
                         .disabled(isWorking)
                     }
                     Spacer()
                     if model.isTestingConnection {
-                        Button("Abbrechen", role: .cancel) {
+                        Button(localized("Abbrechen"), role: .cancel) {
                             connectionTask?.cancel()
                         }
                         .buttonStyle(.bordered)
                         .pointerHoverFeedback(cornerRadius: 7)
                     } else {
-                        Button("Verbindung testen") {
+                        Button(localized("Verbindung testen")) {
                             startConnectionTest()
                         }
                         .buttonStyle(.bordered)
@@ -495,7 +523,7 @@ struct SourceSetupView: View {
                         .disabled(isWorking)
                     }
 
-                    Button("Speichern") {
+                    Button(localized("Speichern")) {
                         Task { await model.save() }
                     }
                     .buttonStyle(.borderedProminent)
@@ -888,10 +916,10 @@ struct PortNumberField: View {
         .number.grouping(.never)
     }
 
-    let title: LocalizedStringKey
+    let title: String
     @Binding var value: Int
 
-    init(_ title: LocalizedStringKey, value: Binding<Int>) {
+    init(_ title: String, value: Binding<Int>) {
         self.title = title
         _value = value
     }
@@ -1015,17 +1043,21 @@ struct OpaqueConfirmationView: View {
 
 struct SourceSidebarFooter: View {
     let addSource: () -> Void
+    @Environment(\.locale) private var locale
 
     var body: some View {
         HStack {
             Button(action: addSource) {
-                Label("Quelle hinzufügen", systemImage: "plus")
+                Label(
+                    AppLocalization.string("Quelle hinzufügen", locale: locale),
+                    systemImage: "plus"
+                )
                     .frame(minHeight: 24)
                     .contentShape(Rectangle())
                     .pointerHoverFeedback()
             }
             .buttonStyle(.borderless)
-            .help("Neue Quelle")
+            .help(AppLocalization.string("Neue Quelle", locale: locale))
             .accessibilityIdentifier("add-source")
             Spacer()
         }
