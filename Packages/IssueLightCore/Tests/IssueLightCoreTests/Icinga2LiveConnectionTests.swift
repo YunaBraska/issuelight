@@ -171,6 +171,30 @@ final class Icinga2LiveConnectionTests: XCTestCase {
         XCTAssertEqual(result, .failed(.tls))
     }
 
+    func testSystemTrustRejectsLivePrivateCA() async throws {
+        let environment = ProcessInfo.processInfo.environment
+        guard let endpointValue = environment["ISSUELIGHT_LIVE_ICINGA_URL"],
+              let endpoint = URL(string: endpointValue),
+              let password = environment["ISSUELIGHT_ICINGA_BASIC_PASSWORD"] else {
+            throw XCTSkip("Live Icinga 2 environment is not configured")
+        }
+        let source = MonitoringSource(
+            name: "Live system trust",
+            providerID: Icinga2Provider.id,
+            endpoint: endpoint,
+            authentication: .basic(username: "issuelight-basic"),
+            serverTrust: .system
+        )
+        let provider = try XCTUnwrap(ProviderRegistry.builtIn().provider(for: source.providerID))
+
+        let result = await provider.testConnection(
+            to: source,
+            access: ProviderAccess(credential: .password(password))
+        )
+
+        XCTAssertEqual(result, .failed(.tls))
+    }
+
     func testImportedPrivateCAKeepsVerificationEnabledForLiveIcingaSnapshot() async throws {
         let environment = ProcessInfo.processInfo.environment
         guard let endpointValue = environment["ISSUELIGHT_LIVE_ICINGA_URL"],

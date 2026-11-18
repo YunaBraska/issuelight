@@ -291,18 +291,19 @@ final class IssueLightModelTests: XCTestCase {
         harness.model.beginAddingSource()
         harness.model.endpoint = "not a valid URL %"
         harness.model.webURL = "also not a URL %"
+        let expectedName = harness.model.suggestedSourceName
 
         await harness.model.save()
 
         let persisted = try await harness.store.load()
         let draft = try XCTUnwrap(persisted.last)
         XCTAssertEqual(persisted.count, 2)
-        XCTAssertEqual(draft.name, "Model Test")
+        XCTAssertEqual(draft.name, expectedName)
         XCTAssertEqual(draft.editableEndpoint, "not a valid URL %")
         XCTAssertEqual(draft.web?.editableBaseURL, "also not a URL %")
         XCTAssertFalse(draft.isEnabled)
         XCTAssertEqual(harness.model.endpoint, "not a valid URL %")
-        XCTAssertEqual(harness.model.name, "Model Test")
+        XCTAssertEqual(harness.model.name, expectedName)
         XCTAssertFalse(harness.model.isSourceEnabled)
         XCTAssertFalse(harness.model.hasUnsavedChanges)
         XCTAssertEqual(
@@ -470,7 +471,7 @@ final class IssueLightModelTests: XCTestCase {
         await harness.model.testConnection()
 
         XCTAssertEqual(harness.model.endpoint, "https://monitoring-discovery.example.test:5665")
-        XCTAssertEqual(harness.model.name, "monitoring-discovery.example.test")
+        XCTAssertEqual(harness.model.name, "Monitoring Discovery")
         XCTAssertEqual(harness.model.selectedConnectionStatus.api, .direct)
         XCTAssertEqual(
             harness.model.activity,
@@ -707,16 +708,32 @@ final class IssueLightModelTests: XCTestCase {
         model.beginAddingSource()
         XCTAssertEqual(model.selectedProviderID, Icinga2Provider.id)
         XCTAssertFalse(model.apiUsernameIsRequired)
+        XCTAssertTrue(model.isEndpointUsingTLS)
+        XCTAssertFalse(model.suggestedSourceName.isEmpty)
 
         model.selectedProviderID = CheckmkProvider.id
         XCTAssertEqual(model.authenticationChoices, [.apiKey])
         XCTAssertEqual(model.authenticationChoice, .apiKey)
         XCTAssertTrue(model.apiUsernameIsRequired)
+        model.serverTrustChoice = .disabled
+        model.endpoint = "http://monitoring.example.test/cmk"
+        XCTAssertFalse(model.isEndpointUsingTLS)
+        XCTAssertEqual(model.serverTrustChoice, .system)
+        XCTAssertEqual(model.suggestedSourceName, "Monitoring")
+
+        model.endpoint = "https://monitoring.example.test/cmk"
+        XCTAssertTrue(model.isEndpointUsingTLS)
 
         model.selectedProviderID = NagiosCoreProvider.id
         XCTAssertEqual(model.authenticationChoices, [.basic])
         XCTAssertEqual(model.authenticationChoice, .basic)
         XCTAssertFalse(model.apiUsernameIsRequired)
+
+        model.endpoint = "http://nagios.example.test/nagios"
+        XCTAssertFalse(model.isEndpointUsingTLS)
+
+        model.selectedProviderID = Icinga2Provider.id
+        XCTAssertTrue(model.isEndpointUsingTLS)
     }
 
     func testSelectingPinnedSourceLoadsReviewedFingerprint() async throws {

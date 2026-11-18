@@ -81,6 +81,8 @@ targets:
       - Sources/IssueCountText.swift
       - Sources/IssueNotificationCoordinator.swift
       - Sources/PanelFilterSettings.swift
+      - Sources/InteractionStyles.swift
+      - Sources/SourceNameSuggestion.swift
       - Sources/SourceSetupView.swift
       - Sources/StatusMenuView.swift
       - path: Resources/Assets.xcassets

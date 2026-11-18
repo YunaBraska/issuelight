@@ -228,6 +228,7 @@ struct StatusMenuContent: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(width: 720, height: panelHeight)
+        .background(Color(nsColor: .windowBackgroundColor))
     }
 
     private var panelHeight: CGFloat {
@@ -334,6 +335,7 @@ struct StatusMenuContent: View {
                 sourceNames: sourceNames
             )
             .environment(\.locale, locale)
+            .opaqueInteractiveSurface()
         }
     }
 
@@ -711,6 +713,7 @@ private struct StatusPanelIssueEntry: View {
                     issue: issue,
                     sourceName: sourceName
                 )
+                .pointerHoverFeedback(cornerRadius: 0)
             }
             .buttonStyle(.plain)
 
@@ -777,25 +780,6 @@ private struct StatusPanelIssueEntry: View {
     }
 }
 
-private struct PointerHoverFeedback: ViewModifier {
-    @State private var isHovering = false
-
-    func body(content: Content) -> some View {
-        content
-            .background(
-                RoundedRectangle(cornerRadius: 5)
-                    .fill(.secondary.opacity(isHovering ? 0.14 : 0))
-            )
-            .onHover { isHovering = $0 }
-    }
-}
-
-private extension View {
-    func pointerHoverFeedback() -> some View {
-        modifier(PointerHoverFeedback())
-    }
-}
-
 private struct IssueActionSheet: View {
     @ObservedObject var model: IssueLightModel
     let pendingAction: PendingIssueAction
@@ -849,6 +833,7 @@ private struct IssueActionSheet: View {
         }
         .padding(22)
         .frame(width: 480)
+        .opaqueInteractiveSurface()
     }
 
     private var title: String {

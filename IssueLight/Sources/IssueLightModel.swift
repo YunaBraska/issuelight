@@ -119,8 +119,13 @@ final class IssueLightModel: ObservableObject {
     @Published var name = ""
     @Published var endpoint = "" {
         didSet {
-            guard endpoint != oldValue,
-                  var source = selectedSource,
+            guard endpoint != oldValue else { return }
+            if !isEndpointUsingTLS {
+                serverTrustChoice = .system
+                selectedServerCertificate = nil
+                pinnedServerCertificateSHA256 = ""
+            }
+            guard var source = selectedSource,
                   let newEndpoint = URL(
                       string: endpoint.trimmingCharacters(in: .whitespacesAndNewlines)
                   ) else {
@@ -288,6 +293,24 @@ final class IssueLightModel: ObservableObject {
 
     var endpointPrompt: String {
         providerRegistry.provider(for: selectedProviderID)?.descriptor.endpointExample ?? ""
+    }
+
+    var suggestedSourceName: String {
+        SourceNameSuggestion.name(
+            rawEndpoint: endpoint,
+            providerName: providerDisplayName,
+            sourceID: sourceID
+        )
+    }
+
+    var isEndpointUsingTLS: Bool {
+        if selectedProviderID == Icinga2Provider.id {
+            return true
+        }
+        let value = endpoint.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !value.isEmpty else { return true }
+        let candidate = value.contains("://") ? value : "https://\(value)"
+        return URLComponents(string: candidate)?.scheme?.lowercased() != "http"
     }
 
     var authenticationChoices: [AuthenticationChoice] {
@@ -1293,7 +1316,11 @@ final class IssueLightModel: ObservableObject {
         let endpointInput = endpointOverride == nil ? endpointValue : nil
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
         let resolvedName = trimmedName.isEmpty
-            ? (url.host ?? providerDisplayName)
+            ? SourceNameSuggestion.name(
+                rawEndpoint: endpointOverride?.absoluteString ?? endpointValue,
+                providerName: providerDisplayName,
+                sourceID: sourceID
+            )
             : trimmedName
         let webConfiguration = navigationWebConfiguration()
 
@@ -1307,16 +1334,20 @@ final class IssueLightModel: ObservableObject {
             authentication = .clientCertificate(identityID: selectedIdentityID)
         }
 
-        var serverTrust: ServerTrustConfiguration
-        switch serverTrustChoice {
-        case .system:
+        let serverTrust: ServerTrustConfiguration
+        if !isEndpointUsingTLS {
             serverTrust = .system
-        case .customCertificate:
-            serverTrust = .customCertificate(certificateID: selectedServerCertificate?.id ?? "")
-        case .pinnedCertificate:
-            serverTrust = .pinnedCertificate(sha256: pinnedServerCertificateSHA256)
-        case .disabled:
-            serverTrust = .disabled
+        } else {
+            switch serverTrustChoice {
+            case .system:
+                serverTrust = .system
+            case .customCertificate:
+                serverTrust = .customCertificate(certificateID: selectedServerCertificate?.id ?? "")
+            case .pinnedCertificate:
+                serverTrust = .pinnedCertificate(sha256: pinnedServerCertificateSHA256)
+            case .disabled:
+                serverTrust = .disabled
+            }
         }
 
         var source: MonitoringSource

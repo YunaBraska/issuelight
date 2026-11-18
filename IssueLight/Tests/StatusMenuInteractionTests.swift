@@ -417,6 +417,47 @@ final class StatusMenuInteractionTests: XCTestCase {
         XCTAssertTrue(added)
     }
 
+    func testNewSourceDraftHasAVisibleCompactSidebarRow() {
+        let view = SourceDraftRow(name: "Production Icinga", providerName: "Icinga 2")
+            .environment(\.locale, Locale(identifier: "en_US"))
+            .environment(\.colorScheme, .light)
+        let size = NativeViewRenderer.fittingSize(
+            for: view,
+            maximumSize: CGSize(width: 250, height: 80)
+        )
+
+        XCTAssertGreaterThanOrEqual(size.height, 32)
+        XCTAssertLessThan(size.height, 60)
+        XCTAssertTrue(
+            NativeViewRenderer.exerciseWindow(
+                for: view,
+                size: CGSize(width: 250, height: ceil(size.height))
+            )
+        )
+    }
+
+    func testOpaqueConfirmationRendersAtReadableSize() {
+        let view = OpaqueConfirmationView(
+            title: "Remove source?",
+            message: "The saved source and its IssueLight credentials will be removed.",
+            confirmTitle: "Remove source",
+            cancelTitle: "Cancel",
+            confirm: {},
+            cancel: {}
+        )
+        .environment(\.locale, Locale(identifier: "en_US"))
+        .environment(\.colorScheme, .light)
+        let size = NativeViewRenderer.fittingSize(
+            for: view,
+            maximumSize: CGSize(width: 500, height: 300)
+        )
+
+        XCTAssertEqual(size.width, 440, accuracy: 1)
+        XCTAssertGreaterThan(size.height, 120)
+        XCTAssertLessThan(size.height, 300)
+        XCTAssertTrue(NativeViewRenderer.exerciseWindow(for: view, size: size))
+    }
+
     func testActionFieldsKeepEnoughIntrinsicHeightInsideMenuPanelSheet() {
         let acknowledgement = IssueActionInputFields(
             author: .constant("Operator"),
