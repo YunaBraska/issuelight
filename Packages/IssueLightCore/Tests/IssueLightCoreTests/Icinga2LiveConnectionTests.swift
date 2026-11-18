@@ -61,6 +61,12 @@ final class Icinga2LiveConnectionTests: XCTestCase {
         XCTAssertEqual(certificate.endpoint, endpoint)
         XCTAssertEqual(certificate.sha256Fingerprint, expectedFingerprint)
         XCTAssertFalse(certificate.subject.isEmpty)
+        XCTAssertFalse(certificate.issuer?.isEmpty ?? true)
+        XCTAssertNotNil(certificate.validFrom)
+        XCTAssertNotNil(certificate.validUntil)
+        if let validFrom = certificate.validFrom, let validUntil = certificate.validUntil {
+            XCTAssertLessThan(validFrom, validUntil)
+        }
     }
 
     func testPinnedLiveServerCertificateRejectsDifferentCertificate() async throws {

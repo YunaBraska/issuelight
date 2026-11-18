@@ -535,6 +535,8 @@ struct PanelFilterPopover: View {
                 Button(AppLocalization.string("Alle Hosts anzeigen", locale: locale)) {
                     filters.showAllHosts()
                 }
+                .buttonStyle(.bordered)
+                .pointerHoverFeedback(cornerRadius: 7)
                 .frame(maxWidth: .infinity, alignment: .trailing)
             }
         }
@@ -806,6 +808,8 @@ private struct IssueActionSheet: View {
             HStack {
                 Spacer()
                 Button(AppLocalization.string("Abbrechen", locale: locale)) { dismiss() }
+                    .buttonStyle(.bordered)
+                    .pointerHoverFeedback(cornerRadius: 7)
                     .keyboardShortcut(.cancelAction)
                 Button(AppLocalization.string("Bestätigen", locale: locale)) {
                     let issue = pendingAction.issue
@@ -824,6 +828,8 @@ private struct IssueActionSheet: View {
                     dismiss()
                     Task { await model.perform(action, on: issue) }
                 }
+                .buttonStyle(.borderedProminent)
+                .pointerHoverFeedback(cornerRadius: 7)
                 .keyboardShortcut(.defaultAction)
                 .disabled(
                     author.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty

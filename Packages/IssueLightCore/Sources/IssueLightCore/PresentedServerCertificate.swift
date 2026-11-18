@@ -4,16 +4,73 @@ import Security
 public struct PresentedServerCertificate: Equatable, Identifiable, Sendable {
     public let endpoint: URL
     public let subject: String
+    public let issuer: String?
+    public let validFrom: Date?
+    public let validUntil: Date?
     public let sha256Fingerprint: String
 
     public var id: String {
         "\(endpoint.absoluteString)|\(sha256Fingerprint)"
     }
 
-    public init(endpoint: URL, subject: String, sha256Fingerprint: String) {
+    public init(
+        endpoint: URL,
+        subject: String,
+        issuer: String? = nil,
+        validFrom: Date? = nil,
+        validUntil: Date? = nil,
+        sha256Fingerprint: String
+    ) {
         self.endpoint = endpoint
         self.subject = subject
+        self.issuer = issuer
+        self.validFrom = validFrom
+        self.validUntil = validUntil
         self.sha256Fingerprint = sha256Fingerprint
+    }
+
+    init(endpoint: URL, certificate: SecCertificate) {
+        let valueKey = kSecPropertyKeyValue as String
+        let certificateValues = SecCertificateCopyValues(
+            certificate,
+            [
+                kSecOIDX509V1IssuerName,
+                kSecOIDX509V1ValidityNotBefore,
+                kSecOIDX509V1ValidityNotAfter,
+            ] as CFArray,
+            nil
+        ) as? [String: Any]
+        let issuerProperty = certificateValues?[kSecOIDX509V1IssuerName as String]
+            as? [String: Any]
+        let issuerParts = issuerProperty?[valueKey] as? [[String: Any]]
+        let parsedIssuer = issuerParts?
+            .compactMap { $0[valueKey] as? String }
+            .joined(separator: ", ")
+        let validFromProperty = certificateValues?[kSecOIDX509V1ValidityNotBefore as String]
+            as? [String: Any]
+        let validUntilProperty = certificateValues?[kSecOIDX509V1ValidityNotAfter as String]
+            as? [String: Any]
+        let validFromValue = validFromProperty?[valueKey]
+        let validUntilValue = validUntilProperty?[valueKey]
+        let validFrom = validFromValue as? Date
+            ?? (validFromValue as? NSNumber).map {
+                Date(timeIntervalSinceReferenceDate: $0.doubleValue)
+            }
+        let validUntil = validUntilValue as? Date
+            ?? (validUntilValue as? NSNumber).map {
+                Date(timeIntervalSinceReferenceDate: $0.doubleValue)
+            }
+
+        self.init(
+            endpoint: endpoint,
+            subject: SecCertificateCopySubjectSummary(certificate) as String?
+                ?? endpoint.host
+                ?? endpoint.absoluteString,
+            issuer: parsedIssuer?.isEmpty == false ? parsedIssuer : nil,
+            validFrom: validFrom,
+            validUntil: validUntil,
+            sha256Fingerprint: ServerCertificateFingerprint.sha256(of: certificate)
+        )
     }
 }
 
@@ -97,12 +154,7 @@ private final class PresentedServerCertificateDelegate: NSObject, URLSessionDele
             return
         }
 
-        let subject = SecCertificateCopySubjectSummary(leaf) as String? ?? authority.host
-        let certificate = PresentedServerCertificate(
-            endpoint: endpoint,
-            subject: subject,
-            sha256Fingerprint: ServerCertificateFingerprint.sha256(of: leaf)
-        )
+        let certificate = PresentedServerCertificate(endpoint: endpoint, certificate: leaf)
         lock.lock()
         storedCertificate = certificate
         lock.unlock()

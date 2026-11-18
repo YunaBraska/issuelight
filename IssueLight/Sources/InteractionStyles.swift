@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct PointerHoverFeedback: ViewModifier {
+    @Environment(\.isEnabled) private var isEnabled
     @State private var isHovering = false
     let cornerRadius: CGFloat
 
@@ -8,9 +9,9 @@ struct PointerHoverFeedback: ViewModifier {
         content
             .background(
                 RoundedRectangle(cornerRadius: cornerRadius)
-                    .fill(.secondary.opacity(isHovering ? 0.14 : 0))
+                    .fill(.secondary.opacity(isEnabled && isHovering ? 0.14 : 0))
             )
-            .onHover { isHovering = $0 }
+            .onHover { isHovering = isEnabled && $0 }
     }
 }
 

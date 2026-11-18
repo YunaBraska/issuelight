@@ -91,6 +91,7 @@ struct SourceSetupView: View {
                 trust: {
                     model.trustPresentedServerCertificate(certificate)
                     presentedServerCertificate = nil
+                    startConnectionTest()
                 }
             )
         }
@@ -248,6 +249,8 @@ struct SourceSetupView: View {
                         Button("PKCS#12 importieren …") {
                             isChoosingIdentity = true
                         }
+                        .buttonStyle(.bordered)
+                        .pointerHoverFeedback(cornerRadius: 7)
                         .fileImporter(
                             isPresented: $isChoosingIdentity,
                             allowedContentTypes: [
@@ -266,18 +269,27 @@ struct SourceSetupView: View {
 
                 if model.isEndpointUsingTLS {
                     Section {
-                        Picker("Serververtrauen", selection: $model.serverTrustChoice) {
-                            ForEach(model.serverTrustChoices) { choice in
-                                Text(verbatim: choice.displayName(locale: locale)).tag(choice)
+                        LabeledContent("Serververtrauen") {
+                            HStack(spacing: 8) {
+                                Picker("", selection: $model.serverTrustChoice) {
+                                    ForEach(model.serverTrustChoices) { choice in
+                                        Text(verbatim: choice.displayName(locale: locale)).tag(choice)
+                                    }
+                                }
+                                .labelsHidden()
+
+                                if model.canReviewBlockedServerCertificate {
+                                    Button("Zertifikat vertrauen") {
+                                        fetchPresentedServerCertificate()
+                                    }
+                                    .buttonStyle(.bordered)
+                                    .pointerHoverFeedback(cornerRadius: 7)
+                                    .disabled(certificateFetchTask != nil)
+                                }
                             }
                         }
 
-                        if model.serverTrustChoice == .system {
-                            Button("Vom Server abrufen …") {
-                                fetchPresentedServerCertificate()
-                            }
-                            .disabled(certificateFetchTask != nil)
-                        } else if model.serverTrustChoice == .customCertificate {
+                        if model.serverTrustChoice == .customCertificate {
                             if let certificate = model.selectedServerCertificate {
                                 LabeledContent("CA", value: certificate.displayName)
                                 Text("SHA-256: \(certificate.sha256Fingerprint)")
@@ -295,6 +307,8 @@ struct SourceSetupView: View {
                             ) {
                                 isChoosingServerCertificate = true
                             }
+                            .buttonStyle(.bordered)
+                            .pointerHoverFeedback(cornerRadius: 7)
                             .fileImporter(
                                 isPresented: $isChoosingServerCertificate,
                                 allowedContentTypes: certificateContentTypes,
@@ -324,6 +338,8 @@ struct SourceSetupView: View {
                             ) {
                                 isChoosingPinnedServerCertificate = true
                             }
+                            .buttonStyle(.bordered)
+                            .pointerHoverFeedback(cornerRadius: 7)
                             .fileImporter(
                                 isPresented: $isChoosingPinnedServerCertificate,
                                 allowedContentTypes: certificateContentTypes,
@@ -333,10 +349,6 @@ struct SourceSetupView: View {
                                     _ = model.pinServerCertificate(at: url)
                                 }
                             }
-                            Button("Vom Server abrufen …") {
-                                fetchPresentedServerCertificate()
-                            }
-                            .disabled(certificateFetchTask != nil)
                         } else if model.serverTrustChoice == .disabled {
                             Label {
                                 VStack(alignment: .leading, spacing: 3) {
@@ -419,6 +431,8 @@ struct SourceSetupView: View {
                                 Button("Auswählen …") {
                                     chooseSSHIdentity()
                                 }
+                                .buttonStyle(.bordered)
+                                .pointerHoverFeedback(cornerRadius: 7)
                             }
                         }
                         TextField(
@@ -498,6 +512,8 @@ struct SourceSetupView: View {
                         Button("Quelle entfernen", role: .destructive) {
                             isConfirmingDeletion = true
                         }
+                        .buttonStyle(.bordered)
+                        .pointerHoverFeedback(cornerRadius: 7)
                         .disabled(isWorking)
                     }
                     Spacer()
@@ -505,16 +521,22 @@ struct SourceSetupView: View {
                         Button("Abbrechen", role: .cancel) {
                             connectionTask?.cancel()
                         }
+                        .buttonStyle(.bordered)
+                        .pointerHoverFeedback(cornerRadius: 7)
                     } else {
                         Button("Verbindung testen") {
-                            connectionTask = Task { await model.testConnection() }
+                            startConnectionTest()
                         }
+                        .buttonStyle(.bordered)
+                        .pointerHoverFeedback(cornerRadius: 7)
                         .disabled(isWorking)
                     }
 
                     Button("Speichern") {
                         Task { await model.save() }
                     }
+                    .buttonStyle(.borderedProminent)
+                    .pointerHoverFeedback(cornerRadius: 7)
                     .keyboardShortcut(.defaultAction)
                     .disabled(isWorking || !model.hasUnsavedChanges)
                 }
@@ -577,6 +599,11 @@ struct SourceSetupView: View {
         }
     }
 
+    private func startConnectionTest() {
+        connectionTask?.cancel()
+        connectionTask = Task { await model.testConnection() }
+    }
+
     private var isWorking: Bool {
         if case .working = model.activity { return true }
         return false
@@ -636,7 +663,7 @@ struct ConnectionEndpointStatusView: View {
         case .ssh:
             Label("SSH", systemImage: "checkmark.circle.fill")
                 .foregroundStyle(.green)
-        case .failed(let message):
+        case .serverTrustBlocked(let message), .failed(let message):
             Label(message, systemImage: "exclamationmark.circle.fill")
                 .foregroundStyle(.red)
                 .lineLimit(1)
@@ -804,6 +831,7 @@ struct PresentedServerCertificateTrustView: View {
     let certificate: PresentedServerCertificate
     let cancel: () -> Void
     let trust: () -> Void
+    @Environment(\.locale) private var locale
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -814,6 +842,14 @@ struct PresentedServerCertificateTrustView: View {
                 .textSelection(.enabled)
             LabeledContent("Server", value: certificate.endpoint.absoluteString)
                 .textSelection(.enabled)
+            if let issuer = certificate.issuer {
+                LabeledContent("Aussteller", value: issuer)
+                    .textSelection(.enabled)
+            }
+            if let validity {
+                LabeledContent("Gültigkeit", value: validity)
+                    .textSelection(.enabled)
+            }
             VStack(alignment: .leading, spacing: 5) {
                 Text(verbatim: "SHA-256")
                     .font(.caption.weight(.semibold))
@@ -832,8 +868,12 @@ struct PresentedServerCertificateTrustView: View {
             HStack {
                 Spacer()
                 Button("Abbrechen", action: cancel)
+                    .buttonStyle(.bordered)
+                    .pointerHoverFeedback(cornerRadius: 7)
                     .keyboardShortcut(.cancelAction)
                 Button("Zertifikat vertrauen", action: trust)
+                    .buttonStyle(.borderedProminent)
+                    .pointerHoverFeedback(cornerRadius: 7)
                     .keyboardShortcut(.defaultAction)
             }
         }
@@ -850,6 +890,19 @@ struct PresentedServerCertificateTrustView: View {
                 bytes[offset..<min(offset + 16, bytes.count)].joined(separator: ":")
             }
             .joined(separator: "\n")
+    }
+
+    private var validity: String? {
+        guard let validFrom = certificate.validFrom,
+              let validUntil = certificate.validUntil else {
+            return nil
+        }
+        let format = Date.FormatStyle(
+            date: .abbreviated,
+            time: .shortened,
+            locale: locale
+        )
+        return "\(validFrom.formatted(format)) – \(validUntil.formatted(format))"
     }
 }
 
@@ -870,8 +923,12 @@ struct OpaqueConfirmationView: View {
             HStack {
                 Spacer()
                 Button(cancelTitle, action: cancel)
+                    .buttonStyle(.bordered)
+                    .pointerHoverFeedback(cornerRadius: 7)
                     .keyboardShortcut(.cancelAction)
                 Button(confirmTitle, role: .destructive, action: confirm)
+                    .buttonStyle(.bordered)
+                    .pointerHoverFeedback(cornerRadius: 7)
                     .keyboardShortcut(.defaultAction)
             }
         }
@@ -890,6 +947,8 @@ struct SourceSidebarFooter: View {
             Button(action: addSource) {
                 Label("Quelle hinzufügen", systemImage: "plus")
                     .frame(minHeight: 24)
+                    .contentShape(Rectangle())
+                    .pointerHoverFeedback()
             }
             .buttonStyle(.borderless)
             .help("Neue Quelle")
@@ -922,6 +981,8 @@ private struct IdentityImportView: View {
             HStack {
                 Spacer()
                 Button("Abbrechen") { isPresented = false }
+                    .buttonStyle(.bordered)
+                    .pointerHoverFeedback(cornerRadius: 7)
                 Button("Importieren") {
                     Task {
                         if await model.importIdentity(at: fileURL, password: password) {
@@ -929,6 +990,8 @@ private struct IdentityImportView: View {
                         }
                     }
                 }
+                .buttonStyle(.borderedProminent)
+                .pointerHoverFeedback(cornerRadius: 7)
                 .keyboardShortcut(.defaultAction)
                 .disabled(password.isEmpty)
             }

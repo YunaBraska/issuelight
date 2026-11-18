@@ -736,6 +736,43 @@ final class IssueLightModelTests: XCTestCase {
         XCTAssertTrue(model.isEndpointUsingTLS)
     }
 
+    func testEffectiveProviderCandidateDeterminesWhetherTLSControlsAreRelevant() async throws {
+        let registry = try ProviderRegistry([HTTPOnlyIcingaIdentifierProvider()])
+        let model = IssueLightModel(
+            sourceStore: nil,
+            providerRegistry: registry,
+            passwordVault: KeychainPasswordVault(keychainContext: testKeychain.context),
+            identityCatalog: KeychainIdentityCatalog(accessContext: testKeychain.context),
+            certificateCatalog: certificateCatalog(),
+            startsAutomatically: false,
+            localizationLocale: Locale(identifier: "en")
+        )
+
+        model.beginAddingSource()
+        model.endpoint = "monitoring.example.test"
+
+        XCTAssertFalse(model.isEndpointUsingTLS)
+    }
+
+    func testTLSErrorOffersCertificateReviewOnlyForTheBlockedEndpoint() async throws {
+        let script = SnapshotScript()
+        let harness = try await makeHarness(sourceCount: 1, script: script)
+        await harness.model.load()
+        let sourceID = try XCTUnwrap(harness.model.selectedSourceID)
+        await script.enqueueConnectionResult(.failed(.tls), for: sourceID)
+
+        await harness.model.testConnection()
+
+        guard case .serverTrustBlocked = harness.model.selectedConnectionStatus.api else {
+            return XCTFail("Expected a server-trust failure")
+        }
+        XCTAssertTrue(harness.model.canReviewBlockedServerCertificate)
+
+        harness.model.endpoint = "https://other.example.test"
+
+        XCTAssertFalse(harness.model.canReviewBlockedServerCertificate)
+    }
+
     func testSelectingPinnedSourceLoadsReviewedFingerprint() async throws {
         let script = SnapshotScript()
         let fingerprint = String(repeating: "AA:", count: 31) + "AA"
@@ -1056,6 +1093,41 @@ private struct TestProvider: MonitoringProvider {
     }
 }
 
+private struct HTTPOnlyIcingaIdentifierProvider: MonitoringProvider {
+    let descriptor = ProviderDescriptor(
+        id: Icinga2Provider.id,
+        displayName: "HTTP Test Provider",
+        capabilities: ProviderCapabilities(
+            authenticationMethods: [.basic],
+            serverTrustMethods: [.system, .disabled]
+        )
+    )
+
+    func endpointCandidates(from hint: String) -> [URL] {
+        let host = hint.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !host.isEmpty else { return [] }
+        return [URL(string: "http://\(host)")!]
+    }
+
+    func validate(_ source: MonitoringSource) -> [SourceValidationIssue] {
+        MonitoringSourceValidator.validateSharedFields(source)
+    }
+
+    func testConnection(
+        to source: MonitoringSource,
+        access: ProviderAccess
+    ) async -> ConnectionTestResult {
+        .connected
+    }
+
+    func loadSnapshot(
+        from source: MonitoringSource,
+        access: ProviderAccess
+    ) async -> SnapshotLoadResult {
+        .loaded(MonitoringSnapshot(sourceID: source.id, observedAt: Date(), issues: []))
+    }
+}
+
 private actor SnapshotScript {
     enum Behavior: Sendable {
         case result(SnapshotLoadResult)
@@ -1070,6 +1142,7 @@ private actor SnapshotScript {
     private var connectionCancellationSourceIDs: Set<UUID> = []
     private var connectionTestCounts: [UUID: Int] = [:]
     private var connectionTrusts: [UUID: [ServerTrustConfiguration]] = [:]
+    private var connectionResults: [UUID: [ConnectionTestResult]] = [:]
 
     func waitForConnectionCancellation(for sourceID: UUID) {
         connectionCancellationSourceIDs.insert(sourceID)
@@ -1078,6 +1151,9 @@ private actor SnapshotScript {
     func testConnection(source: MonitoringSource) async -> ConnectionTestResult {
         connectionTestCounts[source.id, default: 0] += 1
         connectionTrusts[source.id, default: []].append(source.serverTrust)
+        if !connectionResults[source.id, default: []].isEmpty {
+            return connectionResults[source.id, default: []].removeFirst()
+        }
         guard connectionCancellationSourceIDs.contains(source.id) else {
             return .connected
         }
@@ -1093,6 +1169,10 @@ private actor SnapshotScript {
 
     func lastConnectionTrust(for sourceID: UUID) -> ServerTrustConfiguration? {
         connectionTrusts[sourceID]?.last
+    }
+
+    func enqueueConnectionResult(_ result: ConnectionTestResult, for sourceID: UUID) {
+        connectionResults[sourceID, default: []].append(result)
     }
 
     func enqueue(_ behavior: Behavior, for sourceID: UUID) {

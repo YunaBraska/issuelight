@@ -100,6 +100,7 @@ final class IssueLightModel: ObservableObject {
         case checking
         case direct
         case ssh
+        case serverTrustBlocked(String)
         case failed(String)
     }
 
@@ -304,13 +305,26 @@ final class IssueLightModel: ObservableObject {
     }
 
     var isEndpointUsingTLS: Bool {
-        if selectedProviderID == Icinga2Provider.id {
-            return true
+        if let provider = providerRegistry.provider(for: selectedProviderID),
+           let candidate = provider.endpointCandidates(from: endpoint).first {
+            return candidate.scheme?.lowercased() == "https"
         }
         let value = endpoint.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !value.isEmpty else { return true }
         let candidate = value.contains("://") ? value : "https://\(value)"
-        return URLComponents(string: candidate)?.scheme?.lowercased() != "http"
+        return URLComponents(string: candidate)?.scheme?.lowercased() == "https"
+    }
+
+    var canReviewBlockedServerCertificate: Bool {
+        guard isEndpointUsingTLS,
+              serverTrustChoice != .disabled,
+              case .serverTrustBlocked = selectedConnectionStatus.api,
+              let testedSource = connectionStatusSources[sourceID],
+              testedSource.providerID == selectedProviderID,
+              let provider = providerRegistry.provider(for: selectedProviderID) else {
+            return false
+        }
+        return provider.endpointCandidates(from: endpoint).contains(testedSource.endpoint)
     }
 
     var authenticationChoices: [AuthenticationChoice] {
@@ -1731,7 +1745,7 @@ final class IssueLightModel: ObservableObject {
         case .failed(.cancelled):
             break
         case .failed(let failure):
-            connectionStatuses[sourceID, default: ConnectionStatus()].api = .failed(refreshMessage(for: failure))
+            connectionStatuses[sourceID, default: ConnectionStatus()].api = connectionFailureState(failure)
         }
     }
 
@@ -1746,7 +1760,7 @@ final class IssueLightModel: ObservableObject {
         case .failed(.cancelled):
             break
         case .failed(let failure):
-            connectionStatuses[sourceID, default: ConnectionStatus()].api = .failed(refreshMessage(for: failure))
+            connectionStatuses[sourceID, default: ConnectionStatus()].api = connectionFailureState(failure)
         }
     }
 
@@ -1761,8 +1775,15 @@ final class IssueLightModel: ObservableObject {
         case .failed(.cancelled):
             break
         case .failed(let failure):
-            connectionStatuses[sourceID, default: ConnectionStatus()].api = .failed(refreshMessage(for: failure))
+            connectionStatuses[sourceID, default: ConnectionStatus()].api = connectionFailureState(failure)
         }
+    }
+
+    private func connectionFailureState(
+        _ failure: ConnectionFailure
+    ) -> ConnectionEndpointState {
+        let message = refreshMessage(for: failure)
+        return failure == .tls ? .serverTrustBlocked(message) : .failed(message)
     }
 
     private func connectionState(for path: AutomaticConnectionPath) -> ConnectionEndpointState {
