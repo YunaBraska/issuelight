@@ -38,9 +38,10 @@ requires a browser CSRF token or an API key. API-key sources expose quick
 actions. Checkmk API-key sources expose acknowledgement and fixed-downtime
 actions through its REST API. Nagios Core sources use the official JSON status
 and command CGIs with Basic authentication and are qualified against the
-source-built 4.5.14 release. The universal ZIP/DMG/SBOM workflow is ready for
-signing credentials. Direct releases use a signed Sparkle feed for updates. The
-App Store target uses Apple's update channel and contains no Sparkle runtime.
+source-built 4.5.14 release. Stable direct releases publish signed, notarized
+universal ZIP and DMG packages with an SBOM and a signed Sparkle update feed.
+The App Store target uses Apple's update channel and contains no Sparkle
+runtime.
 
 ## Requirements
 
