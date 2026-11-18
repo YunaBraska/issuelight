@@ -337,7 +337,27 @@ final class IssueLightModel: ObservableObject {
     }
 
     var apiUsernameIsRequired: Bool {
-        selectedProviderID == CheckmkProvider.id
+        providerRegistry.provider(for: selectedProviderID)?
+            .descriptor.capabilities.apiKeyUsernameRequirement == .required
+    }
+
+    var apiUsernameIsVisible: Bool {
+        guard let requirement = providerRegistry.provider(for: selectedProviderID)?
+            .descriptor.capabilities.apiKeyUsernameRequirement else {
+            return false
+        }
+        return requirement != .hidden
+    }
+
+    var selectedProviderOffersActions: Bool {
+        providerRegistry.provider(for: selectedProviderID)?
+            .descriptor.capabilities.actions.isEmpty == false
+    }
+
+    var selectedAuthenticationSupportsActions: Bool {
+        providerRegistry.provider(for: selectedProviderID)?
+            .descriptor.capabilities.actionAuthenticationMethods
+            .contains(authenticationChoice.method) == true
     }
 
     var serverTrustChoices: [ServerTrustChoice] {

@@ -13,7 +13,8 @@ public struct CheckmkProvider: MonitoringProvider {
         capabilities: ProviderCapabilities(
             authenticationMethods: [.apiKey],
             serverTrustMethods: [.system, .customCertificate, .pinnedCertificate, .disabled],
-            actions: [.acknowledge, .scheduleDowntime]
+            actions: [.acknowledge, .scheduleDowntime],
+            apiKeyUsernameRequirement: .required
         )
     )
 
@@ -88,14 +89,12 @@ public struct CheckmkProvider: MonitoringProvider {
     }
 
     public func validate(_ source: MonitoringSource) -> [SourceValidationIssue] {
-        var issues = MonitoringSourceValidator.validateSharedFields(source)
+        var issues = MonitoringSourceValidator.validateSharedFields(
+            source,
+            capabilities: descriptor.capabilities
+        )
         if !descriptor.capabilities.authenticationMethods.contains(source.authentication.method) {
             issues.append(.unsupportedAuthentication(source.authentication.method))
-        }
-        if case .apiKey(let username) = source.authentication,
-           username.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-           !issues.contains(.emptyUsername) {
-            issues.append(.emptyUsername)
         }
         let parts = source.endpoint.path.split(separator: "/").map { $0.lowercased() }
         let validSuffixes: [[String]] = [

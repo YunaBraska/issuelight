@@ -715,6 +715,7 @@ final class IssueLightModelTests: XCTestCase {
         XCTAssertEqual(model.authenticationChoices, [.apiKey])
         XCTAssertEqual(model.authenticationChoice, .apiKey)
         XCTAssertTrue(model.apiUsernameIsRequired)
+        XCTAssertTrue(model.selectedAuthenticationSupportsActions)
         model.serverTrustChoice = .disabled
         model.endpoint = "http://monitoring.example.test/cmk"
         XCTAssertFalse(model.isEndpointUsingTLS)
@@ -728,9 +729,19 @@ final class IssueLightModelTests: XCTestCase {
         XCTAssertEqual(model.authenticationChoices, [.basic])
         XCTAssertEqual(model.authenticationChoice, .basic)
         XCTAssertFalse(model.apiUsernameIsRequired)
+        XCTAssertTrue(model.selectedAuthenticationSupportsActions)
 
         model.endpoint = "http://nagios.example.test/nagios"
         XCTAssertFalse(model.isEndpointUsingTLS)
+
+        model.selectedProviderID = ThrukProvider.id
+        XCTAssertEqual(model.authenticationChoices, [.basic, .apiKey])
+        model.authenticationChoice = .basic
+        XCTAssertFalse(model.apiUsernameIsRequired)
+        XCTAssertFalse(model.selectedAuthenticationSupportsActions)
+        model.authenticationChoice = .apiKey
+        XCTAssertFalse(model.apiUsernameIsRequired)
+        XCTAssertTrue(model.selectedAuthenticationSupportsActions)
 
         model.selectedProviderID = Icinga2Provider.id
         XCTAssertTrue(model.isEndpointUsingTLS)

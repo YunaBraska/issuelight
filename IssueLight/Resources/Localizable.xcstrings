@@ -22,12 +22,12 @@
     "In macOS deaktiviert": {"localizations":{"ar":{"stringUnit":{"state":"translated","value":"معطّل في macOS"}},"bn":{"stringUnit":{"state":"translated","value":"macOS-এ বন্ধ"}},"en":{"stringUnit":{"state":"translated","value":"Disabled in macOS"}},"es":{"stringUnit":{"state":"translated","value":"Desactivado en macOS"}},"fr":{"stringUnit":{"state":"translated","value":"Désactivé dans macOS"}},"ha":{"stringUnit":{"state":"translated","value":"An kashe a macOS"}},"hi":{"stringUnit":{"state":"translated","value":"macOS में बंद"}},"id":{"stringUnit":{"state":"translated","value":"Dinonaktifkan di macOS"}},"ja":{"stringUnit":{"state":"translated","value":"macOS で無効"}},"mr":{"stringUnit":{"state":"translated","value":"macOS मध्ये बंद"}},"pcm":{"stringUnit":{"state":"translated","value":"Disabled for macOS"}},"pt":{"stringUnit":{"state":"translated","value":"Desativado no macOS"}},"ru":{"stringUnit":{"state":"translated","value":"Отключено в macOS"}},"sv":{"stringUnit":{"state":"translated","value":"Avstängt i macOS"}},"sw":{"stringUnit":{"state":"translated","value":"Imezimwa katika macOS"}},"te":{"stringUnit":{"state":"translated","value":"macOSలో నిలిపివేయబడింది"}},"tr":{"stringUnit":{"state":"translated","value":"macOS’ta devre dışı"}},"ur":{"stringUnit":{"state":"translated","value":"macOS میں بند"}},"vi":{"stringUnit":{"state":"translated","value":"Đã tắt trong macOS"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"已在 macOS 中停用"}}}},
     "Nur neue oder verschärfte Probleme werden gemeldet. Mitteilungen verbergen Monitoring-Details.": {"localizations":{"ar":{"stringUnit":{"state":"translated","value":"لا يتم الإبلاغ إلا عن المشكلات الجديدة أو المتفاقمة. تخفي الإشعارات تفاصيل المراقبة."}},"bn":{"stringUnit":{"state":"translated","value":"শুধু নতুন বা আরও গুরুতর সমস্যার বিজ্ঞপ্তি দেওয়া হয়। বিজ্ঞপ্তিতে পর্যবেক্ষণের বিবরণ লুকানো থাকে।"}},"en":{"stringUnit":{"state":"translated","value":"Only new or escalated problems are reported. Notifications hide monitoring details."}},"es":{"stringUnit":{"state":"translated","value":"Solo se notifican problemas nuevos o agravados. Las notificaciones ocultan los detalles de monitorización."}},"fr":{"stringUnit":{"state":"translated","value":"Seuls les problèmes nouveaux ou aggravés sont signalés. Les notifications masquent les détails de surveillance."}},"ha":{"stringUnit":{"state":"translated","value":"Sabbin matsaloli ko waɗanda suka tsananta kawai ake sanarwa. Sanarwa suna ɓoye bayanan sa ido."}},"hi":{"stringUnit":{"state":"translated","value":"केवल नई या गंभीर हुई समस्याओं की सूचना दी जाती है। सूचनाएँ निगरानी विवरण छिपाती हैं।"}},"id":{"stringUnit":{"state":"translated","value":"Hanya masalah baru atau yang memburuk yang dilaporkan. Notifikasi menyembunyikan detail pemantauan."}},"ja":{"stringUnit":{"state":"translated","value":"新規または悪化した問題のみ通知します。通知には監視の詳細を表示しません。"}},"mr":{"stringUnit":{"state":"translated","value":"फक्त नवीन किंवा अधिक गंभीर झालेल्या समस्यांची सूचना दिली जाते. सूचनांमध्ये मॉनिटरिंग तपशील लपवले जातात."}},"pcm":{"stringUnit":{"state":"translated","value":"Na only new problem or problem wey worse dem go report. Notification no go show monitoring details."}},"pt":{"stringUnit":{"state":"translated","value":"Apenas são comunicados problemas novos ou agravados. As notificações ocultam os detalhes de monitorização."}},"ru":{"stringUnit":{"state":"translated","value":"Уведомления отправляются только о новых или усугубившихся проблемах. Сведения мониторинга в них скрыты."}},"sv":{"stringUnit":{"state":"translated","value":"Endast nya eller förvärrade problem rapporteras. Notiser döljer övervakningsdetaljer."}},"sw":{"stringUnit":{"state":"translated","value":"Matatizo mapya au yaliyoongezeka pekee ndiyo yanaripotiwa. Arifa huficha maelezo ya ufuatiliaji."}},"te":{"stringUnit":{"state":"translated","value":"కొత్త లేదా తీవ్రత పెరిగిన సమస్యలను మాత్రమే తెలియజేస్తుంది. నోటిఫికేషన్‌లు మానిటరింగ్ వివరాలను దాచుతాయి."}},"tr":{"stringUnit":{"state":"translated","value":"Yalnızca yeni veya ağırlaşan sorunlar bildirilir. Bildirimler izleme ayrıntılarını gizler."}},"ur":{"stringUnit":{"state":"translated","value":"صرف نئے یا زیادہ سنگین مسائل کی اطلاع دی جاتی ہے۔ اطلاعات میں نگرانی کی تفصیلات پوشیدہ رہتی ہیں۔"}},"vi":{"stringUnit":{"state":"translated","value":"Chỉ thông báo sự cố mới hoặc nghiêm trọng hơn. Thông báo ẩn chi tiết giám sát."}},"zh-Hans":{"stringUnit":{"state":"translated","value":"仅报告新出现或升级的问题。通知会隐藏监控详情。"}}}},
     "Neues Monitoring-Problem": {"localizations":{"ar":{"stringUnit":{"state":"translated","value":"مشكلة مراقبة جديدة"}},"bn":{"stringUnit":{"state":"translated","value":"নতুন পর্যবেক্ষণ সমস্যা"}},"en":{"stringUnit":{"state":"translated","value":"New monitoring problem"}},"es":{"stringUnit":{"state":"translated","value":"Nuevo problema de monitorización"}},"fr":{"stringUnit":{"state":"translated","value":"Nouveau problème de surveillance"}},"ha":{"stringUnit":{"state":"translated","value":"Sabuwar matsalar sa ido"}},"hi":{"stringUnit":{"state":"translated","value":"नई निगरानी समस्या"}},"id":{"stringUnit":{"state":"translated","value":"Masalah pemantauan baru"}},"ja":{"stringUnit":{"state":"translated","value":"新しい監視問題"}},"mr":{"stringUnit":{"state":"translated","value":"नवीन मॉनिटरिंग समस्या"}},"pcm":{"stringUnit":{"state":"translated","value":"New monitoring problem"}},"pt":{"stringUnit":{"state":"translated","value":"Novo problema de monitorização"}},"ru":{"stringUnit":{"state":"translated","value":"Новая проблема мониторинга"}},"sv":{"stringUnit":{"state":"translated","value":"Nytt övervakningsproblem"}},"sw":{"stringUnit":{"state":"translated","value":"Tatizo jipya la ufuatiliaji"}},"te":{"stringUnit":{"state":"translated","value":"కొత్త మానిటరింగ్ సమస్య"}},"tr":{"stringUnit":{"state":"translated","value":"Yeni izleme sorunu"}},"ur":{"stringUnit":{"state":"translated","value":"نیا نگرانی کا مسئلہ"}},"vi":{"stringUnit":{"state":"translated","value":"Sự cố giám sát mới"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"新的监控问题"}}}},
-    "%lld neue Monitoring-Probleme": {"localizations":{"ar":{"stringUnit":{"state":"translated","value":"%lld مشكلات مراقبة جديدة"}},"bn":{"stringUnit":{"state":"translated","value":"%lldটি নতুন পর্যবেক্ষণ সমস্যা"}},"en":{"stringUnit":{"state":"translated","value":"%lld new monitoring problems"}},"es":{"stringUnit":{"state":"translated","value":"%lld problemas nuevos de monitorización"}},"fr":{"stringUnit":{"state":"translated","value":"%lld nouveaux problèmes de surveillance"}},"ha":{"stringUnit":{"state":"translated","value":"Sabbin matsalolin sa ido %lld"}},"hi":{"stringUnit":{"state":"translated","value":"%lld नई निगरानी समस्याएँ"}},"id":{"stringUnit":{"state":"translated","value":"%lld masalah pemantauan baru"}},"ja":{"stringUnit":{"state":"translated","value":"%lld 件の新しい監視問題"}},"mr":{"stringUnit":{"state":"translated","value":"%lld नवीन मॉनिटरिंग समस्या"}},"pcm":{"stringUnit":{"state":"translated","value":"%lld new monitoring problems"}},"pt":{"stringUnit":{"state":"translated","value":"%lld novos problemas de monitorização"}},"ru":{"stringUnit":{"state":"translated","value":"%lld новых проблем мониторинга"}},"sv":{"stringUnit":{"state":"translated","value":"%lld nya övervakningsproblem"}},"sw":{"stringUnit":{"state":"translated","value":"Matatizo mapya ya ufuatiliaji %lld"}},"te":{"stringUnit":{"state":"translated","value":"%lld కొత్త మానిటరింగ్ సమస్యలు"}},"tr":{"stringUnit":{"state":"translated","value":"%lld yeni izleme sorunu"}},"ur":{"stringUnit":{"state":"translated","value":"%lld نئے نگرانی کے مسائل"}},"vi":{"stringUnit":{"state":"translated","value":"%lld sự cố giám sát mới"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"%lld 个新的监控问题"}}}},
+    "%lld neue Monitoring-Probleme": {"localizations":{"ar":{"stringUnit":{"state":"translated","value":"%lld مشكلات مراقبة جديدة"}},"bn":{"stringUnit":{"state":"translated","value":"%lldটি নতুন পর্যবেক্ষণ সমস্যা"}},"en":{"stringUnit":{"state":"translated","value":"%lld new monitoring problems"}},"es":{"stringUnit":{"state":"translated","value":"%lld problemas nuevos de monitorización"}},"fr":{"stringUnit":{"state":"translated","value":"%lld nouveaux problèmes de surveillance"}},"ha":{"stringUnit":{"state":"translated","value":"Sabbin matsalolin sa ido %lld"}},"hi":{"stringUnit":{"state":"translated","value":"%lld नई निगरानी समस्याएँ"}},"id":{"stringUnit":{"state":"translated","value":"%lld masalah pemantauan baru"}},"ja":{"stringUnit":{"state":"translated","value":"%lld 件の新しい監視問題"}},"mr":{"stringUnit":{"state":"translated","value":"%lld नवीन मॉनिटरिंग समस्या"}},"pcm":{"stringUnit":{"state":"translated","value":"%lld new monitoring problem dem"}},"pt":{"stringUnit":{"state":"translated","value":"%lld novos problemas de monitorização"}},"ru":{"stringUnit":{"state":"translated","value":"%lld новых проблем мониторинга"}},"sv":{"stringUnit":{"state":"translated","value":"%lld nya övervakningsproblem"}},"sw":{"stringUnit":{"state":"translated","value":"Matatizo mapya ya ufuatiliaji %lld"}},"te":{"stringUnit":{"state":"translated","value":"%lld కొత్త మానిటరింగ్ సమస్యలు"}},"tr":{"stringUnit":{"state":"translated","value":"%lld yeni izleme sorunu"}},"ur":{"stringUnit":{"state":"translated","value":"%lld نئے نگرانی کے مسائل"}},"vi":{"stringUnit":{"state":"translated","value":"%lld sự cố giám sát mới"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"%lld 个新的监控问题"}}}},
     "Öffne IssueLight, um den aktuellen Status zu prüfen.": {"localizations":{"ar":{"stringUnit":{"state":"translated","value":"افتح IssueLight للتحقق من الحالة الحالية."}},"bn":{"stringUnit":{"state":"translated","value":"বর্তমান অবস্থা দেখতে IssueLight খুলুন।"}},"en":{"stringUnit":{"state":"translated","value":"Open IssueLight to check the current status."}},"es":{"stringUnit":{"state":"translated","value":"Abre IssueLight para comprobar el estado actual."}},"fr":{"stringUnit":{"state":"translated","value":"Ouvrez IssueLight pour vérifier l’état actuel."}},"ha":{"stringUnit":{"state":"translated","value":"Buɗe IssueLight don duba halin yanzu."}},"hi":{"stringUnit":{"state":"translated","value":"वर्तमान स्थिति देखने के लिए IssueLight खोलें।"}},"id":{"stringUnit":{"state":"translated","value":"Buka IssueLight untuk memeriksa status saat ini."}},"ja":{"stringUnit":{"state":"translated","value":"現在の状態を確認するには IssueLight を開いてください。"}},"mr":{"stringUnit":{"state":"translated","value":"सध्याची स्थिती पाहण्यासाठी IssueLight उघडा."}},"pcm":{"stringUnit":{"state":"translated","value":"Open IssueLight to check current status."}},"pt":{"stringUnit":{"state":"translated","value":"Abra o IssueLight para verificar o estado atual."}},"ru":{"stringUnit":{"state":"translated","value":"Откройте IssueLight, чтобы проверить текущее состояние."}},"sv":{"stringUnit":{"state":"translated","value":"Öppna IssueLight för att kontrollera aktuell status."}},"sw":{"stringUnit":{"state":"translated","value":"Fungua IssueLight ili kuangalia hali ya sasa."}},"te":{"stringUnit":{"state":"translated","value":"ప్రస్తుత స్థితిని తనిఖీ చేయడానికి IssueLightను తెరవండి."}},"tr":{"stringUnit":{"state":"translated","value":"Güncel durumu kontrol etmek için IssueLight’ı açın."}},"ur":{"stringUnit":{"state":"translated","value":"موجودہ حالت دیکھنے کے لیے IssueLight کھولیں۔"}},"vi":{"stringUnit":{"state":"translated","value":"Mở IssueLight để kiểm tra trạng thái hiện tại."}},"zh-Hans":{"stringUnit":{"state":"translated","value":"打开 IssueLight 以检查当前状态。"}}}},
     "Benachrichtigungen für %@": {"localizations":{"ar":{"stringUnit":{"state":"translated","value":"إشعارات %@"}},"bn":{"stringUnit":{"state":"translated","value":"%@-এর বিজ্ঞপ্তি"}},"en":{"stringUnit":{"state":"translated","value":"Notifications for %@"}},"es":{"stringUnit":{"state":"translated","value":"Notificaciones de %@"}},"fr":{"stringUnit":{"state":"translated","value":"Notifications pour %@"}},"ha":{"stringUnit":{"state":"translated","value":"Sanarwa don %@"}},"hi":{"stringUnit":{"state":"translated","value":"%@ के लिए सूचनाएँ"}},"id":{"stringUnit":{"state":"translated","value":"Notifikasi untuk %@"}},"ja":{"stringUnit":{"state":"translated","value":"%@ の通知"}},"mr":{"stringUnit":{"state":"translated","value":"%@ साठी सूचना"}},"pcm":{"stringUnit":{"state":"translated","value":"Notifications for %@"}},"pt":{"stringUnit":{"state":"translated","value":"Notificações para %@"}},"ru":{"stringUnit":{"state":"translated","value":"Уведомления для %@"}},"sv":{"stringUnit":{"state":"translated","value":"Notiser för %@"}},"sw":{"stringUnit":{"state":"translated","value":"Arifa za %@"}},"te":{"stringUnit":{"state":"translated","value":"%@ కోసం నోటిఫికేషన్‌లు"}},"tr":{"stringUnit":{"state":"translated","value":"%@ bildirimleri"}},"ur":{"stringUnit":{"state":"translated","value":"%@ کے لیے اطلاعات"}},"vi":{"stringUnit":{"state":"translated","value":"Thông báo cho %@"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"%@ 的通知"}}}},
     "Check for Updates…": {"localizations":{"ar":{"stringUnit":{"state":"translated","value":"التحقق من وجود تحديثات…"}},"bn":{"stringUnit":{"state":"translated","value":"আপডেট পরীক্ষা করুন…"}},"de":{"stringUnit":{"state":"translated","value":"Nach Updates suchen …"}},"en":{"stringUnit":{"state":"translated","value":"Check for Updates…"}},"es":{"stringUnit":{"state":"translated","value":"Buscar actualizaciones…"}},"fr":{"stringUnit":{"state":"translated","value":"Rechercher les mises à jour…"}},"ha":{"stringUnit":{"state":"translated","value":"Duba sabuntawa…"}},"hi":{"stringUnit":{"state":"translated","value":"अपडेट की जाँच करें…"}},"id":{"stringUnit":{"state":"translated","value":"Periksa pembaruan…"}},"ja":{"stringUnit":{"state":"translated","value":"アップデートを確認…"}},"mr":{"stringUnit":{"state":"translated","value":"अद्यतने तपासा…"}},"pcm":{"stringUnit":{"state":"translated","value":"Check for updates…"}},"pt":{"stringUnit":{"state":"translated","value":"Procurar atualizações…"}},"ru":{"stringUnit":{"state":"translated","value":"Проверить наличие обновлений…"}},"sv":{"stringUnit":{"state":"translated","value":"Sök efter uppdateringar…"}},"sw":{"stringUnit":{"state":"translated","value":"Angalia masasisho…"}},"te":{"stringUnit":{"state":"translated","value":"నవీకరణల కోసం తనిఖీ చేయండి…"}},"tr":{"stringUnit":{"state":"translated","value":"Güncellemeleri denetle…"}},"ur":{"stringUnit":{"state":"translated","value":"اپ ڈیٹس چیک کریں…"}},"vi":{"stringUnit":{"state":"translated","value":"Kiểm tra bản cập nhật…"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"检查更新…"}}}},
     "Open App Store Updates…": {"localizations":{"ar":{"stringUnit":{"state":"translated","value":"فتح تحديثات App Store…"}},"bn":{"stringUnit":{"state":"translated","value":"App Store আপডেট খুলুন…"}},"de":{"stringUnit":{"state":"translated","value":"App Store-Updates öffnen …"}},"en":{"stringUnit":{"state":"translated","value":"Open App Store Updates…"}},"es":{"stringUnit":{"state":"translated","value":"Abrir actualizaciones del App Store…"}},"fr":{"stringUnit":{"state":"translated","value":"Ouvrir les mises à jour de l’App Store…"}},"ha":{"stringUnit":{"state":"translated","value":"Buɗe sabuntawar App Store…"}},"hi":{"stringUnit":{"state":"translated","value":"App Store अपडेट खोलें…"}},"id":{"stringUnit":{"state":"translated","value":"Buka pembaruan App Store…"}},"ja":{"stringUnit":{"state":"translated","value":"App Store のアップデートを開く…"}},"mr":{"stringUnit":{"state":"translated","value":"App Store अद्यतने उघडा…"}},"pcm":{"stringUnit":{"state":"translated","value":"Open App Store updates…"}},"pt":{"stringUnit":{"state":"translated","value":"Abrir atualizações da App Store…"}},"ru":{"stringUnit":{"state":"translated","value":"Открыть обновления App Store…"}},"sv":{"stringUnit":{"state":"translated","value":"Öppna App Store-uppdateringar…"}},"sw":{"stringUnit":{"state":"translated","value":"Fungua masasisho ya App Store…"}},"te":{"stringUnit":{"state":"translated","value":"App Store నవీకరణలను తెరవండి…"}},"tr":{"stringUnit":{"state":"translated","value":"App Store güncellemelerini aç…"}},"ur":{"stringUnit":{"state":"translated","value":"App Store اپ ڈیٹس کھولیں…"}},"vi":{"stringUnit":{"state":"translated","value":"Mở bản cập nhật App Store…"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"打开 App Store 更新…"}}}},
-    "Diese optionalen Aktionen öffnen den in einem Problem genannten Host. Sie sind nicht der SSH-Tunnel zur Icinga-Quelle.": {"localizations":{"ar":{"stringUnit":{"state":"translated","value":"تفتح هذه الإجراءات الاختيارية المضيف المذكور في المشكلة. وهي ليست نفق SSH إلى مصدر Icinga."}},"bn":{"stringUnit":{"state":"translated","value":"এই ঐচ্ছিক কাজগুলো সমস্যায় উল্লেখ করা হোস্টটি খোলে। এগুলো Icinga উৎসের SSH টানেল নয়।"}},"de":{"stringUnit":{"state":"translated","value":"Diese optionalen Aktionen öffnen den in einem Problem genannten Host. Sie sind nicht der SSH-Tunnel zur Icinga-Quelle."}},"en":{"stringUnit":{"state":"translated","value":"These optional actions open the host named in an issue. They are not the SSH tunnel to the Icinga source."}},"es":{"stringUnit":{"state":"translated","value":"Estas acciones opcionales abren el host indicado en un problema. No son el túnel SSH hacia la fuente de Icinga."}},"fr":{"stringUnit":{"state":"translated","value":"Ces actions facultatives ouvrent l’hôte indiqué dans un problème. Elles ne correspondent pas au tunnel SSH vers la source Icinga."}},"ha":{"stringUnit":{"state":"translated","value":"Waɗannan ayyukan na zaɓi suna buɗe kwamfutar da aka ambata a matsala. Ba su ne ramin SSH zuwa tushen Icinga ba."}},"hi":{"stringUnit":{"state":"translated","value":"ये वैकल्पिक कार्रवाइयाँ समस्या में बताए गए होस्ट को खोलती हैं। ये Icinga स्रोत की SSH टनल नहीं हैं।"}},"id":{"stringUnit":{"state":"translated","value":"Tindakan opsional ini membuka host yang disebut dalam masalah. Ini bukan terowongan SSH ke sumber Icinga."}},"ja":{"stringUnit":{"state":"translated","value":"これらの任意の操作は、問題に記載されたホストを開きます。Icinga ソースへの SSH トンネルではありません。"}},"mr":{"stringUnit":{"state":"translated","value":"या ऐच्छिक कृती समस्येमध्ये नमूद केलेला होस्ट उघडतात. त्या Icinga स्त्रोतासाठीचा SSH टनेल नाहीत."}},"pcm":{"stringUnit":{"state":"translated","value":"Dis optional actions go open di host wey issue mention. Dem no be SSH tunnel to Icinga source."}},"pt":{"stringUnit":{"state":"translated","value":"Estas ações opcionais abrem o anfitrião indicado num problema. Não são o túnel SSH para a origem Icinga."}},"ru":{"stringUnit":{"state":"translated","value":"Эти необязательные действия открывают узел, указанный в проблеме. Это не SSH-туннель к источнику Icinga."}},"sv":{"stringUnit":{"state":"translated","value":"Dessa valfria åtgärder öppnar värden som anges i ett problem. De är inte SSH-tunneln till Icinga-källan."}},"sw":{"stringUnit":{"state":"translated","value":"Vitendo hivi vya hiari hufungua seva iliyotajwa kwenye tatizo. Si handaki la SSH kwenda kwenye chanzo cha Icinga."}},"te":{"stringUnit":{"state":"translated","value":"ఈ ఐచ్ఛిక చర్యలు సమస్యలో పేర్కొన్న హోస్ట్‌ను తెరుస్తాయి. ఇవి Icinga మూలానికి SSH టన్నెల్ కావు."}},"tr":{"stringUnit":{"state":"translated","value":"Bu isteğe bağlı eylemler, sorunda belirtilen ana makineyi açar. Bunlar Icinga kaynağına giden SSH tüneli değildir."}},"ur":{"stringUnit":{"state":"translated","value":"یہ اختیاری کارروائیاں مسئلے میں درج ہوسٹ کو کھولتی ہیں۔ یہ Icinga سورس کی SSH ٹنل نہیں ہیں۔"}},"vi":{"stringUnit":{"state":"translated","value":"Các thao tác tùy chọn này mở máy chủ được nêu trong sự cố. Chúng không phải là đường hầm SSH tới nguồn Icinga."}},"zh-Hans":{"stringUnit":{"state":"translated","value":"这些可选操作会打开问题中提到的主机。它们不是通往 Icinga 数据源的 SSH 隧道。"}}}},
+    "Diese optionalen Aktionen öffnen den in einem Problem genannten Host. Sie sind nicht der SSH-Tunnel zur Monitoring-Quelle.": {"localizations":{"ar":{"stringUnit":{"state":"translated","value":"تفتح هذه الإجراءات الاختيارية المضيف المذكور في المشكلة. وهي ليست نفق SSH إلى مصدر المراقبة."}},"bn":{"stringUnit":{"state":"translated","value":"এই ঐচ্ছিক কাজগুলো সমস্যায় উল্লেখ করা হোস্টটি খোলে। এগুলো মনিটরিং উৎসের SSH টানেল নয়।"}},"de":{"stringUnit":{"state":"translated","value":"Diese optionalen Aktionen öffnen den in einem Problem genannten Host. Sie sind nicht der SSH-Tunnel zur Monitoring-Quelle."}},"en":{"stringUnit":{"state":"translated","value":"These optional actions open the host named in an issue. They are not the SSH tunnel to the monitoring source."}},"es":{"stringUnit":{"state":"translated","value":"Estas acciones opcionales abren el host indicado en un problema. No son el túnel SSH hacia la fuente de monitorización."}},"fr":{"stringUnit":{"state":"translated","value":"Ces actions facultatives ouvrent l’hôte indiqué dans un problème. Elles ne correspondent pas au tunnel SSH vers la source de supervision."}},"ha":{"stringUnit":{"state":"translated","value":"Waɗannan ayyukan na zaɓi suna buɗe kwamfutar da aka ambata a matsala. Ba su ne ramin SSH zuwa tushen sa ido ba."}},"hi":{"stringUnit":{"state":"translated","value":"ये वैकल्पिक कार्रवाइयाँ समस्या में बताए गए होस्ट को खोलती हैं। ये निगरानी स्रोत की SSH टनल नहीं हैं।"}},"id":{"stringUnit":{"state":"translated","value":"Tindakan opsional ini membuka host yang disebut dalam masalah. Ini bukan terowongan SSH ke sumber pemantauan."}},"ja":{"stringUnit":{"state":"translated","value":"これらの任意の操作は、問題に記載されたホストを開きます。監視ソースへの SSH トンネルではありません。"}},"mr":{"stringUnit":{"state":"translated","value":"या ऐच्छिक कृती समस्येमध्ये नमूद केलेला होस्ट उघडतात. त्या मॉनिटरिंग स्रोतासाठीचा SSH टनेल नाहीत."}},"pcm":{"stringUnit":{"state":"translated","value":"Dis optional actions go open di host wey issue mention. Dem no be SSH tunnel to monitoring source."}},"pt":{"stringUnit":{"state":"translated","value":"Estas ações opcionais abrem o anfitrião indicado num problema. Não são o túnel SSH para a origem de monitorização."}},"ru":{"stringUnit":{"state":"translated","value":"Эти необязательные действия открывают узел, указанный в проблеме. Это не SSH-туннель к источнику мониторинга."}},"sv":{"stringUnit":{"state":"translated","value":"Dessa valfria åtgärder öppnar värden som anges i ett problem. De är inte SSH-tunneln till övervakningskällan."}},"sw":{"stringUnit":{"state":"translated","value":"Vitendo hivi vya hiari hufungua seva iliyotajwa kwenye tatizo. Si handaki la SSH kwenda kwenye chanzo cha ufuatiliaji."}},"te":{"stringUnit":{"state":"translated","value":"ఈ ఐచ్ఛిక చర్యలు సమస్యలో పేర్కొన్న హోస్ట్‌ను తెరుస్తాయి. ఇవి మానిటరింగ్ మూలానికి SSH టన్నెల్ కావు."}},"tr":{"stringUnit":{"state":"translated","value":"Bu isteğe bağlı eylemler, sorunda belirtilen ana makineyi açar. Bunlar izleme kaynağına giden SSH tüneli değildir."}},"ur":{"stringUnit":{"state":"translated","value":"یہ اختیاری کارروائیاں مسئلے میں درج ہوسٹ کو کھولتی ہیں۔ یہ مانیٹرنگ سورس کی SSH ٹنل نہیں ہیں۔"}},"vi":{"stringUnit":{"state":"translated","value":"Các thao tác tùy chọn này mở máy chủ được nêu trong sự cố. Chúng không phải là đường hầm SSH tới nguồn giám sát."}},"zh-Hans":{"stringUnit":{"state":"translated","value":"这些可选操作会打开问题中提到的主机。它们不是通往监控数据源的 SSH 隧道。"}}}},
     "Quelle über SSH erreichen": {"localizations":{"ar":{"stringUnit":{"state":"translated","value":"الوصول إلى المصدر عبر SSH"}},"bn":{"stringUnit":{"state":"translated","value":"SSH-এর মাধ্যমে উৎসে পৌঁছান"}},"de":{"stringUnit":{"state":"translated","value":"Quelle über SSH erreichen"}},"en":{"stringUnit":{"state":"translated","value":"Reach source via SSH"}},"es":{"stringUnit":{"state":"translated","value":"Acceder a la fuente mediante SSH"}},"fr":{"stringUnit":{"state":"translated","value":"Accéder à la source via SSH"}},"ha":{"stringUnit":{"state":"translated","value":"Isa ga tushe ta SSH"}},"hi":{"stringUnit":{"state":"translated","value":"SSH के ज़रिए स्रोत तक पहुँचें"}},"id":{"stringUnit":{"state":"translated","value":"Jangkau sumber melalui SSH"}},"ja":{"stringUnit":{"state":"translated","value":"SSH 経由でソースに接続"}},"mr":{"stringUnit":{"state":"translated","value":"SSH द्वारे स्त्रोताशी जोडा"}},"pcm":{"stringUnit":{"state":"translated","value":"Reach source through SSH"}},"pt":{"stringUnit":{"state":"translated","value":"Aceder à origem por SSH"}},"ru":{"stringUnit":{"state":"translated","value":"Подключаться к источнику через SSH"}},"sv":{"stringUnit":{"state":"translated","value":"Nå källan via SSH"}},"sw":{"stringUnit":{"state":"translated","value":"Fikia chanzo kupitia SSH"}},"te":{"stringUnit":{"state":"translated","value":"SSH ద్వారా మూలాన్ని చేరుకోండి"}},"tr":{"stringUnit":{"state":"translated","value":"Kaynağa SSH üzerinden eriş"}},"ur":{"stringUnit":{"state":"translated","value":"SSH کے ذریعے سورس تک پہنچیں"}},"vi":{"stringUnit":{"state":"translated","value":"Truy cập nguồn qua SSH"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"通过 SSH 访问数据源"}}}},
     "Nur als Fallback": {"localizations":{"ar":{"stringUnit":{"state":"translated","value":"للاستخدام الاحتياطي فقط"}},"bn":{"stringUnit":{"state":"translated","value":"শুধু বিকল্প ব্যবস্থা হিসেবে"}},"de":{"stringUnit":{"state":"translated","value":"Nur als Fallback"}},"en":{"stringUnit":{"state":"translated","value":"Fallback only"}},"es":{"stringUnit":{"state":"translated","value":"Solo como alternativa"}},"fr":{"stringUnit":{"state":"translated","value":"Uniquement en secours"}},"ha":{"stringUnit":{"state":"translated","value":"A matsayin mafita ta biyu kawai"}},"hi":{"stringUnit":{"state":"translated","value":"केवल वैकल्पिक मार्ग के रूप में"}},"id":{"stringUnit":{"state":"translated","value":"Hanya sebagai cadangan"}},"ja":{"stringUnit":{"state":"translated","value":"フォールバック時のみ"}},"mr":{"stringUnit":{"state":"translated","value":"फक्त पर्यायी मार्ग म्हणून"}},"pcm":{"stringUnit":{"state":"translated","value":"Na only as backup"}},"pt":{"stringUnit":{"state":"translated","value":"Apenas como alternativa"}},"ru":{"stringUnit":{"state":"translated","value":"Только как резервный вариант"}},"sv":{"stringUnit":{"state":"translated","value":"Endast som reserv"}},"sw":{"stringUnit":{"state":"translated","value":"Kwa njia mbadala pekee"}},"te":{"stringUnit":{"state":"translated","value":"ప్రత్యామ్నాయంగా మాత్రమే"}},"tr":{"stringUnit":{"state":"translated","value":"Yalnızca yedek olarak"}},"ur":{"stringUnit":{"state":"translated","value":"صرف متبادل کے طور پر"}},"vi":{"stringUnit":{"state":"translated","value":"Chỉ dùng làm phương án dự phòng"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"仅作为备用方式"}}}},
     "Verbindungsversuche": {"localizations":{"ar":{"stringUnit":{"state":"translated","value":"محاولات الاتصال"}},"bn":{"stringUnit":{"state":"translated","value":"সংযোগের চেষ্টা"}},"de":{"stringUnit":{"state":"translated","value":"Verbindungsversuche"}},"en":{"stringUnit":{"state":"translated","value":"Connection attempts"}},"es":{"stringUnit":{"state":"translated","value":"Intentos de conexión"}},"fr":{"stringUnit":{"state":"translated","value":"Tentatives de connexion"}},"ha":{"stringUnit":{"state":"translated","value":"Ƙoƙarin haɗawa"}},"hi":{"stringUnit":{"state":"translated","value":"कनेक्शन के प्रयास"}},"id":{"stringUnit":{"state":"translated","value":"Percobaan koneksi"}},"ja":{"stringUnit":{"state":"translated","value":"接続試行"}},"mr":{"stringUnit":{"state":"translated","value":"कनेक्शनचे प्रयत्न"}},"pcm":{"stringUnit":{"state":"translated","value":"Connection attempts"}},"pt":{"stringUnit":{"state":"translated","value":"Tentativas de ligação"}},"ru":{"stringUnit":{"state":"translated","value":"Попытки подключения"}},"sv":{"stringUnit":{"state":"translated","value":"Anslutningsförsök"}},"sw":{"stringUnit":{"state":"translated","value":"Majaribio ya muunganisho"}},"te":{"stringUnit":{"state":"translated","value":"కనెక్షన్ ప్రయత్నాలు"}},"tr":{"stringUnit":{"state":"translated","value":"Bağlantı denemeleri"}},"ur":{"stringUnit":{"state":"translated","value":"کنکشن کی کوششیں"}},"vi":{"stringUnit":{"state":"translated","value":"Các lần thử kết nối"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"连接尝试"}}}},
@@ -3607,7 +3607,7 @@
         },
         "pcm": {
           "stringUnit": { "state": "translated",
-            "value": "1 Problem"
+            "value": "1 problem"
           }
         },
         "pt": {
@@ -3622,7 +3622,7 @@
         },
         "sv": {
           "stringUnit": { "state": "translated",
-            "value": "1 Problem"
+            "value": "1 problem"
           }
         },
         "sw": {
@@ -3637,7 +3637,7 @@
         },
         "tr": {
           "stringUnit": { "state": "translated",
-            "value": "1 Problem"
+            "value": "1 sorun"
           }
         },
         "ur": {
@@ -5212,7 +5212,7 @@
         },
         "zh-Hans": {
           "stringUnit": { "state": "translated",
-            "value": "续订证书后，连接将保持阻止状态，直到您在此处检查并选择新证书为止。"
+            "value": "证书续订后，连接会保持阻止，直到你在此检查并选择新证书。"
           }
         }
       }
@@ -5895,7 +5895,7 @@
         },
         "pcm": {
           "stringUnit": { "state": "translated",
-            "value": "CA Certificate is being imported …"
+            "value": "Dem dey import CA certificate …"
           }
         },
         "pt": {
@@ -6103,7 +6103,7 @@
         },
         "pcm": {
           "stringUnit": { "state": "translated",
-            "value": "Import Client Certificate"
+            "value": "Import client certificate"
           }
         },
         "pt": {
@@ -10575,7 +10575,7 @@
         },
         "pcm": {
           "stringUnit": { "state": "translated",
-            "value": "The TLS connection failed. Check certificate and server name."
+            "value": "TLS connection no work. Check certificate and server name."
           }
         },
         "pt": {
@@ -11199,7 +11199,7 @@
         },
         "pcm": {
           "stringUnit": { "state": "translated",
-            "value": "This authentication is not supported by the selected monitoring type."
+            "value": "Di monitoring type wey you select no support dis authentication."
           }
         },
         "pt": {
@@ -11303,7 +11303,7 @@
         },
         "pcm": {
           "stringUnit": { "state": "translated",
-            "value": "This certificate option is not yet supported."
+            "value": "Dis certificate option never dey supported."
           }
         },
         "pt": {
@@ -11823,7 +11823,7 @@
         },
         "pcm": {
           "stringUnit": { "state": "translated",
-            "value": "Add your first monitoring source."
+            "value": "Add your first monitoring source make you begin."
           }
         },
         "pt": {
@@ -11927,7 +11927,7 @@
         },
         "pcm": {
           "stringUnit": { "state": "translated",
-            "value": "Add a monitoring source first."
+            "value": "Add monitoring source first."
           }
         },
         "pt": {
@@ -12863,7 +12863,7 @@
         },
         "pcm": {
           "stringUnit": { "state": "translated",
-            "value": "Import exactly one CA certificate."
+            "value": "Import only one CA certificate."
           }
         },
         "pt": {
@@ -13799,7 +13799,7 @@
         },
         "pcm": {
           "stringUnit": { "state": "translated",
-            "value": "IssueLight, no source configured"
+            "value": "IssueLight, no monitoring source don configure"
           }
         },
         "pt": {
@@ -15468,7 +15468,7 @@
         },
         "pcm": {
           "stringUnit": { "state": "translated",
-            "value": "Unused CA certificates could not be removed from the keychain."
+            "value": "IssueLight no fit remove CA certificates wey nobody dey use from keychain."
           }
         },
         "pt": {
@@ -18796,7 +18796,7 @@
         },
         "pcm": {
           "stringUnit": { "state": "translated",
-            "value": "Select server certificate …"
+            "value": "Choose server certificate …"
           }
         },
         "pt": {
@@ -18900,7 +18900,7 @@
         },
         "pcm": {
           "stringUnit": { "state": "translated",
-            "value": "Replace server certificate …"
+            "value": "Change server certificate …"
           }
         },
         "pt": {
@@ -19628,7 +19628,7 @@
         },
         "pcm": {
           "stringUnit": { "state": "translated",
-            "value": "Status could not be loaded"
+            "value": "Status no fit load"
           }
         },
         "pt": {
@@ -20302,126 +20302,126 @@
         }
       }
     },
-    "Thruk-Schnellaktionen benötigen einen API-Schlüssel.": {
+    "Schnellaktionen sind mit dieser Authentifizierung nicht verfügbar.": {
       "localizations": {
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "تتطلب إجراءات Thruk السريعة مفتاح API."
+            "value": "الإجراءات السريعة غير متاحة مع طريقة المصادقة هذه."
           }
         },
         "bn": {
           "stringUnit": {
             "state": "translated",
-            "value": "Thruk দ্রুত অ্যাকশনের জন্য একটি API কী প্রয়োজন।"
+            "value": "এই প্রমাণীকরণ পদ্ধতিতে দ্রুত কাজগুলো উপলভ্য নয়।"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Thruk quick actions require an API key."
+            "value": "Quick actions are not available with this authentication method."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Las acciones rápidas de Thruk requieren una clave de API."
+            "value": "Las acciones rápidas no están disponibles con este método de autenticación."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Les actions rapides Thruk nécessitent une clé API."
+            "value": "Les actions rapides ne sont pas disponibles avec cette méthode d’authentification."
           }
         },
         "ha": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ayyukan gaggawa na Thruk suna buƙatar mabuɗin API."
+            "value": "Ba a samun ayyukan gaggawa da wannan hanyar tabbatarwa."
           }
         },
         "hi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Thruk की त्वरित कार्रवाइयों के लिए API कुंजी आवश्यक है।"
+            "value": "इस प्रमाणीकरण विधि के साथ त्वरित कार्रवाइयाँ उपलब्ध नहीं हैं।"
           }
         },
         "id": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tindakan cepat Thruk memerlukan kunci API."
+            "value": "Tindakan cepat tidak tersedia dengan metode autentikasi ini."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "ThrukのクイックアクションにはAPIキーが必要です。"
+            "value": "この認証方法ではクイックアクションを利用できません。"
           }
         },
         "mr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Thruk द्रुत क्रियांसाठी API किल्ली आवश्यक आहे."
+            "value": "या प्रमाणीकरण पद्धतीसह द्रुत क्रिया उपलब्ध नाहीत."
           }
         },
         "pcm": {
           "stringUnit": {
             "state": "translated",
-            "value": "Thruk quick actions need API key."
+            "value": "Quick actions no dey available with dis authentication method."
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "As ações rápidas do Thruk exigem uma chave de API."
+            "value": "As ações rápidas não estão disponíveis com este método de autenticação."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Для быстрых действий Thruk требуется ключ API."
+            "value": "Быстрые действия недоступны при этом способе аутентификации."
           }
         },
         "sv": {
           "stringUnit": {
             "state": "translated",
-            "value": "Thruk-snabbåtgärder kräver en API-nyckel."
+            "value": "Snabbåtgärder är inte tillgängliga med den här autentiseringsmetoden."
           }
         },
         "sw": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vitendo vya haraka vya Thruk vinahitaji ufunguo wa API."
+            "value": "Vitendo vya haraka havipatikani kwa mbinu hii ya uthibitishaji."
           }
         },
         "te": {
           "stringUnit": {
             "state": "translated",
-            "value": "Thruk త్వరిత చర్యలకు API కీ అవసరం."
+            "value": "ఈ ప్రామాణీకరణ పద్ధతితో త్వరిత చర్యలు అందుబాటులో లేవు."
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Thruk hızlı eylemleri bir API anahtarı gerektirir."
+            "value": "Hızlı işlemler bu kimlik doğrulama yöntemiyle kullanılamaz."
           }
         },
         "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "Thruk کی فوری کارروائیوں کے لیے API کلید درکار ہے۔"
+            "value": "اس تصدیقی طریقے کے ساتھ فوری کارروائیاں دستیاب نہیں ہیں۔"
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Các thao tác nhanh của Thruk cần khóa API."
+            "value": "Thao tác nhanh không khả dụng với phương thức xác thực này."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Thruk 快速操作需要 API 密钥。"
+            "value": "此身份验证方式不支持快捷操作。"
           }
         }
       }
@@ -21045,7 +21045,7 @@
         },
         "zh-Hans": {
           "stringUnit": { "state": "translated",
-            "value": "不确定。身份和服务器数据可能被拦截或更改。此例外仅适用于该来源。"
+            "value": "不安全。身份和服务器数据可能会被拦截或篡改。此例外仅适用于此监控源。"
           }
         }
       }
@@ -21832,7 +21832,7 @@
         },
         "pcm": {
           "stringUnit": { "state": "translated",
-            "value": "Select a client certificate from the keychain."
+            "value": "Select client certificate from keychain."
           }
         },
         "pt": {
@@ -22248,7 +22248,7 @@
         },
         "pcm": {
           "stringUnit": { "state": "translated",
-            "value": "Select exactly one server certificate."
+            "value": "Select only one server certificate."
           }
         },
         "pt": {
@@ -22565,7 +22565,7 @@
         },
         "pcm": {
           "stringUnit": { "state": "translated",
-            "value": "Last successfully checked: %1$@, %2$@"
+            "value": "Last check wey work: %1$@, %2$@"
           }
         },
         "pt": {
@@ -23026,7 +23026,7 @@
         },
         "zh-Hans": {
           "stringUnit": { "state": "translated",
-            "value": "macOS不询问就不会在后台释放密码。打开源并再次输入。"
+            "value": "macOS 不允许在后台无提示访问密码。请打开监控源并重新输入密码。"
           }
         }
       }
@@ -23130,7 +23130,7 @@
         },
         "zh-Hans": {
           "stringUnit": { "state": "translated",
-            "value": "macOS 不会在未经询问的情况下发布此钥匙串条目。删除钥匙串访问中旧的 IssueLight 条目并再次保存源。"
+            "value": "macOS 不允许在未提示的情况下访问此钥匙串项目。请在“钥匙串访问”中删除旧的 IssueLight 项目，然后重新保存监控源。"
           }
         }
       }
@@ -23234,7 +23234,7 @@
         },
         "zh-Hans": {
           "stringUnit": { "state": "translated",
-            "value": "macOS 不会在未经询问的情况下发布此钥匙串条目。在源中重新输入密码。"
+            "value": "macOS 不允许在未提示的情况下访问此钥匙串项目。请在监控源中重新输入密码。"
           }
         }
       }
@@ -23338,7 +23338,7 @@
         },
         "zh-Hans": {
           "stringUnit": { "state": "translated",
-            "value": "macOS-系统信任"
+            "value": "macOS 系统信任"
           }
         }
       }
@@ -23442,7 +23442,7 @@
         },
         "zh-Hans": {
           "stringUnit": { "state": "translated",
-            "value": "macOS-系统信任是默认值。自己的 CA 和确切的服务器证书仅适用于此源。完全停用适用于孤立的家庭实验室。"
+            "value": "默认使用 macOS 系统信任。自定义 CA 和精确的服务器证书仅适用于此监控源。完全停用验证仅适用于隔离的家庭实验室。"
           }
         }
       }
@@ -24125,7 +24125,7 @@
         },
         "pcm": {
           "stringUnit": { "state": "translated",
-            "value": "\"%@\" has been imported into the keychain."
+            "value": "\"%@\" don import enter keychain."
           }
         },
         "pt": {
@@ -25805,7 +25805,7 @@
 },
 "pcm": {
   "stringUnit": { "state": "translated",
-    "value": "Enter the SSH bastion server hostname."
+    "value": "Enter di SSH bastion server hostname."
   }
 }
     }
@@ -25914,7 +25914,7 @@
 },
 "pcm": {
   "stringUnit": { "state": "translated",
-    "value": "Enter the SSH username for the bastion server."
+    "value": "Enter SSH username for di bastion server."
   }
 }
     }
@@ -25973,7 +25973,7 @@
 },
 "zh-Hans": {
   "stringUnit": { "state": "translated",
-    "value": "请输入有效的 Web URL，无需凭据、提示或片段。"
+    "value": "请输入不含凭据、查询参数或片段的有效 Web URL。"
   }
 },
 "ja": {

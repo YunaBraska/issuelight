@@ -198,27 +198,15 @@ struct SourceSetupView: View {
                         )
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                        if model.selectedProviderID == ThrukProvider.id {
-                            Label {
-                                Text(
-                                    verbatim: AppLocalization.string(
-                                        "Thruk-Schnellaktionen benötigen einen API-Schlüssel.",
-                                        locale: locale
-                                    )
-                                )
-                            } icon: {
-                                Image(systemName: "info.circle")
-                            }
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        }
                     } else if model.authenticationChoice == .apiKey {
-                        if model.apiUsernameIsRequired {
-                            TextField("Benutzername", text: $model.username)
-                                .textContentType(.username)
-                        } else {
-                            TextField("API-Benutzer (optional)", text: $model.username)
-                                .textContentType(.username)
+                        if model.apiUsernameIsVisible {
+                            if model.apiUsernameIsRequired {
+                                TextField("Benutzername", text: $model.username)
+                                    .textContentType(.username)
+                            } else {
+                                TextField("API-Benutzer (optional)", text: $model.username)
+                                    .textContentType(.username)
+                            }
                         }
                         SecureField("API-Schlüssel", text: $model.credentialSecret)
                             .textContentType(.password)
@@ -264,6 +252,16 @@ struct SourceSetupView: View {
                                 isImportingIdentity = true
                             }
                         }
+                    }
+
+                    if model.selectedProviderOffersActions,
+                       !model.selectedAuthenticationSupportsActions {
+                        Label(
+                            "Schnellaktionen sind mit dieser Authentifizierung nicht verfügbar.",
+                            systemImage: "info.circle"
+                        )
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                     }
                 }
 
@@ -470,7 +468,7 @@ struct SourceSetupView: View {
                     } header: {
                         Text(verbatim: "SSH / RDP")
                     } footer: {
-                        Text("Diese optionalen Aktionen öffnen den in einem Problem genannten Host. Sie sind nicht der SSH-Tunnel zur Icinga-Quelle.")
+                        Text("Diese optionalen Aktionen öffnen den in einem Problem genannten Host. Sie sind nicht der SSH-Tunnel zur Monitoring-Quelle.")
                     }
                 }
 

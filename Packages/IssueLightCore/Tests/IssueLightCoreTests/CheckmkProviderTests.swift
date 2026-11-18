@@ -3,6 +3,13 @@ import XCTest
 @testable import IssueLightCore
 
 final class CheckmkProviderTests: XCTestCase {
+    func testCapabilitiesRequireAPIUsername() {
+        XCTAssertEqual(
+            CheckmkProvider().descriptor.capabilities.apiKeyUsernameRequirement,
+            .required
+        )
+    }
+
     private let stubHost = "checkmk-\(UUID().uuidString.lowercased()).example.test"
 
     func testBuiltInRegistryPublishesCheckmkCapabilities() throws {
