@@ -139,6 +139,10 @@ struct SourceSetupView: View {
         )
     }
 
+    private var disabledTrustWarning: Text {
+        Text("Unsicher. Identität und Serverdaten können abgefangen oder verändert werden. Diese Ausnahme gilt nur für diese Quelle.")
+    }
+
     private var editor: some View {
         VStack(spacing: 0) {
             Form {
@@ -276,6 +280,14 @@ struct SourceSetupView: View {
                                 }
                                 .labelsHidden()
 
+                                if model.serverTrustChoice == .disabled {
+                                    Image(systemName: "exclamationmark.triangle.fill")
+                                        .foregroundStyle(.orange)
+                                        .help(disabledTrustWarning)
+                                        .accessibilityLabel(Text("Zertifikatsprüfung aus"))
+                                        .accessibilityHint(disabledTrustWarning)
+                                }
+
                                 if model.canReviewBlockedServerCertificate {
                                     Button("Zertifikat vertrauen") {
                                         fetchPresentedServerCertificate()
@@ -347,21 +359,9 @@ struct SourceSetupView: View {
                                     _ = model.pinServerCertificate(at: url)
                                 }
                             }
-                        } else if model.serverTrustChoice == .disabled {
-                            Label {
-                                VStack(alignment: .leading, spacing: 3) {
-                                    Text("HTTPS bleibt aktiv. Nur die Zertifikatsprüfung ist deaktiviert.")
-                                    Text("Unsicher. Identität und Serverdaten können abgefangen oder verändert werden. Diese Ausnahme gilt nur für diese Quelle.")
-                                }
-                            } icon: {
-                                Image(systemName: "exclamationmark.triangle.fill")
-                            }
-                            .foregroundStyle(.orange)
                         }
                     } header: {
                         Text("TLS")
-                    } footer: {
-                        Text("macOS-Systemvertrauen ist der Standard. Eigene CAs und exakte Serverzertifikate gelten nur für diese Quelle. Die vollständige Deaktivierung ist für isolierte Homelabs gedacht.")
                     }
                 }
 

@@ -38,6 +38,14 @@ final class AppLanguageTests: XCTestCase {
             AppLocalization.string("Sprache", locale: Locale(identifier: "ar")),
             "لغة"
         )
+        XCTAssertEqual(
+            AppLocalization.string("Zertifikatsprüfung aus", locale: Locale(identifier: "en")),
+            "Certificate check off"
+        )
+        XCTAssertEqual(
+            AppLocalization.string("Zertifikatsprüfung aus", locale: Locale(identifier: "sv")),
+            "Certifikatkontroll av"
+        )
     }
 
     func testSelectionPersistsInInjectedDefaults() throws {

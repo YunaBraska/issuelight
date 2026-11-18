@@ -51,7 +51,7 @@ final class IssueLightModel: ObservableObject {
             case .pinnedCertificate:
                 return AppLocalization.string("Serverzertifikat festlegen", locale: locale)
             case .disabled:
-                return AppLocalization.string("Prüfung deaktiviert", locale: locale)
+                return AppLocalization.string("Zertifikatsprüfung aus", locale: locale)
             }
         }
 
