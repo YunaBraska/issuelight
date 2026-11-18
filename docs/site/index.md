@@ -10,10 +10,10 @@ description: IssueLight keeps infrastructure problems in the macOS menu bar and 
     <h1>See what needs you. Ignore the rest.</h1>
     <p class="lead">IssueLight turns monitoring state into a small, native macOS signal. Healthy systems stay out of the way. Problems arrive ordered by attention, across every source you configured.</p>
     <div class="actions">
-      <a class="button" href="{{ '/install.html' | relative_url }}">Build IssueLight</a>
+      <a class="button" href="{{ '/install.html' | relative_url }}">Download IssueLight</a>
       <a class="button secondary" href="{{ site.repository }}">View the source</a>
     </div>
-    <p class="release-note"><span>Open-source preview</span> macOS 14+ · Icinga 2 baseline · Thruk, Checkmk and Nagios Core supported</p>
+    <p class="release-note"><span>Signed open source</span> macOS 14+ · Icinga 2 baseline · Thruk, Checkmk and Nagios Core supported</p>
   </div>
   <figure class="hero-shot app-window">
     <div class="window-bar"><span></span><span></span><span></span><strong>Menu bar status</strong></div>
@@ -182,7 +182,7 @@ description: IssueLight keeps infrastructure problems in the macOS menu bar and 
   <div class="scope-grid">
     <div><strong>Available now</strong><p>Multiple sources, refresh, attention ordering, quiet notifications, strict TLS options, Keychain credentials, recheck, acknowledgement, fixed downtime and stale-state retention.</p></div>
     <div><strong>Still required</strong><p>The final application check is an installed-app test with a genuinely user-protected mTLS private key.</p></div>
-    <div><strong>Release status</strong><p>The app and unsigned packaging path are tested. Signing, notarization and store delivery belong to the shared CI/CD release flow.</p></div>
+    <div><strong>Release status</strong><p>Signed and notarized universal ZIP and DMG releases ship with signed updates. Store packages use the shared CI/CD delivery flow.</p></div>
   </div>
 </section>
 

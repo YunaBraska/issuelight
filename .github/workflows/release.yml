@@ -23,3 +23,29 @@ jobs:
       app_store_app_name: IssueLight
       app_store_bundle_id: berlin.yuna.issuelight
     secrets: inherit
+
+  release-notes:
+    needs: release
+    if: needs.release.outputs.dry_run == 'false'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Add compatibility notes
+        shell: sh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_VERSION: ${{ needs.release.outputs.version }}
+        run: |
+          set -eu
+          existing_notes=$(gh release view "${RELEASE_VERSION}" --json body --jq .body)
+          notes_file=$(mktemp)
+          trap 'rm -f "${notes_file}"' 0 HUP INT TERM
+          {
+            printf '## Compatibility\n\n'
+            printf '%s\n' '- Requires macOS 14 or later.'
+            printf '%s\n\n' '- Direct downloads update through the signed IssueLight feed. App Store builds update through Apple.'
+            printf '%s\n' "${existing_notes}"
+          } > "${notes_file}"
+          gh release edit "${RELEASE_VERSION}" --notes-file "${notes_file}"

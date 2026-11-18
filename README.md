@@ -1,6 +1,6 @@
 # IssueLight
 
-[![CI](https://github.com/YunaBraska/issuelight/actions/workflows/ci.yml/badge.svg)](https://github.com/YunaBraska/issuelight/actions/workflows/ci.yml)
+[![Snapshot](https://github.com/YunaBraska/issuelight/actions/workflows/build-merge.yml/badge.svg)](https://github.com/YunaBraska/issuelight/actions/workflows/build-merge.yml)
 [![Product Pages](https://github.com/YunaBraska/issuelight/actions/workflows/product-pages.yml/badge.svg)](https://github.com/YunaBraska/issuelight/actions/workflows/product-pages.yml)
 
 [Product page](https://yunabraska.github.io/issuelight/) ·

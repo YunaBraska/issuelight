@@ -8,15 +8,11 @@ small vertical product improvements.
 Run before opening a pull request:
 
 ```sh
-swift test --package-path Packages/IssueLightCore
-xcodebuild build \
-  -project IssueLight/IssueLight.xcodeproj \
-  -scheme IssueLight \
-  -configuration Release \
-  -destination 'platform=macOS' \
-  CODE_SIGNING_ALLOWED=NO
-git diff --check
+sh scripts/check.sh
 ```
+
+This is the same repository check used by pull-request CI. Provider integration
+labs remain opt-in because they start external monitoring systems.
 
 When `IssueLight/project.yml` changes, run XcodeGen and commit the generated
 project changes. Never commit `.env.local`, certificates, private keys,
