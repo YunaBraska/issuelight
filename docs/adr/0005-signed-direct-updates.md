@@ -13,7 +13,7 @@ a competing updater.
 
 ## Decision
 
-Direct releases use the pinned Sparkle 2.10.0 framework. The app checks the
+Direct releases use a pinned Sparkle framework. The app checks the
 HTTPS feed automatically, does not download updates without user interaction,
 and accepts only updates described by the signed appcast. The appcast points to
 the same Developer ID signed, notarized, and stapled DMG published by the

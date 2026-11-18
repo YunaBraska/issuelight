@@ -11,7 +11,7 @@ description: Product, security, development and integration documentation for Is
 </section>
 
 <section class="document-list shell">
-  <a href="{{ site.repository }}/blob/main/docs/PROJECT_STATUS.md"><span>Status</span><strong>What works and what still blocks a public release</strong><p>Verified behavior, coverage and remaining release risks.</p></a>
+  <a href="{{ site.repository }}/blob/main/docs/PROJECT_STATUS.md"><span>Status</span><strong>What works and what remains to validate</strong><p>Verified behavior, coverage and remaining release risks.</p></a>
   <a href="{{ site.repository }}/blob/main/docs/spec/source-connection.md"><span>Specification</span><strong>Source connection and TLS behavior</strong><p>Endpoints, authentication, trust choices and explicit failure behavior.</p></a>
   <a href="{{ site.repository }}/blob/main/docs/spec/attention-snapshot.md"><span>Specification</span><strong>Attention and refresh model</strong><p>Issue ordering, covered states, stale data and refresh ownership.</p></a>
   <a href="{{ site.repository }}/blob/main/docs/spec/multiple-sources.md"><span>Specification</span><strong>Multiple monitoring sources</strong><p>Independent configuration, refresh and aggregation behavior.</p></a>

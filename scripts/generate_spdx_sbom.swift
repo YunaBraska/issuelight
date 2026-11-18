@@ -2,9 +2,9 @@
 
 import Foundation
 
-guard CommandLine.arguments.count == 5 else {
+guard CommandLine.arguments.count == 6 else {
     FileHandle.standardError.write(
-        Data("Usage: generate_spdx_sbom.swift VERSION BUILD_NUMBER REVISION OUTPUT\n".utf8)
+        Data("Usage: generate_spdx_sbom.swift VERSION BUILD_NUMBER REVISION SPARKLE_VERSION OUTPUT\n".utf8)
     )
     exit(64)
 }
@@ -12,16 +12,18 @@ guard CommandLine.arguments.count == 5 else {
 let version = CommandLine.arguments[1]
 let buildNumber = CommandLine.arguments[2]
 let revision = CommandLine.arguments[3]
-let outputPath = CommandLine.arguments[4]
+let sparkleVersion = CommandLine.arguments[4]
+let outputPath = CommandLine.arguments[5]
 
 guard version.range(
     of: "^[A-Za-z0-9][A-Za-z0-9._-]*$",
     options: .regularExpression
 ) != nil,
     buildNumber.range(of: "^[1-9][0-9]*$", options: .regularExpression) != nil,
-    revision.range(of: "^[0-9a-f]{7,64}$", options: .regularExpression) != nil
+    revision.range(of: "^[0-9a-f]{7,64}$", options: .regularExpression) != nil,
+    sparkleVersion.range(of: "^[0-9]+(?:\\.[0-9]+){1,3}$", options: .regularExpression) != nil
 else {
-    FileHandle.standardError.write(Data("Version or revision is invalid.\n".utf8))
+    FileHandle.standardError.write(Data("Version, revision, or Sparkle version is invalid.\n".utf8))
     exit(65)
 }
 
@@ -57,8 +59,8 @@ let document: [String: Any] = [
         [
             "name": "Sparkle",
             "SPDXID": "SPDXRef-Package-Sparkle",
-            "versionInfo": "2.10.0",
-            "downloadLocation": "https://github.com/sparkle-project/Sparkle/releases/tag/2.10.0",
+            "versionInfo": sparkleVersion,
+            "downloadLocation": "https://github.com/sparkle-project/Sparkle/releases/tag/\(sparkleVersion)",
             "filesAnalyzed": false,
             "licenseConcluded": "NOASSERTION",
             "licenseDeclared": "NOASSERTION",
@@ -67,7 +69,7 @@ let document: [String: Any] = [
                 [
                     "referenceCategory": "PACKAGE-MANAGER",
                     "referenceType": "purl",
-                    "referenceLocator": "pkg:github/sparkle-project/Sparkle@2.10.0",
+                    "referenceLocator": "pkg:github/sparkle-project/Sparkle@\(sparkleVersion)",
                 ],
             ],
         ],

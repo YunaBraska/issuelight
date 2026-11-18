@@ -135,7 +135,11 @@ test "$(plutil -extract spdxVersion raw "$sbom_path")" = "SPDX-2.3"
 test "$(plutil -extract packages.0.versionInfo raw "$sbom_path")" = \
     "$release_version ($release_build)"
 test "$(plutil -extract packages.1.name raw "$sbom_path")" = "Sparkle"
-test "$(plutil -extract packages.1.versionInfo raw "$sbom_path")" = "2.10.0"
+packaged_sparkle_version=$(/usr/libexec/PlistBuddy \
+    -c 'Print :CFBundleShortVersionString' \
+    "$app_path/Contents/Frameworks/Sparkle.framework/Versions/Current/Resources/Info.plist")
+test "$(plutil -extract packages.1.versionInfo raw "$sbom_path")" = \
+    "$packaged_sparkle_version"
 if scripts/package_release.sh \
     "$app_path" \
     "$check_work_directory/Release" \

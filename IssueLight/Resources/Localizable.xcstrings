@@ -7,7 +7,6 @@
     "Benachrichtigungen": {"localizations":{"ar":{"stringUnit":{"state":"translated","value":"الإشعارات"}},"bn":{"stringUnit":{"state":"translated","value":"বিজ্ঞপ্তি"}},"en":{"stringUnit":{"state":"translated","value":"Notifications"}},"es":{"stringUnit":{"state":"translated","value":"Notificaciones"}},"fr":{"stringUnit":{"state":"translated","value":"Notifications"}},"ha":{"stringUnit":{"state":"translated","value":"Sanarwa"}},"hi":{"stringUnit":{"state":"translated","value":"सूचनाएँ"}},"id":{"stringUnit":{"state":"translated","value":"Notifikasi"}},"ja":{"stringUnit":{"state":"translated","value":"通知"}},"mr":{"stringUnit":{"state":"translated","value":"सूचना"}},"pcm":{"stringUnit":{"state":"translated","value":"Notifications"}},"pt":{"stringUnit":{"state":"translated","value":"Notificações"}},"ru":{"stringUnit":{"state":"translated","value":"Уведомления"}},"sv":{"stringUnit":{"state":"translated","value":"Notiser"}},"sw":{"stringUnit":{"state":"translated","value":"Arifa"}},"te":{"stringUnit":{"state":"translated","value":"నోటిఫికేషన్‌లు"}},"tr":{"stringUnit":{"state":"translated","value":"Bildirimler"}},"ur":{"stringUnit":{"state":"translated","value":"اطلاعات"}},"vi":{"stringUnit":{"state":"translated","value":"Thông báo"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"通知"}}}},
     "Hosts ausblenden": {"localizations":{"ar":{"stringUnit":{"state":"translated","value":"إخفاء المضيفين"}},"bn":{"stringUnit":{"state":"translated","value":"হোস্ট লুকান"}},"de":{"stringUnit":{"state":"translated","value":"Hosts ausblenden"}},"en":{"stringUnit":{"state":"translated","value":"Hide hosts"}},"es":{"stringUnit":{"state":"translated","value":"Ocultar hosts"}},"fr":{"stringUnit":{"state":"translated","value":"Masquer les hôtes"}},"ha":{"stringUnit":{"state":"translated","value":"Ɓoye rundunoni"}},"hi":{"stringUnit":{"state":"translated","value":"होस्ट छिपाएँ"}},"id":{"stringUnit":{"state":"translated","value":"Sembunyikan host"}},"ja":{"stringUnit":{"state":"translated","value":"ホストを非表示"}},"mr":{"stringUnit":{"state":"translated","value":"होस्ट लपवा"}},"pcm":{"stringUnit":{"state":"translated","value":"Hide hosts"}},"pt":{"stringUnit":{"state":"translated","value":"Ocultar hosts"}},"ru":{"stringUnit":{"state":"translated","value":"Скрыть хосты"}},"sv":{"stringUnit":{"state":"translated","value":"Dölj värdar"}},"sw":{"stringUnit":{"state":"translated","value":"Ficha hosti"}},"te":{"stringUnit":{"state":"translated","value":"హోస్ట్‌లను దాచు"}},"tr":{"stringUnit":{"state":"translated","value":"Ana bilgisayarları gizle"}},"ur":{"stringUnit":{"state":"translated","value":"ہوسٹس چھپائیں"}},"vi":{"stringUnit":{"state":"translated","value":"Ẩn máy chủ"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"隐藏主机"}}}},
     "Hosts durchsuchen": {"localizations":{"ar":{"stringUnit":{"state":"translated","value":"البحث في المضيفين"}},"bn":{"stringUnit":{"state":"translated","value":"হোস্ট খুঁজুন"}},"de":{"stringUnit":{"state":"translated","value":"Hosts durchsuchen"}},"en":{"stringUnit":{"state":"translated","value":"Search hosts"}},"es":{"stringUnit":{"state":"translated","value":"Buscar hosts"}},"fr":{"stringUnit":{"state":"translated","value":"Rechercher des hôtes"}},"ha":{"stringUnit":{"state":"translated","value":"Nemi rundunoni"}},"hi":{"stringUnit":{"state":"translated","value":"होस्ट खोजें"}},"id":{"stringUnit":{"state":"translated","value":"Cari host"}},"ja":{"stringUnit":{"state":"translated","value":"ホストを検索"}},"mr":{"stringUnit":{"state":"translated","value":"होस्ट शोधा"}},"pcm":{"stringUnit":{"state":"translated","value":"Search hosts"}},"pt":{"stringUnit":{"state":"translated","value":"Pesquisar hosts"}},"ru":{"stringUnit":{"state":"translated","value":"Поиск хостов"}},"sv":{"stringUnit":{"state":"translated","value":"Sök värdar"}},"sw":{"stringUnit":{"state":"translated","value":"Tafuta hosti"}},"te":{"stringUnit":{"state":"translated","value":"హోస్ట్‌లను వెతకండి"}},"tr":{"stringUnit":{"state":"translated","value":"Ana bilgisayarlarda ara"}},"ur":{"stringUnit":{"state":"translated","value":"ہوسٹس تلاش کریں"}},"vi":{"stringUnit":{"state":"translated","value":"Tìm máy chủ"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"搜索主机"}}}},
-    "HTTPS bleibt aktiv. Nur die Zertifikatsprüfung ist deaktiviert.": {"localizations":{"ar":{"stringUnit":{"state":"translated","value":"يبقى HTTPS مفعّلًا. تم تعطيل التحقق من الشهادة فقط."}},"bn":{"stringUnit":{"state":"translated","value":"HTTPS সক্রিয় থাকে। শুধু সার্টিফিকেট যাচাই বন্ধ করা হয়েছে।"}},"de":{"stringUnit":{"state":"translated","value":"HTTPS bleibt aktiv. Nur die Zertifikatsprüfung ist deaktiviert."}},"en":{"stringUnit":{"state":"translated","value":"HTTPS remains active. Only certificate verification is disabled."}},"es":{"stringUnit":{"state":"translated","value":"HTTPS permanece activo. Solo se desactiva la verificación del certificado."}},"fr":{"stringUnit":{"state":"translated","value":"HTTPS reste actif. Seule la vérification du certificat est désactivée."}},"ha":{"stringUnit":{"state":"translated","value":"HTTPS yana nan a kunne. Tabbatar da takardar shaida kawai aka kashe."}},"hi":{"stringUnit":{"state":"translated","value":"HTTPS सक्रिय रहता है। केवल प्रमाणपत्र सत्यापन बंद है।"}},"id":{"stringUnit":{"state":"translated","value":"HTTPS tetap aktif. Hanya verifikasi sertifikat yang dinonaktifkan."}},"ja":{"stringUnit":{"state":"translated","value":"HTTPS は有効なままです。無効になるのは証明書の検証だけです。"}},"mr":{"stringUnit":{"state":"translated","value":"HTTPS सुरूच राहते. फक्त प्रमाणपत्र पडताळणी बंद आहे."}},"pcm":{"stringUnit":{"state":"translated","value":"HTTPS still dey active. Na only certificate verification dem disable."}},"pt":{"stringUnit":{"state":"translated","value":"O HTTPS permanece ativo. Apenas a verificação do certificado está desativada."}},"ru":{"stringUnit":{"state":"translated","value":"HTTPS остаётся активным. Отключена только проверка сертификата."}},"sv":{"stringUnit":{"state":"translated","value":"HTTPS förblir aktivt. Endast certifikatverifieringen är inaktiverad."}},"sw":{"stringUnit":{"state":"translated","value":"HTTPS inaendelea kutumika. Uthibitishaji wa cheti pekee umezimwa."}},"te":{"stringUnit":{"state":"translated","value":"HTTPS సక్రియంగానే ఉంటుంది. సర్టిఫికేట్ ధృవీకరణ మాత్రమే నిలిపివేయబడింది."}},"tr":{"stringUnit":{"state":"translated","value":"HTTPS etkin kalır. Yalnızca sertifika doğrulaması devre dışıdır."}},"ur":{"stringUnit":{"state":"translated","value":"HTTPS فعال رہتا ہے۔ صرف سرٹیفکیٹ کی تصدیق غیر فعال ہے۔"}},"vi":{"stringUnit":{"state":"translated","value":"HTTPS vẫn hoạt động. Chỉ việc xác minh chứng chỉ bị tắt."}},"zh-Hans":{"stringUnit":{"state":"translated","value":"HTTPS 仍保持启用。仅停用证书验证。"}}}},
     "Vergleiche den SHA-256-Fingerprint vor der Bestätigung mit einer vertrauenswürdigen Angabe deines Administrators.": {"localizations":{"ar":{"stringUnit":{"state":"translated","value":"قارن بصمة SHA-256 قبل التأكيد بقيمة موثوقة من مسؤول النظام."}},"bn":{"stringUnit":{"state":"translated","value":"নিশ্চিত করার আগে আপনার প্রশাসকের বিশ্বস্ত মানের সঙ্গে SHA-256 ফিঙ্গারপ্রিন্ট মিলিয়ে নিন।"}},"de":{"stringUnit":{"state":"translated","value":"Vergleiche den SHA-256-Fingerprint vor der Bestätigung mit einer vertrauenswürdigen Angabe deines Administrators."}},"en":{"stringUnit":{"state":"translated","value":"Before confirming, compare the SHA-256 fingerprint with a trusted value from your administrator."}},"es":{"stringUnit":{"state":"translated","value":"Antes de confirmar, compara la huella SHA-256 con un valor de confianza proporcionado por tu administrador."}},"fr":{"stringUnit":{"state":"translated","value":"Avant de confirmer, comparez l’empreinte SHA-256 à une valeur fiable fournie par votre administrateur."}},"ha":{"stringUnit":{"state":"translated","value":"Kafin ka tabbatar, kwatanta sawun SHA-256 da amintaccen ƙima daga mai gudanarwarka."}},"hi":{"stringUnit":{"state":"translated","value":"पुष्टि से पहले SHA-256 फ़िंगरप्रिंट की तुलना अपने व्यवस्थापक से मिले विश्वसनीय मान से करें।"}},"id":{"stringUnit":{"state":"translated","value":"Sebelum mengonfirmasi, bandingkan sidik jari SHA-256 dengan nilai tepercaya dari administrator Anda."}},"ja":{"stringUnit":{"state":"translated","value":"確認する前に、SHA-256 フィンガープリントを管理者から入手した信頼できる値と比較してください。"}},"mr":{"stringUnit":{"state":"translated","value":"पुष्टी करण्यापूर्वी SHA-256 फिंगरप्रिंटची प्रशासकाने दिलेल्या विश्वसनीय मूल्यासोबत तुलना करा."}},"pcm":{"stringUnit":{"state":"translated","value":"Before you confirm, compare di SHA-256 fingerprint with trusted value from your administrator."}},"pt":{"stringUnit":{"state":"translated","value":"Antes de confirmar, compare a impressão digital SHA-256 com um valor fidedigno fornecido pelo administrador."}},"ru":{"stringUnit":{"state":"translated","value":"Перед подтверждением сравните отпечаток SHA-256 с доверенным значением от администратора."}},"sv":{"stringUnit":{"state":"translated","value":"Jämför SHA-256-fingeravtrycket med ett betrott värde från administratören innan du bekräftar."}},"sw":{"stringUnit":{"state":"translated","value":"Kabla ya kuthibitisha, linganisha alama ya SHA-256 na thamani inayoaminika kutoka kwa msimamizi."}},"te":{"stringUnit":{"state":"translated","value":"నిర్ధారించే ముందు SHA-256 వేలిముద్రను మీ నిర్వాహకుడు ఇచ్చిన విశ్వసనీయ విలువతో పోల్చండి."}},"tr":{"stringUnit":{"state":"translated","value":"Onaylamadan önce SHA-256 parmak izini yöneticinizden aldığınız güvenilir değerle karşılaştırın."}},"ur":{"stringUnit":{"state":"translated","value":"تصدیق سے پہلے SHA-256 فنگر پرنٹ کا اپنے منتظم سے ملنے والی قابلِ اعتماد قدر سے موازنہ کریں۔"}},"vi":{"stringUnit":{"state":"translated","value":"Trước khi xác nhận, hãy so sánh dấu vân tay SHA-256 với giá trị đáng tin cậy do quản trị viên cung cấp."}},"zh-Hans":{"stringUnit":{"state":"translated","value":"确认前，请将 SHA-256 指纹与管理员提供的可信值进行比较。"}}}},
     "Alle Hosts anzeigen": {"localizations":{"ar":{"stringUnit":{"state":"translated","value":"إظهار جميع المضيفين"}},"bn":{"stringUnit":{"state":"translated","value":"সব হোস্ট দেখান"}},"de":{"stringUnit":{"state":"translated","value":"Alle Hosts anzeigen"}},"en":{"stringUnit":{"state":"translated","value":"Show all hosts"}},"es":{"stringUnit":{"state":"translated","value":"Mostrar todos los hosts"}},"fr":{"stringUnit":{"state":"translated","value":"Afficher tous les hôtes"}},"ha":{"stringUnit":{"state":"translated","value":"Nuna duk rundunoni"}},"hi":{"stringUnit":{"state":"translated","value":"सभी होस्ट दिखाएँ"}},"id":{"stringUnit":{"state":"translated","value":"Tampilkan semua host"}},"ja":{"stringUnit":{"state":"translated","value":"すべてのホストを表示"}},"mr":{"stringUnit":{"state":"translated","value":"सर्व होस्ट दाखवा"}},"pcm":{"stringUnit":{"state":"translated","value":"Show all hosts"}},"pt":{"stringUnit":{"state":"translated","value":"Mostrar todos os hosts"}},"ru":{"stringUnit":{"state":"translated","value":"Показать все хосты"}},"sv":{"stringUnit":{"state":"translated","value":"Visa alla värdar"}},"sw":{"stringUnit":{"state":"translated","value":"Onyesha hosti zote"}},"te":{"stringUnit":{"state":"translated","value":"అన్ని హోస్ట్‌లను చూపు"}},"tr":{"stringUnit":{"state":"translated","value":"Tüm ana bilgisayarları göster"}},"ur":{"stringUnit":{"state":"translated","value":"تمام ہوسٹس دکھائیں"}},"vi":{"stringUnit":{"state":"translated","value":"Hiện tất cả máy chủ"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"显示所有主机"}}}},
     "Zertifikat vertrauen": {"localizations":{"ar":{"stringUnit":{"state":"translated","value":"الوثوق بالشهادة"}},"bn":{"stringUnit":{"state":"translated","value":"সার্টিফিকেটে আস্থা রাখুন"}},"de":{"stringUnit":{"state":"translated","value":"Zertifikat vertrauen"}},"en":{"stringUnit":{"state":"translated","value":"Trust certificate"}},"es":{"stringUnit":{"state":"translated","value":"Confiar en el certificado"}},"fr":{"stringUnit":{"state":"translated","value":"Faire confiance au certificat"}},"ha":{"stringUnit":{"state":"translated","value":"Amince da takardar shaida"}},"hi":{"stringUnit":{"state":"translated","value":"प्रमाणपत्र पर भरोसा करें"}},"id":{"stringUnit":{"state":"translated","value":"Percayai sertifikat"}},"ja":{"stringUnit":{"state":"translated","value":"証明書を信頼"}},"mr":{"stringUnit":{"state":"translated","value":"प्रमाणपत्रावर विश्वास ठेवा"}},"pcm":{"stringUnit":{"state":"translated","value":"Trust certificate"}},"pt":{"stringUnit":{"state":"translated","value":"Confiar no certificado"}},"ru":{"stringUnit":{"state":"translated","value":"Доверять сертификату"}},"sv":{"stringUnit":{"state":"translated","value":"Lita på certifikatet"}},"sw":{"stringUnit":{"state":"translated","value":"Amini cheti"}},"te":{"stringUnit":{"state":"translated","value":"సర్టిఫికేట్‌ను విశ్వసించు"}},"tr":{"stringUnit":{"state":"translated","value":"Sertifikaya güven"}},"ur":{"stringUnit":{"state":"translated","value":"سرٹیفکیٹ پر اعتماد کریں"}},"vi":{"stringUnit":{"state":"translated","value":"Tin cậy chứng chỉ"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"信任证书"}}}},
@@ -13433,110 +13432,6 @@
         }
       }
     },
-    "IssueLight prüft Hosts und Services über die reale API dieser Quelle.": {
-      "localizations": {
-        "ar": {
-          "stringUnit": { "state": "translated",
-            "value": "IssueLight يتحقق من المضيفين والخدمات عبر API الحقيقي لهذا المصدر."
-          }
-        },
-        "bn": {
-          "stringUnit": { "state": "translated",
-            "value": "IssueLight এই উৎসের প্রকৃত API এর মাধ্যমে হোস্ট এবং পরিষেবাগুলি পরীক্ষা করে৷"
-          }
-        },
-        "en": {
-          "stringUnit": { "state": "translated",
-            "value": "IssueLight checks hosts and services through this source's actual API."
-          }
-        },
-        "es": {
-          "stringUnit": { "state": "translated",
-            "value": "IssueLight verifica hosts y servicios a través del API real de esta fuente."
-          }
-        },
-        "fr": {
-          "stringUnit": { "state": "translated",
-            "value": "IssueLight vérifie les hôtes et les services via le vrai API de cette source."
-          }
-        },
-        "ha": {
-          "stringUnit": { "state": "translated",
-            "value": "IssueLight yana bincika Masu masauki da Ayyuka ta ainihin API na wannan tushe."
-          }
-        },
-        "hi": {
-          "stringUnit": { "state": "translated",
-            "value": "IssueLight इस स्रोत के वास्तविक API के माध्यम से मेजबानों और सेवाओं की जाँच करता है।"
-          }
-        },
-        "id": {
-          "stringUnit": { "state": "translated",
-            "value": "IssueLight memeriksa host dan layanan melalui API asli dari sumber ini."
-          }
-        },
-        "ja": {
-          "stringUnit": { "state": "translated",
-            "value": "IssueLight は、このソースの実際の API を介してホストとサービスをチェックします。"
-          }
-        },
-        "mr": {
-          "stringUnit": { "state": "translated",
-            "value": "IssueLight या स्रोताच्या वास्तविक API द्वारे होस्ट्स आणि सेवा तपासत आहे."
-          }
-        },
-        "pcm": {
-          "stringUnit": { "state": "translated",
-            "value": "IssueLight dey check hosts and services through di real API for dis source."
-          }
-        },
-        "pt": {
-          "stringUnit": { "state": "translated",
-            "value": "IssueLight verifica hosts e serviços através do API real desta fonte."
-          }
-        },
-        "ru": {
-          "stringUnit": { "state": "translated",
-            "value": "IssueLight проверяет хосты и сервисы через настоящий API этого источника."
-          }
-        },
-        "sv": {
-          "stringUnit": { "state": "translated",
-            "value": "IssueLight kontrollerar värdar och tjänster via det faktiska API:et för den här källan."
-          }
-        },
-        "sw": {
-          "stringUnit": { "state": "translated",
-            "value": "IssueLight inakagua Hosts na Services kupitia API halisi ya chanzo hiki."
-          }
-        },
-        "te": {
-          "stringUnit": { "state": "translated",
-            "value": "IssueLight ఈ మూలానికి సంబంధించిన వాస్తవ API ద్వారా హోస్ట్‌లు మరియు సర్వీసులను తనిఖీ చేస్తుంది."
-          }
-        },
-        "tr": {
-          "stringUnit": { "state": "translated",
-            "value": "IssueLight, bu kaynağın gerçek API üzerinden Host ve Servisleri kontrol eder."
-          }
-        },
-        "ur": {
-          "stringUnit": { "state": "translated",
-            "value": "IssueLight اس ذریعہ کے حقیقی API کے ذریعے میزبانوں اور خدمات کو چیک کرتا ہے۔"
-          }
-        },
-        "vi": {
-          "stringUnit": { "state": "translated",
-            "value": "IssueLight kiểm tra Hosts và Services qua API thật sự của nguồn này."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": { "state": "translated",
-            "value": "IssueLight 通过该源的真实 API 检查主机和服务。"
-          }
-        }
-      }
-    },
     "IssueLight verwendet die gewählte Sprache unabhängig von macOS.": {
       "localizations": {
         "ar": {
@@ -16350,106 +16245,106 @@
         }
       }
     },
-    "Prüfung deaktiviert": {
+    "Zertifikatsprüfung aus": {
       "localizations": {
         "ar": {
           "stringUnit": { "state": "translated",
-            "value": "تحقق معطل"
+            "value": "فحص الشهادة متوقف"
           }
         },
         "bn": {
           "stringUnit": { "state": "translated",
-            "value": "চেক নিষ্ক্রিয়"
+            "value": "সার্টিফিকেট পরীক্ষা বন্ধ"
           }
         },
         "en": {
           "stringUnit": { "state": "translated",
-            "value": "Check disabled"
+            "value": "Certificate check off"
           }
         },
         "es": {
           "stringUnit": { "state": "translated",
-            "value": "Verificar deshabilitado"
+            "value": "Comprobación de certificado desactivada"
           }
         },
         "fr": {
           "stringUnit": { "state": "translated",
-            "value": "Chèque désactivé"
+            "value": "Vérification du certificat désactivée"
           }
         },
         "ha": {
           "stringUnit": { "state": "translated",
-            "value": "Bincike an kashe"
+            "value": "An kashe tantance takardar shaida"
           }
         },
         "hi": {
           "stringUnit": { "state": "translated",
-            "value": "जाँच अक्षम है"
+            "value": "प्रमाणपत्र जाँच बंद"
           }
         },
         "id": {
           "stringUnit": { "state": "translated",
-            "value": "Centang dinonaktifkan"
+            "value": "Verifikasi sertifikat nonaktif"
           }
         },
         "ja": {
           "stringUnit": { "state": "translated",
-            "value": "チェックが無効になっています"
+            "value": "証明書の検証はオフ"
           }
         },
         "mr": {
           "stringUnit": { "state": "translated",
-            "value": "चाचणी अक्षम केले"
+            "value": "प्रमाणपत्र तपासणी बंद"
           }
         },
         "pcm": {
           "stringUnit": { "state": "translated",
-            "value": "Check disabled"
+            "value": "Certificate check dey off"
           }
         },
         "pt": {
           "stringUnit": { "state": "translated",
-            "value": "Verificação desativada"
+            "value": "Verificação do certificado desativada"
           }
         },
         "ru": {
           "stringUnit": { "state": "translated",
-            "value": "Проверка отключена"
+            "value": "Проверка сертификата отключена"
           }
         },
         "sv": {
           "stringUnit": { "state": "translated",
-            "value": "Verifiering avstängd"
+            "value": "Certifikatkontroll av"
           }
         },
         "sw": {
           "stringUnit": { "state": "translated",
-            "value": "Ukaguzi umezimwa"
+            "value": "Uthibitishaji wa cheti umezimwa"
           }
         },
         "te": {
           "stringUnit": { "state": "translated",
-            "value": "పరీక్ష నిలిపివేయబడింది"
+            "value": "సర్టిఫికేట్ తనిఖీ ఆఫ్"
           }
         },
         "tr": {
           "stringUnit": { "state": "translated",
-            "value": "Doğrulama devre dışı"
+            "value": "Sertifika doğrulaması kapalı"
           }
         },
         "ur": {
           "stringUnit": { "state": "translated",
-            "value": "چیک غیر فعال"
+            "value": "سرٹیفکیٹ کی تصدیق بند"
           }
         },
         "vi": {
           "stringUnit": { "state": "translated",
-            "value": "Kiểm tra bị vô hiệu hóa"
+            "value": "Đã tắt xác minh chứng chỉ"
           }
         },
         "zh-Hans": {
           "stringUnit": { "state": "translated",
-            "value": "检查已禁用"
+            "value": "证书验证已关闭"
           }
         }
       }

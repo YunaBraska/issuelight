@@ -23,6 +23,14 @@ final class LandingPageScreenshotTests: XCTestCase {
             for: thrukSourceSetupView,
             size: CGSize(width: 820, height: 600)
         )
+        let checkmkSourceData = try NativeViewRenderer.pngData(
+            for: checkmkSourceSetupView,
+            size: CGSize(width: 820, height: 600)
+        )
+        let nagiosCoreSourceData = try NativeViewRenderer.pngData(
+            for: nagiosCoreSourceSetupView,
+            size: CGSize(width: 820, height: 600)
+        )
         let menuItemData = try NativeViewRenderer.pngData(
             for: menuItemStatesView,
             size: CGSize(width: 660, height: 180)
@@ -112,28 +120,39 @@ final class LandingPageScreenshotTests: XCTestCase {
             size: CGSize(width: 760, height: 560)
         )
 
-        XCTAssertGreaterThan(sourceData.count, 50_000)
-        XCTAssertGreaterThan(thrukSourceData.count, 50_000)
-        XCTAssertGreaterThan(menuItemData.count, 4_000)
-        XCTAssertGreaterThan(germanMenuData.count, 10_000)
-        XCTAssertGreaterThan(swedishMenuData.count, 10_000)
-        XCTAssertGreaterThan(arabicMenuData.count, 10_000)
-        XCTAssertGreaterThan(sourceFailureMenuData.count, 8_000)
-        XCTAssertGreaterThan(mixedProviderMenuData.count, 18_000)
-        XCTAssertGreaterThan(noSourceMenuData.count, 12_000)
-        XCTAssertGreaterThan(disabledSourceMenuData.count, 12_000)
-        XCTAssertGreaterThan(loadingMenuData.count, 12_000)
-        XCTAssertGreaterThan(allClearMenuData.count, 12_000)
-        XCTAssertGreaterThan(filteredEmptyMenuData.count, 12_000)
-        XCTAssertGreaterThan(actionErrorMenuData.count, 12_000)
-        XCTAssertGreaterThan(darkLargeTextMenuData.count, 20_000)
-        XCTAssertGreaterThan(mtlsPinnedSourceData.count, 60_000)
-        XCTAssertGreaterThan(insecureSSHSourceData.count, 60_000)
-        XCTAssertGreaterThan(connectionPathData.count, 20_000)
-        XCTAssertGreaterThan(swedishSettingsData.count, 8_000)
-        XCTAssertGreaterThan(arabicSettingsData.count, 8_000)
-        XCTAssertGreaterThan(aboutSettingsData.count, 20_000)
-        XCTAssertGreaterThan(notificationSettingsData.count, 20_000)
+        let renderedScreenshots: [(name: String, data: Data, size: CGSize)] = [
+            ("Icinga source setup", sourceData, CGSize(width: 820, height: 600)),
+            ("Thruk source setup", thrukSourceData, CGSize(width: 820, height: 600)),
+            ("Checkmk source setup", checkmkSourceData, CGSize(width: 820, height: 600)),
+            ("Nagios source setup", nagiosCoreSourceData, CGSize(width: 820, height: 600)),
+            ("menu item states", menuItemData, CGSize(width: 660, height: 180)),
+            ("German menu", germanMenuData, CGSize(width: 720, height: 127)),
+            ("Swedish menu", swedishMenuData, CGSize(width: 720, height: 127)),
+            ("Arabic menu", arabicMenuData, CGSize(width: 720, height: 127)),
+            ("source failure menu", sourceFailureMenuData, CGSize(width: 720, height: 88)),
+            ("mixed provider menu", mixedProviderMenuData, CGSize(width: 720, height: 205)),
+            ("no source menu", noSourceMenuData, CGSize(width: 720, height: 220)),
+            ("disabled source menu", disabledSourceMenuData, CGSize(width: 720, height: 220)),
+            ("loading menu", loadingMenuData, CGSize(width: 720, height: 220)),
+            ("all clear menu", allClearMenuData, CGSize(width: 720, height: 200)),
+            ("filtered menu", filteredEmptyMenuData, CGSize(width: 720, height: 200)),
+            ("action error menu", actionErrorMenuData, CGSize(width: 720, height: 132)),
+            ("dark large text menu", darkLargeTextMenuData, CGSize(width: 720, height: 225)),
+            ("mTLS source", mtlsPinnedSourceData, CGSize(width: 900, height: 1_200)),
+            ("insecure SSH source", insecureSSHSourceData, CGSize(width: 900, height: 1_500)),
+            ("connection paths", connectionPathData, CGSize(width: 820, height: 500)),
+            ("Swedish settings", swedishSettingsData, CGSize(width: 920, height: 680)),
+            ("Arabic settings", arabicSettingsData, CGSize(width: 920, height: 680)),
+            ("About settings", aboutSettingsData, CGSize(width: 660, height: 470)),
+            ("notification settings", notificationSettingsData, CGSize(width: 760, height: 560)),
+        ]
+        for screenshot in renderedScreenshots {
+            assertValidPNG(
+                screenshot.data,
+                logicalSize: screenshot.size,
+                name: screenshot.name
+            )
+        }
 
         guard let outputPath = ProcessInfo.processInfo.environment["ISSUELIGHT_SCREENSHOT_OUTPUT_DIR"] else {
             return
@@ -149,6 +168,14 @@ final class LandingPageScreenshotTests: XCTestCase {
         )
         try thrukSourceData.write(
             to: outputDirectory.appendingPathComponent("source-setup-thruk.png"),
+            options: .atomic
+        )
+        try checkmkSourceData.write(
+            to: outputDirectory.appendingPathComponent("source-setup-checkmk.png"),
+            options: .atomic
+        )
+        try nagiosCoreSourceData.write(
+            to: outputDirectory.appendingPathComponent("source-setup-nagios-core.png"),
             options: .atomic
         )
         try menuItemData.write(
@@ -233,7 +260,81 @@ final class LandingPageScreenshotTests: XCTestCase {
         )
     }
 
+    private func assertValidPNG(
+        _ data: Data,
+        logicalSize: CGSize,
+        name: String,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        XCTAssertGreaterThan(data.count, 1_024, "\(name) is unexpectedly empty", file: file, line: line)
+        guard let bitmap = NSBitmapImageRep(data: data) else {
+            XCTFail("\(name) is not a decodable image", file: file, line: line)
+            return
+        }
+        XCTAssertGreaterThanOrEqual(
+            bitmap.pixelsWide,
+            Int(logicalSize.width),
+            "\(name) is narrower than its requested render size",
+            file: file,
+            line: line
+        )
+        XCTAssertGreaterThanOrEqual(
+            bitmap.pixelsHigh,
+            Int(logicalSize.height),
+            "\(name) is shorter than its requested render size",
+            file: file,
+            line: line
+        )
+    }
+
     private var sourceSetupView: some View {
+        sourceSetupView(
+            providerID: Icinga2Provider.id,
+            name: "Production",
+            endpoint: "https://icinga.example:5665",
+            authentication: .basic,
+            username: "monitoring-reader"
+        )
+    }
+
+    private var thrukSourceSetupView: some View {
+        sourceSetupView(
+            providerID: ThrukProvider.id,
+            name: "Operations",
+            endpoint: "monitoring.example/thruk",
+            authentication: .apiKey,
+            username: "automation"
+        )
+    }
+
+    private var checkmkSourceSetupView: some View {
+        sourceSetupView(
+            providerID: CheckmkProvider.id,
+            name: "Platform",
+            endpoint: "monitoring.example/cmk",
+            authentication: .apiKey,
+            username: "automation"
+        )
+    }
+
+    private var nagiosCoreSourceSetupView: some View {
+        sourceSetupView(
+            providerID: NagiosCoreProvider.id,
+            name: "Legacy",
+            endpoint: "monitoring.example/nagios",
+            authentication: .basic,
+            username: "monitoring-reader"
+        )
+    }
+
+    private func sourceSetupView(
+        providerID: ProviderID,
+        name: String,
+        endpoint: String,
+        authentication: IssueLightModel.AuthenticationChoice,
+        username: String
+    ) -> some View {
         let model = IssueLightModel(
             sourceStore: nil,
             providerRegistry: .builtIn(),
@@ -245,36 +346,14 @@ final class LandingPageScreenshotTests: XCTestCase {
             startsAutomatically: false
         )
         model.beginAddingSource()
-        model.name = "Produktion"
-        model.endpoint = "https://icinga.example:5665"
-        model.username = "monitoring-reader"
-        model.authenticationChoice = .basic
+        model.selectedProviderID = providerID
+        model.name = name
+        model.endpoint = endpoint
+        model.username = username
+        model.authenticationChoice = authentication
         model.serverTrustChoice = .system
         return SourceSetupView(model: model)
-            .environment(\.locale, Locale(identifier: "de_DE"))
-            .environment(\.colorScheme, .light)
-    }
-
-    private var thrukSourceSetupView: some View {
-        let model = IssueLightModel(
-            sourceStore: nil,
-            providerRegistry: .builtIn(),
-            passwordVault: KeychainPasswordVault(),
-            identityCatalog: KeychainIdentityCatalog(),
-            certificateCatalog: KeychainServerCertificateCatalog(
-                ownershipScope: "berlin.yuna.issuelight.thruk-screenshot-tests"
-            ),
-            startsAutomatically: false
-        )
-        model.beginAddingSource()
-        model.selectedProviderID = ThrukProvider.id
-        model.name = "Operations"
-        model.endpoint = "monitoring.example/thruk"
-        model.authenticationChoice = .apiKey
-        model.username = "automation"
-        model.serverTrustChoice = .system
-        return SourceSetupView(model: model)
-            .environment(\.locale, Locale(identifier: "de_DE"))
+            .environment(\.locale, Locale(identifier: "en_US"))
             .environment(\.colorScheme, .light)
     }
 

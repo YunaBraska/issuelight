@@ -79,6 +79,49 @@ final class StatusMenuInteractionTests: XCTestCase {
         XCTAssertTrue(isExpanded)
     }
 
+    func testSSHTunnelSettingsRenderAutomaticDefaultsAtCompactWidth() throws {
+        let view = Form {
+            SSHTunnelSettingsView(
+                host: .constant(""),
+                username: .constant(""),
+                port: .constant(""),
+                identityFilePath: .constant(""),
+                preferredLocalPort: .constant(""),
+                automaticHost: "monitoring.internal",
+                chooseIdentity: {}
+            )
+        }
+        .formStyle(.grouped)
+        .environment(\.locale, Locale(identifier: "de_DE"))
+        .environment(\.colorScheme, .light)
+
+        let size = CGSize(width: 500, height: 260)
+        XCTAssertTrue(NativeViewRenderer.exerciseWindow(for: view, size: size))
+        XCTAssertTrue(
+            NativeViewRenderer.exerciseWindow(
+                for: view.environment(\.dynamicTypeSize, .accessibility1),
+                size: CGSize(width: 500, height: 360)
+            )
+        )
+        if let outputPath = ProcessInfo.processInfo.environment[
+            "ISSUELIGHT_SSH_SETTINGS_SCREENSHOT_PATH"
+        ] {
+            let pngData = try NativeViewRenderer.pngData(for: view, size: size)
+            XCTAssertGreaterThan(pngData.count, 10_000)
+            try pngData.write(to: URL(fileURLWithPath: outputPath), options: .atomic)
+        }
+        if let outputPath = ProcessInfo.processInfo.environment[
+            "ISSUELIGHT_SSH_SETTINGS_LARGE_TEXT_SCREENSHOT_PATH"
+        ] {
+            let pngData = try NativeViewRenderer.pngData(
+                for: view.environment(\.dynamicTypeSize, .accessibility1),
+                size: CGSize(width: 500, height: 360)
+            )
+            XCTAssertGreaterThan(pngData.count, 10_000)
+            try pngData.write(to: URL(fileURLWithPath: outputPath), options: .atomic)
+        }
+    }
+
     func testPortNumberFormatNeverAddsLocaleGrouping() {
         XCTAssertEqual(
             PortNumberField.format.locale(Locale(identifier: "de_DE")).format(3_389),

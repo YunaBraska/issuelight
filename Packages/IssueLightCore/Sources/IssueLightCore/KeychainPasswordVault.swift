@@ -195,7 +195,7 @@ public actor KeychainPasswordVault {
     }
 
     func keychainQuery<Scope: KeychainCredentialScope>(for scope: Scope) -> [String: Any] {
-        var query: [String: Any] = [
+        let query: [String: Any] = [
             kSecClass as String: kSecClassInternetPassword,
             kSecAttrAccount as String: scope.account,
             kSecAttrServer as String: scope.server,
@@ -204,9 +204,6 @@ public actor KeychainPasswordVault {
             kSecAttrAuthenticationType as String: scope.authenticationType,
             kSecAttrPath as String: "/issuelight/sources/\(scope.sourceID.uuidString.lowercased())",
         ]
-        if keychainContext == nil {
-            query[kSecUseDataProtectionKeychain as String] = true
-        }
         return query
     }
 }

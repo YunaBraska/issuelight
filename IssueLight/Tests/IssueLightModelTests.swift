@@ -284,6 +284,62 @@ final class IssueLightModelTests: XCTestCase {
         }
     }
 
+    func testDraftSidebarNameUsesEnteredNameBeforeAutomaticSuggestion() async throws {
+        let harness = try await makeHarness(sourceCount: 1, script: SnapshotScript())
+        await harness.model.load()
+        harness.model.beginAddingSource()
+        harness.model.endpoint = "monitoring.example:5665"
+
+        XCTAssertEqual(harness.model.draftSourceName, "Monitoring")
+
+        harness.model.name = "  Production EU  "
+
+        XCTAssertEqual(harness.model.draftSourceName, "Production EU")
+    }
+
+    func testSavingSourceStoresCredentialThroughProductionLoginKeychain() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("IssueLightProductionKeychainModelTests-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        addTeardownBlock {
+            try? FileManager.default.removeItem(at: directory)
+        }
+        let store = SourceStore(fileURL: directory.appendingPathComponent("sources.json"))
+        let vault = KeychainPasswordVault()
+        let model = IssueLightModel(
+            sourceStore: store,
+            providerRegistry: .builtIn(),
+            passwordVault: vault,
+            identityCatalog: KeychainIdentityCatalog(accessContext: testKeychain.context),
+            certificateCatalog: certificateCatalog(),
+            startsAutomatically: false,
+            localizationLocale: Locale(identifier: "de")
+        )
+
+        model.beginAddingSource()
+        model.name = "Production Keychain Regression"
+        model.endpoint = "https://keychain-regression-\(UUID().uuidString).invalid:5665"
+        model.username = "operator"
+        model.credentialSecret = "test-only-production-password"
+        model.isSourceEnabled = false
+
+        await model.save()
+
+        let storedSources = try await store.load()
+        let source = try XCTUnwrap(storedSources.first)
+        let scope = try BasicCredentialScope(source: source)
+        addTeardownBlock {
+            try? await vault.deletePassword(for: scope)
+        }
+        let storedPassword = try await vault.password(for: scope)
+        XCTAssertEqual(storedPassword, "test-only-production-password")
+        XCTAssertTrue(model.hasStoredCredentialSecret)
+        XCTAssertEqual(
+            model.activity,
+            .success("Quelle gespeichert. Geheimnisse bleiben im macOS-Schlüsselbund.")
+        )
+    }
+
     func testSavingIncompleteDraftPersistsPublicInputAndKeepsItPaused() async throws {
         let script = SnapshotScript()
         let harness = try await makeHarness(sourceCount: 1, script: script)
@@ -745,6 +801,25 @@ final class IssueLightModelTests: XCTestCase {
 
         model.selectedProviderID = Icinga2Provider.id
         XCTAssertTrue(model.isEndpointUsingTLS)
+    }
+
+    func testAutomaticSSHHostUsesProviderEndpointDiscovery() async throws {
+        let model = IssueLightModel(
+            sourceStore: nil,
+            providerRegistry: .builtIn(),
+            passwordVault: KeychainPasswordVault(keychainContext: testKeychain.context),
+            identityCatalog: KeychainIdentityCatalog(accessContext: testKeychain.context),
+            certificateCatalog: certificateCatalog(),
+            startsAutomatically: false
+        )
+
+        model.beginAddingSource()
+        model.endpoint = "monitoring.internal:5665"
+        XCTAssertEqual(model.automaticSSHTunnelHost, "monitoring.internal")
+
+        model.selectedProviderID = CheckmkProvider.id
+        model.endpoint = "https://checkmk.internal/site/check_mk/dashboard.py"
+        XCTAssertEqual(model.automaticSSHTunnelHost, "checkmk.internal")
     }
 
     func testEffectiveProviderCandidateDeterminesWhetherTLSControlsAreRelevant() async throws {

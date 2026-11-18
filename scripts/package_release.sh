@@ -177,12 +177,24 @@ staging_archive="$staging_directory/$archive_name"
 staging_sbom="$staging_directory/$sbom_name"
 staging_checksums="$staging_directory/SHA256SUMS"
 
+sparkle_info_plist="$canonical_app_path/Contents/Frameworks/Sparkle.framework/Versions/Current/Resources/Info.plist"
+test -f "$sparkle_info_plist" || {
+    echo "Release app is missing Sparkle version metadata." >&2
+    exit 65
+}
+sparkle_version=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$sparkle_info_plist")
+test -n "$sparkle_version" || {
+    echo "Release app has an empty Sparkle version." >&2
+    exit 65
+}
+
 ditto -c -k --sequesterRsrc --keepParent "$canonical_app_path" "$staging_archive"
 unzip -tq "$staging_archive"
 xcrun swift "$(dirname "$0")/generate_spdx_sbom.swift" \
     "$version" \
     "$bundle_build" \
     "$revision" \
+    "$sparkle_version" \
     "$staging_sbom"
 
 (

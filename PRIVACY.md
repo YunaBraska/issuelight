@@ -6,12 +6,12 @@ contains no analytics, advertising, crash-reporting SDK, or telemetry.
 
 ## Data sent over the network
 
-IssueLight reads host and service state from configured Icinga 2 or Thruk
-sources and can send an operator-initiated recheck, acknowledgement, or fixed
-downtime to the selected object. Action requests include the entered author and
-comment. Requests may contain Basic credentials, a Thruk API key, or a selected
-client identity. The configured TLS policy applies independently to each source
-and credentials are not forwarded to another origin.
+IssueLight reads host and service state from configured Icinga 2, Thruk,
+Checkmk, or Nagios Core sources and can send the operator actions supported by
+that provider. Action requests can include the entered author and comment.
+Requests may contain Basic credentials, a provider API key, or a selected
+client identity. The configured TLS policy applies independently to each
+source, and credentials are not forwarded to another origin.
 
 Opening an issue can contact its configured monitoring-web host directly. If
 the optional automatic HTTP tunnel is enabled and that host is unreachable,

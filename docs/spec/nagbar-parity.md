@@ -5,8 +5,9 @@ Status: Reviewed against `volendavidov/NagBar` and the maintained
 
 IssueLight is not a visual rewrite of NagBar. It preserves the useful operator
 journey while replacing unsafe or noisy behavior. Every declared built-in
-provider has real-system qualification. Signed installed-app acceptance and
-the first notarized replacement cycle remain release blockers.
+provider has real-system qualification. Signed, notarized releases and their
+replacement cycle are established. The protected-key approval lifecycle
+remains a manual installed-app validation item.
 
 ## Capability matrix
 
@@ -37,7 +38,7 @@ the first notarized replacement cycle remain release blockers.
 | User-defined status colors | Done | Dismissed | Use semantic system colors and symbols so dark mode, contrast, and accessibility stay coherent. |
 | Configurable columns and output length | Done | Dismissed | Keep one scannable row hierarchy and bounded output instead of exposing layout internals as preferences. |
 | Dock-icon toggle | Done | Dismissed | IssueLight is a menu-bar utility and remains an `LSUIElement` app. |
-| Automatic update check | Done | Done for direct builds | Direct releases use a signed Sparkle feed. App Store builds contain no Sparkle runtime and use Apple's update channel. A published replacement cycle remains a release gate. |
+| Automatic update check | Done | Done for direct builds | Direct releases use a signed Sparkle feed. App Store builds contain no Sparkle runtime and use Apple's update channel. Published replacement cycles verify the update path. |
 
 ## Current parity conclusion
 
@@ -47,8 +48,8 @@ improves multiple-source isolation, failure handling, credential storage, and
 TLS trust. Direct Icinga Classic remains available through Thruk rather than a
 separate adapter.
 
-Production readiness still requires signed installed-app acceptance and a
-signed, notarized replacement-cycle release.
+The remaining installed-app validation is the approve, deny, and recovery
+lifecycle for a protected mTLS private key.
 
 ## Recommended delivery order
 

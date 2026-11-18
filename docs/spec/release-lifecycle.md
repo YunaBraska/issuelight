@@ -1,6 +1,6 @@
 # Release Lifecycle
 
-Status: Accepted for the first public release.
+Status: Accepted for public releases.
 
 ## Outcome
 
@@ -8,7 +8,7 @@ A person can identify the installed IssueLight version, find the authoritative
 release channel, and distinguish a development build from a publishable,
 notarized release.
 
-The first release supports German plus 20 explicitly selectable translations,
+Public releases support German plus 20 explicitly selectable translations,
 including Swedish. Direct releases check a signed Sparkle feed for updates and
 install only after user confirmation. The direct release includes optional SSH
 tunnels and remote-client launchers. The sandboxed App Store edition uses

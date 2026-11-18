@@ -11,7 +11,7 @@ packages:
     path: ../Packages/IssueLightCore
   Sparkle:
     url: https://github.com/sparkle-project/Sparkle
-    exactVersion: 2.10.0
+    exactVersion: 2.10.1
 
 targetTemplates:
   IssueLightApplication:

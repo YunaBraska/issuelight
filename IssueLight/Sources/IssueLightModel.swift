@@ -51,7 +51,7 @@ final class IssueLightModel: ObservableObject {
             case .pinnedCertificate:
                 return AppLocalization.string("Serverzertifikat festlegen", locale: locale)
             case .disabled:
-                return AppLocalization.string("Prüfung deaktiviert", locale: locale)
+                return AppLocalization.string("Zertifikatsprüfung aus", locale: locale)
             }
         }
 
@@ -296,12 +296,27 @@ final class IssueLightModel: ObservableObject {
         providerRegistry.provider(for: selectedProviderID)?.descriptor.endpointExample ?? ""
     }
 
+    var automaticSSHTunnelHost: String {
+        let hint = endpoint.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let provider = providerRegistry.provider(for: selectedProviderID) else {
+            return ""
+        }
+        return provider.endpointCandidates(from: hint.isEmpty ? endpointPrompt : hint)
+            .compactMap(\.host)
+            .first ?? ""
+    }
+
     var suggestedSourceName: String {
         SourceNameSuggestion.name(
             rawEndpoint: endpoint,
             providerName: providerDisplayName,
             sourceID: sourceID
         )
+    }
+
+    var draftSourceName: String {
+        let enteredName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        return enteredName.isEmpty ? suggestedSourceName : enteredName
     }
 
     var isEndpointUsingTLS: Bool {

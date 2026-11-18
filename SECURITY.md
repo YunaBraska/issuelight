@@ -2,8 +2,9 @@
 
 ## Supported versions
 
-IssueLight has not published a production release. Security fixes currently
-target the `main` branch.
+The latest GitHub release and the `main` branch receive security fixes. Older
+releases are not supported. Direct installations can update through the signed
+in-app update channel. App Store installations use Apple's update channel.
 
 ## Report a vulnerability
 
@@ -13,8 +14,8 @@ affected commit or version, reproduction steps, impact, and any suggested
 mitigation. Do not include real credentials or private monitoring data.
 
 The project will acknowledge a report, reproduce it where possible, and track
-the correction privately until disclosure is safe. No response-time guarantee
-is offered before a maintained release exists.
+the correction privately until disclosure is safe. No fixed response-time
+guarantee is offered.
 
 ## Security boundaries
 
