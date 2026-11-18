@@ -263,7 +263,7 @@ final class StatusMenuInteractionTests: XCTestCase {
         XCTAssertEqual(scheduledDowntime, 1)
     }
 
-    func testHostMultiSelectionFiltersPanelRowsAndMenuBarCountsTogether() {
+    func testHostExclusionFiltersPanelRowsAndMenuBarCountsTogether() {
         let sourceID = UUID()
         let hiddenIssue = MonitoringIssue(
             sourceID: sourceID,
@@ -293,7 +293,7 @@ final class StatusMenuInteractionTests: XCTestCase {
         let defaults = UserDefaults(suiteName: suiteName)!
         addTeardownBlock { defaults.removePersistentDomain(forName: suiteName) }
         let filters = PanelFilterSettings(defaults: defaults)
-        filters.setHost(PanelHostSelection(issue: selectedIssue), selected: true)
+        filters.setHost(PanelHostSelection(issue: hiddenIssue), excluded: true)
         var openedIssueID: String?
         let view = StatusMenuContent(
             hasConfiguredSource: true,

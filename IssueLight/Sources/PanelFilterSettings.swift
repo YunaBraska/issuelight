@@ -64,12 +64,12 @@ final class PanelFilterSettings: ObservableObject {
     @Published var coverage: PanelCoverageFilter {
         didSet { defaults.set(coverage.rawValue, forKey: coverageKey) }
     }
-    @Published private(set) var hostSelections: Set<PanelHostSelection> {
+    @Published private(set) var excludedHosts: Set<PanelHostSelection> {
         didSet {
-            if hostSelections.isEmpty {
-                defaults.removeObject(forKey: hostsKey)
-            } else if let data = try? JSONEncoder().encode(hostSelections) {
-                defaults.set(data, forKey: hostsKey)
+            if excludedHosts.isEmpty {
+                defaults.removeObject(forKey: excludedHostsKey)
+            } else if let data = try? JSONEncoder().encode(excludedHosts) {
+                defaults.set(data, forKey: excludedHostsKey)
             }
         }
     }
@@ -78,20 +78,22 @@ final class PanelFilterSettings: ObservableObject {
     private let sourceKey = "panel.filter.source"
     private let severityKey = "panel.filter.severity"
     private let coverageKey = "panel.filter.coverage"
-    private let hostsKey = "panel.filter.hosts"
+    private let excludedHostsKey = "panel.filter.excluded-hosts"
+    private let legacyIncludedHostsKey = "panel.filter.hosts"
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         sourceID = defaults.string(forKey: sourceKey) ?? ""
         severity = defaults.string(forKey: severityKey).flatMap(PanelSeverityFilter.init(rawValue:)) ?? .all
         coverage = defaults.string(forKey: coverageKey).flatMap(PanelCoverageFilter.init(rawValue:)) ?? .all
-        hostSelections = defaults.data(forKey: hostsKey)
+        excludedHosts = defaults.data(forKey: excludedHostsKey)
             .flatMap { try? JSONDecoder().decode(Set<PanelHostSelection>.self, from: $0) }
             ?? []
+        defaults.removeObject(forKey: legacyIncludedHostsKey)
     }
 
     var isActive: Bool {
-        !sourceID.isEmpty || severity != .all || coverage != .all || !hostSelections.isEmpty
+        !sourceID.isEmpty || severity != .all || coverage != .all || !excludedHosts.isEmpty
     }
 
     func includes(_ issue: MonitoringIssue, isCovered: Bool) -> Bool {
@@ -115,23 +117,23 @@ final class PanelFilterSettings: ObservableObject {
     }
 
     func includesHost(_ issue: MonitoringIssue) -> Bool {
-        hostSelections.isEmpty || hostSelections.contains(PanelHostSelection(issue: issue))
+        !excludedHosts.contains(PanelHostSelection(issue: issue))
     }
 
-    func isHostSelected(_ selection: PanelHostSelection) -> Bool {
-        hostSelections.contains(selection)
+    func isHostExcluded(_ selection: PanelHostSelection) -> Bool {
+        excludedHosts.contains(selection)
     }
 
-    func setHost(_ selection: PanelHostSelection, selected: Bool) {
-        if selected {
-            hostSelections.insert(selection)
+    func setHost(_ selection: PanelHostSelection, excluded: Bool) {
+        if excluded {
+            excludedHosts.insert(selection)
         } else {
-            hostSelections.remove(selection)
+            excludedHosts.remove(selection)
         }
     }
 
-    func clearHosts() {
-        hostSelections = []
+    func showAllHosts() {
+        excludedHosts = []
     }
 
     func reconcile(sourceIDs: Set<UUID>, isAuthoritative: Bool = true) {
@@ -140,9 +142,9 @@ final class PanelFilterSettings: ObservableObject {
         if !sourceID.isEmpty, !storedSourceIDs.contains(sourceID) {
             sourceID = ""
         }
-        let retainedHosts = Set(hostSelections.filter { sourceIDs.contains($0.sourceID) })
-        if retainedHosts != hostSelections {
-            hostSelections = retainedHosts
+        let retainedHosts = Set(excludedHosts.filter { sourceIDs.contains($0.sourceID) })
+        if retainedHosts != excludedHosts {
+            excludedHosts = retainedHosts
         }
     }
 
@@ -150,6 +152,6 @@ final class PanelFilterSettings: ObservableObject {
         sourceID = ""
         severity = .all
         coverage = .all
-        hostSelections = []
+        excludedHosts = []
     }
 }

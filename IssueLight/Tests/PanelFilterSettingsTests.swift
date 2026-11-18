@@ -25,18 +25,17 @@ final class PanelFilterSettingsTests: XCTestCase {
         filters.sourceID = sourceID.uuidString.lowercased()
         filters.severity = .critical
         filters.coverage = .attention
-        filters.setHost(PanelHostSelection(issue: issue), selected: true)
+        filters.setHost(PanelHostSelection(issue: issue), excluded: true)
 
-        XCTAssertTrue(filters.includes(issue, isCovered: false))
-        XCTAssertFalse(filters.includes(issue, isCovered: true))
+        XCTAssertFalse(filters.includes(issue, isCovered: false))
         let reloaded = PanelFilterSettings(defaults: defaults)
         XCTAssertEqual(reloaded.sourceID, sourceID.uuidString.lowercased())
         XCTAssertEqual(reloaded.severity, .critical)
         XCTAssertEqual(reloaded.coverage, .attention)
-        XCTAssertEqual(reloaded.hostSelections, [PanelHostSelection(issue: issue)])
+        XCTAssertEqual(reloaded.excludedHosts, [PanelHostSelection(issue: issue)])
     }
 
-    func testHostSelectionDistinguishesSameHostNameAcrossSourcesAndFiltersMenuIssues() {
+    func testHostExclusionDistinguishesSameHostNameAcrossSourcesAndFiltersMenuIssues() {
         let suiteName = "PanelHostFilterTests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!
         let firstSource = UUID()
@@ -46,11 +45,11 @@ final class PanelFilterSettingsTests: XCTestCase {
         let filters = PanelFilterSettings(defaults: defaults)
         addTeardownBlock { defaults.removePersistentDomain(forName: suiteName) }
 
-        filters.setHost(PanelHostSelection(issue: firstIssue), selected: true)
+        filters.setHost(PanelHostSelection(issue: firstIssue), excluded: true)
 
-        XCTAssertTrue(filters.includesHost(firstIssue))
-        XCTAssertFalse(filters.includesHost(secondIssue))
-        XCTAssertEqual([firstIssue, secondIssue].filter(filters.includesHost), [firstIssue])
+        XCTAssertFalse(filters.includesHost(firstIssue))
+        XCTAssertTrue(filters.includesHost(secondIssue))
+        XCTAssertEqual([firstIssue, secondIssue].filter(filters.includesHost), [secondIssue])
     }
 
     func testRemovedSourceResetsOnlySourceFilter() {
@@ -63,14 +62,14 @@ final class PanelFilterSettingsTests: XCTestCase {
         filters.severity = .warning
         filters.setHost(
             PanelHostSelection(sourceID: removedSourceID, hostName: "retired-host"),
-            selected: true
+            excluded: true
         )
 
         filters.reconcile(sourceIDs: [UUID()])
 
         XCTAssertEqual(filters.sourceID, "")
         XCTAssertEqual(filters.severity, .warning)
-        XCTAssertTrue(filters.hostSelections.isEmpty)
+        XCTAssertTrue(filters.excludedHosts.isEmpty)
     }
 
     func testInitialEmptySourceSnapshotDoesNotErasePersistedFilterBeforeLoadCompletes() {
@@ -86,18 +85,50 @@ final class PanelFilterSettingsTests: XCTestCase {
         XCTAssertEqual(filters.sourceID, sourceID)
     }
 
-    func testMissingHostRemainsSelectedWhileItsSourceStillExists() {
+    func testMissingHostRemainsExcludedWhileItsSourceStillExists() {
         let suiteName = "PanelHostLifecycleTests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!
         addTeardownBlock { defaults.removePersistentDomain(forName: suiteName) }
         let sourceID = UUID()
         let selection = PanelHostSelection(sourceID: sourceID, hostName: "temporarily-healthy")
         let filters = PanelFilterSettings(defaults: defaults)
-        filters.setHost(selection, selected: true)
+        filters.setHost(selection, excluded: true)
 
         filters.reconcile(sourceIDs: [sourceID])
 
-        XCTAssertEqual(filters.hostSelections, [selection])
+        XCTAssertEqual(filters.excludedHosts, [selection])
+    }
+
+    func testTwoExclusionsLeaveTheOther198HostsVisible() {
+        let suiteName = "PanelHostScaleTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        addTeardownBlock { defaults.removePersistentDomain(forName: suiteName) }
+        let sourceID = UUID()
+        let issues = (0..<200).map { index in
+            issue(sourceID: sourceID, hostName: String(format: "host-%03d", index))
+        }
+        let filters = PanelFilterSettings(defaults: defaults)
+
+        filters.setHost(PanelHostSelection(issue: issues[17]), excluded: true)
+        filters.setHost(PanelHostSelection(issue: issues[163]), excluded: true)
+
+        XCTAssertEqual(issues.filter(filters.includesHost).count, 198)
+        XCTAssertFalse(filters.includesHost(issues[17]))
+        XCTAssertFalse(filters.includesHost(issues[163]))
+        XCTAssertTrue(filters.includesHost(issues[162]))
+    }
+
+    func testLegacyPositiveHostFilterIsClearedInsteadOfBeingInverted() throws {
+        let suiteName = "PanelHostMigrationTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        addTeardownBlock { defaults.removePersistentDomain(forName: suiteName) }
+        let legacySelection = PanelHostSelection(sourceID: UUID(), hostName: "legacy-host")
+        defaults.set(try JSONEncoder().encode(Set([legacySelection])), forKey: "panel.filter.hosts")
+
+        let filters = PanelFilterSettings(defaults: defaults)
+
+        XCTAssertTrue(filters.excludedHosts.isEmpty)
+        XCTAssertNil(defaults.data(forKey: "panel.filter.hosts"))
     }
 
     private func issue(sourceID: UUID, hostName: String) -> MonitoringIssue {

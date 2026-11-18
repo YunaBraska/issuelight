@@ -188,6 +188,10 @@ final class IssueLightModel: ObservableObject {
     private let certificateCatalog: KeychainServerCertificateCatalog
     private let accessResolver: ProviderAccessResolver
     private let connectionCoordinator: AutomaticConnectionCoordinator
+    private let presentedServerCertificateFetcher: (
+        URL,
+        ProviderSOCKSProxy?
+    ) async -> PresentedServerCertificateResult
     private var hasStarted = false
     private var refreshLoopTask: Task<Void, Never>?
     private var refreshTasks: [UUID: Task<Void, Never>] = [:]
@@ -548,6 +552,12 @@ final class IssueLightModel: ObservableObject {
         identityCatalog: KeychainIdentityCatalog,
         certificateCatalog: KeychainServerCertificateCatalog,
         connectionCoordinator: AutomaticConnectionCoordinator? = nil,
+        presentedServerCertificateFetcher: @escaping (
+            URL,
+            ProviderSOCKSProxy?
+        ) async -> PresentedServerCertificateResult = { endpoint, proxy in
+            await PresentedServerCertificateFetcher.fetch(from: endpoint, socksProxy: proxy)
+        },
         startsAutomatically: Bool,
         localizationLocale: Locale = .current
     ) {
@@ -557,6 +567,7 @@ final class IssueLightModel: ObservableObject {
         self.identityCatalog = identityCatalog
         self.certificateCatalog = certificateCatalog
         self.connectionCoordinator = connectionCoordinator ?? AutomaticConnectionCoordinator()
+        self.presentedServerCertificateFetcher = presentedServerCertificateFetcher
         self.localizationLocale = localizationLocale
         accessResolver = ProviderAccessResolver(
             passwordVault: passwordVault,
@@ -1168,6 +1179,66 @@ final class IssueLightModel: ObservableObject {
             activity = .failure(localized("Das Serverzertifikat konnte nicht gelesen werden."))
             return false
         }
+    }
+
+    func fetchPresentedServerCertificate() async -> PresentedServerCertificate? {
+        guard let provider = providerRegistry.provider(for: selectedProviderID) else {
+            activity = .failure(localized("Der konfigurierte Monitoring-Typ ist nicht verfügbar."))
+            return nil
+        }
+        let candidates = provider.endpointCandidates(from: endpoint)
+        guard !candidates.isEmpty else {
+            activity = .failure(localized("Die Serveradresse benötigt einen Hostnamen."))
+            return nil
+        }
+
+        activity = .working(localized("Serverzertifikat wird geprüft …"))
+        var finalFailure = ConnectionFailure.unreachable
+        for candidate in candidates {
+            guard let source = sourceFromForm(
+                endpointOverride: candidate,
+                requiresValidConfiguration: false
+            ) else {
+                return nil
+            }
+            let access = ProviderAccess(credential: .password(""))
+            let (result, _) = await connectionCoordinator.performUsingBestAPIPath(
+                source: source,
+                access: access,
+                rediscoverDirect: true,
+                operation: { routedAccess in
+                    await self.presentedServerCertificateFetcher(
+                        candidate,
+                        routedAccess.socksProxy
+                    )
+                },
+                isUnreachable: { result in
+                    result == .failed(.unreachable)
+                }
+            )
+            switch result {
+            case .fetched(let certificate):
+                activity = .idle
+                return certificate
+            case .failed(.cancelled):
+                activity = .idle
+                return nil
+            case .failed(let failure):
+                finalFailure = failure
+            }
+        }
+
+        activity = message(for: .failed(finalFailure))
+        return nil
+    }
+
+    func trustPresentedServerCertificate(_ certificate: PresentedServerCertificate) {
+        endpoint = certificate.endpoint.absoluteString
+        pinnedServerCertificateSHA256 = certificate.sha256Fingerprint
+        serverTrustChoice = .pinnedCertificate
+        activity = .success(
+            localized("Der SHA-256-Fingerprint wurde übernommen. Prüfe die Verbindung, bevor du die Quelle speicherst.")
+        )
     }
 
     func cleanupUnreferencedManagedServerCertificates(

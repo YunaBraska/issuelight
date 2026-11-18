@@ -171,6 +171,7 @@ struct StatusMenuContent: View {
     @Environment(\.locale) private var locale
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var searchText = ""
+    @State private var isShowingFilters = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -188,7 +189,7 @@ struct StatusMenuContent: View {
                     ProgressView()
                         .controlSize(.small)
                 }
-                filterMenu
+                filterButton
                 Button(action: openSettings) {
                     Image(systemName: "gearshape")
                         .frame(width: 28, height: 28)
@@ -313,80 +314,34 @@ struct StatusMenuContent: View {
         }
     }
 
-    private var filterMenu: some View {
-        Menu {
-            Picker(AppLocalization.string("Instanz", locale: locale), selection: $filters.sourceID) {
-                Text(verbatim: AppLocalization.string("Alle Instanzen", locale: locale)).tag("")
-                ForEach(sourceNames.sorted(by: { $0.value.localizedCaseInsensitiveCompare($1.value) == .orderedAscending }), id: \.key) { sourceID, name in
-                    Text(verbatim: name).tag(sourceID.uuidString.lowercased())
-                }
-            }
-            Picker(AppLocalization.string("Status", locale: locale), selection: $filters.severity) {
-                Text(verbatim: AppLocalization.string("Alle Zustände", locale: locale)).tag(PanelSeverityFilter.all)
-                Text(verbatim: AppLocalization.string("Kritisch", locale: locale)).tag(PanelSeverityFilter.critical)
-                Text(verbatim: AppLocalization.string("Warnung", locale: locale)).tag(PanelSeverityFilter.warning)
-                Text(verbatim: AppLocalization.string("Unbekannt", locale: locale)).tag(PanelSeverityFilter.unknown)
-                Text(verbatim: "DOWN").tag(PanelSeverityFilter.down)
-            }
-            Picker(AppLocalization.string("Sichtbarkeit", locale: locale), selection: $filters.coverage) {
-                Text(verbatim: AppLocalization.string("Alle Probleme", locale: locale)).tag(PanelCoverageFilter.all)
-                Text(verbatim: AppLocalization.string("Benötigt Aufmerksamkeit", locale: locale)).tag(PanelCoverageFilter.attention)
-                Text(verbatim: AppLocalization.string("Quittiert oder in Wartungszeit", locale: locale)).tag(PanelCoverageFilter.covered)
-            }
-            if !hostOptions.isEmpty {
-                Menu {
-                    Toggle(
-                        isOn: Binding(
-                            get: { filters.hostSelections.isEmpty },
-                            set: { if $0 { filters.clearHosts() } }
-                        )
-                    ) {
-                        Text(verbatim: AppLocalization.string("Alle Hosts", locale: locale))
-                    }
-                    Divider()
-                    ForEach(hostOptions) { selection in
-                        Toggle(
-                            isOn: Binding(
-                                get: { filters.isHostSelected(selection) },
-                                set: { filters.setHost(selection, selected: $0) }
-                            )
-                        ) {
-                            Text(
-                                verbatim: sourceNames[selection.sourceID].map {
-                                    "\(selection.hostName) · \($0)"
-                                } ?? selection.hostName
-                            )
-                        }
-                    }
-                } label: {
-                    Text(verbatim: AppLocalization.string("Host", locale: locale))
-                }
-                .accessibilityIdentifier("host-filter")
-            }
-            if filters.isActive {
-                Divider()
-                Button(AppLocalization.string("Filter zurücksetzen", locale: locale)) {
-                    filters.reset()
-                }
-            }
+    private var filterButton: some View {
+        Button {
+            isShowingFilters.toggle()
         } label: {
             Image(systemName: filters.isActive ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
                 .frame(width: 28, height: 28)
+                .pointerHoverFeedback()
                 .contentShape(Rectangle())
         }
-        .menuStyle(.borderlessButton)
-        .menuIndicator(.hidden)
-        .fixedSize()
+        .buttonStyle(.borderless)
         .help(AppLocalization.string("Filter", locale: locale))
         .accessibilityLabel(AppLocalization.string("Filter", locale: locale))
         .accessibilityIdentifier("issue-filter")
+        .popover(isPresented: $isShowingFilters, arrowEdge: .top) {
+            PanelFilterPopover(
+                filters: filters,
+                hostOptions: hostOptions,
+                sourceNames: sourceNames
+            )
+            .environment(\.locale, locale)
+        }
     }
 
     private var hostOptions: [PanelHostSelection] {
         let visibleHosts = Set(
             (actionableIssues + coveredIssues).map(PanelHostSelection.init(issue:))
         )
-        return visibleHosts.union(filters.hostSelections).sorted { lhs, rhs in
+        return visibleHosts.union(filters.excludedHosts).sorted { lhs, rhs in
             let lhsSource = sourceNames[lhs.sourceID] ?? ""
             let rhsSource = sourceNames[rhs.sourceID] ?? ""
             let sourceOrder = lhsSource.localizedCaseInsensitiveCompare(rhsSource)
@@ -482,6 +437,156 @@ struct StatusMenuContent: View {
         )
     }
 
+}
+
+struct PanelFilterPopover: View {
+    @ObservedObject var filters: PanelFilterSettings
+    let hostOptions: [PanelHostSelection]
+    let sourceNames: [UUID: String]
+    @Environment(\.locale) private var locale
+    @State private var hostSearch = ""
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text(verbatim: AppLocalization.string("Filter", locale: locale))
+                    .font(.headline)
+                Spacer()
+                if filters.isActive {
+                    Button(AppLocalization.string("Filter zurücksetzen", locale: locale)) {
+                        filters.reset()
+                    }
+                    .buttonStyle(.link)
+                }
+            }
+
+            Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 8) {
+                GridRow {
+                    Text(verbatim: AppLocalization.string("Instanz", locale: locale))
+                        .foregroundStyle(.secondary)
+                    sourcePicker
+                }
+                GridRow {
+                    Text(verbatim: AppLocalization.string("Status", locale: locale))
+                        .foregroundStyle(.secondary)
+                    severityPicker
+                }
+                GridRow {
+                    Text(verbatim: AppLocalization.string("Sichtbarkeit", locale: locale))
+                        .foregroundStyle(.secondary)
+                    coveragePicker
+                }
+            }
+
+            Divider()
+
+            HStack {
+                Text(verbatim: AppLocalization.string("Hosts ausblenden", locale: locale))
+                    .font(.subheadline.weight(.semibold))
+                Spacer()
+                if !filters.excludedHosts.isEmpty {
+                    Text(verbatim: "\(filters.excludedHosts.count)")
+                        .monospacedDigit()
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            TextField(
+                AppLocalization.string("Hosts durchsuchen", locale: locale),
+                text: $hostSearch
+            )
+            .textFieldStyle(.roundedBorder)
+            .accessibilityIdentifier("host-filter-search")
+
+            if filteredHostOptions.isEmpty {
+                ContentUnavailableView(
+                    AppLocalization.string("Keine Treffer", locale: locale),
+                    systemImage: "magnifyingglass"
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                List(filteredHostOptions) { selection in
+                    Toggle(
+                        isOn: Binding(
+                            get: { filters.isHostExcluded(selection) },
+                            set: { filters.setHost(selection, excluded: $0) }
+                        )
+                    ) {
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(verbatim: selection.hostName)
+                                .lineLimit(1)
+                            if let sourceName = sourceNames[selection.sourceID] {
+                                Text(verbatim: sourceName)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(1)
+                            }
+                        }
+                    }
+                    .toggleStyle(.checkbox)
+                }
+                .listStyle(.bordered(alternatesRowBackgrounds: true))
+                .accessibilityIdentifier("host-filter-list")
+            }
+
+            if !filters.excludedHosts.isEmpty {
+                Button(AppLocalization.string("Alle Hosts anzeigen", locale: locale)) {
+                    filters.showAllHosts()
+                }
+                .frame(maxWidth: .infinity, alignment: .trailing)
+            }
+        }
+        .padding(16)
+        .frame(width: 380, height: 480)
+        .accessibilityIdentifier("filter-popover")
+    }
+
+    private var sourcePicker: some View {
+        Picker("", selection: $filters.sourceID) {
+            Text(verbatim: AppLocalization.string("Alle Instanzen", locale: locale)).tag("")
+            ForEach(
+                sourceNames.sorted(by: {
+                    $0.value.localizedCaseInsensitiveCompare($1.value) == .orderedAscending
+                }),
+                id: \.key
+            ) { sourceID, name in
+                Text(verbatim: name).tag(sourceID.uuidString.lowercased())
+            }
+        }
+        .labelsHidden()
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var severityPicker: some View {
+        Picker("", selection: $filters.severity) {
+            Text(verbatim: AppLocalization.string("Alle Zustände", locale: locale)).tag(PanelSeverityFilter.all)
+            Text(verbatim: AppLocalization.string("Kritisch", locale: locale)).tag(PanelSeverityFilter.critical)
+            Text(verbatim: AppLocalization.string("Warnung", locale: locale)).tag(PanelSeverityFilter.warning)
+            Text(verbatim: AppLocalization.string("Unbekannt", locale: locale)).tag(PanelSeverityFilter.unknown)
+            Text(verbatim: "DOWN").tag(PanelSeverityFilter.down)
+        }
+        .labelsHidden()
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var coveragePicker: some View {
+        Picker("", selection: $filters.coverage) {
+            Text(verbatim: AppLocalization.string("Alle Probleme", locale: locale)).tag(PanelCoverageFilter.all)
+            Text(verbatim: AppLocalization.string("Benötigt Aufmerksamkeit", locale: locale)).tag(PanelCoverageFilter.attention)
+            Text(verbatim: AppLocalization.string("Quittiert oder in Wartungszeit", locale: locale)).tag(PanelCoverageFilter.covered)
+        }
+        .labelsHidden()
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var filteredHostOptions: [PanelHostSelection] {
+        let query = hostSearch.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return hostOptions }
+        return hostOptions.filter { selection in
+            selection.hostName.localizedCaseInsensitiveContains(query)
+                || (sourceNames[selection.sourceID] ?? "").localizedCaseInsensitiveContains(query)
+        }
+    }
 }
 
 private struct StatusPanelSourceFailureRow: View {

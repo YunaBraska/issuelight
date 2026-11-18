@@ -22,12 +22,14 @@ struct SourceSetupView: View {
     @State private var isImportingIdentity = false
     @State private var isChoosingServerCertificate = false
     @State private var isChoosingPinnedServerCertificate = false
+    @State private var presentedServerCertificate: PresentedServerCertificate?
     @State private var isShowingSSHOverrides = false
     @State private var isShowingConnectionAttempts = false
     @State private var isConfirmingDeletion = false
     @State private var isConfirmingDiscard = false
     @State private var pendingNavigation: PendingNavigation?
     @State private var connectionTask: Task<Void, Never>?
+    @State private var certificateFetchTask: Task<Void, Never>?
 
     init(
         model: IssueLightModel,
@@ -68,12 +70,23 @@ struct SourceSetupView: View {
         .frame(minWidth: 700, minHeight: 500)
         .onDisappear {
             connectionTask?.cancel()
+            certificateFetchTask?.cancel()
             Task { _ = await model.cleanupUnreferencedManagedServerCertificates() }
         }
         .sheet(isPresented: $isImportingIdentity) {
             if let importURL {
                 IdentityImportView(fileURL: importURL, model: model, isPresented: $isImportingIdentity)
             }
+        }
+        .sheet(item: $presentedServerCertificate) { certificate in
+            PresentedServerCertificateTrustView(
+                certificate: certificate,
+                cancel: { presentedServerCertificate = nil },
+                trust: {
+                    model.trustPresentedServerCertificate(certificate)
+                    presentedServerCertificate = nil
+                }
+            )
         }
         .confirmationDialog(
             "Quelle wirklich entfernen?",
@@ -297,9 +310,22 @@ struct SourceSetupView: View {
                                 _ = model.pinServerCertificate(at: url)
                             }
                         }
+                        Button("Vom Server abrufen …") {
+                            certificateFetchTask?.cancel()
+                            certificateFetchTask = Task {
+                                let certificate = await model.fetchPresentedServerCertificate()
+                                guard !Task.isCancelled else { return }
+                                presentedServerCertificate = certificate
+                                certificateFetchTask = nil
+                            }
+                        }
+                        .disabled(certificateFetchTask != nil)
                     } else if model.serverTrustChoice == .disabled {
                         Label {
-                            Text("Unsicher. Identität und Serverdaten können abgefangen oder verändert werden. Diese Ausnahme gilt nur für diese Quelle.")
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text("HTTPS bleibt aktiv. Nur die Zertifikatsprüfung ist deaktiviert.")
+                                Text("Unsicher. Identität und Serverdaten können abgefangen oder verändert werden. Diese Ausnahme gilt nur für diese Quelle.")
+                            }
                         } icon: {
                             Image(systemName: "exclamationmark.triangle.fill")
                         }
@@ -713,6 +739,58 @@ struct PortNumberField: View {
 
     var body: some View {
         TextField(title, value: $value, format: Self.format)
+    }
+}
+
+struct PresentedServerCertificateTrustView: View {
+    let certificate: PresentedServerCertificate
+    let cancel: () -> Void
+    let trust: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Label("Serverzertifikat festlegen", systemImage: "checkmark.shield")
+                .font(.title2.weight(.semibold))
+            Text(verbatim: certificate.subject)
+                .font(.headline)
+                .textSelection(.enabled)
+            LabeledContent("Server", value: certificate.endpoint.absoluteString)
+                .textSelection(.enabled)
+            VStack(alignment: .leading, spacing: 5) {
+                Text(verbatim: "SHA-256")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                Text(verbatim: displayFingerprint)
+                    .font(.caption.monospaced())
+                    .fixedSize(horizontal: false, vertical: true)
+                    .textSelection(.enabled)
+            }
+            Text("Vergleiche den SHA-256-Fingerprint vor der Bestätigung mit einer vertrauenswürdigen Angabe deines Administrators.")
+                .font(.callout.weight(.medium))
+            Text("Bei einer Zertifikatserneuerung bleibt die Verbindung blockiert, bis du das neue Zertifikat hier geprüft und ausgewählt hast.")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+
+            HStack {
+                Spacer()
+                Button("Abbrechen", action: cancel)
+                    .keyboardShortcut(.cancelAction)
+                Button("Zertifikat vertrauen", action: trust)
+                    .keyboardShortcut(.defaultAction)
+            }
+        }
+        .padding(22)
+        .frame(width: 520)
+        .accessibilityIdentifier("presented-server-certificate")
+    }
+
+    private var displayFingerprint: String {
+        let bytes = certificate.sha256Fingerprint.split(separator: ":")
+        return stride(from: 0, to: bytes.count, by: 16)
+            .map { offset in
+                bytes[offset..<min(offset + 16, bytes.count)].joined(separator: ":")
+            }
+            .joined(separator: "\n")
     }
 }
 

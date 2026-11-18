@@ -42,6 +42,27 @@ final class Icinga2LiveConnectionTests: XCTestCase {
         XCTAssertEqual(result, .connected)
     }
 
+    func testPresentedCertificateFetcherReadsTheLiveSelfSignedCertificate() async throws {
+        let environment = ProcessInfo.processInfo.environment
+        guard let endpointValue = environment["ISSUELIGHT_LIVE_ICINGA_URL"],
+              let endpoint = URL(string: endpointValue),
+              let certificatePath = environment["ISSUELIGHT_LIVE_ICINGA_SERVER_CERT_PATH"] else {
+            throw XCTSkip("Live Icinga 2 environment is not configured")
+        }
+        let expectedFingerprint = try ServerCertificateFingerprint.sha256(
+            at: URL(fileURLWithPath: certificatePath)
+        )
+
+        let result = await PresentedServerCertificateFetcher.fetch(from: endpoint)
+
+        guard case .fetched(let certificate) = result else {
+            return XCTFail("Expected the live server certificate, got \(result)")
+        }
+        XCTAssertEqual(certificate.endpoint, endpoint)
+        XCTAssertEqual(certificate.sha256Fingerprint, expectedFingerprint)
+        XCTAssertFalse(certificate.subject.isEmpty)
+    }
+
     func testPinnedLiveServerCertificateRejectsDifferentCertificate() async throws {
         let environment = ProcessInfo.processInfo.environment
         guard let endpointValue = environment["ISSUELIGHT_LIVE_ICINGA_URL"],

@@ -517,6 +517,50 @@ final class IssueLightModelTests: XCTestCase {
         XCTAssertEqual(harness.model.serverTrustChoice, .disabled)
     }
 
+    func testDisabledCertificateVerificationPersistsWhenSourceIsSaved() async throws {
+        let harness = try await makeHarness(sourceCount: 1, script: SnapshotScript())
+        await harness.model.load()
+        harness.model.serverTrustChoice = .disabled
+
+        await harness.model.save()
+
+        let persistedSources = try await harness.store.load()
+        let persistedSource = try XCTUnwrap(persistedSources.first)
+        XCTAssertEqual(persistedSource.serverTrust, .disabled)
+        XCTAssertEqual(harness.model.serverTrustChoice, .disabled)
+    }
+
+    func testPresentedServerCertificateCanBeReviewedAndPinnedToItsEndpoint() async throws {
+        let candidate = URL(string: "https://monitoring1.example.test:5665")!
+        let presented = PresentedServerCertificate(
+            endpoint: candidate,
+            subject: "monitoring1.example.test",
+            sha256Fingerprint: String(repeating: "AA:", count: 31) + "AA"
+        )
+        let harness = try await makeHarness(
+            sourceCount: 1,
+            script: SnapshotScript(),
+            presentedServerCertificateFetcher: { endpoint, proxy in
+                XCTAssertEqual(endpoint, candidate)
+                XCTAssertNil(proxy)
+                return .fetched(presented)
+            }
+        )
+        await harness.model.load()
+        harness.model.endpoint = candidate.absoluteString
+
+        let fetched = await harness.model.fetchPresentedServerCertificate()
+        harness.model.trustPresentedServerCertificate(try XCTUnwrap(fetched))
+
+        XCTAssertEqual(fetched, presented)
+        XCTAssertEqual(harness.model.endpoint, candidate.absoluteString)
+        XCTAssertEqual(harness.model.serverTrustChoice, .pinnedCertificate)
+        XCTAssertEqual(
+            harness.model.pinnedServerCertificateSHA256,
+            presented.sha256Fingerprint
+        )
+    }
+
     func testEndpointAuthorityChangeDiscardsPreviouslyStoredDisabledTrust() async throws {
         let harness = try await makeHarness(
             sourceCount: 1,
@@ -601,7 +645,7 @@ final class IssueLightModelTests: XCTestCase {
             sourceStore: store,
             providerRegistry: .builtIn(),
             passwordVault: vault,
-            identityCatalog: KeychainIdentityCatalog(),
+            identityCatalog: KeychainIdentityCatalog(accessContext: testKeychain.context),
             certificateCatalog: certificateCatalog(),
             startsAutomatically: false,
             localizationLocale: Locale(identifier: "de")
@@ -654,7 +698,7 @@ final class IssueLightModelTests: XCTestCase {
             sourceStore: nil,
             providerRegistry: .builtIn(),
             passwordVault: KeychainPasswordVault(keychainContext: testKeychain.context),
-            identityCatalog: KeychainIdentityCatalog(),
+            identityCatalog: KeychainIdentityCatalog(accessContext: testKeychain.context),
             certificateCatalog: certificateCatalog(),
             startsAutomatically: false,
             localizationLocale: Locale(identifier: "en")
@@ -771,7 +815,7 @@ final class IssueLightModelTests: XCTestCase {
             sourceStore: store,
             providerRegistry: .builtIn(),
             passwordVault: vault,
-            identityCatalog: KeychainIdentityCatalog(),
+            identityCatalog: KeychainIdentityCatalog(accessContext: testKeychain.context),
             certificateCatalog: certificateCatalog,
             startsAutomatically: false
         )
@@ -800,7 +844,11 @@ final class IssueLightModelTests: XCTestCase {
         disabledIndexes: Set<Int> = [],
         serverTrust: ServerTrustConfiguration = .system,
         certificateCatalog: KeychainServerCertificateCatalog? = nil,
-        connectionCoordinator: AutomaticConnectionCoordinator? = nil
+        connectionCoordinator: AutomaticConnectionCoordinator? = nil,
+        presentedServerCertificateFetcher: @escaping (
+            URL,
+            ProviderSOCKSProxy?
+        ) async -> PresentedServerCertificateResult = { _, _ in .failed(.unreachable) }
     ) async throws -> ModelHarness {
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("IssueLightModelTests-\(UUID().uuidString)", isDirectory: true)
@@ -834,9 +882,10 @@ final class IssueLightModelTests: XCTestCase {
             sourceStore: store,
             providerRegistry: registry,
             passwordVault: vault,
-            identityCatalog: KeychainIdentityCatalog(),
+            identityCatalog: KeychainIdentityCatalog(accessContext: testKeychain.context),
             certificateCatalog: resolvedCertificateCatalog,
             connectionCoordinator: connectionCoordinator,
+            presentedServerCertificateFetcher: presentedServerCertificateFetcher,
             startsAutomatically: false,
             localizationLocale: Locale(identifier: "de")
         )
