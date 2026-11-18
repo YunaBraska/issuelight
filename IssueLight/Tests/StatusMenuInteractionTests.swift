@@ -263,7 +263,7 @@ final class StatusMenuInteractionTests: XCTestCase {
         XCTAssertEqual(scheduledDowntime, 1)
     }
 
-    func testHostMultiSelectionFiltersPanelRowsAndMenuBarCountsTogether() {
+    func testHostExclusionFiltersPanelRowsAndMenuBarCountsTogether() {
         let sourceID = UUID()
         let hiddenIssue = MonitoringIssue(
             sourceID: sourceID,
@@ -293,7 +293,7 @@ final class StatusMenuInteractionTests: XCTestCase {
         let defaults = UserDefaults(suiteName: suiteName)!
         addTeardownBlock { defaults.removePersistentDomain(forName: suiteName) }
         let filters = PanelFilterSettings(defaults: defaults)
-        filters.setHost(PanelHostSelection(issue: selectedIssue), selected: true)
+        filters.setHost(PanelHostSelection(issue: hiddenIssue), excluded: true)
         var openedIssueID: String?
         let view = StatusMenuContent(
             hasConfiguredSource: true,
@@ -415,6 +415,47 @@ final class StatusMenuInteractionTests: XCTestCase {
         )
 
         XCTAssertTrue(added)
+    }
+
+    func testNewSourceDraftHasAVisibleCompactSidebarRow() {
+        let view = SourceDraftRow(name: "Production Icinga", providerName: "Icinga 2")
+            .environment(\.locale, Locale(identifier: "en_US"))
+            .environment(\.colorScheme, .light)
+        let size = NativeViewRenderer.fittingSize(
+            for: view,
+            maximumSize: CGSize(width: 250, height: 80)
+        )
+
+        XCTAssertGreaterThanOrEqual(size.height, 32)
+        XCTAssertLessThan(size.height, 60)
+        XCTAssertTrue(
+            NativeViewRenderer.exerciseWindow(
+                for: view,
+                size: CGSize(width: 250, height: ceil(size.height))
+            )
+        )
+    }
+
+    func testOpaqueConfirmationRendersAtReadableSize() {
+        let view = OpaqueConfirmationView(
+            title: "Remove source?",
+            message: "The saved source and its IssueLight credentials will be removed.",
+            confirmTitle: "Remove source",
+            cancelTitle: "Cancel",
+            confirm: {},
+            cancel: {}
+        )
+        .environment(\.locale, Locale(identifier: "en_US"))
+        .environment(\.colorScheme, .light)
+        let size = NativeViewRenderer.fittingSize(
+            for: view,
+            maximumSize: CGSize(width: 500, height: 300)
+        )
+
+        XCTAssertEqual(size.width, 440, accuracy: 1)
+        XCTAssertGreaterThan(size.height, 120)
+        XCTAssertLessThan(size.height, 300)
+        XCTAssertTrue(NativeViewRenderer.exerciseWindow(for: view, size: size))
     }
 
     func testActionFieldsKeepEnoughIntrinsicHeightInsideMenuPanelSheet() {

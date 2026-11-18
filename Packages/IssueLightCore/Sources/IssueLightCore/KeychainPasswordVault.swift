@@ -141,8 +141,11 @@ public actor KeychainPasswordVault {
     func containsCredentialSecret<Scope: KeychainCredentialScope>(for scope: Scope) throws -> Bool {
         var query = keychainQuery(for: scope)
         query = keychainContext?.matching(query) ?? query
+        let authenticationContext = LAContext()
+        authenticationContext.interactionNotAllowed = true
         query[kSecReturnAttributes as String] = true
         query[kSecMatchLimit as String] = kSecMatchLimitOne
+        query[kSecUseAuthenticationContext as String] = authenticationContext
 
         var result: CFTypeRef?
         let status = SecItemCopyMatching(query as CFDictionary, &result)
@@ -192,7 +195,7 @@ public actor KeychainPasswordVault {
     }
 
     func keychainQuery<Scope: KeychainCredentialScope>(for scope: Scope) -> [String: Any] {
-        [
+        var query: [String: Any] = [
             kSecClass as String: kSecClassInternetPassword,
             kSecAttrAccount as String: scope.account,
             kSecAttrServer as String: scope.server,
@@ -201,6 +204,10 @@ public actor KeychainPasswordVault {
             kSecAttrAuthenticationType as String: scope.authenticationType,
             kSecAttrPath as String: "/issuelight/sources/\(scope.sourceID.uuidString.lowercased())",
         ]
+        if keychainContext == nil {
+            query[kSecUseDataProtectionKeychain as String] = true
+        }
+        return query
     }
 }
 

@@ -45,16 +45,30 @@ public struct ProviderCapabilities: Equatable, Sendable {
     public let authenticationMethods: Set<AuthenticationMethod>
     public let serverTrustMethods: Set<ServerTrustMethod>
     public let actions: Set<MonitoringActionKind>
+    public let actionAuthenticationMethods: Set<AuthenticationMethod>
+    public let apiKeyUsernameRequirement: APIKeyUsernameRequirement
 
     public init(
         authenticationMethods: Set<AuthenticationMethod>,
         serverTrustMethods: Set<ServerTrustMethod>,
-        actions: Set<MonitoringActionKind> = []
+        actions: Set<MonitoringActionKind> = [],
+        actionAuthenticationMethods: Set<AuthenticationMethod>? = nil,
+        apiKeyUsernameRequirement: APIKeyUsernameRequirement = .hidden
     ) {
         self.authenticationMethods = authenticationMethods
         self.serverTrustMethods = serverTrustMethods
         self.actions = actions
+        self.actionAuthenticationMethods = actions.isEmpty
+            ? []
+            : actionAuthenticationMethods ?? authenticationMethods
+        self.apiKeyUsernameRequirement = apiKeyUsernameRequirement
     }
+}
+
+public enum APIKeyUsernameRequirement: Equatable, Sendable {
+    case hidden
+    case optional
+    case required
 }
 
 public enum MonitoringActionKind: String, Hashable, Sendable {
@@ -140,7 +154,11 @@ public extension MonitoringProvider {
     }
 
     func supportedActions(for source: MonitoringSource) -> Set<MonitoringActionKind> {
-        descriptor.capabilities.actions
+        let capabilities = descriptor.capabilities
+        guard capabilities.actionAuthenticationMethods.contains(source.authentication.method) else {
+            return []
+        }
+        return capabilities.actions
     }
 
     func webURL(for issue: MonitoringIssue, from source: MonitoringSource) -> URL? {

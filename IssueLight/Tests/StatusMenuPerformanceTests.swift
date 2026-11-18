@@ -81,6 +81,50 @@ final class StatusMenuPerformanceTests: XCTestCase {
         }
     }
 
+    func testHostExclusionPopoverRendersTwoHundredHostsWithinFiveSeconds() {
+        let sourceID = UUID(uuidString: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")!
+        let hostOptions = (0..<200).map { index in
+            PanelHostSelection(
+                sourceID: sourceID,
+                hostName: String(format: "host-%03d", index)
+            )
+        }
+        let suiteName = "HostFilterPerformanceTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        addTeardownBlock { defaults.removePersistentDomain(forName: suiteName) }
+        let filters = PanelFilterSettings(defaults: defaults)
+        filters.setHost(hostOptions[0], excluded: true)
+        filters.setHost(hostOptions[163], excluded: true)
+        let view = PanelFilterPopover(
+            filters: filters,
+            hostOptions: hostOptions,
+            sourceNames: [sourceID: "Production"]
+        )
+        .environment(\.locale, Locale(identifier: "de_DE"))
+        .environment(\.colorScheme, .light)
+
+        let startedAt = ContinuousClock.now
+        let renderedExpectedSize = NativeViewRenderer.exerciseWindow(
+            for: view,
+            size: CGSize(width: 380, height: 480)
+        )
+        let elapsed = ContinuousClock.now - startedAt
+
+        XCTAssertTrue(renderedExpectedSize)
+        XCTAssertEqual(filters.excludedHosts.count, 2)
+        XCTAssertLessThan(elapsed, .seconds(5))
+        if let outputPath = ProcessInfo.processInfo.environment[
+            "ISSUELIGHT_HOST_FILTER_SCREENSHOT_PATH"
+        ] {
+            let pngData = try? NativeViewRenderer.pngData(
+                for: view,
+                size: CGSize(width: 380, height: 480)
+            )
+            XCTAssertNotNil(pngData)
+            try? pngData?.write(to: URL(fileURLWithPath: outputPath), options: .atomic)
+        }
+    }
+
     private func issueFixture(count: Int) -> (issues: [MonitoringIssue], sourceNames: [UUID: String]) {
         let productionID = UUID(uuidString: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")!
         let homelabID = UUID(uuidString: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")!

@@ -83,7 +83,10 @@ public struct Icinga2Provider: MonitoringProvider {
     }
 
     public func validate(_ source: MonitoringSource) -> [SourceValidationIssue] {
-        var issues = MonitoringSourceValidator.validateSharedFields(source)
+        var issues = MonitoringSourceValidator.validateSharedFields(
+            source,
+            capabilities: descriptor.capabilities
+        )
         let components = URLComponents(url: source.endpoint, resolvingAgainstBaseURL: false)
 
         if !descriptor.capabilities.authenticationMethods.contains(source.authentication.method) {

@@ -100,6 +100,7 @@ final class IssueLightModel: ObservableObject {
         case checking
         case direct
         case ssh
+        case serverTrustBlocked(String)
         case failed(String)
     }
 
@@ -119,8 +120,13 @@ final class IssueLightModel: ObservableObject {
     @Published var name = ""
     @Published var endpoint = "" {
         didSet {
-            guard endpoint != oldValue,
-                  var source = selectedSource,
+            guard endpoint != oldValue else { return }
+            if !isEndpointUsingTLS {
+                serverTrustChoice = .system
+                selectedServerCertificate = nil
+                pinnedServerCertificateSHA256 = ""
+            }
+            guard var source = selectedSource,
                   let newEndpoint = URL(
                       string: endpoint.trimmingCharacters(in: .whitespacesAndNewlines)
                   ) else {
@@ -188,6 +194,10 @@ final class IssueLightModel: ObservableObject {
     private let certificateCatalog: KeychainServerCertificateCatalog
     private let accessResolver: ProviderAccessResolver
     private let connectionCoordinator: AutomaticConnectionCoordinator
+    private let presentedServerCertificateFetcher: (
+        URL,
+        ProviderSOCKSProxy?
+    ) async -> PresentedServerCertificateResult
     private var hasStarted = false
     private var refreshLoopTask: Task<Void, Never>?
     private var refreshTasks: [UUID: Task<Void, Never>] = [:]
@@ -286,6 +296,37 @@ final class IssueLightModel: ObservableObject {
         providerRegistry.provider(for: selectedProviderID)?.descriptor.endpointExample ?? ""
     }
 
+    var suggestedSourceName: String {
+        SourceNameSuggestion.name(
+            rawEndpoint: endpoint,
+            providerName: providerDisplayName,
+            sourceID: sourceID
+        )
+    }
+
+    var isEndpointUsingTLS: Bool {
+        if let provider = providerRegistry.provider(for: selectedProviderID),
+           let candidate = provider.endpointCandidates(from: endpoint).first {
+            return candidate.scheme?.lowercased() == "https"
+        }
+        let value = endpoint.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !value.isEmpty else { return true }
+        let candidate = value.contains("://") ? value : "https://\(value)"
+        return URLComponents(string: candidate)?.scheme?.lowercased() == "https"
+    }
+
+    var canReviewBlockedServerCertificate: Bool {
+        guard isEndpointUsingTLS,
+              serverTrustChoice != .disabled,
+              case .serverTrustBlocked = selectedConnectionStatus.api,
+              let testedSource = connectionStatusSources[sourceID],
+              testedSource.providerID == selectedProviderID,
+              let provider = providerRegistry.provider(for: selectedProviderID) else {
+            return false
+        }
+        return provider.endpointCandidates(from: endpoint).contains(testedSource.endpoint)
+    }
+
     var authenticationChoices: [AuthenticationChoice] {
         guard let methods = providerRegistry
             .provider(for: selectedProviderID)?
@@ -296,7 +337,27 @@ final class IssueLightModel: ObservableObject {
     }
 
     var apiUsernameIsRequired: Bool {
-        selectedProviderID == CheckmkProvider.id
+        providerRegistry.provider(for: selectedProviderID)?
+            .descriptor.capabilities.apiKeyUsernameRequirement == .required
+    }
+
+    var apiUsernameIsVisible: Bool {
+        guard let requirement = providerRegistry.provider(for: selectedProviderID)?
+            .descriptor.capabilities.apiKeyUsernameRequirement else {
+            return false
+        }
+        return requirement != .hidden
+    }
+
+    var selectedProviderOffersActions: Bool {
+        providerRegistry.provider(for: selectedProviderID)?
+            .descriptor.capabilities.actions.isEmpty == false
+    }
+
+    var selectedAuthenticationSupportsActions: Bool {
+        providerRegistry.provider(for: selectedProviderID)?
+            .descriptor.capabilities.actionAuthenticationMethods
+            .contains(authenticationChoice.method) == true
     }
 
     var serverTrustChoices: [ServerTrustChoice] {
@@ -548,6 +609,12 @@ final class IssueLightModel: ObservableObject {
         identityCatalog: KeychainIdentityCatalog,
         certificateCatalog: KeychainServerCertificateCatalog,
         connectionCoordinator: AutomaticConnectionCoordinator? = nil,
+        presentedServerCertificateFetcher: @escaping (
+            URL,
+            ProviderSOCKSProxy?
+        ) async -> PresentedServerCertificateResult = { endpoint, proxy in
+            await PresentedServerCertificateFetcher.fetch(from: endpoint, socksProxy: proxy)
+        },
         startsAutomatically: Bool,
         localizationLocale: Locale = .current
     ) {
@@ -557,6 +624,7 @@ final class IssueLightModel: ObservableObject {
         self.identityCatalog = identityCatalog
         self.certificateCatalog = certificateCatalog
         self.connectionCoordinator = connectionCoordinator ?? AutomaticConnectionCoordinator()
+        self.presentedServerCertificateFetcher = presentedServerCertificateFetcher
         self.localizationLocale = localizationLocale
         accessResolver = ProviderAccessResolver(
             passwordVault: passwordVault,
@@ -1170,6 +1238,66 @@ final class IssueLightModel: ObservableObject {
         }
     }
 
+    func fetchPresentedServerCertificate() async -> PresentedServerCertificate? {
+        guard let provider = providerRegistry.provider(for: selectedProviderID) else {
+            activity = .failure(localized("Der konfigurierte Monitoring-Typ ist nicht verfügbar."))
+            return nil
+        }
+        let candidates = provider.endpointCandidates(from: endpoint)
+        guard !candidates.isEmpty else {
+            activity = .failure(localized("Die Serveradresse benötigt einen Hostnamen."))
+            return nil
+        }
+
+        activity = .working(localized("Serverzertifikat wird geprüft …"))
+        var finalFailure = ConnectionFailure.unreachable
+        for candidate in candidates {
+            guard let source = sourceFromForm(
+                endpointOverride: candidate,
+                requiresValidConfiguration: false
+            ) else {
+                return nil
+            }
+            let access = ProviderAccess(credential: .password(""))
+            let (result, _) = await connectionCoordinator.performUsingBestAPIPath(
+                source: source,
+                access: access,
+                rediscoverDirect: true,
+                operation: { routedAccess in
+                    await self.presentedServerCertificateFetcher(
+                        candidate,
+                        routedAccess.socksProxy
+                    )
+                },
+                isUnreachable: { result in
+                    result == .failed(.unreachable)
+                }
+            )
+            switch result {
+            case .fetched(let certificate):
+                activity = .idle
+                return certificate
+            case .failed(.cancelled):
+                activity = .idle
+                return nil
+            case .failed(let failure):
+                finalFailure = failure
+            }
+        }
+
+        activity = message(for: .failed(finalFailure))
+        return nil
+    }
+
+    func trustPresentedServerCertificate(_ certificate: PresentedServerCertificate) {
+        endpoint = certificate.endpoint.absoluteString
+        pinnedServerCertificateSHA256 = certificate.sha256Fingerprint
+        serverTrustChoice = .pinnedCertificate
+        activity = .success(
+            localized("Der SHA-256-Fingerprint wurde übernommen. Prüfe die Verbindung, bevor du die Quelle speicherst.")
+        )
+    }
+
     func cleanupUnreferencedManagedServerCertificates(
         retainingAdditionalIDs: Set<String> = []
     ) async -> Bool {
@@ -1222,7 +1350,11 @@ final class IssueLightModel: ObservableObject {
         let endpointInput = endpointOverride == nil ? endpointValue : nil
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
         let resolvedName = trimmedName.isEmpty
-            ? (url.host ?? providerDisplayName)
+            ? SourceNameSuggestion.name(
+                rawEndpoint: endpointOverride?.absoluteString ?? endpointValue,
+                providerName: providerDisplayName,
+                sourceID: sourceID
+            )
             : trimmedName
         let webConfiguration = navigationWebConfiguration()
 
@@ -1236,16 +1368,20 @@ final class IssueLightModel: ObservableObject {
             authentication = .clientCertificate(identityID: selectedIdentityID)
         }
 
-        var serverTrust: ServerTrustConfiguration
-        switch serverTrustChoice {
-        case .system:
+        let serverTrust: ServerTrustConfiguration
+        if !isEndpointUsingTLS {
             serverTrust = .system
-        case .customCertificate:
-            serverTrust = .customCertificate(certificateID: selectedServerCertificate?.id ?? "")
-        case .pinnedCertificate:
-            serverTrust = .pinnedCertificate(sha256: pinnedServerCertificateSHA256)
-        case .disabled:
-            serverTrust = .disabled
+        } else {
+            switch serverTrustChoice {
+            case .system:
+                serverTrust = .system
+            case .customCertificate:
+                serverTrust = .customCertificate(certificateID: selectedServerCertificate?.id ?? "")
+            case .pinnedCertificate:
+                serverTrust = .pinnedCertificate(sha256: pinnedServerCertificateSHA256)
+            case .disabled:
+                serverTrust = .disabled
+            }
         }
 
         var source: MonitoringSource
@@ -1629,7 +1765,7 @@ final class IssueLightModel: ObservableObject {
         case .failed(.cancelled):
             break
         case .failed(let failure):
-            connectionStatuses[sourceID, default: ConnectionStatus()].api = .failed(refreshMessage(for: failure))
+            connectionStatuses[sourceID, default: ConnectionStatus()].api = connectionFailureState(failure)
         }
     }
 
@@ -1644,7 +1780,7 @@ final class IssueLightModel: ObservableObject {
         case .failed(.cancelled):
             break
         case .failed(let failure):
-            connectionStatuses[sourceID, default: ConnectionStatus()].api = .failed(refreshMessage(for: failure))
+            connectionStatuses[sourceID, default: ConnectionStatus()].api = connectionFailureState(failure)
         }
     }
 
@@ -1659,8 +1795,15 @@ final class IssueLightModel: ObservableObject {
         case .failed(.cancelled):
             break
         case .failed(let failure):
-            connectionStatuses[sourceID, default: ConnectionStatus()].api = .failed(refreshMessage(for: failure))
+            connectionStatuses[sourceID, default: ConnectionStatus()].api = connectionFailureState(failure)
         }
+    }
+
+    private func connectionFailureState(
+        _ failure: ConnectionFailure
+    ) -> ConnectionEndpointState {
+        let message = refreshMessage(for: failure)
+        return failure == .tls ? .serverTrustBlocked(message) : .failed(message)
     }
 
     private func connectionState(for path: AutomaticConnectionPath) -> ConnectionEndpointState {

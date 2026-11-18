@@ -252,7 +252,10 @@ public enum SourceValidationIssue: Error, Equatable, Hashable, Sendable {
 }
 
 public enum MonitoringSourceValidator {
-    public static func validateSharedFields(_ source: MonitoringSource) -> [SourceValidationIssue] {
+    public static func validateSharedFields(
+        _ source: MonitoringSource,
+        capabilities: ProviderCapabilities? = nil
+    ) -> [SourceValidationIssue] {
         var issues: [SourceValidationIssue] = []
         let components = URLComponents(url: source.endpoint, resolvingAgainstBaseURL: false)
 
@@ -288,8 +291,11 @@ public enum MonitoringSourceValidator {
             } else if username.contains(":") {
                 issues.append(.invalidUsername)
             }
-        case .apiKey:
-            break
+        case .apiKey(let username):
+            if capabilities?.apiKeyUsernameRequirement == .required,
+               username.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                issues.append(.emptyUsername)
+            }
         case .clientCertificate(let identityID):
             if identityID.isEmpty {
                 issues.append(.missingClientIdentity)

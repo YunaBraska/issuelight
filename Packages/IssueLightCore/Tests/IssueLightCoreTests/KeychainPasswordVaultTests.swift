@@ -1,3 +1,4 @@
+import Security
 import XCTest
 @testable import IssueLightCore
 
@@ -53,6 +54,17 @@ final class KeychainPasswordVaultTests: XCTestCase {
         XCTAssertEqual(retainedPassword, "second-secret")
 
         try await vault.deletePassword(for: secondScope)
+    }
+
+    func testProductionQueriesUseTheDataProtectionKeychainWithoutChangingIsolatedTests() async throws {
+        let scope = try BasicCredentialScope(source: source(id: UUID(), account: "operator"))
+        let productionQuery = await KeychainPasswordVault().keychainQuery(for: scope)
+        let isolatedQuery = await KeychainPasswordVault(
+            keychainContext: testKeychain.context
+        ).keychainQuery(for: scope)
+
+        XCTAssertEqual(productionQuery[kSecUseDataProtectionKeychain as String] as? Bool, true)
+        XCTAssertNil(isolatedQuery[kSecUseDataProtectionKeychain as String])
     }
 
     func testRealKeychainAPIKeyLifecycleIsSeparateFromBasicPassword() async throws {
@@ -131,6 +143,52 @@ final class KeychainPasswordVaultTests: XCTestCase {
         do {
             _ = try await vault.password(for: scope)
             XCTFail("Expected the foreign Keychain item to be rejected")
+        } catch {
+            XCTAssertEqual(error as? KeychainPasswordVaultError, .interactionNotAllowed)
+        }
+    }
+
+    func testForeignLegacyCredentialIsNotReportedAsUsableWithoutRequestingItsSecret() async throws {
+        let source = source(id: UUID(), account: "foreign-presence-check")
+        let scope = try BasicCredentialScope(source: source)
+        let label = "IssueLight foreign credential \(source.id.uuidString.lowercased())"
+        let path = "/issuelight/sources/\(source.id.uuidString.lowercased())"
+        let keychainPath = testKeychain.fileURL.path
+        let add = Process()
+        add.executableURL = URL(fileURLWithPath: "/usr/bin/security")
+        add.arguments = [
+            "add-internet-password",
+            "-a", scope.account,
+            "-s", scope.server,
+            "-P", String(scope.port),
+            "-r", "htps",
+            "-t", "http",
+            "-p", path,
+            "-l", label,
+            "-w", "foreign-test-secret",
+            "-T", "/usr/bin/security",
+            keychainPath,
+        ]
+        add.standardOutput = FileHandle.nullDevice
+        add.standardError = FileHandle.nullDevice
+        try add.run()
+        add.waitUntilExit()
+        XCTAssertEqual(add.terminationStatus, 0)
+
+        addTeardownBlock {
+            let delete = Process()
+            delete.executableURL = URL(fileURLWithPath: "/usr/bin/security")
+            delete.arguments = ["delete-internet-password", "-l", label, keychainPath]
+            delete.standardOutput = FileHandle.nullDevice
+            delete.standardError = FileHandle.nullDevice
+            try? delete.run()
+            delete.waitUntilExit()
+        }
+
+        let vault = KeychainPasswordVault(keychainContext: testKeychain.context)
+        do {
+            _ = try await vault.containsPassword(for: scope)
+            XCTFail("Expected an inaccessible Keychain item to be rejected")
         } catch {
             XCTAssertEqual(error as? KeychainPasswordVaultError, .interactionNotAllowed)
         }

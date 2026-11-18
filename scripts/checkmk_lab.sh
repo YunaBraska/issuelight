@@ -6,6 +6,7 @@ container_name=${ISSUELIGHT_CHECKMK_CONTAINER_NAME:-issuelight-checkmk-live}
 image=${ISSUELIGHT_CHECKMK_IMAGE:-checkmk/check-mk-community@sha256:4677d9f8b11598252bf15cea61769e3dc20402908071e79448d3537acd8112f7}
 api_secret=issuelight-live
 endpoint=
+startup_attempts=${ISSUELIGHT_CHECKMK_STARTUP_ATTEMPTS:-180}
 
 require_command() {
   if ! command -v "$1" >/dev/null 2>&1; then
@@ -59,10 +60,21 @@ api_post() {
 }
 
 wait_for_api() {
+  case "$startup_attempts" in
+    ''|*[!0-9]*|0)
+      printf 'ISSUELIGHT_CHECKMK_STARTUP_ATTEMPTS must be a positive integer.\n' >&2
+      exit 64
+      ;;
+  esac
   attempt=0
-  while [ "$attempt" -lt 90 ]; do
+  while [ "$attempt" -lt "$startup_attempts" ]; do
     if api_request "$endpoint/version" >/dev/null 2>&1; then
       return
+    fi
+    if [ "$(docker_command inspect --format '{{.State.Running}}' "$container_name")" != true ]; then
+      docker_command logs "$container_name" >&2 || true
+      printf 'Checkmk stopped before its API became reachable.\n' >&2
+      exit 1
     fi
     attempt=$((attempt + 1))
     sleep 1

@@ -291,18 +291,19 @@ final class IssueLightModelTests: XCTestCase {
         harness.model.beginAddingSource()
         harness.model.endpoint = "not a valid URL %"
         harness.model.webURL = "also not a URL %"
+        let expectedName = harness.model.suggestedSourceName
 
         await harness.model.save()
 
         let persisted = try await harness.store.load()
         let draft = try XCTUnwrap(persisted.last)
         XCTAssertEqual(persisted.count, 2)
-        XCTAssertEqual(draft.name, "Model Test")
+        XCTAssertEqual(draft.name, expectedName)
         XCTAssertEqual(draft.editableEndpoint, "not a valid URL %")
         XCTAssertEqual(draft.web?.editableBaseURL, "also not a URL %")
         XCTAssertFalse(draft.isEnabled)
         XCTAssertEqual(harness.model.endpoint, "not a valid URL %")
-        XCTAssertEqual(harness.model.name, "Model Test")
+        XCTAssertEqual(harness.model.name, expectedName)
         XCTAssertFalse(harness.model.isSourceEnabled)
         XCTAssertFalse(harness.model.hasUnsavedChanges)
         XCTAssertEqual(
@@ -470,7 +471,7 @@ final class IssueLightModelTests: XCTestCase {
         await harness.model.testConnection()
 
         XCTAssertEqual(harness.model.endpoint, "https://monitoring-discovery.example.test:5665")
-        XCTAssertEqual(harness.model.name, "monitoring-discovery.example.test")
+        XCTAssertEqual(harness.model.name, "Monitoring Discovery")
         XCTAssertEqual(harness.model.selectedConnectionStatus.api, .direct)
         XCTAssertEqual(
             harness.model.activity,
@@ -515,6 +516,50 @@ final class IssueLightModelTests: XCTestCase {
 
         XCTAssertEqual(testedTrust, .disabled)
         XCTAssertEqual(harness.model.serverTrustChoice, .disabled)
+    }
+
+    func testDisabledCertificateVerificationPersistsWhenSourceIsSaved() async throws {
+        let harness = try await makeHarness(sourceCount: 1, script: SnapshotScript())
+        await harness.model.load()
+        harness.model.serverTrustChoice = .disabled
+
+        await harness.model.save()
+
+        let persistedSources = try await harness.store.load()
+        let persistedSource = try XCTUnwrap(persistedSources.first)
+        XCTAssertEqual(persistedSource.serverTrust, .disabled)
+        XCTAssertEqual(harness.model.serverTrustChoice, .disabled)
+    }
+
+    func testPresentedServerCertificateCanBeReviewedAndPinnedToItsEndpoint() async throws {
+        let candidate = URL(string: "https://monitoring1.example.test:5665")!
+        let presented = PresentedServerCertificate(
+            endpoint: candidate,
+            subject: "monitoring1.example.test",
+            sha256Fingerprint: String(repeating: "AA:", count: 31) + "AA"
+        )
+        let harness = try await makeHarness(
+            sourceCount: 1,
+            script: SnapshotScript(),
+            presentedServerCertificateFetcher: { endpoint, proxy in
+                XCTAssertEqual(endpoint, candidate)
+                XCTAssertNil(proxy)
+                return .fetched(presented)
+            }
+        )
+        await harness.model.load()
+        harness.model.endpoint = candidate.absoluteString
+
+        let fetched = await harness.model.fetchPresentedServerCertificate()
+        harness.model.trustPresentedServerCertificate(try XCTUnwrap(fetched))
+
+        XCTAssertEqual(fetched, presented)
+        XCTAssertEqual(harness.model.endpoint, candidate.absoluteString)
+        XCTAssertEqual(harness.model.serverTrustChoice, .pinnedCertificate)
+        XCTAssertEqual(
+            harness.model.pinnedServerCertificateSHA256,
+            presented.sha256Fingerprint
+        )
     }
 
     func testEndpointAuthorityChangeDiscardsPreviouslyStoredDisabledTrust() async throws {
@@ -601,7 +646,7 @@ final class IssueLightModelTests: XCTestCase {
             sourceStore: store,
             providerRegistry: .builtIn(),
             passwordVault: vault,
-            identityCatalog: KeychainIdentityCatalog(),
+            identityCatalog: KeychainIdentityCatalog(accessContext: testKeychain.context),
             certificateCatalog: certificateCatalog(),
             startsAutomatically: false,
             localizationLocale: Locale(identifier: "de")
@@ -654,7 +699,7 @@ final class IssueLightModelTests: XCTestCase {
             sourceStore: nil,
             providerRegistry: .builtIn(),
             passwordVault: KeychainPasswordVault(keychainContext: testKeychain.context),
-            identityCatalog: KeychainIdentityCatalog(),
+            identityCatalog: KeychainIdentityCatalog(accessContext: testKeychain.context),
             certificateCatalog: certificateCatalog(),
             startsAutomatically: false,
             localizationLocale: Locale(identifier: "en")
@@ -663,16 +708,80 @@ final class IssueLightModelTests: XCTestCase {
         model.beginAddingSource()
         XCTAssertEqual(model.selectedProviderID, Icinga2Provider.id)
         XCTAssertFalse(model.apiUsernameIsRequired)
+        XCTAssertTrue(model.isEndpointUsingTLS)
+        XCTAssertFalse(model.suggestedSourceName.isEmpty)
 
         model.selectedProviderID = CheckmkProvider.id
         XCTAssertEqual(model.authenticationChoices, [.apiKey])
         XCTAssertEqual(model.authenticationChoice, .apiKey)
         XCTAssertTrue(model.apiUsernameIsRequired)
+        XCTAssertTrue(model.selectedAuthenticationSupportsActions)
+        model.serverTrustChoice = .disabled
+        model.endpoint = "http://monitoring.example.test/cmk"
+        XCTAssertFalse(model.isEndpointUsingTLS)
+        XCTAssertEqual(model.serverTrustChoice, .system)
+        XCTAssertEqual(model.suggestedSourceName, "Monitoring")
+
+        model.endpoint = "https://monitoring.example.test/cmk"
+        XCTAssertTrue(model.isEndpointUsingTLS)
 
         model.selectedProviderID = NagiosCoreProvider.id
         XCTAssertEqual(model.authenticationChoices, [.basic])
         XCTAssertEqual(model.authenticationChoice, .basic)
         XCTAssertFalse(model.apiUsernameIsRequired)
+        XCTAssertTrue(model.selectedAuthenticationSupportsActions)
+
+        model.endpoint = "http://nagios.example.test/nagios"
+        XCTAssertFalse(model.isEndpointUsingTLS)
+
+        model.selectedProviderID = ThrukProvider.id
+        XCTAssertEqual(model.authenticationChoices, [.basic, .apiKey])
+        model.authenticationChoice = .basic
+        XCTAssertFalse(model.apiUsernameIsRequired)
+        XCTAssertFalse(model.selectedAuthenticationSupportsActions)
+        model.authenticationChoice = .apiKey
+        XCTAssertFalse(model.apiUsernameIsRequired)
+        XCTAssertTrue(model.selectedAuthenticationSupportsActions)
+
+        model.selectedProviderID = Icinga2Provider.id
+        XCTAssertTrue(model.isEndpointUsingTLS)
+    }
+
+    func testEffectiveProviderCandidateDeterminesWhetherTLSControlsAreRelevant() async throws {
+        let registry = try ProviderRegistry([HTTPOnlyIcingaIdentifierProvider()])
+        let model = IssueLightModel(
+            sourceStore: nil,
+            providerRegistry: registry,
+            passwordVault: KeychainPasswordVault(keychainContext: testKeychain.context),
+            identityCatalog: KeychainIdentityCatalog(accessContext: testKeychain.context),
+            certificateCatalog: certificateCatalog(),
+            startsAutomatically: false,
+            localizationLocale: Locale(identifier: "en")
+        )
+
+        model.beginAddingSource()
+        model.endpoint = "monitoring.example.test"
+
+        XCTAssertFalse(model.isEndpointUsingTLS)
+    }
+
+    func testTLSErrorOffersCertificateReviewOnlyForTheBlockedEndpoint() async throws {
+        let script = SnapshotScript()
+        let harness = try await makeHarness(sourceCount: 1, script: script)
+        await harness.model.load()
+        let sourceID = try XCTUnwrap(harness.model.selectedSourceID)
+        await script.enqueueConnectionResult(.failed(.tls), for: sourceID)
+
+        await harness.model.testConnection()
+
+        guard case .serverTrustBlocked = harness.model.selectedConnectionStatus.api else {
+            return XCTFail("Expected a server-trust failure")
+        }
+        XCTAssertTrue(harness.model.canReviewBlockedServerCertificate)
+
+        harness.model.endpoint = "https://other.example.test"
+
+        XCTAssertFalse(harness.model.canReviewBlockedServerCertificate)
     }
 
     func testSelectingPinnedSourceLoadsReviewedFingerprint() async throws {
@@ -771,7 +880,7 @@ final class IssueLightModelTests: XCTestCase {
             sourceStore: store,
             providerRegistry: .builtIn(),
             passwordVault: vault,
-            identityCatalog: KeychainIdentityCatalog(),
+            identityCatalog: KeychainIdentityCatalog(accessContext: testKeychain.context),
             certificateCatalog: certificateCatalog,
             startsAutomatically: false
         )
@@ -800,7 +909,11 @@ final class IssueLightModelTests: XCTestCase {
         disabledIndexes: Set<Int> = [],
         serverTrust: ServerTrustConfiguration = .system,
         certificateCatalog: KeychainServerCertificateCatalog? = nil,
-        connectionCoordinator: AutomaticConnectionCoordinator? = nil
+        connectionCoordinator: AutomaticConnectionCoordinator? = nil,
+        presentedServerCertificateFetcher: @escaping (
+            URL,
+            ProviderSOCKSProxy?
+        ) async -> PresentedServerCertificateResult = { _, _ in .failed(.unreachable) }
     ) async throws -> ModelHarness {
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("IssueLightModelTests-\(UUID().uuidString)", isDirectory: true)
@@ -834,9 +947,10 @@ final class IssueLightModelTests: XCTestCase {
             sourceStore: store,
             providerRegistry: registry,
             passwordVault: vault,
-            identityCatalog: KeychainIdentityCatalog(),
+            identityCatalog: KeychainIdentityCatalog(accessContext: testKeychain.context),
             certificateCatalog: resolvedCertificateCatalog,
             connectionCoordinator: connectionCoordinator,
+            presentedServerCertificateFetcher: presentedServerCertificateFetcher,
             startsAutomatically: false,
             localizationLocale: Locale(identifier: "de")
         )
@@ -990,6 +1104,41 @@ private struct TestProvider: MonitoringProvider {
     }
 }
 
+private struct HTTPOnlyIcingaIdentifierProvider: MonitoringProvider {
+    let descriptor = ProviderDescriptor(
+        id: Icinga2Provider.id,
+        displayName: "HTTP Test Provider",
+        capabilities: ProviderCapabilities(
+            authenticationMethods: [.basic],
+            serverTrustMethods: [.system, .disabled]
+        )
+    )
+
+    func endpointCandidates(from hint: String) -> [URL] {
+        let host = hint.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !host.isEmpty else { return [] }
+        return [URL(string: "http://\(host)")!]
+    }
+
+    func validate(_ source: MonitoringSource) -> [SourceValidationIssue] {
+        MonitoringSourceValidator.validateSharedFields(source)
+    }
+
+    func testConnection(
+        to source: MonitoringSource,
+        access: ProviderAccess
+    ) async -> ConnectionTestResult {
+        .connected
+    }
+
+    func loadSnapshot(
+        from source: MonitoringSource,
+        access: ProviderAccess
+    ) async -> SnapshotLoadResult {
+        .loaded(MonitoringSnapshot(sourceID: source.id, observedAt: Date(), issues: []))
+    }
+}
+
 private actor SnapshotScript {
     enum Behavior: Sendable {
         case result(SnapshotLoadResult)
@@ -1004,6 +1153,7 @@ private actor SnapshotScript {
     private var connectionCancellationSourceIDs: Set<UUID> = []
     private var connectionTestCounts: [UUID: Int] = [:]
     private var connectionTrusts: [UUID: [ServerTrustConfiguration]] = [:]
+    private var connectionResults: [UUID: [ConnectionTestResult]] = [:]
 
     func waitForConnectionCancellation(for sourceID: UUID) {
         connectionCancellationSourceIDs.insert(sourceID)
@@ -1012,6 +1162,9 @@ private actor SnapshotScript {
     func testConnection(source: MonitoringSource) async -> ConnectionTestResult {
         connectionTestCounts[source.id, default: 0] += 1
         connectionTrusts[source.id, default: []].append(source.serverTrust)
+        if !connectionResults[source.id, default: []].isEmpty {
+            return connectionResults[source.id, default: []].removeFirst()
+        }
         guard connectionCancellationSourceIDs.contains(source.id) else {
             return .connected
         }
@@ -1027,6 +1180,10 @@ private actor SnapshotScript {
 
     func lastConnectionTrust(for sourceID: UUID) -> ServerTrustConfiguration? {
         connectionTrusts[sourceID]?.last
+    }
+
+    func enqueueConnectionResult(_ result: ConnectionTestResult, for sourceID: UUID) {
+        connectionResults[sourceID, default: []].append(result)
     }
 
     func enqueue(_ behavior: Behavior, for sourceID: UUID) {

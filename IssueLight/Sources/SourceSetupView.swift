@@ -22,12 +22,14 @@ struct SourceSetupView: View {
     @State private var isImportingIdentity = false
     @State private var isChoosingServerCertificate = false
     @State private var isChoosingPinnedServerCertificate = false
+    @State private var presentedServerCertificate: PresentedServerCertificate?
     @State private var isShowingSSHOverrides = false
     @State private var isShowingConnectionAttempts = false
     @State private var isConfirmingDeletion = false
     @State private var isConfirmingDiscard = false
     @State private var pendingNavigation: PendingNavigation?
     @State private var connectionTask: Task<Void, Never>?
+    @State private var certificateFetchTask: Task<Void, Never>?
 
     init(
         model: IssueLightModel,
@@ -41,13 +43,19 @@ struct SourceSetupView: View {
         HStack(spacing: 0) {
             VStack(spacing: 0) {
                 List(selection: sourceSelection) {
+                    if model.isCreatingSource {
+                        SourceDraftRow(
+                            name: model.suggestedSourceName,
+                            providerName: model.providerDisplayName
+                        )
+                    }
                     ForEach(model.sources) { source in
                         SourceRow(source: source, model: model)
                             .tag(source.id)
                     }
                 }
                 .overlay {
-                    if model.sources.isEmpty {
+                    if model.sources.isEmpty && !model.isCreatingSource {
                         ContentUnavailableView(
                             "Noch keine Quellen",
                             systemImage: "server.rack",
@@ -68,6 +76,7 @@ struct SourceSetupView: View {
         .frame(minWidth: 700, minHeight: 500)
         .onDisappear {
             connectionTask?.cancel()
+            certificateFetchTask?.cancel()
             Task { _ = await model.cleanupUnreferencedManagedServerCertificates() }
         }
         .sheet(isPresented: $isImportingIdentity) {
@@ -75,30 +84,48 @@ struct SourceSetupView: View {
                 IdentityImportView(fileURL: importURL, model: model, isPresented: $isImportingIdentity)
             }
         }
-        .confirmationDialog(
-            "Quelle wirklich entfernen?",
-            isPresented: $isConfirmingDeletion,
-            titleVisibility: .visible
-        ) {
-            Button("Quelle entfernen", role: .destructive) {
-                Task { await model.deleteSource() }
-            }
-        } message: {
-            Text(model.deletionMessage)
+        .sheet(item: $presentedServerCertificate) { certificate in
+            PresentedServerCertificateTrustView(
+                certificate: certificate,
+                cancel: { presentedServerCertificate = nil },
+                trust: {
+                    model.trustPresentedServerCertificate(certificate)
+                    presentedServerCertificate = nil
+                    startConnectionTest()
+                }
+            )
         }
-        .confirmationDialog(
-            "Ungespeicherte Änderungen verwerfen?",
-            isPresented: $isConfirmingDiscard,
-            titleVisibility: .visible
-        ) {
-            Button("Änderungen verwerfen", role: .destructive) {
-                performPendingNavigation()
-            }
-            Button("Weiter bearbeiten", role: .cancel) {
-                pendingNavigation = nil
-            }
-        } message: {
-            Text("Die Änderungen an der aktuellen Quelle wurden noch nicht gespeichert.")
+        .sheet(isPresented: $isConfirmingDeletion) {
+            OpaqueConfirmationView(
+                title: "Quelle wirklich entfernen?",
+                message: model.deletionMessage,
+                confirmTitle: "Quelle entfernen",
+                cancelTitle: "Abbrechen",
+                confirm: {
+                    isConfirmingDeletion = false
+                    Task { await model.deleteSource() }
+                },
+                cancel: { isConfirmingDeletion = false }
+            )
+        }
+        .sheet(isPresented: $isConfirmingDiscard) {
+            OpaqueConfirmationView(
+                title: "Ungespeicherte Änderungen verwerfen?",
+                message: AppLocalization.string(
+                    "Die Änderungen an der aktuellen Quelle wurden noch nicht gespeichert.",
+                    locale: locale
+                ),
+                confirmTitle: "Änderungen verwerfen",
+                cancelTitle: "Weiter bearbeiten",
+                confirm: {
+                    isConfirmingDiscard = false
+                    performPendingNavigation()
+                },
+                cancel: {
+                    isConfirmingDiscard = false
+                    pendingNavigation = nil
+                }
+            )
         }
     }
 
@@ -124,7 +151,11 @@ struct SourceSetupView: View {
                     }
                     .pickerStyle(.menu)
                     .accessibilityIdentifier("source-provider-picker")
-                    TextField("Name", text: $model.name, prompt: Text("Produktion"))
+                    TextField(
+                        "Name",
+                        text: $model.name,
+                        prompt: Text(verbatim: model.suggestedSourceName)
+                    )
                     TextField(
                         "Server",
                         text: $model.endpoint,
@@ -167,27 +198,15 @@ struct SourceSetupView: View {
                         )
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                        if model.selectedProviderID == ThrukProvider.id {
-                            Label {
-                                Text(
-                                    verbatim: AppLocalization.string(
-                                        "Thruk-Schnellaktionen benötigen einen API-Schlüssel.",
-                                        locale: locale
-                                    )
-                                )
-                            } icon: {
-                                Image(systemName: "info.circle")
-                            }
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        }
                     } else if model.authenticationChoice == .apiKey {
-                        if model.apiUsernameIsRequired {
-                            TextField("Benutzername", text: $model.username)
-                                .textContentType(.username)
-                        } else {
-                            TextField("API-Benutzer (optional)", text: $model.username)
-                                .textContentType(.username)
+                        if model.apiUsernameIsVisible {
+                            if model.apiUsernameIsRequired {
+                                TextField("Benutzername", text: $model.username)
+                                    .textContentType(.username)
+                            } else {
+                                TextField("API-Benutzer (optional)", text: $model.username)
+                                    .textContentType(.username)
+                            }
                         }
                         SecureField("API-Schlüssel", text: $model.credentialSecret)
                             .textContentType(.password)
@@ -218,6 +237,8 @@ struct SourceSetupView: View {
                         Button("PKCS#12 importieren …") {
                             isChoosingIdentity = true
                         }
+                        .buttonStyle(.bordered)
+                        .pointerHoverFeedback(cornerRadius: 7)
                         .fileImporter(
                             isPresented: $isChoosingIdentity,
                             allowedContentTypes: [
@@ -232,83 +253,116 @@ struct SourceSetupView: View {
                             }
                         }
                     }
+
+                    if model.selectedProviderOffersActions,
+                       !model.selectedAuthenticationSupportsActions {
+                        Label(
+                            "Schnellaktionen sind mit dieser Authentifizierung nicht verfügbar.",
+                            systemImage: "info.circle"
+                        )
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    }
                 }
 
-                Section {
-                    Picker("Serververtrauen", selection: $model.serverTrustChoice) {
-                        ForEach(model.serverTrustChoices) { choice in
-                            Text(verbatim: choice.displayName(locale: locale)).tag(choice)
-                        }
-                    }
+                if model.isEndpointUsingTLS {
+                    Section {
+                        LabeledContent("Serververtrauen") {
+                            HStack(spacing: 8) {
+                                Picker("", selection: $model.serverTrustChoice) {
+                                    ForEach(model.serverTrustChoices) { choice in
+                                        Text(verbatim: choice.displayName(locale: locale)).tag(choice)
+                                    }
+                                }
+                                .labelsHidden()
 
-                    if model.serverTrustChoice == .customCertificate {
-                        if let certificate = model.selectedServerCertificate {
-                            LabeledContent("CA", value: certificate.displayName)
-                            Text("SHA-256: \(certificate.sha256Fingerprint)")
-                                .font(.caption.monospaced())
-                                .foregroundStyle(.secondary)
-                                .textSelection(.enabled)
-                        } else {
-                            Label("Importiere genau ein CA-Zertifikat.", systemImage: "exclamationmark.circle")
-                                .foregroundStyle(.orange)
-                        }
-                        Button(
-                            model.selectedServerCertificate == nil
-                                ? AppLocalization.string("CA-Zertifikat importieren …", locale: locale)
-                                : AppLocalization.string("CA-Zertifikat ersetzen …", locale: locale)
-                        ) {
-                            isChoosingServerCertificate = true
-                        }
-                        .fileImporter(
-                            isPresented: $isChoosingServerCertificate,
-                            allowedContentTypes: certificateContentTypes,
-                            allowsMultipleSelection: false
-                        ) { result in
-                            if case .success(let urls) = result, let url = urls.first {
-                                Task { _ = await model.importServerCertificate(at: url) }
+                                if model.canReviewBlockedServerCertificate {
+                                    Button("Zertifikat vertrauen") {
+                                        fetchPresentedServerCertificate()
+                                    }
+                                    .buttonStyle(.bordered)
+                                    .pointerHoverFeedback(cornerRadius: 7)
+                                    .disabled(certificateFetchTask != nil)
+                                }
                             }
                         }
-                    } else if model.serverTrustChoice == .pinnedCertificate {
-                        if model.pinnedServerCertificateSHA256.isEmpty {
-                            Label("Wähle genau ein Serverzertifikat aus.", systemImage: "exclamationmark.circle")
-                                .foregroundStyle(.orange)
-                        } else {
-                            Text("SHA-256: \(model.pinnedServerCertificateSHA256)")
-                                .font(.caption.monospaced())
-                                .foregroundStyle(.secondary)
-                                .textSelection(.enabled)
-                            Text("Bei einer Zertifikatserneuerung bleibt die Verbindung blockiert, bis du das neue Zertifikat hier geprüft und ausgewählt hast.")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        Button(
-                            model.pinnedServerCertificateSHA256.isEmpty
-                                ? AppLocalization.string("Serverzertifikat auswählen …", locale: locale)
-                                : AppLocalization.string("Serverzertifikat ersetzen …", locale: locale)
-                        ) {
-                            isChoosingPinnedServerCertificate = true
-                        }
-                        .fileImporter(
-                            isPresented: $isChoosingPinnedServerCertificate,
-                            allowedContentTypes: certificateContentTypes,
-                            allowsMultipleSelection: false
-                        ) { result in
-                            if case .success(let urls) = result, let url = urls.first {
-                                _ = model.pinServerCertificate(at: url)
+
+                        if model.serverTrustChoice == .customCertificate {
+                            if let certificate = model.selectedServerCertificate {
+                                LabeledContent("CA", value: certificate.displayName)
+                                Text("SHA-256: \(certificate.sha256Fingerprint)")
+                                    .font(.caption.monospaced())
+                                    .foregroundStyle(.secondary)
+                                    .textSelection(.enabled)
+                            } else {
+                                Label("Importiere genau ein CA-Zertifikat.", systemImage: "exclamationmark.circle")
+                                    .foregroundStyle(.orange)
                             }
+                            Button(
+                                model.selectedServerCertificate == nil
+                                    ? AppLocalization.string("CA-Zertifikat importieren …", locale: locale)
+                                    : AppLocalization.string("CA-Zertifikat ersetzen …", locale: locale)
+                            ) {
+                                isChoosingServerCertificate = true
+                            }
+                            .buttonStyle(.bordered)
+                            .pointerHoverFeedback(cornerRadius: 7)
+                            .fileImporter(
+                                isPresented: $isChoosingServerCertificate,
+                                allowedContentTypes: certificateContentTypes,
+                                allowsMultipleSelection: false
+                            ) { result in
+                                if case .success(let urls) = result, let url = urls.first {
+                                    Task { _ = await model.importServerCertificate(at: url) }
+                                }
+                            }
+                        } else if model.serverTrustChoice == .pinnedCertificate {
+                            if model.pinnedServerCertificateSHA256.isEmpty {
+                                Label("Wähle genau ein Serverzertifikat aus.", systemImage: "exclamationmark.circle")
+                                    .foregroundStyle(.orange)
+                            } else {
+                                Text("SHA-256: \(model.pinnedServerCertificateSHA256)")
+                                    .font(.caption.monospaced())
+                                    .foregroundStyle(.secondary)
+                                    .textSelection(.enabled)
+                                Text("Bei einer Zertifikatserneuerung bleibt die Verbindung blockiert, bis du das neue Zertifikat hier geprüft und ausgewählt hast.")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Button(
+                                model.pinnedServerCertificateSHA256.isEmpty
+                                    ? AppLocalization.string("Serverzertifikat auswählen …", locale: locale)
+                                    : AppLocalization.string("Serverzertifikat ersetzen …", locale: locale)
+                            ) {
+                                isChoosingPinnedServerCertificate = true
+                            }
+                            .buttonStyle(.bordered)
+                            .pointerHoverFeedback(cornerRadius: 7)
+                            .fileImporter(
+                                isPresented: $isChoosingPinnedServerCertificate,
+                                allowedContentTypes: certificateContentTypes,
+                                allowsMultipleSelection: false
+                            ) { result in
+                                if case .success(let urls) = result, let url = urls.first {
+                                    _ = model.pinServerCertificate(at: url)
+                                }
+                            }
+                        } else if model.serverTrustChoice == .disabled {
+                            Label {
+                                VStack(alignment: .leading, spacing: 3) {
+                                    Text("HTTPS bleibt aktiv. Nur die Zertifikatsprüfung ist deaktiviert.")
+                                    Text("Unsicher. Identität und Serverdaten können abgefangen oder verändert werden. Diese Ausnahme gilt nur für diese Quelle.")
+                                }
+                            } icon: {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                            }
+                            .foregroundStyle(.orange)
                         }
-                    } else if model.serverTrustChoice == .disabled {
-                        Label {
-                            Text("Unsicher. Identität und Serverdaten können abgefangen oder verändert werden. Diese Ausnahme gilt nur für diese Quelle.")
-                        } icon: {
-                            Image(systemName: "exclamationmark.triangle.fill")
-                        }
-                        .foregroundStyle(.orange)
+                    } header: {
+                        Text("TLS")
+                    } footer: {
+                        Text("macOS-Systemvertrauen ist der Standard. Eigene CAs und exakte Serverzertifikate gelten nur für diese Quelle. Die vollständige Deaktivierung ist für isolierte Homelabs gedacht.")
                     }
-                } header: {
-                    Text("TLS")
-                } footer: {
-                    Text("macOS-Systemvertrauen ist der Standard. Eigene CAs und exakte Serverzertifikate gelten nur für diese Quelle. Die vollständige Deaktivierung ist für isolierte Homelabs gedacht.")
                 }
 
                 Section {
@@ -365,6 +419,9 @@ struct SourceSetupView: View {
                                         model.sshTunnelIdentityFilePath = ""
                                     } label: {
                                         Image(systemName: "xmark.circle.fill")
+                                            .frame(width: 24, height: 24)
+                                            .pointerHoverFeedback()
+                                            .contentShape(Rectangle())
                                     }
                                     .buttonStyle(.borderless)
                                     .help("Ausgewählten Schlüssel entfernen")
@@ -372,6 +429,8 @@ struct SourceSetupView: View {
                                 Button("Auswählen …") {
                                     chooseSSHIdentity()
                                 }
+                                .buttonStyle(.bordered)
+                                .pointerHoverFeedback(cornerRadius: 7)
                             }
                         }
                         TextField(
@@ -409,7 +468,7 @@ struct SourceSetupView: View {
                     } header: {
                         Text(verbatim: "SSH / RDP")
                     } footer: {
-                        Text("Diese optionalen Aktionen öffnen den in einem Problem genannten Host. Sie sind nicht der SSH-Tunnel zur Icinga-Quelle.")
+                        Text("Diese optionalen Aktionen öffnen den in einem Problem genannten Host. Sie sind nicht der SSH-Tunnel zur Monitoring-Quelle.")
                     }
                 }
 
@@ -451,6 +510,8 @@ struct SourceSetupView: View {
                         Button("Quelle entfernen", role: .destructive) {
                             isConfirmingDeletion = true
                         }
+                        .buttonStyle(.bordered)
+                        .pointerHoverFeedback(cornerRadius: 7)
                         .disabled(isWorking)
                     }
                     Spacer()
@@ -458,22 +519,28 @@ struct SourceSetupView: View {
                         Button("Abbrechen", role: .cancel) {
                             connectionTask?.cancel()
                         }
+                        .buttonStyle(.bordered)
+                        .pointerHoverFeedback(cornerRadius: 7)
                     } else {
                         Button("Verbindung testen") {
-                            connectionTask = Task { await model.testConnection() }
+                            startConnectionTest()
                         }
+                        .buttonStyle(.bordered)
+                        .pointerHoverFeedback(cornerRadius: 7)
                         .disabled(isWorking)
                     }
 
                     Button("Speichern") {
                         Task { await model.save() }
                     }
+                    .buttonStyle(.borderedProminent)
+                    .pointerHoverFeedback(cornerRadius: 7)
                     .keyboardShortcut(.defaultAction)
                     .disabled(isWorking || !model.hasUnsavedChanges)
                 }
             }
             .padding(16)
-            .background(.bar)
+            .background(Color(nsColor: .windowBackgroundColor))
             .layoutPriority(1)
         }
     }
@@ -518,6 +585,21 @@ struct SourceSetupView: View {
             guard response == .OK, let url = panel.url else { return }
             model.sshTunnelIdentityFilePath = url.path
         }
+    }
+
+    private func fetchPresentedServerCertificate() {
+        certificateFetchTask?.cancel()
+        certificateFetchTask = Task {
+            let certificate = await model.fetchPresentedServerCertificate()
+            guard !Task.isCancelled else { return }
+            presentedServerCertificate = certificate
+            certificateFetchTask = nil
+        }
+    }
+
+    private func startConnectionTest() {
+        connectionTask?.cancel()
+        connectionTask = Task { await model.testConnection() }
     }
 
     private var isWorking: Bool {
@@ -579,7 +661,7 @@ struct ConnectionEndpointStatusView: View {
         case .ssh:
             Label("SSH", systemImage: "checkmark.circle.fill")
                 .foregroundStyle(.green)
-        case .failed(let message):
+        case .serverTrustBlocked(let message), .failed(let message):
             Label(message, systemImage: "exclamationmark.circle.fill")
                 .foregroundStyle(.red)
                 .lineLimit(1)
@@ -587,6 +669,33 @@ struct ConnectionEndpointStatusView: View {
                 .frame(maxWidth: 260, alignment: .trailing)
                 .help(message)
         }
+    }
+}
+
+struct SourceDraftRow: View {
+    let name: String
+    let providerName: String
+    @Environment(\.locale) private var locale
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "plus.circle.fill")
+                .foregroundStyle(.tint)
+                .frame(width: 18)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(verbatim: name)
+                    .lineLimit(1)
+                Text(verbatim: "\(providerName) · \(AppLocalization.string("Neue Quelle", locale: locale))")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+        }
+        .padding(.vertical, 2)
+        .listRowBackground(Color.accentColor.opacity(0.12))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("new-source-draft")
     }
 }
 
@@ -716,6 +825,118 @@ struct PortNumberField: View {
     }
 }
 
+struct PresentedServerCertificateTrustView: View {
+    let certificate: PresentedServerCertificate
+    let cancel: () -> Void
+    let trust: () -> Void
+    @Environment(\.locale) private var locale
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Label("Serverzertifikat festlegen", systemImage: "checkmark.shield")
+                .font(.title2.weight(.semibold))
+            Text(verbatim: certificate.subject)
+                .font(.headline)
+                .textSelection(.enabled)
+            LabeledContent("Server", value: certificate.endpoint.absoluteString)
+                .textSelection(.enabled)
+            if let issuer = certificate.issuer {
+                LabeledContent("Aussteller", value: issuer)
+                    .textSelection(.enabled)
+            }
+            if let validity {
+                LabeledContent("Gültigkeit", value: validity)
+                    .textSelection(.enabled)
+            }
+            VStack(alignment: .leading, spacing: 5) {
+                Text(verbatim: "SHA-256")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                Text(verbatim: displayFingerprint)
+                    .font(.caption.monospaced())
+                    .fixedSize(horizontal: false, vertical: true)
+                    .textSelection(.enabled)
+            }
+            Text("Vergleiche den SHA-256-Fingerprint vor der Bestätigung mit einer vertrauenswürdigen Angabe deines Administrators.")
+                .font(.callout.weight(.medium))
+            Text("Bei einer Zertifikatserneuerung bleibt die Verbindung blockiert, bis du das neue Zertifikat hier geprüft und ausgewählt hast.")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+
+            HStack {
+                Spacer()
+                Button("Abbrechen", action: cancel)
+                    .buttonStyle(.bordered)
+                    .pointerHoverFeedback(cornerRadius: 7)
+                    .keyboardShortcut(.cancelAction)
+                Button("Zertifikat vertrauen", action: trust)
+                    .buttonStyle(.borderedProminent)
+                    .pointerHoverFeedback(cornerRadius: 7)
+                    .keyboardShortcut(.defaultAction)
+            }
+        }
+        .padding(22)
+        .frame(width: 520)
+        .opaqueInteractiveSurface()
+        .accessibilityIdentifier("presented-server-certificate")
+    }
+
+    private var displayFingerprint: String {
+        let bytes = certificate.sha256Fingerprint.split(separator: ":")
+        return stride(from: 0, to: bytes.count, by: 16)
+            .map { offset in
+                bytes[offset..<min(offset + 16, bytes.count)].joined(separator: ":")
+            }
+            .joined(separator: "\n")
+    }
+
+    private var validity: String? {
+        guard let validFrom = certificate.validFrom,
+              let validUntil = certificate.validUntil else {
+            return nil
+        }
+        let format = Date.FormatStyle(
+            date: .abbreviated,
+            time: .shortened,
+            locale: locale
+        )
+        return "\(validFrom.formatted(format)) – \(validUntil.formatted(format))"
+    }
+}
+
+struct OpaqueConfirmationView: View {
+    let title: LocalizedStringKey
+    let message: String
+    let confirmTitle: LocalizedStringKey
+    let cancelTitle: LocalizedStringKey
+    let confirm: () -> Void
+    let cancel: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Label(title, systemImage: "exclamationmark.triangle")
+                .font(.title2.weight(.semibold))
+            Text(verbatim: message)
+                .fixedSize(horizontal: false, vertical: true)
+            HStack {
+                Spacer()
+                Button(cancelTitle, action: cancel)
+                    .buttonStyle(.bordered)
+                    .pointerHoverFeedback(cornerRadius: 7)
+                    .keyboardShortcut(.cancelAction)
+                Button(confirmTitle, role: .destructive, action: confirm)
+                    .buttonStyle(.bordered)
+                    .pointerHoverFeedback(cornerRadius: 7)
+                    .keyboardShortcut(.defaultAction)
+            }
+        }
+        .padding(22)
+        .frame(width: 440)
+        .opaqueInteractiveSurface()
+        .accessibilityIdentifier("opaque-confirmation")
+    }
+}
+
 struct SourceSidebarFooter: View {
     let addSource: () -> Void
 
@@ -724,6 +945,8 @@ struct SourceSidebarFooter: View {
             Button(action: addSource) {
                 Label("Quelle hinzufügen", systemImage: "plus")
                     .frame(minHeight: 24)
+                    .contentShape(Rectangle())
+                    .pointerHoverFeedback()
             }
             .buttonStyle(.borderless)
             .help("Neue Quelle")
@@ -732,7 +955,7 @@ struct SourceSidebarFooter: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
-        .background(.bar)
+        .background(Color(nsColor: .windowBackgroundColor))
     }
 }
 
@@ -756,6 +979,8 @@ private struct IdentityImportView: View {
             HStack {
                 Spacer()
                 Button("Abbrechen") { isPresented = false }
+                    .buttonStyle(.bordered)
+                    .pointerHoverFeedback(cornerRadius: 7)
                 Button("Importieren") {
                     Task {
                         if await model.importIdentity(at: fileURL, password: password) {
@@ -763,11 +988,14 @@ private struct IdentityImportView: View {
                         }
                     }
                 }
+                .buttonStyle(.borderedProminent)
+                .pointerHoverFeedback(cornerRadius: 7)
                 .keyboardShortcut(.defaultAction)
                 .disabled(password.isEmpty)
             }
         }
         .padding(24)
         .frame(width: 420)
+        .opaqueInteractiveSurface()
     }
 }

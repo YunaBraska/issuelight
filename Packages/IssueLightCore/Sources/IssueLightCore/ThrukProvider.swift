@@ -13,7 +13,9 @@ public struct ThrukProvider: MonitoringProvider {
         capabilities: ProviderCapabilities(
             authenticationMethods: [.basic, .apiKey],
             serverTrustMethods: [.system, .customCertificate, .pinnedCertificate, .disabled],
-            actions: [.recheck, .acknowledge, .scheduleDowntime]
+            actions: [.recheck, .acknowledge, .scheduleDowntime],
+            actionAuthenticationMethods: [.apiKey],
+            apiKeyUsernameRequirement: .optional
         )
     )
 
@@ -61,7 +63,10 @@ public struct ThrukProvider: MonitoringProvider {
     }
 
     public func validate(_ source: MonitoringSource) -> [SourceValidationIssue] {
-        var issues = MonitoringSourceValidator.validateSharedFields(source)
+        var issues = MonitoringSourceValidator.validateSharedFields(
+            source,
+            capabilities: descriptor.capabilities
+        )
         if !descriptor.capabilities.authenticationMethods.contains(source.authentication.method) {
             issues.append(.unsupportedAuthentication(source.authentication.method))
         }
@@ -79,10 +84,6 @@ public struct ThrukProvider: MonitoringProvider {
             issues.append(.unsupportedPath(source.endpoint.path))
         }
         return issues
-    }
-
-    public func supportedActions(for source: MonitoringSource) -> Set<MonitoringActionKind> {
-        source.authentication.method == .apiKey ? descriptor.capabilities.actions : []
     }
 
     public func testConnection(

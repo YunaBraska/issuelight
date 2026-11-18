@@ -23,6 +23,14 @@ final class ThrukProviderTests: XCTestCase {
             provider.descriptor.capabilities.actions,
             [.recheck, .acknowledge, .scheduleDowntime]
         )
+        XCTAssertEqual(
+            provider.descriptor.capabilities.actionAuthenticationMethods,
+            [.apiKey]
+        )
+        XCTAssertEqual(
+            provider.descriptor.capabilities.apiKeyUsernameRequirement,
+            .optional
+        )
     }
 
     func testWriteActionsRequireAPIKeyAuthentication() {
