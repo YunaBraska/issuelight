@@ -3,19 +3,31 @@ import XCTest
 @testable import IssueLightCore
 
 final class ProviderInfrastructureTests: XCTestCase {
-    func testTransportFailuresKeepServerTrustTLSHandshakeAndClientCertificateDistinct() {
-        XCTAssertEqual(
-            ProviderHTTPSession.failure(for: URLError(.serverCertificateHasUnknownRoot)),
-            .serverTrust
-        )
-        XCTAssertEqual(
-            ProviderHTTPSession.failure(for: URLError(.secureConnectionFailed)),
-            .tls
-        )
-        XCTAssertEqual(
-            ProviderHTTPSession.failure(for: URLError(.clientCertificateRequired)),
-            .clientCertificateRejected
-        )
+    func testEveryServerCertificateErrorIsClassifiedAsServerTrust() {
+        for code in [
+            URLError.Code.serverCertificateHasBadDate,
+            .serverCertificateUntrusted,
+            .serverCertificateHasUnknownRoot,
+            .serverCertificateNotYetValid,
+        ] {
+            XCTAssertEqual(ProviderHTTPSession.failure(for: URLError(code)), .serverTrust)
+        }
+    }
+
+    func testSecureConnectionFailureIsClassifiedAsTLSHandshake() {
+        XCTAssertEqual(ProviderHTTPSession.failure(for: URLError(.secureConnectionFailed)), .tls)
+    }
+
+    func testEveryClientCertificateErrorIsClassifiedSeparately() {
+        for code in [
+            URLError.Code.clientCertificateRejected,
+            .clientCertificateRequired,
+        ] {
+            XCTAssertEqual(
+                ProviderHTTPSession.failure(for: URLError(code)),
+                .clientCertificateRejected
+            )
+        }
     }
 
     func testSOCKSRoutingPreservesAccessAndConfiguresAnIndependentSessionCopy() {

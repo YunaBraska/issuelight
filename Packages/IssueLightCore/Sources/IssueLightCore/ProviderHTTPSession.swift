@@ -91,7 +91,14 @@ final class ProviderHTTPSession {
             if delegate.hasRejectedServerTrust {
                 throw ProviderHTTPError.failure(.serverTrust)
             }
-            throw ProviderHTTPError.failure(Self.failure(for: error))
+            let failure = Self.failure(for: error)
+            if failure == .cancelled {
+                throw ProviderHTTPError.failure(.cancelled)
+            }
+            if delegate.hasReceivedClientCertificateChallenge {
+                throw ProviderHTTPError.failure(.clientCertificateRejected)
+            }
+            throw ProviderHTTPError.failure(failure)
         }
     }
 
@@ -147,13 +154,20 @@ private final class ProviderHTTPSessionDelegate: NSObject, URLSessionDelegate, U
     private let trust: ServerTrustConfiguration
     private let authentication: ProviderHTTPAuthentication
     private let trustedServerCertificate: SecCertificate?
-    private let trustStateLock = NSLock()
+    private let challengeStateLock = NSLock()
     private var rejectedServerTrust = false
+    private var receivedClientCertificateChallenge = false
 
     var hasRejectedServerTrust: Bool {
-        trustStateLock.lock()
-        defer { trustStateLock.unlock() }
+        challengeStateLock.lock()
+        defer { challengeStateLock.unlock() }
         return rejectedServerTrust
+    }
+
+    var hasReceivedClientCertificateChallenge: Bool {
+        challengeStateLock.lock()
+        defer { challengeStateLock.unlock() }
+        return receivedClientCertificateChallenge
     }
 
     init(
@@ -174,12 +188,16 @@ private final class ProviderHTTPSessionDelegate: NSObject, URLSessionDelegate, U
         completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
     ) {
         if challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodClientCertificate,
-           authority.matches(challenge.protectionSpace),
-           case .clientIdentity(let identity) = authentication {
-            completionHandler(
-                .useCredential,
-                URLCredential(identity: identity, certificates: nil, persistence: .forSession)
-            )
+           authority.matches(challenge.protectionSpace) {
+            recordClientCertificateChallenge()
+            if case .clientIdentity(let identity) = authentication {
+                completionHandler(
+                    .useCredential,
+                    URLCredential(identity: identity, certificates: nil, persistence: .forSession)
+                )
+            } else {
+                completionHandler(.performDefaultHandling, nil)
+            }
             return
         }
 
@@ -268,10 +286,16 @@ private final class ProviderHTTPSessionDelegate: NSObject, URLSessionDelegate, U
     private func rejectServerTrust(
         _ completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
     ) {
-        trustStateLock.lock()
+        challengeStateLock.lock()
         rejectedServerTrust = true
-        trustStateLock.unlock()
+        challengeStateLock.unlock()
         completionHandler(.cancelAuthenticationChallenge, nil)
+    }
+
+    private func recordClientCertificateChallenge() {
+        challengeStateLock.lock()
+        receivedClientCertificateChallenge = true
+        challengeStateLock.unlock()
     }
 }
 

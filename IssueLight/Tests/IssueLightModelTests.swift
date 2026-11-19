@@ -597,6 +597,7 @@ final class IssueLightModelTests: XCTestCase {
         let harness = try await makeHarness(
             sourceCount: 1,
             script: SnapshotScript(),
+            serverTrust: .disabled,
             presentedServerCertificateFetcher: { endpoint, proxy in
                 XCTAssertEqual(endpoint, candidate)
                 XCTAssertNil(proxy)
@@ -604,6 +605,7 @@ final class IssueLightModelTests: XCTestCase {
             }
         )
         await harness.model.load()
+        XCTAssertEqual(harness.model.serverTrustChoice, .disabled)
         harness.model.endpoint = candidate.absoluteString
 
         let fetched = await harness.model.fetchPresentedServerCertificate()
@@ -895,6 +897,26 @@ final class IssueLightModelTests: XCTestCase {
             return XCTFail("Expected a TLS handshake failure")
         }
         XCTAssertEqual(message, "TLS-Handshake fehlgeschlagen. Prüfe API-Adresse und Port.")
+        XCTAssertFalse(harness.model.canReviewBlockedServerCertificate)
+    }
+
+    func testRequiredClientCertificateDoesNotOfferServerTrustAction() async throws {
+        let script = SnapshotScript()
+        let harness = try await makeHarness(
+            sourceCount: 1,
+            script: script,
+            serverTrust: .disabled
+        )
+        await harness.model.load()
+        let sourceID = try XCTUnwrap(harness.model.selectedSourceID)
+        await script.enqueueConnectionResult(.failed(.clientCertificateRejected), for: sourceID)
+
+        await harness.model.testConnection()
+
+        guard case .failed(let message) = harness.model.selectedConnectionStatus.api else {
+            return XCTFail("Expected a client-certificate failure")
+        }
+        XCTAssertEqual(message, "Client-Zertifikat fehlt oder wurde abgelehnt.")
         XCTAssertFalse(harness.model.canReviewBlockedServerCertificate)
     }
 
