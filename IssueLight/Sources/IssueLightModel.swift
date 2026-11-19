@@ -2,6 +2,12 @@ import Foundation
 import IssueLightCore
 import Security
 
+extension ConnectionFailure {
+    var requiresAlternativeNetworkPath: Bool {
+        self == .unreachable || self == .tls
+    }
+}
+
 @MainActor
 final class IssueLightModel: ObservableObject {
     enum AuthenticationChoice: String, CaseIterable, Identifiable {
@@ -332,7 +338,6 @@ final class IssueLightModel: ObservableObject {
 
     var canReviewBlockedServerCertificate: Bool {
         guard isEndpointUsingTLS,
-              serverTrustChoice != .disabled,
               case .serverTrustBlocked = selectedConnectionStatus.api,
               let testedSource = connectionStatusSources[sourceID],
               testedSource.providerID == selectedProviderID,
@@ -509,7 +514,8 @@ final class IssueLightModel: ObservableObject {
                 )
             },
             isUnreachable: { result in
-                result == .failed(.unreachable)
+                guard case .failed(let failure) = result else { return false }
+                return failure.requiresAlternativeNetworkPath
             }
         )
         updateAPIConnectionStatus(for: source.id, result: result, path: path)
@@ -893,7 +899,8 @@ final class IssueLightModel: ObservableObject {
                     await provider.testConnection(to: source, access: routedAccess)
                 },
                 isUnreachable: { result in
-                    result == .failed(.unreachable)
+                    guard case .failed(let failure) = result else { return false }
+                    return failure.requiresAlternativeNetworkPath
                 }
             )
             guard connectionTestID == testedSourceID else { return }
@@ -1285,7 +1292,8 @@ final class IssueLightModel: ObservableObject {
                     )
                 },
                 isUnreachable: { result in
-                    result == .failed(.unreachable)
+                    guard case .failed(let failure) = result else { return false }
+                    return failure.requiresAlternativeNetworkPath
                 }
             )
             switch result {
@@ -1530,7 +1538,8 @@ final class IssueLightModel: ObservableObject {
                 await provider.loadSnapshot(from: source, access: routedAccess)
             },
             isUnreachable: { result in
-                result == .failed(.unreachable)
+                guard case .failed(let failure) = result else { return false }
+                return failure.requiresAlternativeNetworkPath
             }
         )
 
@@ -1818,7 +1827,7 @@ final class IssueLightModel: ObservableObject {
         _ failure: ConnectionFailure
     ) -> ConnectionEndpointState {
         let message = refreshMessage(for: failure)
-        return failure == .tls ? .serverTrustBlocked(message) : .failed(message)
+        return failure == .serverTrust ? .serverTrustBlocked(message) : .failed(message)
     }
 
     private func connectionState(for path: AutomaticConnectionPath) -> ConnectionEndpointState {
@@ -1834,7 +1843,10 @@ final class IssueLightModel: ObservableObject {
 
     private func shouldTryNextEndpointCandidate(after result: ConnectionTestResult) -> Bool {
         switch result {
-        case .failed(.unreachable), .failed(.incompatibleResponse), .failed(.http(statusCode: 404)),
+        case .failed(.unreachable),
+             .failed(.tls),
+             .failed(.incompatibleResponse),
+             .failed(.http(statusCode: 404)),
              .failed(.server(statusCode: 404)):
             return true
         default:
@@ -1902,8 +1914,12 @@ final class IssueLightModel: ObservableObject {
             return .failure(localized("Die Anmeldung wurde abgelehnt. Prüfe Zugangsdaten oder API-Benutzer."))
         case .failed(.authorization):
             return .failure(localized("Die Anmeldung funktioniert, aber Rechte für Hosts oder Services fehlen."))
-        case .failed(.tls):
+        case .failed(.serverTrust):
             return .failure(localized("Die TLS-Verbindung ist fehlgeschlagen. Prüfe Zertifikat und Servernamen."))
+        case .failed(.tls):
+            return .failure(localized("TLS-Handshake fehlgeschlagen. Prüfe API-Adresse und Port."))
+        case .failed(.clientCertificateRejected):
+            return .failure(localized("Client-Zertifikat fehlt oder wurde abgelehnt."))
         case .failed(.unreachable):
             return .failure(localized("Der Server ist nicht erreichbar."))
         case .failed(.clientCertificateNotAvailable):
@@ -1929,8 +1945,12 @@ final class IssueLightModel: ObservableObject {
             return localized("Die Anmeldung wurde abgelehnt.")
         case .authorization:
             return localized("Die API-Rechte reichen nicht zum Lesen des Status.")
+        case .serverTrust:
+            return localized("Die TLS-Verbindung ist fehlgeschlagen. Prüfe Zertifikat und Servernamen.")
         case .tls:
-            return localized("Die sichere Verbindung ist fehlgeschlagen.")
+            return localized("TLS-Handshake fehlgeschlagen. Prüfe API-Adresse und Port.")
+        case .clientCertificateRejected:
+            return localized("Client-Zertifikat fehlt oder wurde abgelehnt.")
         case .unreachable:
             return localized("Der Server ist nicht erreichbar.")
         case .clientCertificateNotAvailable:

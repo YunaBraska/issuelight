@@ -89,7 +89,7 @@ final class ProviderHTTPSession {
             throw error
         } catch {
             if delegate.hasRejectedServerTrust {
-                throw ProviderHTTPError.failure(.tls)
+                throw ProviderHTTPError.failure(.serverTrust)
             }
             throw ProviderHTTPError.failure(Self.failure(for: error))
         }
@@ -122,10 +122,12 @@ final class ProviderHTTPSession {
         case .serverCertificateHasBadDate,
              .serverCertificateUntrusted,
              .serverCertificateHasUnknownRoot,
-             .serverCertificateNotYetValid,
-             .clientCertificateRejected,
-             .clientCertificateRequired,
-             .secureConnectionFailed:
+             .serverCertificateNotYetValid:
+            return .serverTrust
+        case .clientCertificateRejected,
+             .clientCertificateRequired:
+            return .clientCertificateRejected
+        case .secureConnectionFailed:
             return .tls
         case .cannotFindHost,
              .cannotConnectToHost,

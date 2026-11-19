@@ -840,12 +840,12 @@ final class IssueLightModelTests: XCTestCase {
         XCTAssertFalse(model.isEndpointUsingTLS)
     }
 
-    func testTLSErrorOffersCertificateReviewOnlyForTheBlockedEndpoint() async throws {
+    func testServerTrustErrorOffersCertificateReviewOnlyForTheBlockedEndpoint() async throws {
         let script = SnapshotScript()
         let harness = try await makeHarness(sourceCount: 1, script: script)
         await harness.model.load()
         let sourceID = try XCTUnwrap(harness.model.selectedSourceID)
-        await script.enqueueConnectionResult(.failed(.tls), for: sourceID)
+        await script.enqueueConnectionResult(.failed(.serverTrust), for: sourceID)
 
         await harness.model.testConnection()
 
@@ -856,6 +856,45 @@ final class IssueLightModelTests: XCTestCase {
 
         harness.model.endpoint = "https://other.example.test"
 
+        XCTAssertFalse(harness.model.canReviewBlockedServerCertificate)
+    }
+
+    func testServerTrustErrorOffersCertificateReviewWhenVerificationWasDisabled() async throws {
+        let script = SnapshotScript()
+        let harness = try await makeHarness(
+            sourceCount: 1,
+            script: script,
+            serverTrust: .disabled
+        )
+        await harness.model.load()
+        let sourceID = try XCTUnwrap(harness.model.selectedSourceID)
+        await script.enqueueConnectionResult(.failed(.serverTrust), for: sourceID)
+
+        await harness.model.testConnection()
+
+        guard case .serverTrustBlocked = harness.model.selectedConnectionStatus.api else {
+            return XCTFail("Expected a server-trust failure")
+        }
+        XCTAssertTrue(harness.model.canReviewBlockedServerCertificate)
+    }
+
+    func testTLSHandshakeErrorDoesNotPretendCertificateReviewCanFixIt() async throws {
+        let script = SnapshotScript()
+        let harness = try await makeHarness(
+            sourceCount: 1,
+            script: script,
+            serverTrust: .disabled
+        )
+        await harness.model.load()
+        let sourceID = try XCTUnwrap(harness.model.selectedSourceID)
+        await script.enqueueConnectionResult(.failed(.tls), for: sourceID)
+
+        await harness.model.testConnection()
+
+        guard case .failed(let message) = harness.model.selectedConnectionStatus.api else {
+            return XCTFail("Expected a TLS handshake failure")
+        }
+        XCTAssertEqual(message, "TLS-Handshake fehlgeschlagen. Prüfe API-Adresse und Port.")
         XCTAssertFalse(harness.model.canReviewBlockedServerCertificate)
     }
 

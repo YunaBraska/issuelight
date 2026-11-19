@@ -3,6 +3,21 @@ import XCTest
 @testable import IssueLightCore
 
 final class ProviderInfrastructureTests: XCTestCase {
+    func testTransportFailuresKeepServerTrustTLSHandshakeAndClientCertificateDistinct() {
+        XCTAssertEqual(
+            ProviderHTTPSession.failure(for: URLError(.serverCertificateHasUnknownRoot)),
+            .serverTrust
+        )
+        XCTAssertEqual(
+            ProviderHTTPSession.failure(for: URLError(.secureConnectionFailed)),
+            .tls
+        )
+        XCTAssertEqual(
+            ProviderHTTPSession.failure(for: URLError(.clientCertificateRequired)),
+            .clientCertificateRejected
+        )
+    }
+
     func testSOCKSRoutingPreservesAccessAndConfiguresAnIndependentSessionCopy() {
         let access = ProviderAccess(credential: .password("secret"))
             .routingThroughSOCKS(port: 4_217)
