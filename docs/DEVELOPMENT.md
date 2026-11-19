@@ -86,25 +86,8 @@ are excluded. These floors prevent regression from the verified baseline; they
 do not replace the project goals of 95% reachable line coverage and 90% branch
 coverage.
 
-Run the same check locally after a coverage-enabled test run:
-
-```sh
-swift test --package-path Packages/IssueLightCore --enable-code-coverage
-coverage_path=$(swift test \
-  --package-path Packages/IssueLightCore \
-  --show-codecov-path)
-coverage_profile="$(dirname "$coverage_path")/default.profdata"
-test_binary=$(find Packages/IssueLightCore/.build -type f \
-  -path '*/IssueLightCore*Tests.xctest/Contents/MacOS/IssueLightCore*Tests' \
-  -print -quit)
-coverage_json=$(mktemp /tmp/issuelight-coverage.XXXXXX)
-xcrun llvm-cov export "$test_binary" \
-  -instr-profile="$coverage_profile" \
-  -ignore-filename-regex='Tests/|\.build/' \
-  -summary-only >"$coverage_json"
-scripts/check_coverage.sh "$coverage_json" 86.0 79.0
-rm -f "$coverage_json"
-```
+`sh scripts/check.sh` runs the same coverage export and ratchet locally. Keep
+that script as the single executable definition of the check.
 
 ## Release-candidate packaging
 

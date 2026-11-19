@@ -7,14 +7,14 @@ description: Product, security, development and integration documentation for Is
 <section class="page-hero shell">
   <p class="eyebrow"><span></span>Documentation</p>
   <h1>Follow the evidence.</h1>
-  <p>Start with the product status when you need the honest boundary. Use the specifications for accepted behavior and the development guide when you want to build or test the app.</p>
+  <p>Use the specifications for accepted behavior and the development guide to build, test and review the app.</p>
 </section>
 
 <section class="document-list shell">
-  <a href="{{ site.repository }}/blob/main/docs/PROJECT_STATUS.md"><span>Status</span><strong>What works and what remains to validate</strong><p>Verified behavior, coverage and remaining release risks.</p></a>
   <a href="{{ site.repository }}/blob/main/docs/spec/source-connection.md"><span>Specification</span><strong>Source connection and TLS behavior</strong><p>Endpoints, authentication, trust choices and explicit failure behavior.</p></a>
   <a href="{{ site.repository }}/blob/main/docs/spec/attention-snapshot.md"><span>Specification</span><strong>Attention and refresh model</strong><p>Issue ordering, covered states, stale data and refresh ownership.</p></a>
   <a href="{{ site.repository }}/blob/main/docs/spec/multiple-sources.md"><span>Specification</span><strong>Multiple monitoring sources</strong><p>Independent configuration, refresh and aggregation behavior.</p></a>
+  <a href="{{ site.repository }}/blob/main/docs/spec/release-lifecycle.md"><span>Specification</span><strong>Release and update lifecycle</strong><p>Direct downloads, App Store packages and their verification boundaries.</p></a>
   <a href="{{ site.repository }}/blob/main/integration/icinga2/README.md"><span>Integration</span><strong>Real Icinga 2 and Icinga Web lab</strong><p>Authentication, private CA, pinning, mTLS and object deep links.</p></a>
   <a href="{{ site.repository }}/blob/main/integration/thruk/README.md"><span>Integration</span><strong>Real Thruk and Naemon lab</strong><p>Basic and API-key authentication, trust, snapshots and commands against pinned OMD Labs.</p></a>
   <a href="{{ site.repository }}/blob/main/integration/checkmk/README.md"><span>Integration</span><strong>Real Checkmk lab</strong><p>Discovery, snapshots, API-key authentication and commands against pinned Checkmk Community.</p></a>

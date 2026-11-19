@@ -58,43 +58,29 @@ CONFIG
   -keyout "$output_dir/root.key" \
   -out "$output_dir/root.crt" >/dev/null 2>&1
 
-"$openssl_bin" req -new -nodes -newkey rsa:2048 \
-  -config "$output_dir/openssl.cnf" \
-  -subj '/CN=localhost' \
-  -keyout "$output_dir/server.key" \
-  -out "$output_dir/valid.csr" >/dev/null 2>&1
+"$openssl_bin" genpkey -algorithm RSA \
+  -pkeyopt rsa_keygen_bits:2048 \
+  -out "$output_dir/server.key" >/dev/null 2>&1
 
-"$openssl_bin" ca -batch -notext \
-  -config "$output_dir/openssl.cnf" \
-  -extensions server_extensions \
-  -in "$output_dir/valid.csr" \
-  -out "$output_dir/valid.crt" \
-  -days 3650 >/dev/null 2>&1
+create_server_certificate() {
+  certificate_name=$1
+  common_name=$2
+  shift 2
+  "$openssl_bin" req -new \
+    -config "$output_dir/openssl.cnf" \
+    -subj "/CN=$common_name" \
+    -key "$output_dir/server.key" \
+    -out "$output_dir/$certificate_name.csr" >/dev/null 2>&1
+  "$openssl_bin" ca -batch -notext \
+    -config "$output_dir/openssl.cnf" \
+    -extensions server_extensions \
+    -in "$output_dir/$certificate_name.csr" \
+    -out "$output_dir/$certificate_name.crt" \
+    "$@" >/dev/null 2>&1
+}
 
-"$openssl_bin" req -new \
-  -config "$output_dir/openssl.cnf" \
-  -subj '/CN=expired.localhost' \
-  -key "$output_dir/server.key" \
-  -out "$output_dir/expired.csr" >/dev/null 2>&1
-
-"$openssl_bin" ca -batch -notext \
-  -config "$output_dir/openssl.cnf" \
-  -extensions server_extensions \
-  -in "$output_dir/expired.csr" \
-  -out "$output_dir/expired.crt" \
-  -startdate 20200101000000Z \
-  -enddate 20210101000000Z >/dev/null 2>&1
-
-"$openssl_bin" req -new \
-  -config "$output_dir/openssl.cnf" \
-  -subj '/CN=future.localhost' \
-  -key "$output_dir/server.key" \
-  -out "$output_dir/future.csr" >/dev/null 2>&1
-
-"$openssl_bin" ca -batch -notext \
-  -config "$output_dir/openssl.cnf" \
-  -extensions server_extensions \
-  -in "$output_dir/future.csr" \
-  -out "$output_dir/future.crt" \
-  -startdate 20400101000000Z \
-  -enddate 20410101000000Z >/dev/null 2>&1
+create_server_certificate valid localhost -days 3650
+create_server_certificate expired expired.localhost \
+  -startdate 20200101000000Z -enddate 20210101000000Z
+create_server_certificate future future.localhost \
+  -startdate 20400101000000Z -enddate 20410101000000Z

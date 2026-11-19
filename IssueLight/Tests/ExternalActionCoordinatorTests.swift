@@ -126,7 +126,7 @@ final class ExternalActionCoordinatorTests: XCTestCase {
                     attempts.append(routedAccess.socksProxy)
                     return routedAccess.socksProxy == nil ? .failed(.tls) : .connected
                 },
-                isUnreachable: { result in
+                requiresAlternativeNetworkPath: { result in
                     guard case .failed(let failure) = result else { return false }
                     return failure.requiresAlternativeNetworkPath
                 }
@@ -167,7 +167,7 @@ final class ExternalActionCoordinatorTests: XCTestCase {
                     attempts.append(routedAccess.socksProxy)
                     return routedAccess.socksProxy == nil ? .failed(.unreachable) : .connected
                 },
-                isUnreachable: { $0 == .failed(.unreachable) }
+                requiresAlternativeNetworkPath: { $0 == .failed(.unreachable) }
             )
 
         XCTAssertEqual(result, .connected)
@@ -206,7 +206,7 @@ final class ExternalActionCoordinatorTests: XCTestCase {
                     attempts.append(routedAccess.socksProxy)
                     return routedAccess.socksProxy == nil ? .failed(.unreachable) : .connected
                 },
-                isUnreachable: { $0 == .failed(.unreachable) }
+                requiresAlternativeNetworkPath: { $0 == .failed(.unreachable) }
             )
         let second: (ConnectionTestResult, AutomaticConnectionPath) = await coordinator
             .performUsingBestAPIPath(
@@ -216,7 +216,7 @@ final class ExternalActionCoordinatorTests: XCTestCase {
                     attempts.append(routedAccess.socksProxy)
                     return routedAccess.socksProxy == nil ? .failed(.unreachable) : .connected
                 },
-                isUnreachable: { $0 == .failed(.unreachable) }
+                requiresAlternativeNetworkPath: { $0 == .failed(.unreachable) }
             )
         let third: (ConnectionTestResult, AutomaticConnectionPath) = await coordinator
             .performUsingBestAPIPath(
@@ -227,7 +227,7 @@ final class ExternalActionCoordinatorTests: XCTestCase {
                     attempts.append(routedAccess.socksProxy)
                     return routedAccess.socksProxy == nil ? .connected : .failed(.unreachable)
                 },
-                isUnreachable: { $0 == .failed(.unreachable) }
+                requiresAlternativeNetworkPath: { $0 == .failed(.unreachable) }
             )
 
         XCTAssertEqual(first.1, .ssh)
@@ -458,7 +458,7 @@ final class ExternalActionCoordinatorTests: XCTestCase {
             operation: { access in
                 await Icinga2Provider().testConnection(to: source, access: access)
             },
-            isUnreachable: { $0 == .failed(.unreachable) }
+            requiresAlternativeNetworkPath: { $0 == .failed(.unreachable) }
         )
 
         XCTAssertEqual(result, .connected)

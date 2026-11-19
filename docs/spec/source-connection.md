@@ -48,10 +48,11 @@ TLS policy. It does not own monitoring-state presentation or notifications.
   optional SSH and RDP host actions. These are provider-neutral public
   configuration.
 - API and web reachability are evaluated independently. A user-initiated test
-  checks the direct route first. Only a reachability failure may start
-  non-interactive system OpenSSH. TLS, authentication, authorization, and
-  response failures do not. Background work reuses the successful route to
-  avoid repeating a 15-second direct timeout every minute.
+  checks the direct route first. A reachability or generic TLS-handshake failure
+  may start non-interactive system OpenSSH. Server-trust, client-certificate,
+  authentication, authorization, and response failures do not. Background work
+  reuses the successful route to avoid repeating a 15-second direct timeout
+  every minute.
 - One source-owned SOCKS5 session may serve both API and web checks. API
   requests retain their original URL, server name, and trust policy through
   the proxy. Local ports are runtime state and are never persisted.
@@ -164,18 +165,20 @@ TLS policy. It does not own monitoring-state presentation or notifications.
 - `CONN-001` Testing a source MUST use the same provider, credentials, trust
   policy, and network path used by background refresh.
 - `CONN-002` A connection test MUST distinguish invalid configuration, DNS or
-  reachability failure, TLS failure, authentication failure, authorization
-  failure, incompatible response, server failure, and cancellation.
+  reachability failure, server-trust failure, generic TLS-handshake failure,
+  client-certificate failure, authentication failure, authorization failure,
+  incompatible response, server failure, and cancellation.
 - `CONN-003` Icinga 2 success MUST be established through a successful real API
   request. A local canned response is not production success.
 - `CONN-004` A user-initiated test MUST report API and web reachability
   independently as direct, SSH, or failed.
 - `CONN-005` A user-initiated test MUST try direct access first and MUST attempt
-  SSH only after a reachability failure. It MUST NOT hide TLS, authentication,
-  authorization, server, or incompatible-response failures behind SSH retries.
+  SSH only after a reachability or generic TLS-handshake failure. It MUST NOT
+  hide server-trust, client-certificate, authentication, authorization, server,
+  or incompatible-response failures behind SSH retries.
 - `CONN-006` Background refresh and monitoring actions MUST reuse the route
   selected by the user-initiated connection test. They MUST retry route
-  selection when that route becomes unreachable.
+  selection when that route becomes unreachable or its TLS handshake fails.
 - `CONN-007` Icinga 2 discovery MUST accept a hostname, IP address, API URL, or
   pasted monitoring-web URL. It MUST discard path, query, and fragment data,
   require HTTPS for the real API request, and confirm every candidate through

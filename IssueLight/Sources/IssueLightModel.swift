@@ -513,7 +513,7 @@ final class IssueLightModel: ObservableObject {
                     access: routedAccess
                 )
             },
-            isUnreachable: { result in
+            requiresAlternativeNetworkPath: { result in
                 guard case .failed(let failure) = result else { return false }
                 return failure.requiresAlternativeNetworkPath
             }
@@ -898,7 +898,7 @@ final class IssueLightModel: ObservableObject {
                 operation: { routedAccess in
                     await provider.testConnection(to: source, access: routedAccess)
                 },
-                isUnreachable: { result in
+                requiresAlternativeNetworkPath: { result in
                     guard case .failed(let failure) = result else { return false }
                     return failure.requiresAlternativeNetworkPath
                 }
@@ -1291,7 +1291,7 @@ final class IssueLightModel: ObservableObject {
                         routedAccess.socksProxy
                     )
                 },
-                isUnreachable: { result in
+                requiresAlternativeNetworkPath: { result in
                     guard case .failed(let failure) = result else { return false }
                     return failure.requiresAlternativeNetworkPath
                 }
@@ -1537,7 +1537,7 @@ final class IssueLightModel: ObservableObject {
             operation: { routedAccess in
                 await provider.loadSnapshot(from: source, access: routedAccess)
             },
-            isUnreachable: { result in
+            requiresAlternativeNetworkPath: { result in
                 guard case .failed(let failure) = result else { return false }
                 return failure.requiresAlternativeNetworkPath
             }

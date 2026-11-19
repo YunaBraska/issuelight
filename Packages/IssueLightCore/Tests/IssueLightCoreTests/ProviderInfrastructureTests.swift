@@ -30,6 +30,23 @@ final class ProviderInfrastructureTests: XCTestCase {
         }
     }
 
+    func testClientCertificateChallengeDoesNotHideLaterRequestTimeout() {
+        XCTAssertEqual(
+            ProviderHTTPSession.failure(
+                for: URLError(.timedOut),
+                challengeFailure: .clientCertificateRejected
+            ),
+            .unreachable
+        )
+        XCTAssertEqual(
+            ProviderHTTPSession.failure(
+                for: URLError(.networkConnectionLost),
+                challengeFailure: .clientCertificateRejected
+            ),
+            .clientCertificateRejected
+        )
+    }
+
     func testSOCKSRoutingPreservesAccessAndConfiguresAnIndependentSessionCopy() {
         let access = ProviderAccess(credential: .password("secret"))
             .routingThroughSOCKS(port: 4_217)

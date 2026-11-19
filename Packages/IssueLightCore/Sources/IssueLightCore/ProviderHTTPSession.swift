@@ -88,17 +88,12 @@ final class ProviderHTTPSession {
         } catch let error as ProviderHTTPError {
             throw error
         } catch {
-            if delegate.hasRejectedServerTrust {
-                throw ProviderHTTPError.failure(.serverTrust)
-            }
-            let failure = Self.failure(for: error)
-            if failure == .cancelled {
+            if Task.isCancelled {
                 throw ProviderHTTPError.failure(.cancelled)
             }
-            if delegate.hasReceivedClientCertificateChallenge {
-                throw ProviderHTTPError.failure(.clientCertificateRejected)
-            }
-            throw ProviderHTTPError.failure(failure)
+            throw ProviderHTTPError.failure(
+                Self.failure(for: error, challengeFailure: delegate.challengeFailure)
+            )
         }
     }
 
@@ -121,8 +116,20 @@ final class ProviderHTTPSession {
         }
     }
 
-    static func failure(for error: Error) -> ConnectionFailure {
+    static func failure(for error: Error, challengeFailure: ConnectionFailure? = nil) -> ConnectionFailure {
         let code = (error as? URLError)?.code
+        if let challengeFailure {
+            switch code {
+            case .cancelled,
+                 .networkConnectionLost,
+                 .secureConnectionFailed,
+                 .clientCertificateRejected,
+                 .clientCertificateRequired:
+                return challengeFailure
+            default:
+                break
+            }
+        }
         switch code {
         case .cancelled:
             return .cancelled
@@ -155,19 +162,12 @@ private final class ProviderHTTPSessionDelegate: NSObject, URLSessionDelegate, U
     private let authentication: ProviderHTTPAuthentication
     private let trustedServerCertificate: SecCertificate?
     private let challengeStateLock = NSLock()
-    private var rejectedServerTrust = false
-    private var receivedClientCertificateChallenge = false
+    private var recordedChallengeFailure: ConnectionFailure?
 
-    var hasRejectedServerTrust: Bool {
+    var challengeFailure: ConnectionFailure? {
         challengeStateLock.lock()
         defer { challengeStateLock.unlock() }
-        return rejectedServerTrust
-    }
-
-    var hasReceivedClientCertificateChallenge: Bool {
-        challengeStateLock.lock()
-        defer { challengeStateLock.unlock() }
-        return receivedClientCertificateChallenge
+        return recordedChallengeFailure
     }
 
     init(
@@ -189,7 +189,7 @@ private final class ProviderHTTPSessionDelegate: NSObject, URLSessionDelegate, U
     ) {
         if challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodClientCertificate,
            authority.matches(challenge.protectionSpace) {
-            recordClientCertificateChallenge()
+            recordChallengeFailure(.clientCertificateRejected)
             if case .clientIdentity(let identity) = authentication {
                 completionHandler(
                     .useCredential,
@@ -286,15 +286,13 @@ private final class ProviderHTTPSessionDelegate: NSObject, URLSessionDelegate, U
     private func rejectServerTrust(
         _ completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
     ) {
-        challengeStateLock.lock()
-        rejectedServerTrust = true
-        challengeStateLock.unlock()
+        recordChallengeFailure(.serverTrust)
         completionHandler(.cancelAuthenticationChallenge, nil)
     }
 
-    private func recordClientCertificateChallenge() {
+    private func recordChallengeFailure(_ failure: ConnectionFailure) {
         challengeStateLock.lock()
-        receivedClientCertificateChallenge = true
+        recordedChallengeFailure = recordedChallengeFailure ?? failure
         challengeStateLock.unlock()
     }
 }
