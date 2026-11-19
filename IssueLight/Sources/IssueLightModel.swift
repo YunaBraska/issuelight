@@ -1866,7 +1866,7 @@ final class IssueLightModel: ObservableObject {
         case .ssh:
             route = "SSH"
         case .unavailable:
-            route = "—"
+            route = "\(localized("Direkt")) → SSH"
         }
 
         let outcome: String
@@ -1874,7 +1874,13 @@ final class IssueLightModel: ObservableObject {
         case .connected:
             outcome = localized("\(providerDisplayName) ist erreichbar. Host- und Servicezugriff funktionieren.")
         case .failed(let failure):
-            outcome = refreshMessage(for: failure)
+            let directFailure = refreshMessage(for: failure)
+            if case .unavailable(let detail) = path {
+                outcome = directFailure + " "
+                    + localized("Der SSH-Tunnel konnte nicht gestartet werden: \(detail)")
+            } else {
+                outcome = directFailure
+            }
         }
         return ConnectionAttempt(
             endpoint: source.endpoint.absoluteString,

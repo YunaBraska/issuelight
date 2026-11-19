@@ -48,6 +48,14 @@ extendedKeyUsage = serverAuth
 subjectAltName = DNS:localhost
 subjectKeyIdentifier = hash
 authorityKeyIdentifier = keyid,issuer
+
+[ client_only_extensions ]
+basicConstraints = critical, CA:FALSE
+keyUsage = critical, digitalSignature, keyEncipherment
+extendedKeyUsage = clientAuth
+subjectAltName = DNS:localhost
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid,issuer
 CONFIG
 
 "$openssl_bin" req -new -x509 -nodes -newkey rsa:2048 \
@@ -84,3 +92,15 @@ create_server_certificate expired expired.localhost \
   -startdate 20200101000000Z -enddate 20210101000000Z
 create_server_certificate future future.localhost \
   -startdate 20400101000000Z -enddate 20410101000000Z
+
+"$openssl_bin" req -new \
+  -config "$output_dir/openssl.cnf" \
+  -subj '/CN=client-only.localhost' \
+  -key "$output_dir/server.key" \
+  -out "$output_dir/client-only.csr" >/dev/null 2>&1
+"$openssl_bin" ca -batch -notext \
+  -config "$output_dir/openssl.cnf" \
+  -extensions client_only_extensions \
+  -in "$output_dir/client-only.csr" \
+  -out "$output_dir/client-only.crt" \
+  -days 3650 >/dev/null 2>&1

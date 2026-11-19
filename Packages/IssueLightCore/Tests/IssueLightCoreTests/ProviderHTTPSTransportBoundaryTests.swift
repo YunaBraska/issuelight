@@ -58,6 +58,19 @@ final class ProviderHTTPSTransportBoundaryTests: XCTestCase {
         XCTAssertEqual(result, .success(200))
     }
 
+    func testDisabledTrustAcceptsCertificateWithoutServerAuthenticationUsage() async throws {
+        let fixtures = try Self.fixtureResult.get()
+        let server = try OpenSSLTestServer(
+            certificate: fixtures.clientOnlyCertificate,
+            privateKey: fixtures.serverPrivateKey
+        )
+        defer { server.stop() }
+
+        let result = await TLSBoundaryProbe.request(port: server.port, trust: .disabled)
+
+        XCTAssertEqual(result, .success(200))
+    }
+
     func testSystemTrustRejectsCertificateFromUnknownPrivateCA() async throws {
         let fixtures = try Self.fixtureResult.get()
         let server = try OpenSSLTestServer(
@@ -148,6 +161,7 @@ private final class TLSBoundaryFixtures {
     var validCertificate: URL { directory.appendingPathComponent("valid.crt") }
     var expiredCertificate: URL { directory.appendingPathComponent("expired.crt") }
     var futureCertificate: URL { directory.appendingPathComponent("future.crt") }
+    var clientOnlyCertificate: URL { directory.appendingPathComponent("client-only.crt") }
     var serverPrivateKey: URL { directory.appendingPathComponent("server.key") }
 
     init() throws {

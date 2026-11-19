@@ -49,7 +49,6 @@ public struct Icinga2Provider: MonitoringProvider {
         }
 
         let explicitPort = components.port
-        let hintedPort = explicitPort ?? (hasExplicitScheme && hintedScheme == "https" ? 443 : nil)
         let firstPathComponent = components.path
             .split(separator: "/", omittingEmptySubsequences: true)
             .first?
@@ -57,6 +56,8 @@ public struct Icinga2Provider: MonitoringProvider {
         let looksLikeAPIPath = firstPathComponent == nil
             || firstPathComponent == "v1"
             || firstPathComponent == "v2"
+        let hintedPort = explicitPort
+            ?? (hasExplicitScheme && hintedScheme == "https" && !looksLikeAPIPath ? 443 : nil)
         components.scheme = "https"
         components.path = ""
         components.query = nil

@@ -511,6 +511,29 @@ final class IssueLightModelTests: XCTestCase {
         )
     }
 
+    func testConnectionAttemptsExposeSSHFailureAfterDirectTLSFailure() async throws {
+        let script = SnapshotScript()
+        let coordinator = AutomaticConnectionCoordinator(
+            tunnelManager: SSHTunnelManager(executableURL: URL(fileURLWithPath: "/usr/bin/false")),
+            canConnect: { _, _, _ in false }
+        )
+        let harness = try await makeHarness(
+            sourceCount: 1,
+            script: script,
+            connectionCoordinator: coordinator
+        )
+        await harness.model.load()
+        let sourceID = try XCTUnwrap(harness.model.selectedSourceID)
+        await script.enqueueConnectionResult(.failed(.tls), for: sourceID)
+
+        await harness.model.testConnection()
+
+        let apiAttempt = try XCTUnwrap(harness.model.connectionAttempts.first)
+        XCTAssertEqual(apiAttempt.route, "Direkt → SSH")
+        XCTAssertTrue(apiAttempt.outcome.contains("TLS-Handshake fehlgeschlagen"))
+        XCTAssertTrue(apiAttempt.outcome.contains("SSH-Tunnel konnte nicht gestartet werden"))
+    }
+
     func testConnectionTestCanonicalizesDiscoveredEndpointAndDefaultNameOnlyAfterProviderSuccess() async throws {
         let coordinator = AutomaticConnectionCoordinator { _, _, _ in true }
         let harness = try await makeHarness(

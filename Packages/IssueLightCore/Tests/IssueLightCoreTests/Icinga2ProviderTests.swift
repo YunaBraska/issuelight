@@ -157,6 +157,13 @@ final class Icinga2ProviderTests: XCTestCase {
         )
     }
 
+    func testIcingaUsesItsAPIPortWhenHTTPSHintDoesNotStateAPort() {
+        XCTAssertEqual(
+            Icinga2Provider().endpointCandidates(from: "https://icinga.internal").map(\.absoluteString),
+            ["https://icinga.internal:5665"]
+        )
+    }
+
     func testIcingaRejectsEndpointHintsContainingCredentialsOrMissingAHost() {
         let provider = Icinga2Provider()
 
