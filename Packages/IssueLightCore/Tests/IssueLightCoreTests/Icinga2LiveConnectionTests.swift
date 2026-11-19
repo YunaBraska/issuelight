@@ -98,7 +98,7 @@ final class Icinga2LiveConnectionTests: XCTestCase {
             access: ProviderAccess(credential: .password(password))
         )
 
-        XCTAssertEqual(result, .failed(.tls))
+        XCTAssertEqual(result, .failed(.serverTrust))
     }
 
     func testPinnedLiveServerCertificateRetainsHostnameVerification() async throws {
@@ -128,10 +128,10 @@ final class Icinga2LiveConnectionTests: XCTestCase {
             access: ProviderAccess(credential: .password(password))
         )
 
-        XCTAssertEqual(result, .failed(.tls))
+        XCTAssertEqual(result, .failed(.serverTrust))
     }
 
-    func testUnrelatedPrivateCAIsRejectedAsTLSFailure() async throws {
+    func testUnrelatedPrivateCAIsRejectedAsServerTrustFailure() async throws {
         let environment = ProcessInfo.processInfo.environment
         guard let endpointValue = environment["ISSUELIGHT_LIVE_ICINGA_URL"],
               let endpoint = URL(string: endpointValue),
@@ -174,7 +174,7 @@ final class Icinga2LiveConnectionTests: XCTestCase {
             )
         )
 
-        XCTAssertEqual(result, .failed(.tls))
+        XCTAssertEqual(result, .failed(.serverTrust))
     }
 
     func testSystemTrustRejectsLivePrivateCA() async throws {
@@ -198,7 +198,7 @@ final class Icinga2LiveConnectionTests: XCTestCase {
             access: ProviderAccess(credential: .password(password))
         )
 
-        XCTAssertEqual(result, .failed(.tls))
+        XCTAssertEqual(result, .failed(.serverTrust))
     }
 
     func testImportedPrivateCAKeepsVerificationEnabledForLiveIcingaSnapshot() async throws {

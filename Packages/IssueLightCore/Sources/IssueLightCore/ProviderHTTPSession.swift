@@ -88,10 +88,12 @@ final class ProviderHTTPSession {
         } catch let error as ProviderHTTPError {
             throw error
         } catch {
-            if delegate.hasRejectedServerTrust {
-                throw ProviderHTTPError.failure(.tls)
+            if Task.isCancelled {
+                throw ProviderHTTPError.failure(.cancelled)
             }
-            throw ProviderHTTPError.failure(Self.failure(for: error))
+            throw ProviderHTTPError.failure(
+                Self.failure(for: error, challengeFailure: delegate.challengeFailure)
+            )
         }
     }
 
@@ -114,18 +116,32 @@ final class ProviderHTTPSession {
         }
     }
 
-    static func failure(for error: Error) -> ConnectionFailure {
+    static func failure(for error: Error, challengeFailure: ConnectionFailure? = nil) -> ConnectionFailure {
         let code = (error as? URLError)?.code
+        if let challengeFailure {
+            switch code {
+            case .cancelled,
+                 .networkConnectionLost,
+                 .secureConnectionFailed,
+                 .clientCertificateRejected,
+                 .clientCertificateRequired:
+                return challengeFailure
+            default:
+                break
+            }
+        }
         switch code {
         case .cancelled:
             return .cancelled
         case .serverCertificateHasBadDate,
              .serverCertificateUntrusted,
              .serverCertificateHasUnknownRoot,
-             .serverCertificateNotYetValid,
-             .clientCertificateRejected,
-             .clientCertificateRequired,
-             .secureConnectionFailed:
+             .serverCertificateNotYetValid:
+            return .serverTrust
+        case .clientCertificateRejected,
+             .clientCertificateRequired:
+            return .clientCertificateRejected
+        case .secureConnectionFailed:
             return .tls
         case .cannotFindHost,
              .cannotConnectToHost,
@@ -145,13 +161,13 @@ private final class ProviderHTTPSessionDelegate: NSObject, URLSessionDelegate, U
     private let trust: ServerTrustConfiguration
     private let authentication: ProviderHTTPAuthentication
     private let trustedServerCertificate: SecCertificate?
-    private let trustStateLock = NSLock()
-    private var rejectedServerTrust = false
+    private let challengeStateLock = NSLock()
+    private var recordedChallengeFailure: ConnectionFailure?
 
-    var hasRejectedServerTrust: Bool {
-        trustStateLock.lock()
-        defer { trustStateLock.unlock() }
-        return rejectedServerTrust
+    var challengeFailure: ConnectionFailure? {
+        challengeStateLock.lock()
+        defer { challengeStateLock.unlock() }
+        return recordedChallengeFailure
     }
 
     init(
@@ -172,12 +188,16 @@ private final class ProviderHTTPSessionDelegate: NSObject, URLSessionDelegate, U
         completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
     ) {
         if challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodClientCertificate,
-           authority.matches(challenge.protectionSpace),
-           case .clientIdentity(let identity) = authentication {
-            completionHandler(
-                .useCredential,
-                URLCredential(identity: identity, certificates: nil, persistence: .forSession)
-            )
+           authority.matches(challenge.protectionSpace) {
+            recordChallengeFailure(.clientCertificateRejected)
+            if case .clientIdentity(let identity) = authentication {
+                completionHandler(
+                    .useCredential,
+                    URLCredential(identity: identity, certificates: nil, persistence: .forSession)
+                )
+            } else {
+                completionHandler(.performDefaultHandling, nil)
+            }
             return
         }
 
@@ -266,10 +286,14 @@ private final class ProviderHTTPSessionDelegate: NSObject, URLSessionDelegate, U
     private func rejectServerTrust(
         _ completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
     ) {
-        trustStateLock.lock()
-        rejectedServerTrust = true
-        trustStateLock.unlock()
+        recordChallengeFailure(.serverTrust)
         completionHandler(.cancelAuthenticationChallenge, nil)
+    }
+
+    private func recordChallengeFailure(_ failure: ConnectionFailure) {
+        challengeStateLock.lock()
+        recordedChallengeFailure = recordedChallengeFailure ?? failure
+        challengeStateLock.unlock()
     }
 }
 

@@ -133,14 +133,14 @@ final class Icinga2ConnectionTesterTests: XCTestCase {
         XCTAssertEqual(result, .failed(.http(statusCode: 429)))
     }
 
-    func testConnectionMapsTLSFailure() async {
+    func testConnectionMapsServerTrustFailure() async {
         StubURLProtocol.configure(host: stubHost) { _ in
             throw URLError(.serverCertificateHasUnknownRoot)
         }
 
         let result = await tester().test(source(), password: "secret")
 
-        XCTAssertEqual(result, .failed(.tls))
+        XCTAssertEqual(result, .failed(.serverTrust))
     }
 
     func testConnectionMapsReachabilityFailure() async {

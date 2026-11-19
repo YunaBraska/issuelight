@@ -51,7 +51,7 @@ final class ThrukLiveConnectionTests: XCTestCase {
             access: ProviderAccess(credential: .password(password))
         )
 
-        XCTAssertEqual(result, .failed(.tls))
+        XCTAssertEqual(result, .failed(.serverTrust))
     }
 
     func testSecretKeyHeaderConnectsThroughTheAPIKeyPath() async throws {

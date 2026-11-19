@@ -42,11 +42,11 @@ final class AutomaticConnectionCoordinator {
         access: ProviderAccess,
         rediscoverDirect: Bool = false,
         operation: (ProviderAccess) async -> Result,
-        isUnreachable: (Result) -> Bool
+        requiresAlternativeNetworkPath: (Result) -> Bool
     ) async -> (Result, AutomaticConnectionPath) {
         if !rediscoverDirect, let proxyPort = apiProxyPorts[source.id] {
             let proxiedResult = await operation(access.routingThroughSOCKS(port: proxyPort))
-            if !isUnreachable(proxiedResult) {
+            if !requiresAlternativeNetworkPath(proxiedResult) {
                 return (proxiedResult, .ssh)
             }
             apiProxyPorts[source.id] = nil
@@ -54,7 +54,7 @@ final class AutomaticConnectionCoordinator {
         }
 
         let directResult = await operation(access)
-        guard isUnreachable(directResult) else {
+        guard requiresAlternativeNetworkPath(directResult) else {
             apiProxyPorts[source.id] = nil
             tunnelManager.stopSOCKS(sourceID: source.id)
             return (directResult, .direct)
@@ -68,7 +68,7 @@ final class AutomaticConnectionCoordinator {
 
         if let proxyPort = apiProxyPorts[source.id] {
             let proxiedResult = await operation(access.routingThroughSOCKS(port: proxyPort))
-            if !isUnreachable(proxiedResult) {
+            if !requiresAlternativeNetworkPath(proxiedResult) {
                 return (proxiedResult, .ssh)
             }
             apiProxyPorts[source.id] = nil
@@ -82,9 +82,9 @@ final class AutomaticConnectionCoordinator {
         switch await tunnelManager.startSOCKS(sourceID: source.id, configuration: configuration) {
         case .success(let proxyPort):
             let proxiedResult = await operation(access.routingThroughSOCKS(port: proxyPort))
-            guard !isUnreachable(proxiedResult) else {
+            guard !requiresAlternativeNetworkPath(proxiedResult) else {
                 tunnelManager.stopSOCKS(sourceID: source.id)
-                return (proxiedResult, .unavailable("SSH connected, but the API is not reachable through it."))
+                return (proxiedResult, .unavailable("SSH connected, but the API connection still failed."))
             }
             apiProxyPorts[source.id] = proxyPort
             return (proxiedResult, .ssh)

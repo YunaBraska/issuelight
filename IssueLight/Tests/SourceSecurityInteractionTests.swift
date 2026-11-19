@@ -21,6 +21,7 @@ final class SourceSecurityInteractionTests: XCTestCase {
         model.endpoint = "monitoring.example.test"
         model.username = "monitoring"
         model.credentialSecret = "test-only-password"
+        model.serverTrustChoice = .disabled
 
         await model.testConnection()
 
@@ -108,13 +109,13 @@ private struct BlockedTLSProvider: MonitoringProvider {
         to source: MonitoringSource,
         access: ProviderAccess
     ) async -> ConnectionTestResult {
-        .failed(.tls)
+        .failed(.serverTrust)
     }
 
     func loadSnapshot(
         from source: MonitoringSource,
         access: ProviderAccess
     ) async -> SnapshotLoadResult {
-        .failed(.tls)
+        .failed(.serverTrust)
     }
 }

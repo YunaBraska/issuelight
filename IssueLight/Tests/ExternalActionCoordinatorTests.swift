@@ -4,6 +4,14 @@ import XCTest
 
 @MainActor
 final class ExternalActionCoordinatorTests: XCTestCase {
+    func testOnlyNetworkAndTLSHandshakeFailuresTryAnotherNetworkPath() {
+        XCTAssertTrue(ConnectionFailure.unreachable.requiresAlternativeNetworkPath)
+        XCTAssertTrue(ConnectionFailure.tls.requiresAlternativeNetworkPath)
+        XCTAssertFalse(ConnectionFailure.serverTrust.requiresAlternativeNetworkPath)
+        XCTAssertFalse(ConnectionFailure.clientCertificateRejected.requiresAlternativeNetworkPath)
+        XCTAssertFalse(ConnectionFailure.authentication.requiresAlternativeNetworkPath)
+    }
+
     func testTunnelCommandUsesSafeArgumentsAndExplicitIdentity() {
         let configuration = SSHTunnelConfiguration(
             bastionHost: "bastion.example.test",
@@ -89,16 +97,26 @@ final class ExternalActionCoordinatorTests: XCTestCase {
         )
     }
 
-    func testAutomaticAPIRoutingKeepsDirectPathForTLSFailure() async {
-        let coordinator = AutomaticConnectionCoordinator()
+    func testAutomaticAPIRoutingRetriesTLSHandshakeThroughSSH() async throws {
+        let executable = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .appendingPathComponent("Fixtures/fake-ssh-listener.sh")
+        let coordinator = AutomaticConnectionCoordinator(
+            tunnelManager: SSHTunnelManager(executableURL: executable)
+        )
         let source = MonitoringSource(
             name: "Production",
             providerID: Icinga2Provider.id,
             endpoint: URL(string: "https://monitoring.example.test:5665")!,
-            authentication: .basic(username: "operator")
+            authentication: .basic(username: "operator"),
+            sshTunnel: SSHTunnelConfiguration(
+                bastionHost: "bastion.example.test",
+                username: "operator"
+            )
         )
         let access = ProviderAccess(credential: .password("test-only"))
         var attempts: [ProviderSOCKSProxy?] = []
+        defer { coordinator.stop(sourceID: source.id) }
 
         let (result, path): (ConnectionTestResult, AutomaticConnectionPath) = await coordinator
             .performUsingBestAPIPath(
@@ -106,15 +124,19 @@ final class ExternalActionCoordinatorTests: XCTestCase {
                 access: access,
                 operation: { routedAccess in
                     attempts.append(routedAccess.socksProxy)
-                    return .failed(.tls)
+                    return routedAccess.socksProxy == nil ? .failed(.tls) : .connected
                 },
-                isUnreachable: { $0 == .failed(.unreachable) }
+                requiresAlternativeNetworkPath: { result in
+                    guard case .failed(let failure) = result else { return false }
+                    return failure.requiresAlternativeNetworkPath
+                }
             )
 
-        XCTAssertEqual(result, .failed(.tls))
-        XCTAssertEqual(path, .direct)
-        XCTAssertEqual(attempts.count, 1)
+        XCTAssertEqual(result, .connected)
+        XCTAssertEqual(path, .ssh)
+        XCTAssertEqual(attempts.count, 2)
         XCTAssertNil(attempts[0])
+        XCTAssertNotNil(attempts[1])
     }
 
     func testAutomaticAPIRoutingFallsBackToSSHOnlyAfterDirectUnreachable() async throws {
@@ -145,7 +167,7 @@ final class ExternalActionCoordinatorTests: XCTestCase {
                     attempts.append(routedAccess.socksProxy)
                     return routedAccess.socksProxy == nil ? .failed(.unreachable) : .connected
                 },
-                isUnreachable: { $0 == .failed(.unreachable) }
+                requiresAlternativeNetworkPath: { $0 == .failed(.unreachable) }
             )
 
         XCTAssertEqual(result, .connected)
@@ -184,7 +206,7 @@ final class ExternalActionCoordinatorTests: XCTestCase {
                     attempts.append(routedAccess.socksProxy)
                     return routedAccess.socksProxy == nil ? .failed(.unreachable) : .connected
                 },
-                isUnreachable: { $0 == .failed(.unreachable) }
+                requiresAlternativeNetworkPath: { $0 == .failed(.unreachable) }
             )
         let second: (ConnectionTestResult, AutomaticConnectionPath) = await coordinator
             .performUsingBestAPIPath(
@@ -194,7 +216,7 @@ final class ExternalActionCoordinatorTests: XCTestCase {
                     attempts.append(routedAccess.socksProxy)
                     return routedAccess.socksProxy == nil ? .failed(.unreachable) : .connected
                 },
-                isUnreachable: { $0 == .failed(.unreachable) }
+                requiresAlternativeNetworkPath: { $0 == .failed(.unreachable) }
             )
         let third: (ConnectionTestResult, AutomaticConnectionPath) = await coordinator
             .performUsingBestAPIPath(
@@ -205,7 +227,7 @@ final class ExternalActionCoordinatorTests: XCTestCase {
                     attempts.append(routedAccess.socksProxy)
                     return routedAccess.socksProxy == nil ? .connected : .failed(.unreachable)
                 },
-                isUnreachable: { $0 == .failed(.unreachable) }
+                requiresAlternativeNetworkPath: { $0 == .failed(.unreachable) }
             )
 
         XCTAssertEqual(first.1, .ssh)
@@ -436,7 +458,7 @@ final class ExternalActionCoordinatorTests: XCTestCase {
             operation: { access in
                 await Icinga2Provider().testConnection(to: source, access: access)
             },
-            isUnreachable: { $0 == .failed(.unreachable) }
+            requiresAlternativeNetworkPath: { $0 == .failed(.unreachable) }
         )
 
         XCTAssertEqual(result, .connected)

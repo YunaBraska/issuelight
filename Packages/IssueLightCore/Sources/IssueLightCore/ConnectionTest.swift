@@ -8,7 +8,9 @@ public enum ConnectionFailure: Error, Equatable, Sendable {
     case serverCertificateNotAvailable
     case cancelled
     case unreachable
+    case serverTrust
     case tls
+    case clientCertificateRejected
     case authentication
     case authorization
     case incompatibleResponse
