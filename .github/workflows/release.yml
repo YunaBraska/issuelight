@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   release:
-    uses: YunaBraska/YunaBraska/.github/workflows/wc_swift_release.yml@a9c0081ab7aca7188219df1b4830cd46c5ca29ed
+    uses: YunaBraska/YunaBraska/.github/workflows/wc_swift_release.yml@469372e592d87a003dbfae15ef8d50194bcea7e5
     with:
       force: ${{ inputs.force }}
       macos_update_public_key: ${{ vars.MACOS_UPDATE_PUBLIC_KEY }}
