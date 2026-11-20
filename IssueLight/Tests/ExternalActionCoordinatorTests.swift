@@ -190,6 +190,74 @@ final class ExternalActionCoordinatorTests: XCTestCase {
         XCTAssertNotNil(attempts[1])
     }
 
+    func testAutomaticAPIRoutingRecoversWhenTheAPIPortWasStoredAsTheSSHPort() async throws {
+        let executable = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .appendingPathComponent("Fixtures/fake-ssh-api-port-fallback.sh")
+        let manager = SSHTunnelManager(executableURL: executable)
+        let coordinator = AutomaticConnectionCoordinator(tunnelManager: manager)
+        let source = MonitoringSource(
+            name: "Production",
+            providerID: Icinga2Provider.id,
+            endpoint: URL(string: "https://monitoring.example.test:5665")!,
+            authentication: .basic(username: "operator"),
+            sshTunnel: SSHTunnelConfiguration(
+                bastionHost: "bastion.example.test",
+                username: "operator",
+                port: 5_665
+            )
+        )
+        let access = ProviderAccess(credential: .password("test-only"))
+        defer { coordinator.stop(sourceID: source.id) }
+
+        let (result, path): (ConnectionTestResult, AutomaticConnectionPath) = await coordinator
+            .performUsingBestAPIPath(
+                source: source,
+                access: access,
+                operation: { routedAccess in
+                    routedAccess.socksProxy == nil ? .failed(.unreachable) : .connected
+                },
+                requiresAlternativeNetworkPath: { $0 == .failed(.unreachable) }
+            )
+
+        XCTAssertEqual(result, .connected)
+        XCTAssertEqual(path, .ssh)
+    }
+
+    func testAutomaticAPIRoutingDoesNotReplaceADistinctCustomSSHPort() async throws {
+        let executable = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .appendingPathComponent("Fixtures/fake-ssh-api-port-fallback.sh")
+        let manager = SSHTunnelManager(executableURL: executable)
+        let coordinator = AutomaticConnectionCoordinator(tunnelManager: manager)
+        let source = MonitoringSource(
+            name: "Production",
+            providerID: Icinga2Provider.id,
+            endpoint: URL(string: "https://monitoring.example.test:5665")!,
+            authentication: .basic(username: "operator"),
+            sshTunnel: SSHTunnelConfiguration(
+                bastionHost: "bastion.example.test",
+                username: "operator",
+                port: 2_222
+            )
+        )
+        defer { coordinator.stop(sourceID: source.id) }
+
+        let (_, path): (ConnectionTestResult, AutomaticConnectionPath) = await coordinator
+            .performUsingBestAPIPath(
+                source: source,
+                access: ProviderAccess(credential: .password("test-only")),
+                operation: { _ in .failed(.unreachable) },
+                requiresAlternativeNetworkPath: { $0 == .failed(.unreachable) }
+            )
+
+        guard case .unavailable(let message) = path else {
+            return XCTFail("A distinct custom SSH port must not be silently replaced")
+        }
+        XCTAssertTrue(message.contains("port 2222"))
+        XCTAssertFalse(message.contains("port 22:"))
+    }
+
     func testAutomaticAPIRoutingReusesSuccessfulSSHUntilConnectionTestRediscoversDirect() async throws {
         let executable = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()

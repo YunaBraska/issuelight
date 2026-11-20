@@ -79,7 +79,14 @@ final class AutomaticConnectionCoordinator {
         guard !configuration.bastionHost.isEmpty else {
             return (directResult, .unavailable("The API host cannot be used as an SSH destination."))
         }
-        switch await tunnelManager.startSOCKS(sourceID: source.id, configuration: configuration) {
+        let fallbackPort = configuration.port != 22 && configuration.port == source.endpoint.port
+            ? 22
+            : nil
+        switch await tunnelManager.startSOCKS(
+            sourceID: source.id,
+            configuration: configuration,
+            fallbackPort: fallbackPort
+        ) {
         case .success(let proxyPort):
             let proxiedResult = await operation(access.routingThroughSOCKS(port: proxyPort))
             guard !requiresAlternativeNetworkPath(proxiedResult) else {
@@ -113,7 +120,14 @@ final class AutomaticConnectionCoordinator {
         guard !configuration.bastionHost.isEmpty else {
             return .unavailable("The API host cannot be used as an SSH destination.")
         }
-        switch await tunnelManager.startSOCKS(sourceID: source.id, configuration: configuration) {
+        let fallbackPort = configuration.port != 22 && configuration.port == source.endpoint.port
+            ? 22
+            : nil
+        switch await tunnelManager.startSOCKS(
+            sourceID: source.id,
+            configuration: configuration,
+            fallbackPort: fallbackPort
+        ) {
         case .success(let proxyPort):
             if await canConnect(host, port, proxyPort) {
                 return .ssh
@@ -243,7 +257,8 @@ final class SSHTunnelManager {
 
     func startSOCKS(
         sourceID: UUID,
-        configuration: SSHTunnelConfiguration
+        configuration: SSHTunnelConfiguration,
+        fallbackPort _: Int? = nil
     ) async -> Result<Int, StartError> {
         .failure(.message("SSH tunnelling is unavailable in the App Store edition."))
     }
@@ -476,7 +491,8 @@ final class SSHTunnelManager {
 
     func startSOCKS(
         sourceID: UUID,
-        configuration: SSHTunnelConfiguration
+        configuration: SSHTunnelConfiguration,
+        fallbackPort: Int? = nil
     ) async -> Result<Int, StartError> {
         let key = TunnelKey(sourceID: sourceID, purpose: .proxy)
         if let active = activeTunnels[key],
@@ -484,36 +500,59 @@ final class SSHTunnelManager {
            active.configuration == configuration {
             return await awaitReadiness(key: key, active: active)
         }
-
-        stop(key: key)
-        guard let localPort = LocalPortAllocator.availablePort(preferred: configuration.preferredLocalPort) else {
-            return .failure(.message("No local port is available."))
+        var candidates = [configuration]
+        if let fallbackPort,
+           fallbackPort != configuration.port,
+           (1...65_535).contains(fallbackPort) {
+            var fallback = configuration
+            fallback.port = fallbackPort
+            candidates.append(fallback)
         }
 
-        let process = Process()
-        let standardError = Pipe()
-        process.executableURL = executableURL
-        process.arguments = additionalArguments + Command(
-            socksPort: localPort,
-            configuration: configuration
-        ).arguments
-        process.standardInput = FileHandle.nullDevice
-        process.standardOutput = FileHandle.nullDevice
-        process.standardError = standardError
-        do {
-            try process.run()
-        } catch {
-            return .failure(.message(error.localizedDescription))
+        var failures: [String] = []
+        for candidate in candidates {
+            stop(key: key)
+            guard let localPort = LocalPortAllocator.availablePort(
+                preferred: configuration.preferredLocalPort
+            ) else {
+                return .failure(.message("No local port is available."))
+            }
+
+            let process = Process()
+            let standardError = Pipe()
+            process.executableURL = executableURL
+            process.arguments = additionalArguments + Command(
+                socksPort: localPort,
+                configuration: candidate
+            ).arguments
+            process.standardInput = FileHandle.nullDevice
+            process.standardOutput = FileHandle.nullDevice
+            process.standardError = standardError
+            do {
+                try process.run()
+            } catch {
+                failures.append(error.localizedDescription)
+                continue
+            }
+            let active = ActiveTunnel(
+                process: process,
+                localPort: localPort,
+                targetHost: nil,
+                targetPort: nil,
+                configuration: configuration
+            )
+            activeTunnels[key] = active
+            switch await awaitReadiness(key: key, active: active, standardError: standardError) {
+            case .success(let port):
+                return .success(port)
+            case .failure(.message(let message)):
+                failures.append(
+                    candidates.count == 1 ? message : "SSH port \(candidate.port): \(message)"
+                )
+            }
         }
-        let active = ActiveTunnel(
-            process: process,
-            localPort: localPort,
-            targetHost: nil,
-            targetPort: nil,
-            configuration: configuration
-        )
-        activeTunnels[key] = active
-        return await awaitReadiness(key: key, active: active, standardError: standardError)
+
+        return .failure(.message(failures.joined(separator: "\n")))
     }
 
     func reconcileSources(_ sources: [MonitoringSource]) {

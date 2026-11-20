@@ -210,6 +210,9 @@ TLS policy. It does not own monitoring-state presentation or notifications.
   canonicalizing it to `statusjson.cgi`. A hint without a scheme MUST try HTTPS
   only, except loopback development hosts. Plain HTTP otherwise requires an
   explicit scheme.
+- `CONN-013` When an SSH port override equals the monitoring API port and cannot
+  establish SSH, source connection testing MUST retry the standard SSH port 22.
+  It MUST NOT replace a distinct custom SSH port.
 
 ### Navigation
 
