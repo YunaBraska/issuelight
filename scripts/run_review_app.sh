@@ -64,9 +64,7 @@ ditto "$built_app" "$review_app"
 codesign --verify --deep --strict "$review_app"
 
 xcrun swiftc \
-    "$repository_root/Packages/IssueLightCore/Sources/IssueLightCore/MonitoringSource.swift" \
-    "$repository_root/Packages/IssueLightCore/Sources/IssueLightCore/ServerCertificateFingerprint.swift" \
-    "$repository_root/Packages/IssueLightCore/Sources/IssueLightCore/SourceStore.swift" \
+    -parse-as-library \
     "$repository_root/scripts/seed_review_source.swift" \
     -o "$review_seed_binary"
 "$review_seed_binary" "$review_sources_file" "$ISSUELIGHT_ICINGA_PORT" "$ISSUELIGHT_ICINGAWEB_PORT"

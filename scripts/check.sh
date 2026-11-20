@@ -148,6 +148,9 @@ test "$(/usr/libexec/PlistBuddy -c 'Print :SUEnableAutomaticChecks' "$app_path/C
 test "$(/usr/libexec/PlistBuddy -c 'Print :SUAutomaticallyUpdate' "$app_path/Contents/Info.plist")" = false
 test "$(/usr/libexec/PlistBuddy -c 'Print :SUVerifyUpdateBeforeExtraction' "$app_path/Contents/Info.plist")" = true
 test "$(/usr/libexec/PlistBuddy -c 'Print :SURequireSignedFeed' "$app_path/Contents/Info.plist")" = true
+test "$(/usr/libexec/PlistBuddy \
+    -c 'Print :NSAppTransportSecurity:NSAllowsArbitraryLoads' \
+    "$app_path/Contents/Info.plist")" = true
 
 release_build=$(/usr/libexec/PlistBuddy \
     -c 'Print :CFBundleVersion' \
@@ -201,6 +204,9 @@ if /usr/libexec/PlistBuddy -c 'Print :SUFeedURL' "$store_app/Contents/Info.plist
     echo "App Store package contains direct-release update configuration." >&2
     exit 1
 fi
+test "$(/usr/libexec/PlistBuddy \
+    -c 'Print :NSAppTransportSecurity:NSAllowsArbitraryLoads' \
+    "$store_app/Contents/Info.plist")" = true
 codesign --verify --deep --strict "$store_app"
 store_entitlements=$(codesign -d --entitlements :- "$store_app" 2>/dev/null)
 printf '%s\n' "$store_entitlements" | plutil -extract 'com\.apple\.security\.app-sandbox' raw - | grep -Fx true >/dev/null
