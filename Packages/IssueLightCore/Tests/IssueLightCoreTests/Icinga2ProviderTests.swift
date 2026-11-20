@@ -109,6 +109,8 @@ final class Icinga2ProviderTests: XCTestCase {
         XCTAssertEqual(
             provider.endpointCandidates(from: "http://icinga.example.test:8443/v2/?ignored=yes").map(\.absoluteString),
             [
+                "https://icinga.example.test:8443",
+                "https://icinga.example.test:5665",
                 "http://icinga.example.test:8443",
                 "http://icinga.example.test:5665",
             ]
@@ -124,6 +126,7 @@ final class Icinga2ProviderTests: XCTestCase {
             ).map(\.absoluteString),
             [
                 "https://localhost:5665",
+                "https://localhost:8080",
                 "http://localhost:5665",
                 "http://localhost:8080",
             ]
@@ -181,10 +184,26 @@ final class Icinga2ProviderTests: XCTestCase {
         )
     }
 
-    func testIcingaPreservesExplicitHTTPWhenNoPortIsGiven() {
+    func testIcingaTriesHTTPSBeforeExplicitlyAllowedHTTPWhenNoPortIsGiven() {
         XCTAssertEqual(
             Icinga2Provider().endpointCandidates(from: "http://icinga.internal").map(\.absoluteString),
-            ["http://icinga.internal:5665"]
+            [
+                "https://icinga.internal:5665",
+                "http://icinga.internal:5665",
+            ]
+        )
+    }
+
+    func testIcingaNeverInfersHTTPWithoutAnExplicitHTTPHint() {
+        let provider = Icinga2Provider()
+
+        XCTAssertTrue(
+            provider.endpointCandidates(from: "icinga.internal").allSatisfy { $0.scheme == "https" }
+        )
+        XCTAssertTrue(
+            provider.endpointCandidates(from: "https://icinga.internal:8443").allSatisfy {
+                $0.scheme == "https"
+            }
         )
     }
 

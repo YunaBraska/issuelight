@@ -326,14 +326,16 @@ final class IssueLightModel: ObservableObject {
     }
 
     var isEndpointUsingTLS: Bool {
-        if let provider = providerRegistry.provider(for: selectedProviderID),
-           let candidate = provider.endpointCandidates(from: endpoint).first {
-            return candidate.scheme?.lowercased() == "https"
-        }
         let value = endpoint.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !value.isEmpty else { return true }
-        let candidate = value.contains("://") ? value : "https://\(value)"
-        return URLComponents(string: candidate)?.scheme?.lowercased() == "https"
+        if value.contains("://") {
+            return URLComponents(string: value)?.scheme?.lowercased() == "https"
+        }
+        if let provider = providerRegistry.provider(for: selectedProviderID),
+           let candidate = provider.endpointCandidates(from: value).first {
+            return candidate.scheme?.lowercased() == "https"
+        }
+        return true
     }
 
     var canReviewBlockedServerCertificate: Bool {
@@ -1392,7 +1394,7 @@ final class IssueLightModel: ObservableObject {
         }
 
         let serverTrust: ServerTrustConfiguration
-        if !isEndpointUsingTLS {
+        if url.scheme?.lowercased() != "https" {
             serverTrust = .system
         } else {
             switch serverTrustChoice {
@@ -1845,6 +1847,7 @@ final class IssueLightModel: ObservableObject {
         switch result {
         case .failed(.unreachable),
              .failed(.tls),
+             .failed(.serverTrust),
              .failed(.incompatibleResponse),
              .failed(.http(statusCode: 404)),
              .failed(.server(statusCode: 404)):

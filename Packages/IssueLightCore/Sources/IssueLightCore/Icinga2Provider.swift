@@ -64,19 +64,23 @@ public struct Icinga2Provider: MonitoringProvider {
         components.query = nil
         components.fragment = nil
 
+        let schemes = hintedScheme == "http" && hasExplicitScheme
+            ? ["https", "http"]
+            : ["https"]
         var routes: [(String, Int)] = []
         if looksLikeAPIPath {
-            if let hintedPort {
-                routes.append((hintedScheme, hintedPort))
+            for scheme in schemes {
+                if let hintedPort {
+                    routes.append((scheme, hintedPort))
+                }
+                routes.append((scheme, 5_665))
             }
-            routes.append((hintedScheme, 5_665))
         } else {
-            routes.append(("https", 5_665))
-            if hintedScheme == "http" {
-                routes.append(("http", 5_665))
-            }
-            if let hintedPort {
-                routes.append((hintedScheme, hintedPort))
+            for scheme in schemes {
+                routes.append((scheme, 5_665))
+                if let hintedPort {
+                    routes.append((scheme, hintedPort))
+                }
             }
         }
 

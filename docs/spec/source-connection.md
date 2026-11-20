@@ -185,12 +185,12 @@ TLS policy. It does not own monitoring-state presentation or notifications.
   selection when that route becomes unreachable or its TLS handshake fails.
 - `CONN-007` Icinga 2 discovery MUST accept a hostname, IP address, API URL, or
   pasted monitoring-web URL. It MUST discard path, query, and fragment data,
-  preserve an explicit HTTP or HTTPS API scheme, and confirm every candidate
-  through the Icinga API. A hint without a scheme MUST use HTTPS and MUST NOT
-  silently downgrade credentials. API-shaped hints try their stated port before
-  `5665`. Web-shaped hints try HTTPS on `5665` first. An explicitly HTTP web
-  hint then tries HTTP on `5665` and its stated port so reverse proxies remain
-  discoverable without treating a web response as an API match.
+  preserve an explicit HTTPS scheme, and confirm every candidate through the
+  Icinga API. A hint without a scheme MUST use HTTPS only. An explicit HTTP hint
+  authorizes HTTP, but secure HTTPS variants MUST be tried first and HTTP only
+  afterward. API-shaped hints try their stated port before `5665`. Web-shaped
+  hints try `5665` before their stated web port. This keeps HTTP reverse proxies
+  discoverable without silently downgrading an HTTPS or scheme-less input.
 - `CONN-008` Only a successful provider API request MAY replace the endpoint
   hint with a canonical endpoint. An open port, TLS handshake, HTTP response,
   or failed authentication alone is not discovery success.

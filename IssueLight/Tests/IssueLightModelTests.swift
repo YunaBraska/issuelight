@@ -581,6 +581,30 @@ final class IssueLightModelTests: XCTestCase {
         )
     }
 
+    func testExplicitHTTPAllowsHTTPSUpgradeBeforeHTTPFallback() async throws {
+        let script = SnapshotScript()
+        let coordinator = AutomaticConnectionCoordinator { _, _, _ in true }
+        let harness = try await makeHarness(
+            sourceCount: 1,
+            script: script,
+            connectionCoordinator: coordinator
+        )
+        await harness.model.load()
+        let sourceID = try XCTUnwrap(harness.model.selectedSourceID)
+        harness.model.endpoint = "http://monitoring1.example.test:5665"
+        harness.model.credentialSecret = "test-only-password-1"
+        await script.enqueueConnectionResult(.failed(.serverTrust), for: sourceID)
+        await script.enqueueConnectionResult(.connected, for: sourceID)
+
+        await harness.model.testConnection()
+        let connectionTests = await script.connectionTests(for: sourceID)
+
+        XCTAssertEqual(connectionTests, 2)
+        XCTAssertEqual(harness.model.endpoint, "http://monitoring1.example.test:5665")
+        XCTAssertFalse(harness.model.isEndpointUsingTLS)
+        XCTAssertEqual(harness.model.selectedConnectionStatus.api, .direct)
+    }
+
     func testConnectionPreservesExplicitDisabledTrustAfterEndpointAuthorityChange() async throws {
         let script = SnapshotScript()
         let harness = try await makeHarness(sourceCount: 1, script: script)
@@ -832,7 +856,7 @@ final class IssueLightModelTests: XCTestCase {
         XCTAssertTrue(model.selectedAuthenticationSupportsActions)
 
         model.selectedProviderID = Icinga2Provider.id
-        XCTAssertTrue(model.isEndpointUsingTLS)
+        XCTAssertFalse(model.isEndpointUsingTLS)
     }
 
     func testAutomaticSSHHostUsesProviderEndpointDiscovery() async throws {
@@ -1227,6 +1251,12 @@ private struct TestProvider: MonitoringProvider {
             return [
                 URL(string: "https://monitoring1.example.test:5665")!,
                 URL(string: "https://monitoring1.example.test")!,
+            ]
+        }
+        if hint == "http://monitoring1.example.test:5665" {
+            return [
+                URL(string: "https://monitoring1.example.test:5665")!,
+                URL(string: "http://monitoring1.example.test:5665")!,
             ]
         }
         let value = hint.trimmingCharacters(in: .whitespacesAndNewlines)
