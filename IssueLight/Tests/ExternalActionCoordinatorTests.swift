@@ -190,38 +190,46 @@ final class ExternalActionCoordinatorTests: XCTestCase {
         XCTAssertNotNil(attempts[1])
     }
 
-    func testAutomaticAPIRoutingRecoversWhenTheAPIPortWasStoredAsTheSSHPort() async throws {
+    func testAutomaticAPIRoutingRecoversAcrossProvidersWhenTheAPIPortWasStoredAsTheSSHPort() async throws {
         let executable = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()
             .appendingPathComponent("Fixtures/fake-ssh-api-port-fallback.sh")
-        let manager = SSHTunnelManager(executableURL: executable)
-        let coordinator = AutomaticConnectionCoordinator(tunnelManager: manager)
-        let source = MonitoringSource(
-            name: "Production",
-            providerID: Icinga2Provider.id,
-            endpoint: URL(string: "https://monitoring.example.test:5665")!,
-            authentication: .basic(username: "operator"),
-            sshTunnel: SSHTunnelConfiguration(
-                bastionHost: "bastion.example.test",
-                username: "operator",
-                port: 5_665
-            )
-        )
-        let access = ProviderAccess(credential: .password("test-only"))
-        defer { coordinator.stop(sourceID: source.id) }
+        let scenarios = [
+            (Icinga2Provider.id, "https://icinga.example.test:5665"),
+            (CheckmkProvider.id, "https://checkmk.example.test:443"),
+            (ThrukProvider.id, "https://thruk.example.test:8443"),
+            (NagiosCoreProvider.id, "http://nagios.example.test:8080"),
+        ]
 
-        let (result, path): (ConnectionTestResult, AutomaticConnectionPath) = await coordinator
-            .performUsingBestAPIPath(
-                source: source,
-                access: access,
-                operation: { routedAccess in
-                    routedAccess.socksProxy == nil ? .failed(.unreachable) : .connected
-                },
-                requiresAlternativeNetworkPath: { $0 == .failed(.unreachable) }
+        for (providerID, endpointText) in scenarios {
+            let manager = SSHTunnelManager(executableURL: executable)
+            let coordinator = AutomaticConnectionCoordinator(tunnelManager: manager)
+            let endpoint = try XCTUnwrap(URL(string: endpointText))
+            let source = MonitoringSource(
+                name: "Production",
+                providerID: providerID,
+                endpoint: endpoint,
+                authentication: .basic(username: "operator"),
+                sshTunnel: SSHTunnelConfiguration(
+                    bastionHost: "bastion.example.test",
+                    username: "operator",
+                    port: try XCTUnwrap(endpoint.port)
+                )
             )
+            let (result, path): (ConnectionTestResult, AutomaticConnectionPath) = await coordinator
+                .performUsingBestAPIPath(
+                    source: source,
+                    access: ProviderAccess(credential: .password("test-only")),
+                    operation: { routedAccess in
+                        routedAccess.socksProxy == nil ? .failed(.unreachable) : .connected
+                    },
+                    requiresAlternativeNetworkPath: { $0 == .failed(.unreachable) }
+                )
 
-        XCTAssertEqual(result, .connected)
-        XCTAssertEqual(path, .ssh)
+            XCTAssertEqual(result, .connected, providerID.rawValue)
+            XCTAssertEqual(path, .ssh, providerID.rawValue)
+            coordinator.stop(sourceID: source.id)
+        }
     }
 
     func testAutomaticAPIRoutingDoesNotReplaceADistinctCustomSSHPort() async throws {
@@ -355,6 +363,36 @@ final class ExternalActionCoordinatorTests: XCTestCase {
         XCTAssertEqual(proxyPorts.count, 2)
         XCTAssertNil(proxyPorts[0])
         XCTAssertNotNil(proxyPorts[1])
+    }
+
+    func testWebRoutingRecoversWhenTheAPIPortWasStoredAsTheSSHPort() async throws {
+        let executable = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .appendingPathComponent("Fixtures/fake-ssh-api-port-fallback.sh")
+        let manager = SSHTunnelManager(executableURL: executable)
+        let coordinator = AutomaticConnectionCoordinator(
+            tunnelManager: manager,
+            canConnect: { _, _, proxyPort in proxyPort != nil }
+        )
+        let source = MonitoringSource(
+            name: "Production",
+            providerID: CheckmkProvider.id,
+            endpoint: URL(string: "https://checkmk.example.test:443")!,
+            authentication: .apiKey(username: "automation"),
+            sshTunnel: SSHTunnelConfiguration(
+                bastionHost: "bastion.example.test",
+                username: "operator",
+                port: 443
+            )
+        )
+        defer { coordinator.stop(sourceID: source.id) }
+
+        let path = await coordinator.checkWeb(
+            source: source,
+            url: URL(string: "https://checkmk-web.example.test/site/check_mk")!
+        )
+
+        XCTAssertEqual(path, .ssh)
     }
 
     func testRemoteActionReportsWhetherWorkspaceAcceptedURL() {
