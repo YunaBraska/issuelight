@@ -14,8 +14,9 @@ ship or invoke those external tools.
 The App Store build compiles with `ISSUELIGHT_APP_STORE`, uses the App Sandbox,
 outgoing network access, and read-only user-selected file access. It contains
 no OpenSSH or netcat executable path and does not offer SSH tunnels, SSH
-actions, or RDP actions. It continues to support direct Icinga HTTPS access,
-Keychain credentials, mTLS, private CAs, pinning, issue actions, and web links.
+actions, or RDP actions. It continues to support direct Icinga HTTP and HTTPS
+access, Keychain credentials, mTLS, private CAs, pinning, issue actions, and web
+links.
 
 The Store package is built by the shared Swift release workflow and uses the
 same bundle identifier and stable marketing version as the direct release. A

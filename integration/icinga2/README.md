@@ -60,7 +60,9 @@ persisted sources with verification enabled through the real built-in Icinga 2
 provider. The PKCS#12 files intentionally omit the lab CA so identity import
 does not silently alter server trust.
 
-The matrix intentionally treats plain HTTP and no authentication as negative
-tests because the Icinga 2 API requires HTTPS and authentication. It also proves
-that the lab's private CA is rejected without an explicit trust decision. Host
-and service deep links are verified against the real Icinga Web interface.
+The real Icinga fixture exposes its API over HTTPS and requires authentication,
+so plain HTTP on that TLS-only port remains a negative test. The provider also
+has a local plain-HTTP transport boundary for deployments that expose Icinga
+through an explicit HTTP reverse proxy. The matrix proves that the lab's private
+CA is rejected without an explicit trust decision. Host and service deep links
+are verified against the real Icinga Web interface.

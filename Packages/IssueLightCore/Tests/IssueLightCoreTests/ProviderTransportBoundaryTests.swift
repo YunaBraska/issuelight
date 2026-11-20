@@ -3,7 +3,7 @@ import Foundation
 import XCTest
 @testable import IssueLightCore
 
-final class ProviderHTTPSTransportBoundaryTests: XCTestCase {
+final class ProviderTransportBoundaryTests: XCTestCase {
     private static var fixtureResult: Result<TLSBoundaryFixtures, Error>!
 
     override class func setUp() {
@@ -100,6 +100,24 @@ final class ProviderHTTPSTransportBoundaryTests: XCTestCase {
         let result = await TLSBoundaryProbe.request(port: server.port, trust: .disabled)
 
         XCTAssertEqual(result, .failure(.tls))
+    }
+
+    func testIcingaBasicConnectionUsesRealPlainHTTPTransport() async throws {
+        let server = try PlainHTTPTestServer(body: Data(#"{"results":[]}"#.utf8))
+        defer { server.stop() }
+        let source = MonitoringSource(
+            name: "HTTP boundary",
+            providerID: Icinga2Provider.id,
+            endpoint: URL(string: "http://127.0.0.1:\(server.port)")!,
+            authentication: .basic(username: "fixture")
+        )
+
+        let result = await Icinga2Provider().testConnection(
+            to: source,
+            access: ProviderAccess(credential: .password("test-only"))
+        )
+
+        XCTAssertEqual(result, .connected)
     }
 
     func testRequiredClientCertificateIsReportedSeparately() async throws {
@@ -277,9 +295,13 @@ private final class OpenSSLTestServer {
 private final class PlainHTTPTestServer {
     let port: Int
     private let lock = NSLock()
+    private let response: Data
     private var listeningDescriptor: Int32
 
-    init() throws {
+    init(body: Data = Data()) throws {
+        response = Data(
+            "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: \(body.count)\r\nConnection: close\r\n\r\n".utf8
+        ) + body
         let descriptor = socket(AF_INET, SOCK_STREAM, 0)
         guard descriptor >= 0 else {
             throw TLSBoundaryFixtureError.serverDidNotStart
@@ -354,9 +376,6 @@ private final class PlainHTTPTestServer {
                 SO_NOSIGPIPE,
                 &noSignal,
                 socklen_t(MemoryLayout<Int32>.size)
-            )
-            let response = Data(
-                "HTTP/1.1 200 OK\r\nContent-Length: 0\r\nConnection: close\r\n\r\n".utf8
             )
             response.withUnsafeBytes { bytes in
                 _ = send(client, bytes.baseAddress, bytes.count, 0)

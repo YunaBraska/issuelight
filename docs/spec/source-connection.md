@@ -102,8 +102,9 @@ TLS policy. It does not own monitoring-state presentation or notifications.
   MUST NOT be simulated.
 - `PRV-003` Adding a built-in provider SHOULD change only its adapter and the
   single provider registration point.
-- `PRV-004` The Icinga 2 provider MUST require HTTPS and MUST accept only the
-  API root or `/v1` as its configured endpoint path.
+- `PRV-004` The Icinga 2 provider MUST accept HTTP and HTTPS API endpoints and
+  only the API root or `/v1` as its configured endpoint path. Client-certificate
+  authentication MUST require HTTPS.
 - `PRV-005` A provider MUST own candidate generation and canonicalization for
   its endpoint hints. Shared setup code MUST NOT contain Icinga-specific ports,
   paths, or response rules.
@@ -184,10 +185,12 @@ TLS policy. It does not own monitoring-state presentation or notifications.
   selection when that route becomes unreachable or its TLS handshake fails.
 - `CONN-007` Icinga 2 discovery MUST accept a hostname, IP address, API URL, or
   pasted monitoring-web URL. It MUST discard path, query, and fragment data,
-  require HTTPS for the real API request, and confirm every candidate through
-  the Icinga API. API-shaped hints try their stated port before `5665`.
-  Web-shaped hints try `5665` before their stated HTTPS port so a pasted web
-  address does not turn a web authentication response into a false API match.
+  preserve an explicit HTTP or HTTPS API scheme, and confirm every candidate
+  through the Icinga API. A hint without a scheme MUST use HTTPS and MUST NOT
+  silently downgrade credentials. API-shaped hints try their stated port before
+  `5665`. Web-shaped hints try HTTPS on `5665` first. An explicitly HTTP web
+  hint then tries HTTP on `5665` and its stated port so reverse proxies remain
+  discoverable without treating a web response as an API match.
 - `CONN-008` Only a successful provider API request MAY replace the endpoint
   hint with a canonical endpoint. An open port, TLS handshake, HTTP response,
   or failed authentication alone is not discovery success.
@@ -256,5 +259,5 @@ TLS policy. It does not own monitoring-state presentation or notifications.
 | AUTH-002, AUTH-004 | Keychain identity catalog and connection test | Real PKCS#12 import, persistent-reference resolution, accepted and rejected live Icinga mTLS, and exact cleanup |
 | AUTH-003, AUTH-005..006 | source setup journey | Password availability uses only non-secret ownership metadata; a real foreign legacy Keychain item is rejected without reading its secret; background password and exact-identity reads use a non-interactive authentication context; broad identity searches silently skip protected items; isolated Keychain tests prove prompt-free failure for a protected legacy-ACL private key and success for a trusted key; missing identities fail explicitly; approve, deny, and recovery remain signed-app acceptance checks |
 | TLS-001..007 | connection test and source lifecycle | Default, source-specific private CA, exact leaf pinning, and unchecked trust implemented; packaged direct and Store apps retain the runtime ATS exception required for dynamic endpoints; the running direct app reads real Icinga hosts and services through an unchecked private certificate; the live matrix accepts the configured CA and exact leaf, rejects an unrelated CA, mismatched leaf, and exact leaf under the wrong hostname; Apple trust evaluation preserves certificate validity policy; authority changes reset custom trust; real Keychain tests cover ownership-aware CA cleanup after the final source reference; pin replacement remains an explicit user action |
-| CONN-001..012 | connection test | Real containerized Icinga 2 Basic and mTLS success, real OMD/Thruk Basic and API-key success, real Checkmk API-key success, source-built Nagios Core Basic-auth and CGI success, distinct authentication, authorization, and trust failures, unit coverage for direct-first routing and independent settings status, plus running-UI cancellation evidence |
+| CONN-001..012 | connection test | Real containerized Icinga 2 Basic and mTLS success, a real local plain-HTTP transport boundary, real OMD/Thruk Basic and API-key success, real Checkmk API-key success, source-built Nagios Core Basic-auth and CGI success, distinct authentication, authorization, and trust failures, unit coverage for direct-first routing and independent settings status, plus running-UI cancellation evidence |
 | NAV-001..005 | issue row and source settings | Core tests cover classic and Icinga DB Web host/service links plus escaped SSH/RDP URLs; app tests cover source-wide SSH persistence, safe OpenSSH commands, direct opening, row clicks, and source-owned cleanup; real OpenSSH integration tests verify HTTP forwarding and an Icinga API request through SOCKS5 before closing owned ports |

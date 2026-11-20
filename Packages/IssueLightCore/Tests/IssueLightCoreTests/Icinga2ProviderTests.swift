@@ -77,16 +77,25 @@ final class Icinga2ProviderTests: XCTestCase {
         )
     }
 
-    func testIcingaRequiresHTTPSAndSupportedRootPath() {
+    func testIcingaAcceptsHTTPAndHTTPSButRejectsUnsupportedPaths() {
         let provider = Icinga2Provider()
 
-        XCTAssertEqual(
-            provider.validate(source(endpoint: "http://icinga.example.test:5665/v1")),
-            [.unsupportedScheme("http")]
-        )
+        XCTAssertTrue(provider.validate(source(endpoint: "http://icinga.example.test:5665/v1")).isEmpty)
+        XCTAssertTrue(provider.validate(source(endpoint: "https://icinga.example.test:5665/v1")).isEmpty)
         XCTAssertEqual(
             provider.validate(source(endpoint: "https://icinga.example.test:5665/custom")),
             [.unsupportedPath("/custom")]
+        )
+    }
+
+    func testIcingaRejectsClientCertificateAuthenticationWithoutTLS() {
+        let provider = Icinga2Provider()
+        var httpSource = source(endpoint: "http://icinga.example.test:5665")
+        httpSource.authentication = .clientCertificate(identityID: "identity")
+
+        XCTAssertEqual(
+            provider.validate(httpSource),
+            [.unsupportedAuthentication(.clientCertificate)]
         )
     }
 
@@ -100,8 +109,8 @@ final class Icinga2ProviderTests: XCTestCase {
         XCTAssertEqual(
             provider.endpointCandidates(from: "http://icinga.example.test:8443/v2/?ignored=yes").map(\.absoluteString),
             [
-                "https://icinga.example.test:8443",
-                "https://icinga.example.test:5665",
+                "http://icinga.example.test:8443",
+                "http://icinga.example.test:5665",
             ]
         )
     }
@@ -115,7 +124,8 @@ final class Icinga2ProviderTests: XCTestCase {
             ).map(\.absoluteString),
             [
                 "https://localhost:5665",
-                "https://localhost:8080",
+                "http://localhost:5665",
+                "http://localhost:8080",
             ]
         )
         XCTAssertEqual(
@@ -132,6 +142,13 @@ final class Icinga2ProviderTests: XCTestCase {
             [
                 "https://monitoring.example.test:5665",
                 "https://monitoring.example.test:443",
+            ]
+        )
+        XCTAssertEqual(
+            provider.endpointCandidates(from: "http://monitoring.example.test:5665/icingaweb2").map(\.absoluteString),
+            [
+                "https://monitoring.example.test:5665",
+                "http://monitoring.example.test:5665",
             ]
         )
     }
@@ -164,11 +181,19 @@ final class Icinga2ProviderTests: XCTestCase {
         )
     }
 
+    func testIcingaPreservesExplicitHTTPWhenNoPortIsGiven() {
+        XCTAssertEqual(
+            Icinga2Provider().endpointCandidates(from: "http://icinga.internal").map(\.absoluteString),
+            ["http://icinga.internal:5665"]
+        )
+    }
+
     func testIcingaRejectsEndpointHintsContainingCredentialsOrMissingAHost() {
         let provider = Icinga2Provider()
 
         XCTAssertEqual(provider.endpointCandidates(from: "https://user:secret@icinga.example.test"), [])
         XCTAssertEqual(provider.endpointCandidates(from: "https:///v1"), [])
+        XCTAssertEqual(provider.endpointCandidates(from: "ftp://icinga.example.test"), [])
     }
 
     func testIcingaBuildsStatusURLFromRootAndVersionedEndpoint() throws {
@@ -181,6 +206,10 @@ final class Icinga2ProviderTests: XCTestCase {
         XCTAssertEqual(
             try provider.statusURL(for: source(endpoint: "https://icinga.example.test:5665/v1/")),
             URL(string: "https://icinga.example.test:5665/v1/status")
+        )
+        XCTAssertEqual(
+            try provider.statusURL(for: source(endpoint: "http://icinga.example.test:5665/v1/")),
+            URL(string: "http://icinga.example.test:5665/v1/status")
         )
     }
 
@@ -266,7 +295,7 @@ final class Icinga2ProviderTests: XCTestCase {
         XCTAssertThrowsError(try provider.statusURL(for: invalidSource)) { error in
             XCTAssertEqual(
                 error as? Icinga2ProviderError,
-                .invalidSource([.unsupportedScheme("http"), .unsupportedPath("/custom")])
+                .invalidSource([.unsupportedPath("/custom")])
             )
         }
     }
@@ -275,7 +304,8 @@ final class Icinga2ProviderTests: XCTestCase {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [StubURLProtocol.self]
         StubURLProtocol.configure(host: stubHost) { request in
-            (
+            XCTAssertEqual(request.url?.scheme, "http")
+            return (
                 HTTPURLResponse(
                     url: request.url!,
                     statusCode: 200,
@@ -288,7 +318,7 @@ final class Icinga2ProviderTests: XCTestCase {
         let provider = Icinga2Provider(configuration: configuration)
 
         let result = await provider.testConnection(
-            to: source(endpoint: "https://\(stubHost):5665"),
+            to: source(endpoint: "http://\(stubHost):5665"),
             access: ProviderAccess(credential: .password("secret"))
         )
 
@@ -718,7 +748,7 @@ final class Icinga2ProviderTests: XCTestCase {
 
     func testRegisteredProviderRejectsActionFromInvalidSource() async {
         let provider = Icinga2Provider()
-        let actionSource = source(endpoint: "http://icinga.example.test:5665")
+        let actionSource = source(endpoint: "http://icinga.example.test:5665/custom")
 
         let result = await provider.perform(
             .recheck,
@@ -727,7 +757,7 @@ final class Icinga2ProviderTests: XCTestCase {
             access: ProviderAccess(credential: .password("secret"))
         )
 
-        XCTAssertEqual(result, .failed(.invalidConfiguration([.unsupportedScheme("http")])))
+        XCTAssertEqual(result, .failed(.invalidConfiguration([.unsupportedPath("/custom")])))
     }
 
     private func actionProvider(statusCode: Int, body: String) -> Icinga2Provider {

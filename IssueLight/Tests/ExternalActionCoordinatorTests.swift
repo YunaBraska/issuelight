@@ -7,9 +7,22 @@ final class ExternalActionCoordinatorTests: XCTestCase {
     func testOnlyNetworkAndTLSHandshakeFailuresTryAnotherNetworkPath() {
         XCTAssertTrue(ConnectionFailure.unreachable.requiresAlternativeNetworkPath)
         XCTAssertTrue(ConnectionFailure.tls.requiresAlternativeNetworkPath)
-        XCTAssertFalse(ConnectionFailure.serverTrust.requiresAlternativeNetworkPath)
-        XCTAssertFalse(ConnectionFailure.clientCertificateRejected.requiresAlternativeNetworkPath)
-        XCTAssertFalse(ConnectionFailure.authentication.requiresAlternativeNetworkPath)
+        for failure in [
+            ConnectionFailure.invalidConfiguration([.missingHost]),
+            .unsupportedTrustConfiguration,
+            .clientCertificateNotAvailable,
+            .serverCertificateNotAvailable,
+            .cancelled,
+            .serverTrust,
+            .clientCertificateRejected,
+            .authentication,
+            .authorization,
+            .incompatibleResponse,
+            .server(statusCode: 503),
+            .http(statusCode: 429),
+        ] {
+            XCTAssertFalse(failure.requiresAlternativeNetworkPath, "Unexpected SSH fallback for \(failure)")
+        }
     }
 
     func testTunnelCommandUsesSafeArgumentsAndExplicitIdentity() {
@@ -148,7 +161,7 @@ final class ExternalActionCoordinatorTests: XCTestCase {
         let source = MonitoringSource(
             name: "Production",
             providerID: Icinga2Provider.id,
-            endpoint: URL(string: "https://monitoring.example.test:5665")!,
+            endpoint: URL(string: "http://monitoring.example.test:5665")!,
             authentication: .basic(username: "operator"),
             sshTunnel: SSHTunnelConfiguration(
                 bastionHost: "bastion.example.test",

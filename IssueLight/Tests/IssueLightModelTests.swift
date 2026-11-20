@@ -792,6 +792,13 @@ final class IssueLightModelTests: XCTestCase {
         XCTAssertTrue(model.isEndpointUsingTLS)
         XCTAssertFalse(model.suggestedSourceName.isEmpty)
 
+        model.serverTrustChoice = .disabled
+        model.endpoint = "http://icinga.internal:5665"
+        XCTAssertFalse(model.isEndpointUsingTLS)
+        XCTAssertEqual(model.serverTrustChoice, .system)
+        model.endpoint = "https://icinga.internal:5665"
+        XCTAssertTrue(model.isEndpointUsingTLS)
+
         model.selectedProviderID = CheckmkProvider.id
         XCTAssertEqual(model.authenticationChoices, [.apiKey])
         XCTAssertEqual(model.authenticationChoice, .apiKey)
