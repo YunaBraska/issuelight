@@ -195,13 +195,13 @@ final class ExternalActionCoordinatorTests: XCTestCase {
             .deletingLastPathComponent()
             .appendingPathComponent("Fixtures/fake-ssh-api-port-fallback.sh")
         let scenarios = [
-            (Icinga2Provider.id, "https://icinga.example.test:5665"),
-            (CheckmkProvider.id, "https://checkmk.example.test:443"),
-            (ThrukProvider.id, "https://thruk.example.test:8443"),
-            (NagiosCoreProvider.id, "http://nagios.example.test:8080"),
+            (Icinga2Provider.id, "https://icinga.example.test:5665", 5_665),
+            (CheckmkProvider.id, "https://checkmk.example.test", 443),
+            (ThrukProvider.id, "https://thruk.example.test:8443", 8_443),
+            (NagiosCoreProvider.id, "http://nagios.example.test", 80),
         ]
 
-        for (providerID, endpointText) in scenarios {
+        for (providerID, endpointText, apiPort) in scenarios {
             let manager = SSHTunnelManager(executableURL: executable)
             let coordinator = AutomaticConnectionCoordinator(tunnelManager: manager)
             let endpoint = try XCTUnwrap(URL(string: endpointText))
@@ -213,7 +213,7 @@ final class ExternalActionCoordinatorTests: XCTestCase {
                 sshTunnel: SSHTunnelConfiguration(
                     bastionHost: "bastion.example.test",
                     username: "operator",
-                    port: try XCTUnwrap(endpoint.port)
+                    port: apiPort
                 )
             )
             let (result, path): (ConnectionTestResult, AutomaticConnectionPath) = await coordinator
@@ -377,7 +377,7 @@ final class ExternalActionCoordinatorTests: XCTestCase {
         let source = MonitoringSource(
             name: "Production",
             providerID: CheckmkProvider.id,
-            endpoint: URL(string: "https://checkmk.example.test:443")!,
+            endpoint: URL(string: "https://checkmk.example.test")!,
             authentication: .apiKey(username: "automation"),
             sshTunnel: SSHTunnelConfiguration(
                 bastionHost: "bastion.example.test",
@@ -393,6 +393,40 @@ final class ExternalActionCoordinatorTests: XCTestCase {
         )
 
         XCTAssertEqual(path, .ssh)
+    }
+
+    func testWebRoutingDoesNotReplaceADistinctCustomSSHPort() async throws {
+        let executable = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .appendingPathComponent("Fixtures/fake-ssh-api-port-fallback.sh")
+        let manager = SSHTunnelManager(executableURL: executable)
+        let coordinator = AutomaticConnectionCoordinator(
+            tunnelManager: manager,
+            canConnect: { _, _, _ in false }
+        )
+        let source = MonitoringSource(
+            name: "Production",
+            providerID: NagiosCoreProvider.id,
+            endpoint: URL(string: "http://nagios.example.test")!,
+            authentication: .basic(username: "operator"),
+            sshTunnel: SSHTunnelConfiguration(
+                bastionHost: "bastion.example.test",
+                username: "operator",
+                port: 2_222
+            )
+        )
+        defer { coordinator.stop(sourceID: source.id) }
+
+        let path = await coordinator.checkWeb(
+            source: source,
+            url: URL(string: "http://nagios-web.example.test/nagios")!
+        )
+
+        guard case .unavailable(let message) = path else {
+            return XCTFail("A distinct custom SSH port must not be silently replaced")
+        }
+        XCTAssertTrue(message.contains("port 2222"))
+        XCTAssertFalse(message.contains("port 22:"))
     }
 
     func testRemoteActionReportsWhetherWorkspaceAcceptedURL() {

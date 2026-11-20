@@ -4,6 +4,7 @@ set -eu
 
 forward=""
 ssh_port=22
+bastion_host=""
 while [ "$#" -gt 0 ]; do
     case "$1" in
         -D)
@@ -14,6 +15,10 @@ while [ "$#" -gt 0 ]; do
             ssh_port="$2"
             shift 2
             ;;
+        --)
+            bastion_host="$2"
+            shift 2
+            ;;
         *)
             shift
             ;;
@@ -21,7 +26,8 @@ while [ "$#" -gt 0 ]; do
 done
 
 test -n "$forward"
-if [ "$ssh_port" -ne 22 ]; then
+test -n "$bastion_host"
+if [ "$ssh_port" -ne 22 ] || [ "$bastion_host" = "always-fail.example.test" ]; then
     echo "ssh: connect to host bastion.example.test port $ssh_port: Operation timed out" >&2
     exit 255
 fi

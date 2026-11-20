@@ -79,7 +79,11 @@ final class AutomaticConnectionCoordinator {
         guard !configuration.bastionHost.isEmpty else {
             return (directResult, .unavailable("The API host cannot be used as an SSH destination."))
         }
-        let fallbackPort = configuration.port != 22 && configuration.port == source.endpoint.port
+        let endpointPort = source.endpoint.port ?? [
+            "http": 80,
+            "https": 443,
+        ][source.endpoint.scheme?.lowercased() ?? ""]
+        let fallbackPort = configuration.port != 22 && configuration.port == endpointPort
             ? 22
             : nil
         switch await tunnelManager.startSOCKS(
@@ -120,7 +124,11 @@ final class AutomaticConnectionCoordinator {
         guard !configuration.bastionHost.isEmpty else {
             return .unavailable("The API host cannot be used as an SSH destination.")
         }
-        let fallbackPort = configuration.port != 22 && configuration.port == source.endpoint.port
+        let endpointPort = source.endpoint.port ?? [
+            "http": 80,
+            "https": 443,
+        ][source.endpoint.scheme?.lowercased() ?? ""]
+        let fallbackPort = configuration.port != 22 && configuration.port == endpointPort
             ? 22
             : nil
         switch await tunnelManager.startSOCKS(
