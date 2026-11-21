@@ -102,8 +102,9 @@ TLS policy. It does not own monitoring-state presentation or notifications.
   MUST NOT be simulated.
 - `PRV-003` Adding a built-in provider SHOULD change only its adapter and the
   single provider registration point.
-- `PRV-004` The Icinga 2 provider MUST require HTTPS and MUST accept only the
-  API root or `/v1` as its configured endpoint path.
+- `PRV-004` The Icinga 2 provider MUST accept HTTP and HTTPS API endpoints and
+  only the API root or `/v1` as its configured endpoint path. Client-certificate
+  authentication MUST require HTTPS.
 - `PRV-005` A provider MUST own candidate generation and canonicalization for
   its endpoint hints. Shared setup code MUST NOT contain Icinga-specific ports,
   paths, or response rules.
@@ -159,6 +160,11 @@ TLS policy. It does not own monitoring-state presentation or notifications.
 - `TLS-006` IssueLight MUST delete an imported CA only when IssueLight created
   the Keychain item and no persisted source references it. Shared and
   externally managed certificates MUST remain untouched.
+- `TLS-007` Every distributed app MUST permit the selected source trust policy
+  to reach the URL loading system. Packaging MUST NOT silently replace custom,
+  pinned, or explicitly unchecked trust with App Transport Security defaults.
+- `TLS-008` Server-trust settings MUST affect HTTPS only. A plain HTTP source
+  MUST NOT require or evaluate a CA, certificate pin, or server certificate.
 
 ### Connection result
 
@@ -181,10 +187,12 @@ TLS policy. It does not own monitoring-state presentation or notifications.
   selection when that route becomes unreachable or its TLS handshake fails.
 - `CONN-007` Icinga 2 discovery MUST accept a hostname, IP address, API URL, or
   pasted monitoring-web URL. It MUST discard path, query, and fragment data,
-  require HTTPS for the real API request, and confirm every candidate through
-  the Icinga API. API-shaped hints try their stated port before `5665`.
-  Web-shaped hints try `5665` before their stated HTTPS port so a pasted web
-  address does not turn a web authentication response into a false API match.
+  preserve an explicit HTTPS scheme, and confirm every candidate through the
+  Icinga API. A hint without a scheme MUST use HTTPS only. An explicit HTTP hint
+  authorizes HTTP, but secure HTTPS variants MUST be tried first and HTTP only
+  afterward. API-shaped hints try their stated port before `5665`. Web-shaped
+  hints try `5665` before their stated web port. This keeps HTTP reverse proxies
+  discoverable without silently downgrading an HTTPS or scheme-less input.
 - `CONN-008` Only a successful provider API request MAY replace the endpoint
   hint with a canonical endpoint. An open port, TLS handshake, HTTP response,
   or failed authentication alone is not discovery success.
@@ -204,6 +212,28 @@ TLS policy. It does not own monitoring-state presentation or notifications.
   canonicalizing it to `statusjson.cgi`. A hint without a scheme MUST try HTTPS
   only, except loopback development hosts. Plain HTTP otherwise requires an
   explicit scheme.
+- `CONN-013` When an SSH port override equals the explicit or protocol-default
+  monitoring API port and cannot establish SSH, source connection testing MUST
+  retry the standard SSH port 22. It MUST NOT replace a distinct custom SSH port.
+- `CONN-014` An API endpoint on the monitoring host's explicit loopback address
+  MUST use an SSH local forward. A SOCKS route MUST remain the default for other
+  API hosts. The local forward MUST preserve the endpoint host and use the
+  preferred local port or the next available port.
+- `CONN-015` Direct, SOCKS, and SSH local-forward routes MUST preserve the
+  source's provider authentication, server-trust policy, trusted certificate,
+  and client identity. Route selection MUST NOT weaken or replace them.
+- `CONN-016` Disabled server-certificate verification MUST accept every server
+  certificate presented through any route, including an unknown issuer,
+  hostname mismatch, invalid validity period, or unsuitable key usage. It MUST
+  still report failures that are not certificate validation, including a
+  missing TLS server, protocol mismatch, interrupted handshake, or rejected
+  client certificate.
+- `CONN-017` The executable integration matrix MUST cover direct, SOCKS, and
+  SSH local-forward routes; HTTP and HTTPS; Basic, API-key, and client-identity
+  credentials; default and explicit endpoint ports; default, colliding, and
+  custom SSH ports; automatic and preferred local ports; every trust mode; and
+  every public connection result. Real TLS and OpenSSH boundaries MUST verify
+  the security-sensitive route and trust conjunctions.
 
 ### Navigation
 
@@ -252,6 +282,6 @@ TLS policy. It does not own monitoring-state presentation or notifications.
 | AUTH-001, AUTH-007..009 | `KeychainPasswordVault` and API-key providers | Temporary real-Keychain tests prove independent Basic-password and API-key storage, replacement, lookup, and cleanup; real Thruk and Checkmk tests prove reads, commands, wrong-secret rejection, and provider-specific action availability |
 | AUTH-002, AUTH-004 | Keychain identity catalog and connection test | Real PKCS#12 import, persistent-reference resolution, accepted and rejected live Icinga mTLS, and exact cleanup |
 | AUTH-003, AUTH-005..006 | source setup journey | Password availability uses only non-secret ownership metadata; a real foreign legacy Keychain item is rejected without reading its secret; background password and exact-identity reads use a non-interactive authentication context; broad identity searches silently skip protected items; isolated Keychain tests prove prompt-free failure for a protected legacy-ACL private key and success for a trusted key; missing identities fail explicitly; approve, deny, and recovery remain signed-app acceptance checks |
-| TLS-001..006 | connection test and source lifecycle | Default, source-specific private CA, exact leaf pinning, and unchecked trust implemented; the live matrix accepts the configured CA and exact leaf, rejects an unrelated CA, mismatched leaf, and exact leaf under the wrong hostname; Apple trust evaluation preserves certificate validity policy; authority changes reset custom trust; real Keychain tests cover ownership-aware CA cleanup after the final source reference; pin replacement remains an explicit user action |
-| CONN-001..012 | connection test | Real containerized Icinga 2 Basic and mTLS success, real OMD/Thruk Basic and API-key success, real Checkmk API-key success, source-built Nagios Core Basic-auth and CGI success, distinct authentication, authorization, and trust failures, unit coverage for direct-first routing and independent settings status, plus running-UI cancellation evidence |
+| TLS-001..007 | connection test and source lifecycle | Default, source-specific private CA, exact leaf pinning, and unchecked trust implemented; packaged direct and Store apps retain the runtime ATS exception required for dynamic endpoints; the running direct app reads real Icinga hosts and services through an unchecked private certificate; the live matrix accepts the configured CA and exact leaf, rejects an unrelated CA, mismatched leaf, and exact leaf under the wrong hostname; Apple trust evaluation preserves certificate validity policy; authority changes reset custom trust; real Keychain tests cover ownership-aware CA cleanup after the final source reference; pin replacement remains an explicit user action |
+| CONN-001..012 | connection test | Real containerized Icinga 2 Basic and mTLS success, a real local plain-HTTP transport boundary, real OMD/Thruk Basic and API-key success, real Checkmk API-key success, source-built Nagios Core Basic-auth and CGI success, distinct authentication, authorization, and trust failures, unit coverage for direct-first routing and independent settings status, plus running-UI cancellation evidence |
 | NAV-001..005 | issue row and source settings | Core tests cover classic and Icinga DB Web host/service links plus escaped SSH/RDP URLs; app tests cover source-wide SSH persistence, safe OpenSSH commands, direct opening, row clicks, and source-owned cleanup; real OpenSSH integration tests verify HTTP forwarding and an Icinga API request through SOCKS5 before closing owned ports |

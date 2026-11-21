@@ -1,4 +1,5 @@
 import Foundation
+import Security
 import XCTest
 @testable import IssueLightCore
 
@@ -62,6 +63,30 @@ final class ProviderInfrastructureTests: XCTestCase {
 
         XCTAssertTrue(original.proxyConfigurations.isEmpty)
         XCTAssertEqual(routed.proxyConfigurations.count, 1)
+    }
+
+    func testSOCKSRoutingPreservesAPIKeyAndTrustedServerCertificate() throws {
+        let certificateURL = try XCTUnwrap(
+            Bundle.module.url(
+                forResource: "issuelight-test-root",
+                withExtension: "crt",
+                subdirectory: "Fixtures"
+            )
+        )
+        let certificate = try ServerCertificateFingerprint.certificate(at: certificateURL)
+
+        let access = ProviderAccess(
+            credential: .apiKey("secret-key"),
+            trustedServerCertificate: certificate
+        ).routingThroughSOCKS(port: 4_218)
+
+        guard case .apiKey(let apiKey) = access.credential else {
+            return XCTFail("Expected API-key access to remain unchanged")
+        }
+        XCTAssertEqual(apiKey, "secret-key")
+        XCTAssertEqual(access.socksProxy, ProviderSOCKSProxy(port: 4_218))
+        let routedCertificate = try XCTUnwrap(access.trustedServerCertificate)
+        XCTAssertTrue(CFEqual(routedCertificate, certificate))
     }
 
     func testSessionRoutingIgnoresMissingAndInvalidSOCKSPorts() {

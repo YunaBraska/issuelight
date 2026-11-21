@@ -31,6 +31,7 @@
 		35156CCD4E9DF655560EAE89 /* LocalizationCatalogTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4B3515E72AB361E1828C443 /* LocalizationCatalogTests.swift */; };
 		3B697920252CDC321476EDE8 /* IssueLightCore in Frameworks */ = {isa = PBXBuildFile; productRef = DC7D45D252B87DCC417AA92F /* IssueLightCore */; };
 		3C4D6A55A2AC322344F797F8 /* IssueNotificationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9362146CB6CA68CABEFDA96E /* IssueNotificationTests.swift */; };
+		3F7B1C2D4E5F60718293A4B5 /* ConnectionRoutingMatrixTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E6A0B1C3D4E5F60718293A4 /* ConnectionRoutingMatrixTests.swift */; };
 		3FA95B80B258AD7B0BE55EC8 /* SourceSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91EE3ED68B171A6AE0F289E8 /* SourceSetupView.swift */; };
 		44A25CC4EDE9DC060EA250A5 /* ExternalActionCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97C6E00A2AD6D8AD6E1AF5CC /* ExternalActionCoordinator.swift */; };
 		463FB2C2555A5007E1EE3618 /* AppUpdateController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B97F335B12E0E1191A755D4B /* AppUpdateController.swift */; };
@@ -90,6 +91,7 @@
 		18E60BF16AEA857551A17BA1 /* AppLanguage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLanguage.swift; sourceTree = "<group>"; };
 		1B9C6A87B0F7798160330A47 /* IssueLightModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IssueLightModelTests.swift; sourceTree = "<group>"; };
 		1C616C33DB6BD5AED6F10556 /* IssueCountTextTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IssueCountTextTests.swift; sourceTree = "<group>"; };
+		2E6A0B1C3D4E5F60718293A4 /* ConnectionRoutingMatrixTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionRoutingMatrixTests.swift; sourceTree = "<group>"; };
 		24C5EB5D516BD2213CFB90BE /* IssueLight-AppStore.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "IssueLight-AppStore.entitlements"; sourceTree = "<group>"; };
 		337DF16D9B06F76D63B81E9A /* AppLanguageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLanguageTests.swift; sourceTree = "<group>"; };
 		3431970B83ED36AE4011D43C /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
@@ -159,6 +161,7 @@
 			isa = PBXGroup;
 			children = (
 				337DF16D9B06F76D63B81E9A /* AppLanguageTests.swift */,
+				2E6A0B1C3D4E5F60718293A4 /* ConnectionRoutingMatrixTests.swift */,
 				DDED0A17E2827B7F6258D479 /* ExternalActionCoordinatorTests.swift */,
 				1C616C33DB6BD5AED6F10556 /* IssueCountTextTests.swift */,
 				1B9C6A87B0F7798160330A47 /* IssueLightModelTests.swift */,
@@ -443,6 +446,7 @@
 				2AAC1E22CBD705C679CDBFB4 /* AppDistribution.swift in Sources */,
 				C84E4FC7353CAD3122FC446A /* AppLanguage.swift in Sources */,
 				A651D26274C272318418FBC0 /* AppLanguageTests.swift in Sources */,
+				3F7B1C2D4E5F60718293A4B5 /* ConnectionRoutingMatrixTests.swift in Sources */,
 				FEF45AAA6FF5D8A762337D16 /* AppUpdateController.swift in Sources */,
 				EF11DDA9984A8622E2A4DBE2 /* ExternalActionCoordinator.swift in Sources */,
 				70B663DEDAF6DDD5FEEBFFF5 /* ExternalActionCoordinatorTests.swift in Sources */,
@@ -589,7 +593,8 @@
 				DEVELOPMENT_TEAM = "";
 				ENABLE_CODE_COVERAGE = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
-				GENERATE_INFOPLIST_FILE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "Resources/IssueLight-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = IssueLight;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_LSUIElement = YES;
@@ -674,7 +679,8 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = YES;
-				GENERATE_INFOPLIST_FILE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "Resources/IssueLight-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = IssueLight;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_LSUIElement = YES;
@@ -721,7 +727,8 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = YES;
-				GENERATE_INFOPLIST_FILE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "Resources/IssueLightAppStore-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = IssueLight;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_LSUIElement = YES;
@@ -753,7 +760,8 @@
 				DEVELOPMENT_TEAM = "";
 				ENABLE_CODE_COVERAGE = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
-				GENERATE_INFOPLIST_FILE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "Resources/IssueLightAppStore-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = IssueLight;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_LSUIElement = YES;

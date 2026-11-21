@@ -158,7 +158,9 @@ if test -n "$update_public_key"; then
 fi
 
 if test "$identity" = -; then
-    codesign --force --sign - --options runtime --timestamp=none "$app_path"
+    # Hardened Runtime library validation requires a real signing team. Keeping
+    # it on an ad-hoc app makes dyld reject the embedded Sparkle framework.
+    codesign --force --sign - --timestamp=none "$app_path"
 else
     framework_directory="$app_path/Contents/Frameworks"
     if test -d "$framework_directory"; then

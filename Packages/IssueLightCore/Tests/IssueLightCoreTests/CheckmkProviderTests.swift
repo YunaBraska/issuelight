@@ -104,7 +104,7 @@ final class CheckmkProviderTests: XCTestCase {
             let body: String
             switch request.url?.path {
             case "/cmk/check_mk/api/v1/version":
-                body = #"{"site":"cmk","rest_api":{"revision":"1.0.0"},"versions":{"checkmk":"2.5.0"},"edition":"raw","demo":false}"#
+                body = #"{"site":"cmk","rest_api":{"revision":"1.0.0"},"versions":{"apache":[2,4,52],"checkmk":"2.5.0","python":"3.13"},"edition":"raw","demo":false}"#
             default:
                 body = #"{"links":[],"id":"all","domainType":"host","title":"All","value":[]}"#
             }

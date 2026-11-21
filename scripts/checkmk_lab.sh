@@ -84,6 +84,13 @@ wait_for_api() {
   exit 1
 }
 
+disable_host_check() {
+  # shellcheck disable=SC2016 # Expand the timestamp inside the container.
+  docker_command exec --user cmk "$container_name" bash -lc \
+    'now=$(date +%s); printf "COMMAND [%s] DISABLE_HOST_CHECK;issuelight-live\n" "$now" | lq' \
+    >/dev/null
+}
+
 set_problem_state() {
   # shellcheck disable=SC2016 # Expand the timestamp inside the container.
   docker_command exec --user cmk "$container_name" bash -lc \
@@ -130,6 +137,8 @@ start_lab() {
     '{"host_name":"issuelight-live","folder":"/","attributes":{"alias":"IssueLight live lab","ipaddress":"192.0.2.1","tag_agent":"no-agent","tag_snmp_ds":"no-snmp"}}' \
     "$endpoint/domain-types/host_config/collections/all" >/dev/null
   docker_command exec --user cmk "$container_name" bash -lc 'cmk -R' >/dev/null
+  disable_host_check
+  sleep 5
   set_problem_state
   wait_for_problem
 }

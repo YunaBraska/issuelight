@@ -17,10 +17,23 @@ targetTemplates:
   IssueLightApplication:
     type: application
     platform: macOS
+    info:
+      path: Resources/${target_name}-Info.plist
+      properties:
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        CFBundleDisplayName: IssueLight
+        LSApplicationCategoryType: public.app-category.utilities
+        LSUIElement: true
+        NSHumanReadableCopyright: Copyright © 2026 Yuna Morgenstern and IssueLight contributors.
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: true
     sources:
       - Sources
       - path: Resources
         excludes:
+          - IssueLight-Info.plist
+          - IssueLightAppStore-Info.plist
           - Sparkle-LICENSE.txt
     settings:
       base:
@@ -35,7 +48,7 @@ targetTemplates:
         CODE_SIGN_STYLE: Manual
         DEVELOPMENT_TEAM: ""
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-        GENERATE_INFOPLIST_FILE: YES
+        GENERATE_INFOPLIST_FILE: NO
         INFOPLIST_KEY_CFBundleDisplayName: IssueLight
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.utilities
         INFOPLIST_KEY_LSUIElement: YES
