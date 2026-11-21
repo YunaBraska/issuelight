@@ -6,26 +6,21 @@ import XCTest
 final class ConnectionRoutingMatrixTests: XCTestCase {
     func testDirectAPIRoutingMatrixAcrossProvidersSchemesSuccessAndEveryFailure() async throws {
         let executable = fixture("fake-ssh-listener.sh")
-        let providerIDs = [
-            Icinga2Provider.id,
-            CheckmkProvider.id,
-            ThrukProvider.id,
-            NagiosCoreProvider.id,
-        ]
         let outcomes = [("connected", ConnectionTestResult.connected)] + failureOutcomes
+        var executedScenarios = 0
 
-        for providerID in providerIDs {
+        for provider in providerScenarios {
             for scheme in ["http", "https"] {
                 for (outcomeName, directOutcome) in outcomes {
                     let manager = SSHTunnelManager(executableURL: executable)
                     let coordinator = AutomaticConnectionCoordinator(tunnelManager: manager)
-                    let source = source(providerID: providerID, scheme: scheme)
+                    let source = source(provider: provider, scheme: scheme, target: .remote)
                     var usedProxy: [Bool] = []
 
                     let (result, path): (ConnectionTestResult, AutomaticConnectionPath) = await coordinator
                         .performUsingBestAPIPath(
                             source: source,
-                            access: ProviderAccess(credential: .password("test-only")),
+                            access: provider.access,
                             operation: { _, access in
                                 let isProxied = access.socksProxy != nil
                                 usedProxy.append(isProxied)
@@ -34,7 +29,7 @@ final class ConnectionRoutingMatrixTests: XCTestCase {
                             requiresAlternativeNetworkPath: needsAlternativePath
                         )
 
-                    let label = "\(providerID.rawValue) \(scheme) \(outcomeName)"
+                    let label = "\(provider.label) \(scheme) \(outcomeName)"
                     if needsAlternativePath(directOutcome) {
                         XCTAssertEqual(result, .connected, label)
                         XCTAssertEqual(path, .ssh, label)
@@ -45,47 +40,149 @@ final class ConnectionRoutingMatrixTests: XCTestCase {
                         XCTAssertEqual(usedProxy, [false], label)
                     }
                     coordinator.stop(sourceID: source.id)
+                    executedScenarios += 1
                 }
             }
         }
+        XCTAssertEqual(executedScenarios, providerScenarios.count * 2 * outcomes.count)
     }
 
-    func testProxiedAPIResultMatrixPreservesEverySuccessAndFailure() async throws {
+    func testRoutedAPIResultMatrixAcrossProvidersSchemesTargetsAndEveryOutcome() async throws {
         let executable = fixture("fake-ssh-listener.sh")
         let outcomes = [("connected", ConnectionTestResult.connected)] + failureOutcomes
+        var executedScenarios = 0
 
-        for (outcomeName, proxiedOutcome) in outcomes {
-            let manager = SSHTunnelManager(executableURL: executable)
-            let coordinator = AutomaticConnectionCoordinator(tunnelManager: manager)
-            let source = source(providerID: Icinga2Provider.id, scheme: "https")
-            var usedProxy: [Bool] = []
+        for provider in providerScenarios {
+            for scheme in ["http", "https"] {
+                for target in EndpointTarget.allCases {
+                    for (outcomeName, routedOutcome) in outcomes {
+                        let manager = SSHTunnelManager(executableURL: executable)
+                        let coordinator = AutomaticConnectionCoordinator(tunnelManager: manager)
+                        let source = source(provider: provider, scheme: scheme, target: target)
+                        var attempts: [(MonitoringSource, ProviderAccess)] = []
 
-            let (result, path): (ConnectionTestResult, AutomaticConnectionPath) = await coordinator
-                .performUsingBestAPIPath(
-                    source: source,
-                    access: ProviderAccess(credential: .password("test-only")),
-                    operation: { _, access in
-                        let isProxied = access.socksProxy != nil
-                        usedProxy.append(isProxied)
-                        return isProxied ? proxiedOutcome : .failed(.unreachable)
-                    },
-                    requiresAlternativeNetworkPath: needsAlternativePath
-                )
+                        let (result, path): (ConnectionTestResult, AutomaticConnectionPath) = await coordinator
+                            .performUsingBestAPIPath(
+                                source: source,
+                                access: provider.access,
+                                operation: { routedSource, access in
+                                    attempts.append((routedSource, access))
+                                    return attempts.count == 1 ? .failed(.unreachable) : routedOutcome
+                                },
+                                requiresAlternativeNetworkPath: needsAlternativePath
+                            )
 
-            XCTAssertEqual(result, proxiedOutcome, outcomeName)
-            XCTAssertEqual(usedProxy, [false, true], outcomeName)
-            if needsAlternativePath(proxiedOutcome) {
-                guard case .unavailable(let message) = path else {
-                    coordinator.stop(sourceID: source.id)
-                    XCTFail("Repeated network failure must make the route unavailable: \(outcomeName)")
-                    continue
+                        let label = "\(provider.label) \(scheme) \(target) \(outcomeName)"
+                        XCTAssertEqual(result, routedOutcome, label)
+                        XCTAssertEqual(attempts.count, 2, label)
+                        XCTAssertEqual(attempts[0].0, source, label)
+                        XCTAssertNil(attempts[0].1.socksProxy, label)
+                        XCTAssertEqual(attempts[1].0.serverTrust, source.serverTrust, label)
+                        XCTAssertEqual(attempts[1].0.authentication, source.authentication, label)
+                        provider.assertCredential(attempts[1].1, label: label)
+                        switch target {
+                        case .remote:
+                            XCTAssertEqual(attempts[1].0.endpoint, source.endpoint, label)
+                            XCTAssertNotNil(attempts[1].1.socksProxy, label)
+                        case .ipv4Loopback, .localhost:
+                            XCTAssertEqual(attempts[1].0.endpoint.host, source.endpoint.host, label)
+                            XCTAssertNotEqual(attempts[1].0.endpoint.port, source.endpoint.port, label)
+                            XCTAssertNil(attempts[1].1.socksProxy, label)
+                        }
+
+                        if needsAlternativePath(routedOutcome) {
+                            guard case .unavailable(let message) = path else {
+                                coordinator.stop(sourceID: source.id)
+                                XCTFail("Repeated network failure must make the route unavailable: \(label)")
+                                continue
+                            }
+                            XCTAssertTrue(message.contains("API connection still failed"), label)
+                        } else {
+                            XCTAssertEqual(path, .ssh, label)
+                        }
+                        coordinator.stop(sourceID: source.id)
+                        executedScenarios += 1
+                    }
                 }
-                XCTAssertTrue(message.contains("API connection still failed"), outcomeName)
-            } else {
-                XCTAssertEqual(path, .ssh, outcomeName)
             }
-            coordinator.stop(sourceID: source.id)
         }
+        XCTAssertEqual(
+            executedScenarios,
+            providerScenarios.count * 2 * EndpointTarget.allCases.count * outcomes.count
+        )
+    }
+
+    func testEveryRoutePreservesProviderAuthenticationAndTrustPolicy() throws {
+        var executedScenarios = 0
+
+        for provider in providerScenarios {
+            for scheme in ["http", "https"] {
+                for explicitEndpointPort in [nil, 5_665] as [Int?] {
+                    for target in EndpointTarget.allCases {
+                        for trust in trustConfigurations {
+                            for sshPort in [22, 2_222, explicitEndpointPort ?? (scheme == "http" ? 80 : 443)] {
+                                for preferredLocalPort in [nil, 49_152] as [Int?] {
+                                    let source = source(
+                                        provider: provider,
+                                        scheme: scheme,
+                                        target: target,
+                                        trust: trust,
+                                        explicitPort: explicitEndpointPort,
+                                        sshPort: sshPort,
+                                        preferredLocalPort: preferredLocalPort
+                                    )
+                                    let configuration = try XCTUnwrap(source.sshTunnel)
+                                    let route: ActiveAPIConnectionRoute = target == .remote
+                                        ? .socks(port: 49_153, configuration: configuration)
+                                        : .localForward(
+                                            port: 49_153,
+                                            targetHost: source.endpoint.host!,
+                                            targetPort: source.endpoint.effectiveHTTPPort!,
+                                            configuration: configuration
+                                        )
+                                    let (routedSource, routedAccess) = route.routing(
+                                        source: source,
+                                        access: provider.access
+                                    )
+                                    let label = "\(provider.label) \(scheme) port=\(explicitEndpointPort.map(String.init) ?? "default") \(target) \(trust) ssh=\(sshPort) local=\(preferredLocalPort.map(String.init) ?? "automatic")"
+
+                                    XCTAssertTrue(route.matches(source: source, configuration: configuration), label)
+                                    XCTAssertEqual(routedSource.id, source.id, label)
+                                    XCTAssertEqual(routedSource.providerID, source.providerID, label)
+                                    XCTAssertEqual(routedSource.authentication, source.authentication, label)
+                                    XCTAssertEqual(routedSource.serverTrust, trust, label)
+                                    provider.assertCredential(routedAccess, label: label)
+                                    if target == .remote {
+                                        XCTAssertEqual(routedSource.endpoint, source.endpoint, label)
+                                        XCTAssertEqual(
+                                            routedAccess.socksProxy,
+                                            ProviderSOCKSProxy(port: 49_153),
+                                            label
+                                        )
+                                    } else {
+                                        XCTAssertEqual(routedSource.endpoint.scheme, source.endpoint.scheme, label)
+                                        XCTAssertEqual(routedSource.endpoint.host, source.endpoint.host, label)
+                                        XCTAssertEqual(routedSource.endpoint.port, 49_153, label)
+                                        XCTAssertNil(routedAccess.socksProxy, label)
+                                    }
+                                    executedScenarios += 1
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        XCTAssertEqual(
+            executedScenarios,
+            providerScenarios.count
+                * 2
+                * 2
+                * EndpointTarget.allCases.count
+                * trustConfigurations.count
+                * 3
+                * 2
+        )
     }
 
     func testCachedSSHFailureRecoversDirectlyAndClearsTheCachedRoute() async throws {
@@ -143,60 +240,6 @@ final class ConnectionRoutingMatrixTests: XCTestCase {
         XCTAssertEqual(stablePath, .direct)
         XCTAssertEqual(usedProxy, [false])
         coordinator.stop(sourceID: source.id)
-    }
-
-    func testRemoteLoopbackAPIsUseLocalForwardAcrossProvidersSchemesAndNetworkFailures() async throws {
-        let executable = fixture("fake-ssh-listener.sh")
-        let providerIDs = [
-            Icinga2Provider.id,
-            CheckmkProvider.id,
-            ThrukProvider.id,
-            NagiosCoreProvider.id,
-        ]
-        let failures = [ConnectionFailure.unreachable, .tls]
-
-        for providerID in providerIDs {
-            for scheme in ["http", "https"] {
-                for host in ["127.0.0.1", "localhost"] {
-                    for failure in failures {
-                        let manager = SSHTunnelManager(executableURL: executable)
-                        let coordinator = AutomaticConnectionCoordinator(tunnelManager: manager)
-                        let source = MonitoringSource(
-                            name: "Remote loopback",
-                            providerID: providerID,
-                            endpoint: URL(string: "\(scheme)://\(host):45555")!,
-                            authentication: .basic(username: "operator"),
-                            sshTunnel: SSHTunnelConfiguration(
-                                bastionHost: "bastion.example.test",
-                                username: "operator",
-                                preferredLocalPort: 45_555
-                            )
-                        )
-                        var attempts: [(URL, ProviderSOCKSProxy?)] = []
-
-                        let (result, path): (ConnectionTestResult, AutomaticConnectionPath) = await coordinator
-                            .performUsingBestAPIPath(
-                                source: source,
-                                access: ProviderAccess(credential: .password("test-only")),
-                                operation: { routedSource, access in
-                                    attempts.append((routedSource.endpoint, access.socksProxy))
-                                    return attempts.count == 1 ? .failed(failure) : .connected
-                                },
-                                requiresAlternativeNetworkPath: needsAlternativePath
-                            )
-
-                        let label = "\(providerID.rawValue) \(scheme) \(host) \(failure)"
-                        XCTAssertEqual(result, .connected, label)
-                        XCTAssertEqual(path, .ssh, label)
-                        XCTAssertEqual(attempts.count, 2, label)
-                        XCTAssertNil(attempts[0].1, label)
-                        XCTAssertNil(attempts[1].1, "Loopback must use a local forward, not SOCKS: \(label)")
-                        XCTAssertEqual(attempts[1].0.host, host, label)
-                        coordinator.stop(sourceID: source.id)
-                    }
-                }
-            }
-        }
     }
 
     func testWebRoutingMatrixAcrossProvidersSchemesAndReachabilityStates() async throws {
@@ -353,6 +396,75 @@ final class ConnectionRoutingMatrixTests: XCTestCase {
             .appendingPathComponent("Fixtures/\(name)")
     }
 
+    private var providerScenarios: [ProviderScenario] {
+        [
+            ProviderScenario(
+                label: "icinga2-basic",
+                providerID: Icinga2Provider.id,
+                authentication: .basic(username: "operator"),
+                credential: .password("icinga-password")
+            ),
+            ProviderScenario(
+                label: "checkmk-api-key",
+                providerID: CheckmkProvider.id,
+                authentication: .apiKey(username: "automation"),
+                credential: .apiKey("checkmk-secret")
+            ),
+            ProviderScenario(
+                label: "thruk-basic",
+                providerID: ThrukProvider.id,
+                authentication: .basic(username: "operator"),
+                credential: .password("thruk-password")
+            ),
+            ProviderScenario(
+                label: "thruk-api-key",
+                providerID: ThrukProvider.id,
+                authentication: .apiKey(username: "automation"),
+                credential: .apiKey("thruk-secret")
+            ),
+            ProviderScenario(
+                label: "nagios-basic",
+                providerID: NagiosCoreProvider.id,
+                authentication: .basic(username: "operator"),
+                credential: .password("nagios-password")
+            ),
+        ]
+    }
+
+    private var trustConfigurations: [ServerTrustConfiguration] {
+        [
+            .system,
+            .customCertificate(certificateID: "matrix-private-ca"),
+            .pinnedCertificate(sha256: String(repeating: "AA", count: 32)),
+            .disabled,
+        ]
+    }
+
+    private func source(
+        provider: ProviderScenario,
+        scheme: String,
+        target: EndpointTarget,
+        trust: ServerTrustConfiguration = .disabled,
+        explicitPort: Int? = 8_443,
+        sshPort: Int = 22,
+        preferredLocalPort: Int? = 49_152
+    ) -> MonitoringSource {
+        let portText = explicitPort.map { ":\($0)" } ?? ""
+        return MonitoringSource(
+            name: "Matrix",
+            providerID: provider.providerID,
+            endpoint: URL(string: "\(scheme)://\(target.host(for: provider.providerID))\(portText)")!,
+            authentication: provider.authentication,
+            serverTrust: trust,
+            sshTunnel: SSHTunnelConfiguration(
+                bastionHost: "bastion.example.test",
+                username: "operator",
+                port: sshPort,
+                preferredLocalPort: preferredLocalPort
+            )
+        )
+    }
+
     private func source(providerID: ProviderID, scheme: String) -> MonitoringSource {
         MonitoringSource(
             name: "Matrix",
@@ -364,5 +476,60 @@ final class ConnectionRoutingMatrixTests: XCTestCase {
                 username: "operator"
             )
         )
+    }
+}
+
+private enum EndpointTarget: CaseIterable, Equatable {
+    case remote
+    case ipv4Loopback
+    case localhost
+
+    func host(for providerID: ProviderID) -> String {
+        switch self {
+        case .remote:
+            return "\(providerID.rawValue).example.test"
+        case .ipv4Loopback:
+            return "127.0.0.1"
+        case .localhost:
+            return "localhost"
+        }
+    }
+}
+
+private struct ProviderScenario {
+    let label: String
+    let providerID: ProviderID
+    let authentication: AuthenticationConfiguration
+    let credential: TestCredential
+
+    var access: ProviderAccess {
+        ProviderAccess(credential: credential.providerCredential)
+    }
+
+    func assertCredential(_ access: ProviderAccess, label: String) {
+        credential.assert(access.credential, label: label)
+    }
+}
+
+private enum TestCredential {
+    case password(String)
+    case apiKey(String)
+
+    var providerCredential: ProviderCredential {
+        switch self {
+        case .password(let value): return .password(value)
+        case .apiKey(let value): return .apiKey(value)
+        }
+    }
+
+    func assert(_ credential: ProviderCredential, label: String) {
+        switch (self, credential) {
+        case (.password(let expected), .password(let actual)):
+            XCTAssertEqual(actual, expected, label)
+        case (.apiKey(let expected), .apiKey(let actual)):
+            XCTAssertEqual(actual, expected, label)
+        default:
+            XCTFail("Credential kind changed while routing: \(label)")
+        }
     }
 }

@@ -121,7 +121,7 @@ public struct CheckmkProvider: MonitoringProvider {
             )
             guard let version = try? JSONDecoder().decode(CheckmkVersion.self, from: versionData),
                   !version.site.isEmpty,
-                  version.versions["checkmk"]?.isEmpty == false else {
+                  !version.versions.checkmk.isEmpty else {
                 return .failed(.incompatibleResponse)
             }
             for (objectType, columns) in [
@@ -365,8 +365,12 @@ struct CheckmkCommand {
 }
 
 struct CheckmkVersion: Decodable {
+    struct Versions: Decodable {
+        let checkmk: String
+    }
+
     let site: String
-    let versions: [String: String]
+    let versions: Versions
 }
 
 struct CheckmkProblem: Decodable {

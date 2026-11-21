@@ -163,6 +163,8 @@ TLS policy. It does not own monitoring-state presentation or notifications.
 - `TLS-007` Every distributed app MUST permit the selected source trust policy
   to reach the URL loading system. Packaging MUST NOT silently replace custom,
   pinned, or explicitly unchecked trust with App Transport Security defaults.
+- `TLS-008` Server-trust settings MUST affect HTTPS only. A plain HTTP source
+  MUST NOT require or evaluate a CA, certificate pin, or server certificate.
 
 ### Connection result
 
@@ -217,6 +219,21 @@ TLS policy. It does not own monitoring-state presentation or notifications.
   MUST use an SSH local forward. A SOCKS route MUST remain the default for other
   API hosts. The local forward MUST preserve the endpoint host and use the
   preferred local port or the next available port.
+- `CONN-015` Direct, SOCKS, and SSH local-forward routes MUST preserve the
+  source's provider authentication, server-trust policy, trusted certificate,
+  and client identity. Route selection MUST NOT weaken or replace them.
+- `CONN-016` Disabled server-certificate verification MUST accept every server
+  certificate presented through any route, including an unknown issuer,
+  hostname mismatch, invalid validity period, or unsuitable key usage. It MUST
+  still report failures that are not certificate validation, including a
+  missing TLS server, protocol mismatch, interrupted handshake, or rejected
+  client certificate.
+- `CONN-017` The executable integration matrix MUST cover direct, SOCKS, and
+  SSH local-forward routes; HTTP and HTTPS; Basic, API-key, and client-identity
+  credentials; default and explicit endpoint ports; default, colliding, and
+  custom SSH ports; automatic and preferred local ports; every trust mode; and
+  every public connection result. Real TLS and OpenSSH boundaries MUST verify
+  the security-sensitive route and trust conjunctions.
 
 ### Navigation
 

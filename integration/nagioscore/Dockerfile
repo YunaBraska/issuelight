@@ -1,4 +1,4 @@
-FROM debian@sha256:734a72b3d6142a71993b4bc580ca01d8ca687f77a2c422d96a961d3376b179bc AS build
+FROM debian@sha256:268fb24c39bca92d326dd83ea3abebe4a3f7751c804ffef23bb6d857dd343ff8 AS build
 
 ARG NAGIOS_VERSION=4.5.14
 ARG NAGIOS_SHA256=dce59f306577789c56d2748471d4c3856ecba8572d6b0811cf79f9de2f9afabb
@@ -32,7 +32,7 @@ RUN curl --fail --location --silent --show-error \
     && make --jobs="$(getconf _NPROCESSORS_ONLN)" all \
     && make install
 
-FROM debian@sha256:734a72b3d6142a71993b4bc580ca01d8ca687f77a2c422d96a961d3376b179bc
+FROM debian@sha256:268fb24c39bca92d326dd83ea3abebe4a3f7751c804ffef23bb6d857dd343ff8
 
 RUN apt-get update \
     && apt-get install --yes --no-install-recommends \

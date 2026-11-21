@@ -120,6 +120,25 @@ final class ProviderTransportBoundaryTests: XCTestCase {
         XCTAssertEqual(result, .connected)
     }
 
+    func testPlainHTTPDoesNotRequireATLSCertificateForACustomTrustSetting() async throws {
+        let server = try PlainHTTPTestServer(body: Data(#"{"results":[]}"#.utf8))
+        defer { server.stop() }
+        let source = MonitoringSource(
+            name: "HTTP ignores TLS trust",
+            providerID: Icinga2Provider.id,
+            endpoint: URL(string: "http://127.0.0.1:\(server.port)")!,
+            authentication: .basic(username: "fixture"),
+            serverTrust: .customCertificate(certificateID: "unused-over-http")
+        )
+
+        let result = await Icinga2Provider().testConnection(
+            to: source,
+            access: ProviderAccess(credential: .password("test-only"))
+        )
+
+        XCTAssertEqual(result, .connected)
+    }
+
     func testRequiredClientCertificateIsReportedSeparately() async throws {
         let fixtures = try Self.fixtureResult.get()
         let server = try OpenSSLTestServer(

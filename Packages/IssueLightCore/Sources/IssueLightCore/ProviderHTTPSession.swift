@@ -35,7 +35,8 @@ final class ProviderHTTPSession {
         guard let authority = ProviderHTTPAuthority(url: source.endpoint) else {
             throw ProviderHTTPError.failure(.invalidConfiguration([.missingHost]))
         }
-        if case .customCertificate = source.serverTrust,
+        if source.endpoint.scheme?.lowercased() == "https",
+           case .customCertificate = source.serverTrust,
            trustedServerCertificate == nil {
             throw ProviderHTTPError.failure(.serverCertificateNotAvailable)
         }

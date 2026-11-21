@@ -20,11 +20,12 @@ fixture needs no browser password. Never reuse that gateway configuration for
 a deployed Icinga Web instance.
 
 The same Compose project includes an isolated OpenSSH gateway on
-`127.0.0.1:2222`. Its key-only account may forward only to the fixture's local
-HTTP endpoint. The live app test uses the real macOS OpenSSH client, verifies
-the forwarded response, reuses one process for concurrent opens, disables the
-source, and confirms that the owned local port closes. Host-key checking
-remains strict through a generated, isolated `known_hosts` file.
+`127.0.0.1:2222`. Its key-only account may forward only to the fixture's HTTP
+and Icinga API endpoints. The live app tests use the real macOS OpenSSH client,
+verify successful HTTP and HTTPS APIs through SOCKS and loopback forwards,
+cover every server-trust mode plus mTLS, and confirm that disabling a source
+closes its owned port. Host-key checking remains strict through a generated,
+isolated `known_hosts` file.
 
 The Compose project name is fixed to `issuelight-icinga2` so old monitoring
 labs cannot leak objects or volumes into this fixture. The image's sample host

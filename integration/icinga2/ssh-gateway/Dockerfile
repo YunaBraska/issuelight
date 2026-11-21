@@ -12,7 +12,7 @@ RUN apk add --no-cache darkhttpd openssh-server socat \
         'KbdInteractiveAuthentication no' \
         'PermitRootLogin no' \
         'GatewayPorts no' \
-        'PermitOpen 127.0.0.1:8080 127.0.0.1:5665 icinga2:5665' \
+        'PermitOpen 127.0.0.1:8080 127.0.0.1:5665 127.0.0.1:25666 127.0.0.1:28081 localhost:8080 localhost:25666 localhost:28081 icinga2:5665 web-gateway:8081 ssh-gateway:8080' \
         >> /etc/ssh/sshd_config
 
 COPY entrypoint.sh /usr/local/bin/issuelight-ssh-entrypoint

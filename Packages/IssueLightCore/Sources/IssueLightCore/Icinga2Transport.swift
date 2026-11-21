@@ -168,6 +168,7 @@ final class Icinga2Transport {
         guard issues.isEmpty else {
             throw Icinga2TransportError.failure(.invalidConfiguration(issues))
         }
+        guard source.endpoint.scheme?.lowercased() == "https" else { return }
         switch source.serverTrust {
         case .system, .disabled:
             return
