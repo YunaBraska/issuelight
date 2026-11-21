@@ -1,6 +1,6 @@
 FROM alpine:3.22@sha256:49340b346798875b5592e5d420241f2f9cfba5f47e62ebb1446a1b34734e898f
 
-RUN apk add --no-cache darkhttpd openssh-server \
+RUN apk add --no-cache darkhttpd openssh-server socat \
     && adduser -D -s /bin/sh operator \
     && printf '%s\n' 'operator:disabled-password' | chpasswd \
     && ssh-keygen -A \
@@ -12,7 +12,7 @@ RUN apk add --no-cache darkhttpd openssh-server \
         'KbdInteractiveAuthentication no' \
         'PermitRootLogin no' \
         'GatewayPorts no' \
-        'PermitOpen 127.0.0.1:8080 icinga2:5665' \
+        'PermitOpen 127.0.0.1:8080 127.0.0.1:5665 icinga2:5665' \
         >> /etc/ssh/sshd_config
 
 COPY entrypoint.sh /usr/local/bin/issuelight-ssh-entrypoint

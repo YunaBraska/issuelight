@@ -135,7 +135,7 @@ final class ExternalActionCoordinatorTests: XCTestCase {
             .performUsingBestAPIPath(
                 source: source,
                 access: access,
-                operation: { routedAccess in
+                operation: { _, routedAccess in
                     attempts.append(routedAccess.socksProxy)
                     return routedAccess.socksProxy == nil ? .failed(.tls) : .connected
                 },
@@ -176,7 +176,7 @@ final class ExternalActionCoordinatorTests: XCTestCase {
             .performUsingBestAPIPath(
                 source: source,
                 access: access,
-                operation: { routedAccess in
+                operation: { _, routedAccess in
                     attempts.append(routedAccess.socksProxy)
                     return routedAccess.socksProxy == nil ? .failed(.unreachable) : .connected
                 },
@@ -220,7 +220,7 @@ final class ExternalActionCoordinatorTests: XCTestCase {
                 .performUsingBestAPIPath(
                     source: source,
                     access: ProviderAccess(credential: .password("test-only")),
-                    operation: { routedAccess in
+                    operation: { _, routedAccess in
                         routedAccess.socksProxy == nil ? .failed(.unreachable) : .connected
                     },
                     requiresAlternativeNetworkPath: { $0 == .failed(.unreachable) }
@@ -255,7 +255,7 @@ final class ExternalActionCoordinatorTests: XCTestCase {
             .performUsingBestAPIPath(
                 source: source,
                 access: ProviderAccess(credential: .password("test-only")),
-                operation: { _ in .failed(.unreachable) },
+                operation: { _, _ in .failed(.unreachable) },
                 requiresAlternativeNetworkPath: { $0 == .failed(.unreachable) }
             )
 
@@ -264,6 +264,45 @@ final class ExternalActionCoordinatorTests: XCTestCase {
         }
         XCTAssertTrue(message.contains("port 2222"))
         XCTAssertFalse(message.contains("port 22:"))
+    }
+
+    func testRemoteLoopbackAPIRecoversWhenTheAPIPortWasStoredAsTheSSHPort() async throws {
+        let executable = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .appendingPathComponent("Fixtures/fake-ssh-api-port-fallback.sh")
+        let manager = SSHTunnelManager(executableURL: executable)
+        let coordinator = AutomaticConnectionCoordinator(tunnelManager: manager)
+        let source = MonitoringSource(
+            name: "Production",
+            providerID: Icinga2Provider.id,
+            endpoint: URL(string: "https://127.0.0.1:5665")!,
+            authentication: .basic(username: "operator"),
+            sshTunnel: SSHTunnelConfiguration(
+                bastionHost: "bastion.example.test",
+                username: "operator",
+                port: 5_665,
+                preferredLocalPort: 49_152
+            )
+        )
+        var attempts: [(URL, ProviderSOCKSProxy?)] = []
+        defer { coordinator.stop(sourceID: source.id) }
+
+        let (result, path): (ConnectionTestResult, AutomaticConnectionPath) = await coordinator
+            .performUsingBestAPIPath(
+                source: source,
+                access: ProviderAccess(credential: .password("test-only")),
+                operation: { routedSource, access in
+                    attempts.append((routedSource.endpoint, access.socksProxy))
+                    return attempts.count == 1 ? .failed(.unreachable) : .connected
+                },
+                requiresAlternativeNetworkPath: { $0 == .failed(.unreachable) }
+            )
+
+        XCTAssertEqual(result, .connected)
+        XCTAssertEqual(path, .ssh)
+        XCTAssertEqual(attempts.count, 2)
+        XCTAssertEqual(attempts[1].0.absoluteString, "https://127.0.0.1:49152")
+        XCTAssertNil(attempts[1].1)
     }
 
     func testAutomaticAPIRoutingReusesSuccessfulSSHUntilConnectionTestRediscoversDirect() async throws {
@@ -291,7 +330,7 @@ final class ExternalActionCoordinatorTests: XCTestCase {
                 source: source,
                 access: access,
                 rediscoverDirect: true,
-                operation: { routedAccess in
+                operation: { _, routedAccess in
                     attempts.append(routedAccess.socksProxy)
                     return routedAccess.socksProxy == nil ? .failed(.unreachable) : .connected
                 },
@@ -301,7 +340,7 @@ final class ExternalActionCoordinatorTests: XCTestCase {
             .performUsingBestAPIPath(
                 source: source,
                 access: access,
-                operation: { routedAccess in
+                operation: { _, routedAccess in
                     attempts.append(routedAccess.socksProxy)
                     return routedAccess.socksProxy == nil ? .failed(.unreachable) : .connected
                 },
@@ -312,7 +351,7 @@ final class ExternalActionCoordinatorTests: XCTestCase {
                 source: source,
                 access: access,
                 rediscoverDirect: true,
-                operation: { routedAccess in
+                operation: { _, routedAccess in
                     attempts.append(routedAccess.socksProxy)
                     return routedAccess.socksProxy == nil ? .connected : .failed(.unreachable)
                 },
@@ -566,7 +605,7 @@ final class ExternalActionCoordinatorTests: XCTestCase {
         XCTAssertTrue(didClose, "The owned SSH forwarding port remained open after disabling its source")
     }
 
-    func testLiveAutomaticRoutingLoadsIcingaAPIThroughSOCKS() async throws {
+    func testLiveAutomaticRoutingLoadsRemoteLoopbackIcingaAPIThroughSSH() async throws {
         let environment = ProcessInfo.processInfo.environment
         guard let endpointText = environment["ISSUELIGHT_LIVE_ICINGA_SSH_URL"],
               let endpoint = URL(string: endpointText),
@@ -599,7 +638,8 @@ final class ExternalActionCoordinatorTests: XCTestCase {
                 bastionHost: "127.0.0.1",
                 username: "operator",
                 port: port,
-                identityFilePath: identityFilePath
+                identityFilePath: identityFilePath,
+                preferredLocalPort: 5_665
             )
         )
         defer { coordinator.stop(sourceID: source.id) }
@@ -608,8 +648,8 @@ final class ExternalActionCoordinatorTests: XCTestCase {
             source: source,
             access: ProviderAccess(credential: .password(password)),
             rediscoverDirect: true,
-            operation: { access in
-                await Icinga2Provider().testConnection(to: source, access: access)
+            operation: { routedSource, access in
+                await Icinga2Provider().testConnection(to: routedSource, access: access)
             },
             requiresAlternativeNetworkPath: { $0 == .failed(.unreachable) }
         )

@@ -213,6 +213,10 @@ TLS policy. It does not own monitoring-state presentation or notifications.
 - `CONN-013` When an SSH port override equals the explicit or protocol-default
   monitoring API port and cannot establish SSH, source connection testing MUST
   retry the standard SSH port 22. It MUST NOT replace a distinct custom SSH port.
+- `CONN-014` An API endpoint on the monitoring host's explicit loopback address
+  MUST use an SSH local forward. A SOCKS route MUST remain the default for other
+  API hosts. The local forward MUST preserve the endpoint host and use the
+  preferred local port or the next available port.
 
 ### Navigation
 

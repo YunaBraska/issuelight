@@ -26,7 +26,7 @@ final class ConnectionRoutingMatrixTests: XCTestCase {
                         .performUsingBestAPIPath(
                             source: source,
                             access: ProviderAccess(credential: .password("test-only")),
-                            operation: { access in
+                            operation: { _, access in
                                 let isProxied = access.socksProxy != nil
                                 usedProxy.append(isProxied)
                                 return isProxied ? .connected : directOutcome
@@ -64,7 +64,7 @@ final class ConnectionRoutingMatrixTests: XCTestCase {
                 .performUsingBestAPIPath(
                     source: source,
                     access: ProviderAccess(credential: .password("test-only")),
-                    operation: { access in
+                    operation: { _, access in
                         let isProxied = access.socksProxy != nil
                         usedProxy.append(isProxied)
                         return isProxied ? proxiedOutcome : .failed(.unreachable)
@@ -98,7 +98,7 @@ final class ConnectionRoutingMatrixTests: XCTestCase {
             .performUsingBestAPIPath(
                 source: source,
                 access: ProviderAccess(credential: .password("test-only")),
-                operation: { access in
+                operation: { _, access in
                     let isProxied = access.socksProxy != nil
                     usedProxy.append(isProxied)
                     return isProxied ? .connected : .failed(.unreachable)
@@ -115,7 +115,7 @@ final class ConnectionRoutingMatrixTests: XCTestCase {
             .performUsingBestAPIPath(
                 source: source,
                 access: ProviderAccess(credential: .password("test-only")),
-                operation: { access in
+                operation: { _, access in
                     let isProxied = access.socksProxy != nil
                     usedProxy.append(isProxied)
                     return isProxied ? .failed(.unreachable) : .connected
@@ -132,7 +132,7 @@ final class ConnectionRoutingMatrixTests: XCTestCase {
             .performUsingBestAPIPath(
                 source: source,
                 access: ProviderAccess(credential: .password("test-only")),
-                operation: { access in
+                operation: { _, access in
                     usedProxy.append(access.socksProxy != nil)
                     return .connected
                 },
@@ -143,6 +143,60 @@ final class ConnectionRoutingMatrixTests: XCTestCase {
         XCTAssertEqual(stablePath, .direct)
         XCTAssertEqual(usedProxy, [false])
         coordinator.stop(sourceID: source.id)
+    }
+
+    func testRemoteLoopbackAPIsUseLocalForwardAcrossProvidersSchemesAndNetworkFailures() async throws {
+        let executable = fixture("fake-ssh-listener.sh")
+        let providerIDs = [
+            Icinga2Provider.id,
+            CheckmkProvider.id,
+            ThrukProvider.id,
+            NagiosCoreProvider.id,
+        ]
+        let failures = [ConnectionFailure.unreachable, .tls]
+
+        for providerID in providerIDs {
+            for scheme in ["http", "https"] {
+                for host in ["127.0.0.1", "localhost"] {
+                    for failure in failures {
+                        let manager = SSHTunnelManager(executableURL: executable)
+                        let coordinator = AutomaticConnectionCoordinator(tunnelManager: manager)
+                        let source = MonitoringSource(
+                            name: "Remote loopback",
+                            providerID: providerID,
+                            endpoint: URL(string: "\(scheme)://\(host):45555")!,
+                            authentication: .basic(username: "operator"),
+                            sshTunnel: SSHTunnelConfiguration(
+                                bastionHost: "bastion.example.test",
+                                username: "operator",
+                                preferredLocalPort: 45_555
+                            )
+                        )
+                        var attempts: [(URL, ProviderSOCKSProxy?)] = []
+
+                        let (result, path): (ConnectionTestResult, AutomaticConnectionPath) = await coordinator
+                            .performUsingBestAPIPath(
+                                source: source,
+                                access: ProviderAccess(credential: .password("test-only")),
+                                operation: { routedSource, access in
+                                    attempts.append((routedSource.endpoint, access.socksProxy))
+                                    return attempts.count == 1 ? .failed(failure) : .connected
+                                },
+                                requiresAlternativeNetworkPath: needsAlternativePath
+                            )
+
+                        let label = "\(providerID.rawValue) \(scheme) \(host) \(failure)"
+                        XCTAssertEqual(result, .connected, label)
+                        XCTAssertEqual(path, .ssh, label)
+                        XCTAssertEqual(attempts.count, 2, label)
+                        XCTAssertNil(attempts[0].1, label)
+                        XCTAssertNil(attempts[1].1, "Loopback must use a local forward, not SOCKS: \(label)")
+                        XCTAssertEqual(attempts[1].0.host, host, label)
+                        coordinator.stop(sourceID: source.id)
+                    }
+                }
+            }
+        }
     }
 
     func testWebRoutingMatrixAcrossProvidersSchemesAndReachabilityStates() async throws {
@@ -216,7 +270,7 @@ final class ConnectionRoutingMatrixTests: XCTestCase {
             .performUsingBestAPIPath(
                 source: failingSource,
                 access: ProviderAccess(credential: .password("test-only")),
-                operation: { _ in .failed(.unreachable) },
+                operation: { _, _ in .failed(.unreachable) },
                 requiresAlternativeNetworkPath: needsAlternativePath
             )
 
@@ -237,7 +291,7 @@ final class ConnectionRoutingMatrixTests: XCTestCase {
             .performUsingBestAPIPath(
                 source: automaticSource,
                 access: ProviderAccess(credential: .apiKey("test-only")),
-                operation: { access in
+                operation: { _, access in
                     access.socksProxy == nil ? .failed(.unreachable) : .connected
                 },
                 requiresAlternativeNetworkPath: needsAlternativePath

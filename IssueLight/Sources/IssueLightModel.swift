@@ -507,11 +507,11 @@ final class IssueLightModel: ObservableObject {
         let (result, path) = await connectionCoordinator.performUsingBestAPIPath(
             source: source,
             access: access,
-            operation: { routedAccess in
+            operation: { routedSource, routedAccess in
                 await provider.perform(
                     action,
                     on: issue,
-                    from: source,
+                    from: routedSource,
                     access: routedAccess
                 )
             },
@@ -897,8 +897,8 @@ final class IssueLightModel: ObservableObject {
                 source: source,
                 access: access,
                 rediscoverDirect: true,
-                operation: { routedAccess in
-                    await provider.testConnection(to: source, access: routedAccess)
+                operation: { routedSource, routedAccess in
+                    await provider.testConnection(to: routedSource, access: routedAccess)
                 },
                 requiresAlternativeNetworkPath: { result in
                     guard case .failed(let failure) = result else { return false }
@@ -1287,11 +1287,20 @@ final class IssueLightModel: ObservableObject {
                 source: source,
                 access: access,
                 rediscoverDirect: true,
-                operation: { routedAccess in
-                    await self.presentedServerCertificateFetcher(
-                        candidate,
+                operation: { routedSource, routedAccess in
+                    let result = await self.presentedServerCertificateFetcher(
+                        routedSource.endpoint,
                         routedAccess.socksProxy
                     )
+                    guard case .fetched(let certificate) = result else { return result }
+                    return .fetched(PresentedServerCertificate(
+                        endpoint: candidate,
+                        subject: certificate.subject,
+                        issuer: certificate.issuer,
+                        validFrom: certificate.validFrom,
+                        validUntil: certificate.validUntil,
+                        sha256Fingerprint: certificate.sha256Fingerprint
+                    ))
                 },
                 requiresAlternativeNetworkPath: { result in
                     guard case .failed(let failure) = result else { return false }
@@ -1536,8 +1545,8 @@ final class IssueLightModel: ObservableObject {
         let (result, path) = await connectionCoordinator.performUsingBestAPIPath(
             source: source,
             access: access,
-            operation: { routedAccess in
-                await provider.loadSnapshot(from: source, access: routedAccess)
+            operation: { routedSource, routedAccess in
+                await provider.loadSnapshot(from: routedSource, access: routedAccess)
             },
             requiresAlternativeNetworkPath: { result in
                 guard case .failed(let failure) = result else { return false }

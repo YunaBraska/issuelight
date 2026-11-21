@@ -7,7 +7,7 @@ ssh_port=22
 bastion_host=""
 while [ "$#" -gt 0 ]; do
     case "$1" in
-        -D)
+        -D|-L)
             forward="$2"
             shift 2
             ;;
@@ -32,5 +32,13 @@ if [ "$ssh_port" -ne 22 ] || [ "$bastion_host" = "always-fail.example.test" ]; t
     exit 255
 fi
 
-port=${forward##*:}
+case "$forward" in
+    127.0.0.1:*:*)
+        destination=${forward#*:}
+        port=${destination%%:*}
+        ;;
+    *)
+        port=${forward##*:}
+        ;;
+esac
 exec /usr/bin/nc -l 127.0.0.1 "$port"
