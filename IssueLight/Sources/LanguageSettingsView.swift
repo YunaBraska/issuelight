@@ -357,12 +357,21 @@ struct LanguageSettingsView: View {
 
 @MainActor
 struct AboutSettingsView: View {
+    #if ISSUELIGHT_APP_STORE
+    private static let messages: [LocalizedStringResource] = [
+        "Alerts multiply. Attention does not.\nIssueLight sorts the signal before it reaches you.",
+        "Green is a temporary agreement between distributed systems.\nIssueLight watches the fine print.",
+        "The quiet menu bar is not doing nothing.\nIt is waiting for evidence.",
+        "Monitoring should interrupt you only when it has something useful to say.\nIssueLight keeps the noise down and the problems visible.",
+    ]
+    #else
     private static let messages: [LocalizedStringResource] = [
         "Alerts multiply. Attention does not.\nIssueLight sorts the signal before it reaches you.\nA star helps. Coffee keeps the beacon lit.",
         "Green is a temporary agreement between distributed systems.\nIssueLight watches the fine print.\nStar it if it saved a minute. Fuel it if it saved the night.",
         "The quiet menu bar is not doing nothing.\nIt is waiting for evidence.\nStar the repository if that restraint feels useful.",
         "Monitoring should interrupt you only when it has something useful to say.\nIssueLight keeps the noise down and the problems visible.\nCoffee is optional. Reliable alerts are not.",
     ]
+    #endif
 
     @Environment(\.locale) private var locale
     let icon: NSImage
@@ -376,10 +385,12 @@ struct AboutSettingsView: View {
     private let releasesURL = URL(string: "https://github.com/YunaBraska/issuelight/releases")!
     private let privacyURL = URL(string: "https://yunabraska.github.io/issuelight/privacy.html")!
     private let issuesURL = URL(string: "https://github.com/YunaBraska/issuelight/issues/new")!
+    #if !ISSUELIGHT_APP_STORE
     private let sponsorsURL = URL(string: "https://github.com/sponsors/YunaBraska")!
     private let coffeeURL = URL(string: "https://buymeacoffee.com/YunaBraska")!
     private let koFiURL = URL(string: "https://ko-fi.com/YunaBraska")!
     private let liberapayURL = URL(string: "https://liberapay.com/YunaBraska")!
+    #endif
     private let nagBarURL = URL(string: "https://github.com/volendavidov/NagBar")!
 
     init(
@@ -496,10 +507,12 @@ struct AboutSettingsView: View {
                 systemImage: "exclamationmark.bubble",
                 destination: issuesURL
             )
+            #if !ISSUELIGHT_APP_STORE
             aboutLink("GitHub Sponsors", systemImage: "heart", destination: sponsorsURL)
             aboutLink("Buy Me a Coffee", systemImage: "cup.and.saucer", destination: coffeeURL)
             aboutLink("Ko-fi", systemImage: "mug", destination: koFiURL)
             aboutLink("Liberapay", systemImage: "gift", destination: liberapayURL)
+            #endif
             aboutLink(
                 AppLocalization.string("NagBar · Danke für die Inspiration", locale: locale),
                 systemImage: "sparkles",
