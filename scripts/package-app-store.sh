@@ -124,6 +124,12 @@ if test -d "$app/Contents/Frameworks/Sparkle.framework" \
     printf '%s\n' 'App Store app must not contain the direct-release updater.' >&2
     exit 65
 fi
+for forbidden_domain in github.com/sponsors buymeacoffee.com ko-fi.com liberapay.com; do
+    if strings "$app/Contents/MacOS/IssueLight" | grep -Fq "$forbidden_domain"; then
+        printf '%s\n' "App Store app must not contain $forbidden_domain." >&2
+        exit 65
+    fi
+done
 
 rm -rf "$dist_directory"
 mkdir -p "$dist_directory"
