@@ -92,22 +92,8 @@ struct IssueLightApp: App {
         }
     }
 
-    private var menuBarIssues: [MonitoringIssue] {
-        model.actionableIssues.filter(panelFilters.includesHost)
-    }
-
-    private var menuBarUnavailableSourceCount: Int {
-        model.failedSources.filter { failure in
-            panelFilters.sourceID.isEmpty
-                || failure.source.id.uuidString.lowercased() == panelFilters.sourceID
-        }.count
-    }
-
     private var menuBarCounts: MenuBarIssueCounts {
-        MenuBarIssueCounts(
-            issues: menuBarIssues,
-            unavailableSourceCount: menuBarUnavailableSourceCount
-        )
+        MenuBarIssueCounts(model: model, filters: panelFilters)
     }
 
     private var menuBarAccessibilityLabel: String {

@@ -64,6 +64,62 @@ final class IssueLightModelTests: XCTestCase {
         XCTAssertEqual(secondMetrics.loads, 1)
     }
 
+    func testSavedSourcePatternsUpdateListAndMenuBarWithoutRefreshing() async throws {
+        let script = SnapshotScript()
+        let harness = try await makeHarness(sourceCount: 2, script: script)
+        let first = harness.sources[0]
+        let second = harness.sources[1]
+        for source in harness.sources {
+            await script.enqueue(
+                .result(.loaded(snapshot(source: source, observedAt: 1, summary: source.name))),
+                for: source.id
+            )
+        }
+        await harness.model.start()
+        let suite = "SourceIssueFilterTests.\(UUID())"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let filters = PanelFilterSettings(defaults: defaults)
+        XCTAssertEqual(MenuBarIssueCounts(model: harness.model, filters: filters).compactText, "D:2")
+
+        var filter = SourceIssueFilter()
+        filter.patterns = [.init(host: " host-* "), .init(service: " ")]
+        let saved = await harness.model.saveIssueFilter(filter, for: first.id)
+
+        XCTAssertTrue(saved)
+        XCTAssertEqual(harness.model.displayedIssues().map(\.sourceID), [second.id])
+        XCTAssertEqual(MenuBarIssueCounts(model: harness.model, filters: filters).compactText, "D:1")
+        XCTAssertEqual(harness.model.activeIssueCount, 2)
+        XCTAssertFalse(harness.model.hasUnsavedChanges)
+        let metrics = await script.metrics(for: first.id)
+        XCTAssertEqual(metrics.loads, 1)
+        var expected = first
+        expected.issueFilter = filter.normalized
+        let stored = try await harness.store.load()
+        XCTAssertEqual(stored, [expected, second])
+
+        filters.includesSourceExclusions = true
+        XCTAssertEqual(harness.model.displayedIssues(includeSourceExclusions: true).count, 2)
+        XCTAssertEqual(MenuBarIssueCounts(model: harness.model, filters: filters).compactText, "D:2")
+        filters.includesSourceExclusions = false
+        await harness.model.load()
+        XCTAssertEqual(harness.model.displayedIssues().map(\.sourceID), [second.id])
+
+        let savedForSecond = await harness.model.saveIssueFilter(filter, for: second.id)
+        XCTAssertTrue(savedForSecond)
+        XCTAssertTrue(harness.model.displayedIssues().isEmpty)
+        XCTAssertEqual(MenuBarIssueCounts(model: harness.model, filters: filters).compactText, "")
+        XCTAssertEqual(harness.model.snapshots.count, 2)
+        let clearedSecond = await harness.model.saveIssueFilter(SourceIssueFilter(), for: second.id)
+        XCTAssertTrue(clearedSecond)
+
+        let cleared = await harness.model.saveIssueFilter(SourceIssueFilter(), for: first.id)
+        XCTAssertTrue(cleared)
+        XCTAssertEqual(harness.model.displayedIssues().count, 2)
+        let reset = try await harness.store.load()
+        XCTAssertEqual(reset, [first, second])
+    }
+
     func testFailedSourceRetainsItsSnapshotWhileAnotherSourceUpdates() async throws {
         let script = SnapshotScript()
         let harness = try await makeHarness(sourceCount: 2, script: script)

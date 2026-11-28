@@ -147,6 +147,7 @@ public struct MonitoringSource: Codable, Equatable, Identifiable, Sendable {
     public var sshTunnel: SSHTunnelConfiguration?
     public var web: MonitoringWebConfiguration?
     public var remoteAccess: RemoteAccessConfiguration?
+    public var issueFilter: SourceIssueFilter? = nil
 
     public init(
         id: UUID = UUID(),

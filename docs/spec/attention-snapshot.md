@@ -76,6 +76,18 @@ provider confirms the command.
 - `MENU-011` A successful quick action MUST stay silent and refresh its source.
   A failed action MUST remain dismissible inside the panel without presenting
   a modal alert or closing the panel.
+- `MENU-012` Each saved source MAY exclude hosts and services in active
+  downtime or with acknowledgement, independently by object type. It MAY also
+  exclude objects by case-sensitive glob matches on their native host and
+  service names. A host-only rule also covers that host's services. A
+  service-only rule covers services across hosts. When both are present, both
+  must match. Empty rules have no effect. Previous sources default to showing
+  all issues.
+- `MENU-013` Source exclusions MUST apply to both the panel and menu-bar
+  counts from the existing snapshot. Saving exclusions MUST preserve
+  connectivity, snapshots, and notifications. A source outage remains
+  visible. The panel MUST disclose excluded issues and allow temporarily
+  including them in the panel and counters.
 
 ### Notifications
 

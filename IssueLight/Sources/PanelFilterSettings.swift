@@ -55,6 +55,8 @@ struct PanelHostSelection: Codable, Hashable, Identifiable {
 
 @MainActor
 final class PanelFilterSettings: ObservableObject {
+    @Published var includesSourceExclusions = false
+
     @Published var sourceID: String {
         didSet { defaults.set(sourceID, forKey: sourceKey) }
     }

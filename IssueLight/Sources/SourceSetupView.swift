@@ -30,6 +30,7 @@ struct SourceSetupView: View {
     @State private var pendingNavigation: PendingNavigation?
     @State private var connectionTask: Task<Void, Never>?
     @State private var certificateFetchTask: Task<Void, Never>?
+    @State private var filterSource: MonitoringSource?
 
     init(
         model: IssueLightModel,
@@ -78,6 +79,11 @@ struct SourceSetupView: View {
             connectionTask?.cancel()
             certificateFetchTask?.cancel()
             Task { _ = await model.cleanupUnreferencedManagedServerCertificates() }
+        }
+        .sheet(item: $filterSource) { source in
+            SourceIssueFilterEditor(source: source, issues: model.snapshots[source.id]?.issues) {
+                await model.saveIssueFilter($0, for: source.id)
+            }
         }
         .sheet(isPresented: $isImportingIdentity) {
             if let importURL {
@@ -174,6 +180,12 @@ struct SourceSetupView: View {
                         prompt: Text(verbatim: model.endpointPrompt)
                     )
                         .textContentType(.URL)
+                    if let source = model.selectedSource {
+                        Button(localized("Filter konfigurieren …")) {
+                            filterSource = source
+                        }
+                        .accessibilityIdentifier("source-filter-settings")
+                    }
                 } header: {
                     if model.isCreatingSource {
                         Text(verbatim: localized("Neue Quelle"))
@@ -753,11 +765,144 @@ private struct SourceRow: View {
         case .refreshing:
             return AppLocalization.string("wird aktualisiert", locale: locale)
         case .current:
-            let count = model.snapshots[source.id]?.actionableIssues.count ?? 0
+            let count = model.visibleIssues(for: source).count(where: \.requiresAttention)
             return IssueCountText.sourceStatus(count, locale: locale)
         case .failed(let message):
             return AppLocalization.string("Aktualisierung fehlgeschlagen, \(message)", locale: locale)
         }
+    }
+}
+
+struct SourceIssueFilterEditor: View {
+    private struct Rule: Identifiable {
+        let id = UUID()
+        var pattern: IssueExclusionPattern
+    }
+
+    let source: MonitoringSource
+    let issues: [MonitoringIssue]?
+    let save: (SourceIssueFilter) async -> Bool
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.locale) private var locale
+    @State private var draft: SourceIssueFilter
+    @State private var rules: [Rule]
+    @State private var isSaving = false
+    @State private var saveFailed = false
+
+    init(
+        source: MonitoringSource,
+        issues: [MonitoringIssue]? = nil,
+        save: @escaping (SourceIssueFilter) async -> Bool
+    ) {
+        self.source = source
+        self.issues = issues
+        self.save = save
+        let filter = source.issueFilter ?? SourceIssueFilter()
+        _draft = State(initialValue: filter)
+        _rules = State(initialValue: filter.patterns.map { Rule(pattern: $0) })
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(verbatim: localized("Probleme ausblenden")).font(.headline)
+                Text(source.name).foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding()
+
+            Form {
+                Section(localized("Hosts")) {
+                    Toggle(localized("Wartungszeit"), isOn: $draft.hideHostsInDowntime)
+                        .accessibilityIdentifier("hide-hosts-in-downtime")
+                    Toggle(localized("Quittiert"), isOn: $draft.hideAcknowledgedHosts)
+                        .accessibilityIdentifier("hide-acknowledged-hosts")
+                }
+                .toggleStyle(.checkbox)
+
+                Section(localized("Services")) {
+                    Toggle(localized("Wartungszeit"), isOn: $draft.hideServicesInDowntime)
+                        .accessibilityIdentifier("hide-services-in-downtime")
+                    Toggle(localized("Quittiert"), isOn: $draft.hideAcknowledgedServices)
+                        .accessibilityIdentifier("hide-acknowledged-services")
+                }
+                .toggleStyle(.checkbox)
+
+                Section {
+                    ForEach($rules) { $rule in
+                        HStack {
+                            TextField(localized("Host"), text: $rule.pattern.host)
+                            TextField(localized("Service"), text: $rule.pattern.service)
+                            Button(role: .destructive) {
+                                rules.removeAll { $0.id == rule.id }
+                            } label: {
+                                Image(systemName: "minus.circle")
+                            }
+                            .buttonStyle(.borderless)
+                            .accessibilityLabel(localized("Regel entfernen"))
+                            .help(localized("Regel entfernen"))
+                        }
+                    }
+                    Button {
+                        rules.append(Rule(pattern: IssueExclusionPattern()))
+                    } label: {
+                        Label(localized("Regel hinzufügen"), systemImage: "plus")
+                    }
+                    .accessibilityIdentifier("add-source-filter-rule")
+                } header: {
+                    Text(verbatim: localized("Ausschlussregeln"))
+                } footer: {
+                    Text(verbatim: localized("Muster unterscheiden Groß- und Kleinschreibung. * steht für beliebig viele Zeichen, ? für eines."))
+                }
+            }
+            .formStyle(.grouped)
+            .disabled(isSaving)
+
+            Divider()
+            HStack {
+                if saveFailed {
+                    Text(verbatim: localized("Filter konnten nicht gespeichert werden."))
+                        .foregroundStyle(.red)
+                } else if let issues {
+                    let filter = editedFilter.normalized
+                    let hidden = issues.count { filter?.excludes($0) == true }
+                    Text(verbatim: localized("Ausgeblendet: \(hidden)"))
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Button(localized("Abbrechen")) { dismiss() }
+                    .keyboardShortcut(.cancelAction)
+                Button(localized("Speichern")) {
+                    let filter = editedFilter
+                    isSaving = true
+                    Task {
+                        if await save(filter) {
+                            dismiss()
+                        } else {
+                            saveFailed = true
+                        }
+                        isSaving = false
+                    }
+                }
+                .keyboardShortcut(.defaultAction)
+                .disabled(editedFilter.normalized == source.issueFilter)
+            }
+            .disabled(isSaving)
+            .padding()
+        }
+        .frame(width: 500, height: 520)
+        .background(Color(nsColor: .windowBackgroundColor))
+        .interactiveDismissDisabled(isSaving)
+    }
+
+    private var editedFilter: SourceIssueFilter {
+        var filter = draft
+        filter.patterns = rules.map(\.pattern)
+        return filter
+    }
+
+    private func localized(_ resource: LocalizedStringResource) -> String {
+        AppLocalization.string(resource, locale: locale)
     }
 }
 

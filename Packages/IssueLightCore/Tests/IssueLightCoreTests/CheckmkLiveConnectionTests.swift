@@ -49,6 +49,7 @@ final class CheckmkLiveConnectionTests: XCTestCase {
         XCTAssertEqual(issue.summary, "DOWN - IssueLight live lab")
         XCTAssertFalse(issue.isAcknowledged)
         XCTAssertFalse(issue.isInDowntime)
+        assertSourceRulesForIssue(issue)
         XCTAssertEqual(provider.supportedActions(for: source), [.acknowledge, .scheduleDowntime])
 
         let acknowledgement = await provider.perform(
@@ -89,6 +90,7 @@ final class CheckmkLiveConnectionTests: XCTestCase {
         }
         XCTAssertEqual(updatedIssue?.isAcknowledged, true)
         XCTAssertEqual(updatedIssue?.isInDowntime, true)
+        assertSourceRulesForIssue(try XCTUnwrap(updatedIssue))
     }
 
     private func liveSource(endpoint: URL) -> MonitoringSource {

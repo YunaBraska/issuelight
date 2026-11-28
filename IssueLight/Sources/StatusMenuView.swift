@@ -52,6 +52,19 @@ struct MenuBarIssueCounts: Equatable {
     }
 }
 
+extension MenuBarIssueCounts {
+    @MainActor
+    init(model: IssueLightModel, filters: PanelFilterSettings) {
+        self.init(
+            issues: model.displayedIssues(includeSourceExclusions: filters.includesSourceExclusions)
+                .filter { $0.requiresAttention && filters.includesHost($0) },
+            unavailableSourceCount: model.failedSources.filter {
+                filters.sourceID.isEmpty || $0.source.id.uuidString.lowercased() == filters.sourceID
+            }.count
+        )
+    }
+}
+
 struct StatusMenuView: View {
     @ObservedObject var model: IssueLightModel
     @ObservedObject var externalActions: ExternalActionCoordinator
@@ -60,12 +73,15 @@ struct StatusMenuView: View {
     @State private var pendingAction: PendingIssueAction?
 
     var body: some View {
+        let filtered = model.displayedIssues()
+        let displayed = filters.includesSourceExclusions
+            ? model.displayedIssues(includeSourceExclusions: true) : filtered
         StatusMenuContent(
             hasConfiguredSource: model.hasConfiguredSource,
             hasEnabledSource: model.hasEnabledSource,
             hasActiveSnapshot: model.hasActiveSnapshot,
-            actionableIssues: model.actionableIssues,
-            coveredIssues: model.coveredIssues,
+            actionableIssues: displayed.filter(\.requiresAttention),
+            coveredIssues: displayed.filter { !$0.requiresAttention },
             sourceNames: Dictionary(uniqueKeysWithValues: model.sources.map { ($0.id, $0.name) }),
             sourceFailures: model.failedSources,
             filters: filters,
@@ -115,7 +131,8 @@ struct StatusMenuView: View {
             requestDowntime: { issue in
                 pendingAction = PendingIssueAction(issue: issue, kind: .scheduleDowntime)
             },
-            dismissActionError: model.dismissActionError
+            dismissActionError: model.dismissActionError,
+            sourceExcludedCount: model.activeIssueCount - filtered.count
         )
         .onChange(of: model.sources.map(\.id), initial: true) { _, sourceIDs in
             filters.reconcile(
@@ -168,6 +185,7 @@ struct StatusMenuContent: View {
     let requestAcknowledgement: (MonitoringIssue) -> Void
     let requestDowntime: (MonitoringIssue) -> Void
     let dismissActionError: () -> Void
+    var sourceExcludedCount = 0
     @Environment(\.locale) private var locale
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var searchText = ""
@@ -229,6 +247,31 @@ struct StatusMenuContent: View {
                 Divider()
             }
 
+            if sourceExcludedCount > 0 {
+                HStack {
+                    Text(
+                        verbatim: filters.includesSourceExclusions
+                            ? AppLocalization.string("Quellenfilter ausgesetzt", locale: locale)
+                            : AppLocalization.string("Ausgeblendet: \(sourceExcludedCount)", locale: locale)
+                    )
+                    .foregroundStyle(.secondary)
+                    Spacer()
+                    Button(
+                        filters.includesSourceExclusions
+                            ? AppLocalization.string("Filter anwenden", locale: locale)
+                            : AppLocalization.string("Alle anzeigen", locale: locale)
+                    ) {
+                        filters.includesSourceExclusions.toggle()
+                    }
+                    .buttonStyle(.link)
+                    .accessibilityIdentifier("toggle-source-exclusions")
+                }
+                .font(.caption)
+                .padding(.horizontal, 12)
+                .frame(height: ceil(27 * panelTextScale))
+                Divider()
+            }
+
             issuePanel
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
@@ -253,11 +296,13 @@ struct StatusMenuContent: View {
             return 200
         }
         let actionErrorHeight: CGFloat = actionError == nil ? 0 : ceil(44 * panelTextScale)
+        let sourceFilterHeight: CGFloat = sourceExcludedCount == 0 ? 0 : ceil(28 * panelTextScale)
         return min(
             520,
             ceil(49 * panelTextScale)
                 + CGFloat(visibleRowCount) * issueRowHeight
                 + actionErrorHeight
+                + sourceFilterHeight
         )
     }
 
@@ -373,7 +418,7 @@ struct StatusMenuContent: View {
                 systemImage: "pause.circle",
                 description: Text(verbatim: AppLocalization.string("Aktiviere mindestens eine Quelle, um den Status zu überwachen.", locale: locale))
             )
-        } else if hasPanelRows {
+        } else if hasPanelRows || sourceExcludedCount > 0 {
             if filteredSourceFailures.isEmpty
                 && filteredActionableIssues.isEmpty
                 && filteredCoveredIssues.isEmpty {

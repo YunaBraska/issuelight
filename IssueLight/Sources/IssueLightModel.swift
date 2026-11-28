@@ -535,14 +535,25 @@ final class IssueLightModel: ObservableObject {
     }
 
     var actionableIssues: [MonitoringIssue] {
-        activeSnapshots.flatMap(\.actionableIssues).sorted(by: issueOrder)
+        displayedIssues().filter(\.requiresAttention)
     }
 
-    var coveredIssues: [MonitoringIssue] {
-        activeSnapshots
-            .flatMap(\.issues)
-            .filter { !$0.requiresAttention }
+    func displayedIssues(includeSourceExclusions: Bool = false) -> [MonitoringIssue] {
+        sources.filter(\.isEnabled)
+            .flatMap { source in
+                includeSourceExclusions ? (snapshots[source.id]?.issues ?? []) : visibleIssues(for: source)
+            }
             .sorted(by: issueOrder)
+    }
+
+    func visibleIssues(for source: MonitoringSource) -> [MonitoringIssue] {
+        let issues = snapshots[source.id]?.issues ?? []
+        guard let filter = source.issueFilter else { return issues }
+        return issues.filter { !filter.excludes($0) }
+    }
+
+    var activeIssueCount: Int {
+        activeSnapshots.reduce(0) { $0 + $1.issues.count }
     }
 
     var hasActiveSnapshot: Bool {
@@ -1120,6 +1131,18 @@ final class IssueLightModel: ObservableObject {
             }
         } catch {
             activity = .failure(localized("Die Quelle konnte nicht gespeichert werden: \(error.localizedDescription)"))
+        }
+    }
+
+    func saveIssueFilter(_ filter: SourceIssueFilter, for sourceID: UUID) async -> Bool {
+        guard var source = sources.first(where: { $0.id == sourceID }),
+              let sourceStore else { return false }
+        source.issueFilter = filter.normalized
+        do {
+            sources = try await sourceStore.upsert(source)
+            return true
+        } catch {
+            return false
         }
     }
 

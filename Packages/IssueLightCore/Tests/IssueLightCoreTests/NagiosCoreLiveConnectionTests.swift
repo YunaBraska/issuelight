@@ -39,6 +39,8 @@ final class NagiosCoreLiveConnectionTests: XCTestCase {
         XCTAssertEqual(service.maxCheckAttempts, 1)
         XCTAssertFalse(service.isAcknowledged)
         XCTAssertFalse(service.isInDowntime)
+        assertSourceRulesForIssue(host)
+        assertSourceRulesForIssue(service)
     }
 
     func testRealCSRFProtectedCommandsUseTheProviderBoundary() async throws {
@@ -92,6 +94,7 @@ final class NagiosCoreLiveConnectionTests: XCTestCase {
         }
         XCTAssertEqual(updatedIssue?.isAcknowledged, true)
         XCTAssertEqual(updatedIssue?.isInDowntime, true)
+        assertSourceRulesForIssue(try XCTUnwrap(updatedIssue))
 
         let recheck = await provider.perform(.recheck, on: issue, from: source, access: access)
         XCTAssertEqual(recheck, .completed)

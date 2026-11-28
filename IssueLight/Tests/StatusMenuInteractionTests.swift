@@ -122,6 +122,38 @@ final class StatusMenuInteractionTests: XCTestCase {
         }
     }
 
+    func testSourceFilterEditorRendersExistingRulesInANativeWindow() throws {
+        var source = MonitoringSource(
+            name: "Infrastructure",
+            providerID: Icinga2Provider.id,
+            endpoint: URL(string: "https://monitoring.example.test")!,
+            authentication: .basic(username: "operator")
+        )
+        var filter = SourceIssueFilter()
+        filter.hideHostsInDowntime = true
+        filter.hideAcknowledgedServices = true
+        filter.patterns = [.init(host: "edge-*", service: "disk-?")]
+        source.issueFilter = filter
+        var savedFilter: SourceIssueFilter?
+        let view = SourceIssueFilterEditor(source: source, issues: []) { settings in
+            savedFilter = settings
+            return true
+        }
+        .environment(\.locale, Locale(identifier: "de"))
+        .environment(\.colorScheme, .light)
+        let size = CGSize(width: 500, height: 520)
+        XCTAssertTrue(NativeViewRenderer.exerciseWindow(for: view, size: size))
+        let screenshot = try NativeViewRenderer.pngData(for: view, size: size)
+        XCTAssertGreaterThan(screenshot.count, 10_000)
+        if let path = ProcessInfo.processInfo.environment["ISSUELIGHT_SOURCE_FILTER_SCREENSHOT_PATH"] {
+            try screenshot.write(to: URL(fileURLWithPath: path), options: .atomic)
+        }
+        NativeViewRenderer.click([CGPoint(x: 38, y: 388), CGPoint(x: 445, y: 28)], in: view, size: size)
+        XCTAssertEqual(savedFilter?.hideHostsInDowntime, false)
+        XCTAssertEqual(savedFilter?.hideAcknowledgedServices, true)
+        XCTAssertEqual(savedFilter?.patterns, filter.patterns)
+    }
+
     func testPortNumberFormatNeverAddsLocaleGrouping() {
         XCTAssertEqual(
             PortNumberField.format.locale(Locale(identifier: "de_DE")).format(3_389),

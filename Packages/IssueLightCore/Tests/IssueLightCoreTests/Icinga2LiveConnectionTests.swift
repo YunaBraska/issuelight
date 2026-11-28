@@ -294,6 +294,7 @@ final class Icinga2LiveConnectionTests: XCTestCase {
                 && $0.severity == .critical
         })
         XCTAssertEqual(snapshot.highestAttentionSeverity, .critical)
+        snapshot.issues.forEach { assertSourceRulesForIssue($0) }
     }
 
     func testDisabledTrustAcceptsLiveServerWithMismatchedHostname() async throws {
@@ -377,6 +378,71 @@ final class Icinga2LiveConnectionTests: XCTestCase {
         let result = await provider.perform(.recheck, on: service, from: source, access: access)
 
         XCTAssertEqual(result, .completed)
+    }
+
+    func testLiveRulesHideAcknowledgedHostAndServiceInDowntime() async throws {
+        let env = ProcessInfo.processInfo.environment
+        guard let url = env["ISSUELIGHT_LIVE_ICINGA_URL"].flatMap(URL.init(string:)),
+              url.host == "localhost",
+              let password = env["ISSUELIGHT_ICINGA_BASIC_PASSWORD"] else {
+            throw XCTSkip("Requires the local Icinga 2 lab")
+        }
+        let source = MonitoringSource(
+            name: "Live source filters",
+            providerID: Icinga2Provider.id,
+            endpoint: url,
+            authentication: .basic(username: "issuelight-basic"),
+            serverTrust: .disabled
+        )
+        let provider = Icinga2Provider()
+        let access = ProviderAccess(credential: .password(password))
+        guard case .loaded(let original) = await provider.loadSnapshot(from: source, access: access) else {
+            return XCTFail("Expected a live snapshot")
+        }
+        let host = try XCTUnwrap(original.issues.first { $0.kind == .host && $0.hostName == "down-host" })
+        let service = try XCTUnwrap(original.issues.first { $0.serviceName == "cascaded-service" })
+        let session = try ProviderHTTPSession(
+            source: source,
+            authentication: .basic(username: "issuelight-basic", password: password),
+            trustedServerCertificate: nil,
+            configuration: .ephemeral
+        )
+        addTeardownBlock {
+            defer { session.close() }
+            for (action, type, filter) in [
+                ("remove-acknowledgement", "Host", #"host.name=="down-host""#),
+                ("remove-downtime", "Service", #"host.name=="down-host" && service.name=="cascaded-service""#),
+            ] {
+                var request = URLRequest(url: url.appendingPathComponent("v1/actions/\(action)"))
+                request.httpMethod = "POST"
+                request.setValue("application/json", forHTTPHeaderField: "Accept")
+                request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                request.httpBody = try JSONSerialization.data(withJSONObject: ["type": type, "filter": filter])
+                _ = try await session.data(for: request)
+            }
+        }
+        let ack = await provider.perform(.acknowledge(author: "test", comment: "Source filters"),
+                                         on: host, from: source, access: access)
+        let now = Date()
+        let downtime = await provider.perform(
+            .scheduleDowntime(author: "test", comment: "Source filters",
+                              start: now.addingTimeInterval(-1), end: now.addingTimeInterval(120)),
+            on: service, from: source, access: access
+        )
+        XCTAssertEqual(ack, .completed)
+        XCTAssertEqual(downtime, .completed)
+
+        for _ in 0..<20 {
+            if case .loaded(let snapshot) = await provider.loadSnapshot(from: source, access: access),
+               let acknowledged = snapshot.issues.first(where: { $0.id == host.id && $0.isAcknowledged }),
+               let inDowntime = snapshot.issues.first(where: { $0.id == service.id && $0.isInDowntime }) {
+                assertSourceRulesForIssue(acknowledged)
+                assertSourceRulesForIssue(inDowntime)
+                return
+            }
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        XCTFail("Expected the host acknowledgement and service downtime in the live snapshot")
     }
 
     func testImportedKeychainIdentityConnectsToLiveIcingaAPI() async throws {
