@@ -132,16 +132,29 @@ final class StatusMenuInteractionTests: XCTestCase {
         var filter = SourceIssueFilter()
         filter.hostConditions.insert(.downtime)
         filter.serviceConditions.insert(.acknowledged)
-        filter.patterns = [.init(host: "edge-*", service: "disk-?", states: [.warning, .pending, .unknown, .critical])]
+        filter.patterns = [
+            .init(service: "apt", states: [.warning, .pending, .unknown, .critical]),
+            .init(service: "qnap-*", states: [.warning, .pending, .unknown, .critical]),
+            .init(host: "edge-*", states: [.down, .unreachable]),
+        ]
         source.issueFilter = filter
+        let sourceID = source.id
+        let issues = [("db-01", "apt"), ("db-02", "apt"), ("nas-01", "qnap-backup"), ("db-01", "HTTP")]
+            .map { host, service in
+                MonitoringIssue(
+                    sourceID: sourceID, nativeID: "\(host)!\(service)", kind: .service,
+                    hostName: host, serviceName: service, displayName: service, severity: .critical,
+                    summary: "Critical", isAcknowledged: false, isInDowntime: false
+                )
+            }
         var savedFilter: SourceIssueFilter?
-        let view = SourceIssueFilterEditor(source: source, issues: []) { settings in
+        let view = SourceIssueFilterEditor(source: source, issues: issues) { settings in
             savedFilter = settings
             return true
         }
         .environment(\.locale, Locale(identifier: "de"))
         .environment(\.colorScheme, .light)
-        let size = CGSize(width: 620, height: 555)
+        let size = CGSize(width: 620, height: 590)
         XCTAssertTrue(NativeViewRenderer.exerciseWindow(for: view, size: size))
         let screenshot = try NativeViewRenderer.pngData(for: view, size: size)
         XCTAssertGreaterThan(screenshot.count, 10_000)
@@ -149,14 +162,18 @@ final class StatusMenuInteractionTests: XCTestCase {
             try screenshot.write(to: URL(fileURLWithPath: path), options: .atomic)
         }
         NativeViewRenderer.click(
-            [CGPoint(x: 38, y: 428), CGPoint(x: 338, y: 380), CGPoint(x: 38, y: 297), CGPoint(x: 565, y: 28)],
+            [
+                CGPoint(x: 38, y: 436), CGPoint(x: 338, y: 390), CGPoint(x: 38, y: 305),
+                CGPoint(x: 387, y: 556), CGPoint(x: 573, y: 125), CGPoint(x: 565, y: 28),
+            ],
             in: view,
             size: size
         )
         XCTAssertEqual(savedFilter?.hostConditions, [])
         XCTAssertEqual(savedFilter?.serviceConditions, [.acknowledged, .flapping])
         XCTAssertEqual(savedFilter?.hideServicesOfHostsInDowntime, true)
-        XCTAssertEqual(savedFilter?.patterns, filter.patterns)
+        XCTAssertEqual(savedFilter?.showPendingChecks, true)
+        XCTAssertEqual(savedFilter?.patterns, Array(filter.patterns.prefix(2)))
     }
 
     func testPortNumberFormatNeverAddsLocaleGrouping() {

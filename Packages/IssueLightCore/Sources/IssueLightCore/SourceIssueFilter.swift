@@ -26,6 +26,10 @@ public enum IssueFilterState: String, Codable, CaseIterable, Sendable {
     case warning
     case unknown
 
+    public var appliesToServices: Bool {
+        self != .down && self != .unreachable
+    }
+
     public init(_ issue: MonitoringIssue) {
         switch (issue.kind, issue.severity) {
         case (_, .pending): self = .pending
@@ -58,6 +62,13 @@ public struct IssueExclusionPattern: Codable, Equatable, Sendable {
 
     public var hasValidSyntax: Bool {
         trimmed.matcher != nil
+    }
+
+    public var applicableStates: [IssueFilterState] {
+        if service.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return IssueFilterState.allCases
+        }
+        return IssueFilterState.allCases.filter(\.appliesToServices)
     }
 
     fileprivate var trimmed: Self {

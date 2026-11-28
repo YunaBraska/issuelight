@@ -807,11 +807,17 @@ struct SourceIssueFilterEditor: View {
         let validRules = filter.patterns.allSatisfy(\.hasValidSyntax)
         let normalized = filter.normalized
         VStack(spacing: 0) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(verbatim: localized("Filter")).font(.headline)
-                Text(source.name).foregroundStyle(.secondary)
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(verbatim: localized("Filter")).font(.headline)
+                    Text(source.name).foregroundStyle(.secondary)
+                }
+                Spacer()
+                Toggle(localized("Ausstehende Prüfungen anzeigen"), isOn: $draft.showPendingChecks)
+                    .toggleStyle(.checkbox)
+                    .fixedSize(horizontal: true, vertical: false)
+                    .disabled(isSaving)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
             .padding()
 
             Form {
@@ -821,28 +827,15 @@ struct SourceIssueFilterEditor: View {
                         Divider()
                         conditions(localized("Services"), isHost: false, selection: $draft.serviceConditions)
                     }
-                    Toggle(localized("Services von Hosts in Wartung"), isOn: $draft.hideServicesOfHostsInDowntime)
-                    Toggle(localized("Ausstehende Prüfungen anzeigen"), isOn: $draft.showPendingChecks)
+                    Toggle(localized("Services bei Host-Wartung"), isOn: $draft.hideServicesOfHostsInDowntime)
+                } header: {
+                    Text(verbatim: localized("Probleme ausblenden"))
                 }
                 .toggleStyle(.checkbox)
 
                 Section {
-                    ForEach($rules) { $rule in
-                        HStack {
-                            TextField(localized("Host"), text: $rule.pattern.host)
-                                .accessibilityLabel(localized("Host"))
-                            TextField(localized("Service"), text: $rule.pattern.service)
-                                .accessibilityLabel(localized("Service"))
-                            ruleOptions($rule.pattern)
-                            Button(role: .destructive) {
-                                rules.removeAll { $0.id == rule.id }
-                            } label: {
-                                Image(systemName: "minus.circle")
-                            }
-                            .buttonStyle(.borderless)
-                            .accessibilityLabel(localized("Regel entfernen"))
-                            .help(localized("Regel entfernen"))
-                        }
+                    if !rules.isEmpty {
+                        ruleTable
                     }
                     Button {
                         rules.append(Rule(pattern: IssueExclusionPattern()))
@@ -852,8 +845,6 @@ struct SourceIssueFilterEditor: View {
                     .accessibilityIdentifier("add-source-filter-rule")
                 } header: {
                     Text(verbatim: localized("Ausschlussregeln"))
-                } footer: {
-                    Text(verbatim: localized("Muster unterscheiden Groß- und Kleinschreibung. * steht für beliebig viele Zeichen, ? für eines."))
                 }
             }
             .formStyle(.grouped)
@@ -893,9 +884,55 @@ struct SourceIssueFilterEditor: View {
             .disabled(isSaving)
             .padding()
         }
-        .frame(width: 620, height: 555)
+        .frame(width: 620, height: 590)
         .background(Color(nsColor: .windowBackgroundColor))
         .interactiveDismissDisabled(isSaving)
+    }
+
+    private var ruleTable: some View {
+        let statusWidth: CGFloat = 124
+        let removeWidth: CGFloat = 34
+        return VStack(spacing: 6) {
+            HStack(spacing: 8) {
+                Text(verbatim: localized("Host")).frame(maxWidth: .infinity, alignment: .leading)
+                Text(verbatim: localized("Service")).frame(maxWidth: .infinity, alignment: .leading)
+                Text(verbatim: localized("Status")).frame(width: statusWidth, alignment: .leading)
+                Color.clear.frame(width: removeWidth, height: 1)
+            }
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(.secondary)
+            .accessibilityHidden(true)
+
+            ForEach($rules) { $rule in
+                let canMatchServices = rule.pattern.states?.contains(where: \.appliesToServices) ?? true
+                HStack(spacing: 8) {
+                    TextField(localized("Host"), text: $rule.pattern.host, prompt: Text(verbatim: localized("Alle Hosts")))
+                        .labelsHidden()
+                        .textFieldStyle(.roundedBorder)
+                        .frame(maxWidth: .infinity)
+                    TextField(
+                        localized("Service"), text: $rule.pattern.service,
+                        prompt: Text(verbatim: canMatchServices ? localized("Alle Services") : "")
+                    )
+                    .labelsHidden()
+                    .textFieldStyle(.roundedBorder)
+                    .frame(maxWidth: .infinity)
+                    ruleOptions($rule.pattern)
+                        .frame(width: statusWidth, alignment: .leading)
+                    Button {
+                        let ruleID = rule.id
+                        rules.removeAll { $0.id == ruleID }
+                    } label: {
+                        Image(systemName: "minus")
+                            .frame(width: 14, height: 18)
+                    }
+                    .buttonStyle(.bordered)
+                    .accessibilityLabel(localized("Regel entfernen"))
+                    .help(localized("Regel entfernen"))
+                    .frame(width: removeWidth)
+                }
+            }
+        }
     }
 
     private func conditions(
@@ -936,12 +973,18 @@ struct SourceIssueFilterEditor: View {
 
     private func ruleOptions(_ rule: Binding<IssueExclusionPattern>) -> some View {
         let allStates = Set(IssueFilterState.allCases)
-        let currentStates = rule.wrappedValue.states
-        let statusTitle = currentStates.map { states in
+        let applicableStates = rule.wrappedValue.applicableStates
+        let selectedStates = rule.wrappedValue.states.map { states in
+            applicableStates.filter(states.contains)
+        }
+        let statusTitle = selectedStates.map { states in
             states.isEmpty
                 ? localized("Keine Zustände")
-                : IssueFilterState.allCases.filter(states.contains).map(\.abbreviation).joined(separator: ", ")
+                : states.map(\.abbreviation).joined(separator: ", ")
         } ?? localized("Alle Zustände")
+        let statusDescription = selectedStates.flatMap { states in
+            states.isEmpty ? nil : states.map { $0.localizedName(locale: locale) }.joined(separator: ", ")
+        } ?? statusTitle
         return Menu {
             Toggle(localized("Regulärer Ausdruck"), isOn: Binding(
                 get: { rule.wrappedValue.usesRegularExpressions == true },
@@ -949,7 +992,7 @@ struct SourceIssueFilterEditor: View {
             ))
             Divider()
             Button(localized("Alle Zustände")) { rule.wrappedValue.states = nil }
-            ForEach(IssueFilterState.allCases, id: \.self) { state in
+            ForEach(applicableStates, id: \.self) { state in
                 Toggle(state.localizedName(locale: locale), isOn: Binding(
                     get: { rule.wrappedValue.states?.contains(state) ?? true },
                     set: { enabled in
@@ -970,7 +1013,8 @@ struct SourceIssueFilterEditor: View {
         }
         .fixedSize()
         .accessibilityLabel(localized("Status"))
-        .accessibilityValue(statusTitle)
+        .accessibilityValue(statusDescription)
+        .help(statusDescription)
         .accessibilityIdentifier("source-filter-rule-options")
     }
 

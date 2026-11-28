@@ -100,6 +100,35 @@ final class SourceIssueFilterTests: XCTestCase {
         XCTAssertTrue(filter.excludes(issue(kind: .service, service: "disk-*")))
     }
 
+    func testServicePatternOffersOnlyStatusesThatCanMatchServices() {
+        var pattern = IssueExclusionPattern(host: "edge-*", service: "  ")
+        XCTAssertEqual(Set(pattern.applicableStates), Set(IssueFilterState.allCases))
+
+        pattern.service = " apt "
+        XCTAssertEqual(Set(pattern.applicableStates), [.warning, .pending, .unknown, .critical])
+    }
+
+    func testServiceOnlyRuleMatchesAcrossHostsAndKeepsCaseDistinct() {
+        var filter = SourceIssueFilter()
+        filter.patterns = [
+            .init(service: "apt", states: [.warning, .pending, .unknown, .critical]),
+            .init(service: "qnap-*", states: [.warning, .pending, .unknown, .critical]),
+        ]
+        let cases = [
+            issue(kind: .service, host: "edge-a", service: "apt"),
+            issue(kind: .service, host: "edge-b", service: "apt", severity: .warning),
+            issue(kind: .service, host: "nas-1", service: "qnap-backup", severity: .pending),
+            issue(kind: .service, host: "edge-c", service: "APT"),
+            issue(kind: .service, host: "nas-1", service: "qnap"),
+            issue(kind: .host, host: "apt"),
+        ]
+        XCTAssertEqual(filter.retainingVisibleIssues(cases), Array(cases.suffix(3)))
+
+        filter.patterns = [.init(service: "(?i)^apt$", usesRegularExpressions: true)]
+        XCTAssertTrue(filter.excludes(cases[3]))
+        XCTAssertFalse(filter.excludes(cases[5]))
+    }
+
     func testBothColumnsMustMatchAndAnyNonemptyRuleCanExcludeAnIssue() throws {
         var filter = SourceIssueFilter()
         filter.patterns = [
