@@ -321,6 +321,37 @@ final class Icinga2LiveConnectionTests: XCTestCase {
         XCTAssertEqual(result, .connected)
     }
 
+    func testLiveDisabledTrustSeparatesAuthenticationFromObjectPermissions() async throws {
+        let environment = ProcessInfo.processInfo.environment
+        guard let endpointValue = environment["ISSUELIGHT_LIVE_ICINGA_URL"],
+              let endpoint = URL(string: endpointValue),
+              let forbiddenPassword = environment["ISSUELIGHT_ICINGA_FORBIDDEN_PASSWORD"] else {
+            throw XCTSkip("The live Icinga 2 permissions fixture is not configured")
+        }
+        var source = MonitoringSource(
+            name: "Live permissions",
+            providerID: Icinga2Provider.id,
+            endpoint: endpoint,
+            authentication: .basic(username: "issuelight-basic"),
+            serverTrust: .disabled
+        )
+        let provider = try XCTUnwrap(ProviderRegistry.builtIn().provider(for: source.providerID))
+
+        let invalidLogin = await provider.testConnection(
+            to: source,
+            access: ProviderAccess(credential: .password(UUID().uuidString))
+        )
+        XCTAssertEqual(invalidLogin, .failed(.authentication))
+
+        source.authentication = .basic(username: "issuelight-forbidden")
+        let forbiddenAccess = ProviderAccess(credential: .password(forbiddenPassword))
+        let forbiddenConnection = await provider.testConnection(to: source, access: forbiddenAccess)
+        let forbiddenSnapshot = await provider.loadSnapshot(from: source, access: forbiddenAccess)
+
+        XCTAssertEqual(forbiddenConnection, .failed(.authorization))
+        XCTAssertEqual(forbiddenSnapshot, .failed(.authorization))
+    }
+
     func testLiveBasicAuthenticationRechecksARealService() async throws {
         let environment = ProcessInfo.processInfo.environment
         guard let endpointValue = environment["ISSUELIGHT_LIVE_ICINGA_URL"],

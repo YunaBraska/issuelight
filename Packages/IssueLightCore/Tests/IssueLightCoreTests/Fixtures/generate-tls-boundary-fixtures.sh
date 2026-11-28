@@ -56,6 +56,13 @@ extendedKeyUsage = clientAuth
 subjectAltName = DNS:localhost
 subjectKeyIdentifier = hash
 authorityKeyIdentifier = keyid,issuer
+
+[ no_extended_key_usage_extensions ]
+basicConstraints = critical, CA:FALSE
+keyUsage = critical, digitalSignature, keyEncipherment
+subjectAltName = IP:127.0.0.1
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid,issuer
 CONFIG
 
 "$openssl_bin" req -new -x509 -nodes -newkey rsa:2048 \
@@ -73,7 +80,8 @@ CONFIG
 create_server_certificate() {
   certificate_name=$1
   common_name=$2
-  shift 2
+  extensions=$3
+  shift 3
   "$openssl_bin" req -new \
     -config "$output_dir/openssl.cnf" \
     -subj "/CN=$common_name" \
@@ -81,26 +89,16 @@ create_server_certificate() {
     -out "$output_dir/$certificate_name.csr" >/dev/null 2>&1
   "$openssl_bin" ca -batch -notext \
     -config "$output_dir/openssl.cnf" \
-    -extensions server_extensions \
+    -extensions "$extensions" \
     -in "$output_dir/$certificate_name.csr" \
     -out "$output_dir/$certificate_name.crt" \
     "$@" >/dev/null 2>&1
 }
 
-create_server_certificate valid localhost -days 3650
-create_server_certificate expired expired.localhost \
+create_server_certificate valid localhost server_extensions -days 3650
+create_server_certificate expired expired.localhost server_extensions \
   -startdate 20200101000000Z -enddate 20210101000000Z
-create_server_certificate future future.localhost \
+create_server_certificate future future.localhost server_extensions \
   -startdate 20400101000000Z -enddate 20410101000000Z
-
-"$openssl_bin" req -new \
-  -config "$output_dir/openssl.cnf" \
-  -subj '/CN=client-only.localhost' \
-  -key "$output_dir/server.key" \
-  -out "$output_dir/client-only.csr" >/dev/null 2>&1
-"$openssl_bin" ca -batch -notext \
-  -config "$output_dir/openssl.cnf" \
-  -extensions client_only_extensions \
-  -in "$output_dir/client-only.csr" \
-  -out "$output_dir/client-only.crt" \
-  -days 3650 >/dev/null 2>&1
+create_server_certificate client-only client-only.localhost client_only_extensions -days 3650
+create_server_certificate no-extended-key-usage 127.0.0.1 no_extended_key_usage_extensions -days 365

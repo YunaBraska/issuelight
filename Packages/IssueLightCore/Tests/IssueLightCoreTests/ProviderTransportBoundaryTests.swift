@@ -84,6 +84,26 @@ final class ProviderTransportBoundaryTests: XCTestCase {
         XCTAssertEqual(result, .failure(.serverTrust))
     }
 
+    func testExactPinStillRequiresServerAuthenticationUsage() async throws {
+        let fixtures = try Self.fixtureResult.get()
+        let certificate = fixtures.certificateWithoutExtendedKeyUsage
+        let server = try OpenSSLTestServer(
+            certificate: certificate,
+            privateKey: fixtures.serverPrivateKey
+        )
+        defer { server.stop() }
+        let fingerprint = try ServerCertificateFingerprint.sha256(at: certificate)
+
+        let pinned = await TLSBoundaryProbe.request(
+            port: server.port,
+            trust: .pinnedCertificate(sha256: fingerprint)
+        )
+        let unchecked = await TLSBoundaryProbe.request(port: server.port, trust: .disabled)
+
+        XCTAssertEqual(pinned, .failure(.serverTrust))
+        XCTAssertEqual(unchecked, .success(200))
+    }
+
     func testHandshakeWithoutServerCertificateIsNotReportedAsTrustRejection() async throws {
         let server = try OpenSSLTestServer(certificate: nil, privateKey: nil)
         defer { server.stop() }
@@ -199,6 +219,7 @@ private final class TLSBoundaryFixtures {
     var expiredCertificate: URL { directory.appendingPathComponent("expired.crt") }
     var futureCertificate: URL { directory.appendingPathComponent("future.crt") }
     var clientOnlyCertificate: URL { directory.appendingPathComponent("client-only.crt") }
+    var certificateWithoutExtendedKeyUsage: URL { directory.appendingPathComponent("no-extended-key-usage.crt") }
     var serverPrivateKey: URL { directory.appendingPathComponent("server.key") }
 
     init() throws {
