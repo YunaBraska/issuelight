@@ -12,13 +12,14 @@ struct ThrukSnapshotDecoder {
         sourceID: UUID,
         observedAt: Date,
         hostData: Data,
-        serviceData: Data
+        serviceData: Data,
+        includePending: Bool = false
     ) throws -> MonitoringSnapshot {
         let decoder = JSONDecoder()
         let hosts = try decoder.decode([ThrukObject].self, from: hostData)
         let services = try decoder.decode([ThrukObject].self, from: serviceData)
-        let hostIssues = try hosts.compactMap { try hostIssue($0, sourceID: sourceID) }
-        let serviceIssues = try services.compactMap { try serviceIssue($0, sourceID: sourceID) }
+        let hostIssues = try hosts.compactMap { try hostIssue($0, sourceID: sourceID, includePending: includePending) }
+        let serviceIssues = try services.compactMap { try serviceIssue($0, sourceID: sourceID, includePending: includePending) }
         return MonitoringSnapshot(
             sourceID: sourceID,
             observedAt: observedAt,
@@ -26,13 +27,18 @@ struct ThrukSnapshotDecoder {
         )
     }
 
-    func hostIssue(_ object: ThrukObject, sourceID: UUID) throws -> MonitoringIssue? {
-        guard let state = object.state?.value else {
+    func hostIssue(_ object: ThrukObject, sourceID: UUID, includePending: Bool) throws -> MonitoringIssue? {
+        let pending = object.hasBeenChecked?.value == false
+        guard !pending || includePending else { return nil }
+        guard let state = pending ? 0 : object.state?.value else {
             throw ThrukSnapshotDecodingError.unsupportedHostState(-1)
         }
-        guard state != 0 else { return nil }
         let severity: MonitoringSeverity
         switch state {
+        case 0 where pending:
+            severity = .pending
+        case 0:
+            return nil
         case 1:
             severity = .critical
         case 2, 3:
@@ -59,13 +65,18 @@ struct ThrukSnapshotDecoder {
         )
     }
 
-    func serviceIssue(_ object: ThrukObject, sourceID: UUID) throws -> MonitoringIssue? {
-        guard let state = object.state?.value else {
+    func serviceIssue(_ object: ThrukObject, sourceID: UUID, includePending: Bool) throws -> MonitoringIssue? {
+        let pending = object.hasBeenChecked?.value == false
+        guard !pending || includePending else { return nil }
+        guard let state = pending ? 0 : object.state?.value else {
             throw ThrukSnapshotDecodingError.unsupportedServiceState(-1)
         }
-        guard state != 0 else { return nil }
         let severity: MonitoringSeverity
         switch state {
+        case 0 where pending:
+            severity = .pending
+        case 0:
+            return nil
         case 1:
             severity = .warning
         case 2:
@@ -122,7 +133,13 @@ struct ThrukSnapshotDecoder {
             checkAttempt: object.currentAttempt?.value,
             maxCheckAttempts: object.maxCheckAttempts?.value,
             isAcknowledged: object.acknowledged?.value ?? false,
-            isInDowntime: (object.scheduledDowntimeDepth?.value ?? 0) > 0
+            isInDowntime: (object.scheduledDowntimeDepth?.value ?? 0) > 0,
+            activity: .init(
+                isFlapping: object.isFlapping?.value,
+                notificationsEnabled: object.notificationsEnabled?.value,
+                isSoftState: (object.stateType?.value).map { $0 == 0 },
+                hostIsInDowntime: (object.hostScheduledDowntimeDepth?.value).map { $0 > 0 }
+            )
         )
     }
 
@@ -157,29 +174,39 @@ struct ThrukObject: Decodable {
     let acknowledged: ThrukBoolean?
     let currentAttempt: ThrukInteger?
     let description: String?
+    let hasBeenChecked: ThrukBoolean?
     let displayName: String?
     let hostName: String?
+    let hostScheduledDowntimeDepth: ThrukInteger?
+    let isFlapping: ThrukBoolean?
     let lastStateChange: ThrukInteger?
     let maxCheckAttempts: ThrukInteger?
     let name: String?
+    let notificationsEnabled: ThrukBoolean?
     let peerKey: String?
     let pluginOutput: String?
     let scheduledDowntimeDepth: ThrukInteger?
     let state: ThrukInteger?
+    let stateType: ThrukInteger?
 
     enum CodingKeys: String, CodingKey {
         case acknowledged
         case currentAttempt = "current_attempt"
         case description
+        case hasBeenChecked = "has_been_checked"
         case displayName = "display_name"
         case hostName = "host_name"
+        case hostScheduledDowntimeDepth = "host_scheduled_downtime_depth"
+        case isFlapping = "is_flapping"
         case lastStateChange = "last_state_change"
         case maxCheckAttempts = "max_check_attempts"
         case name
+        case notificationsEnabled = "notifications_enabled"
         case peerKey = "peer_key"
         case pluginOutput = "plugin_output"
         case scheduledDowntimeDepth = "scheduled_downtime_depth"
         case state
+        case stateType = "state_type"
     }
 }
 

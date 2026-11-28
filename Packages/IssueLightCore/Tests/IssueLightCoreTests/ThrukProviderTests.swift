@@ -165,7 +165,7 @@ final class ThrukProviderTests: XCTestCase {
             if request.url?.path.hasSuffix("/hosts") == true {
                 body = #"[{"acknowledged":0,"current_attempt":2,"display_name":"Edge Router","last_state_change":1799990000,"max_check_attempts":3,"name":"edge-1","peer_key":"prod","plugin_output":"DOWN - no route","scheduled_downtime_depth":0,"state":1}]"#
             } else {
-                body = #"[{"acknowledged":1,"current_attempt":1,"description":"Disk /","host_name":"edge-1","last_state_change":1799995000,"max_check_attempts":5,"peer_key":"prod","plugin_output":"WARNING - 85%","scheduled_downtime_depth":1,"state":1}]"#
+                body = #"[{"acknowledged":1,"current_attempt":1,"description":"Disk /","host_name":"edge-1","last_state_change":1799995000,"max_check_attempts":5,"peer_key":"prod","plugin_output":"WARNING - 85%","scheduled_downtime_depth":1,"state":1,"is_flapping":"yes","notifications_enabled":false,"state_type":"0","host_scheduled_downtime_depth":"1"}]"#
             }
             return Self.response(request: request, statusCode: 200, body: body)
         }
@@ -196,6 +196,10 @@ final class ThrukProviderTests: XCTestCase {
         XCTAssertEqual(snapshot.issues[1].severity, .warning)
         XCTAssertTrue(snapshot.issues[1].isAcknowledged)
         XCTAssertTrue(snapshot.issues[1].isInDowntime)
+        XCTAssertEqual(snapshot.issues[0].activity, .init())
+        XCTAssertEqual(snapshot.issues[1].activity, .init(
+            isFlapping: true, notificationsEnabled: false, isSoftState: true, hostIsInDowntime: true
+        ))
     }
 
     func testSnapshotIgnoresHealthyObjectsAndRejectsMalformedProblems() async {

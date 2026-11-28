@@ -14,7 +14,7 @@ final class Icinga2SnapshotLoaderTests: XCTestCase {
                 return Self.response(
                     request: request,
                     statusCode: 200,
-                    body: #"{"results":[{"attrs":{"acknowledgement":0,"display_name":"Router","downtime_depth":0,"last_check_result":{"output":"Host unreachable"},"name":"router-1","state":1},"name":"router-1","type":"Host"}]}"#
+                    body: #"{"results":[{"attrs":{"acknowledgement":0,"display_name":"Router","downtime_depth":0,"flapping":true,"enable_notifications":false,"state_type":0,"last_check_result":{"output":"Host unreachable"},"name":"router-1","state":1},"name":"router-1","type":"Host"}]}"#
                 )
             }
             return Self.response(
@@ -32,6 +32,9 @@ final class Icinga2SnapshotLoaderTests: XCTestCase {
         }
         XCTAssertEqual(snapshot.observedAt, observedAt)
         XCTAssertEqual(snapshot.issues.map(\.displayName), ["Router"])
+        XCTAssertEqual(snapshot.issues.first?.activity, .init(
+            isFlapping: true, notificationsEnabled: false, isSoftState: true
+        ))
         let requests = recorder.requests
         XCTAssertEqual(Set(requests.compactMap { $0.url?.path }), ["/v1/objects/hosts", "/v1/objects/services"])
         XCTAssertTrue(requests.allSatisfy {
@@ -44,6 +47,9 @@ final class Icinga2SnapshotLoaderTests: XCTestCase {
                 .value
         }
         XCTAssertEqual(Set(filters), ["host.state!=0", "service.state!=0"])
+        let serviceRequest = try XCTUnwrap(requests.first { $0.url?.path == "/v1/objects/services" })
+        let serviceQuery = try XCTUnwrap(serviceRequest.url.flatMap { URLComponents(url: $0, resolvingAgainstBaseURL: false)?.queryItems })
+        XCTAssertTrue(serviceQuery.contains(URLQueryItem(name: "joins", value: "host.downtime_depth")))
     }
 
     func testLoadKeepsAuthenticationFailureDistinctFromHealthySnapshot() async {
@@ -54,6 +60,39 @@ final class Icinga2SnapshotLoaderTests: XCTestCase {
         let result = await loader().load(source(), password: "wrong")
 
         XCTAssertEqual(result, .failed(.authentication))
+    }
+
+    func testLoadShowsServiceProblemsWhenAllHostsAreHealthy() async throws {
+        let result = await load(
+            serviceBody: """
+            {"results":[
+              {"type":"Service","name":"edge!disk","attrs":{"name":"disk","display_name":"Disk","host_name":"edge","state":1.0,"acknowledgement":0.0,"downtime_depth":0.0}},
+              {"type":"Service","name":"edge!https","attrs":{"name":"https","display_name":"HTTPS","host_name":"edge","state":2.0,"acknowledgement":0.0,"downtime_depth":0.0,"last_check_result":null}},
+              {"type":"Service","name":"edge!backup","attrs":{"name":"backup","display_name":"Backup","host_name":"edge","state":3.0,"acknowledgement":0.0,"downtime_depth":0.0}}
+            ]}
+            """
+        )
+
+        guard case .loaded(let snapshot) = result else {
+            return XCTFail("Expected a loaded snapshot, got \(result)")
+        }
+        XCTAssertEqual(snapshot.issues.map(\.kind), [.service, .service, .service])
+        XCTAssertEqual(snapshot.issues.map(\.hostName), ["edge", "edge", "edge"])
+        XCTAssertEqual(snapshot.issues.map(\.severity), [.critical, .unknown, .warning])
+        XCTAssertEqual(snapshot.actionableIssues, snapshot.issues)
+    }
+
+    func testLoadReportsDeniedServiceAccessEvenWhenHostQueryIsEmpty() async {
+        StubURLProtocol.configure(host: stubHost) { request in
+            if request.url?.path.hasSuffix("/hosts") == true {
+                return Self.response(request: request, statusCode: 200, body: #"{"results":[]}"#)
+            }
+            return Self.response(request: request, statusCode: 403, body: #"{"error":403}"#)
+        }
+
+        let result = await loader().load(source(), password: "secret")
+
+        XCTAssertEqual(result, .failed(.authorization))
     }
 
     func testLoadRejectsMissingPasswordBeforeRequest() async {

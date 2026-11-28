@@ -294,6 +294,12 @@ final class Icinga2LiveConnectionTests: XCTestCase {
                 && $0.severity == .critical
         })
         XCTAssertEqual(snapshot.highestAttentionSeverity, .critical)
+        snapshot.issues.forEach { assertSourceRulesForIssue($0) }
+        XCTAssertTrue(snapshot.issues.allSatisfy { $0.activity.isFlapping == false && $0.activity.isSoftState != nil })
+        _ = try await assertPendingChecksFromLiveProvider(
+            provider, source: source, access: ProviderAccess(credential: .password(password)),
+            initialSnapshot: snapshot, host: "healthy-host", service: "pending-service"
+        )
     }
 
     func testDisabledTrustAcceptsLiveServerWithMismatchedHostname() async throws {
@@ -321,6 +327,37 @@ final class Icinga2LiveConnectionTests: XCTestCase {
         XCTAssertEqual(result, .connected)
     }
 
+    func testLiveDisabledTrustSeparatesAuthenticationFromObjectPermissions() async throws {
+        let environment = ProcessInfo.processInfo.environment
+        guard let endpointValue = environment["ISSUELIGHT_LIVE_ICINGA_URL"],
+              let endpoint = URL(string: endpointValue),
+              let forbiddenPassword = environment["ISSUELIGHT_ICINGA_FORBIDDEN_PASSWORD"] else {
+            throw XCTSkip("The live Icinga 2 permissions fixture is not configured")
+        }
+        var source = MonitoringSource(
+            name: "Live permissions",
+            providerID: Icinga2Provider.id,
+            endpoint: endpoint,
+            authentication: .basic(username: "issuelight-basic"),
+            serverTrust: .disabled
+        )
+        let provider = try XCTUnwrap(ProviderRegistry.builtIn().provider(for: source.providerID))
+
+        let invalidLogin = await provider.testConnection(
+            to: source,
+            access: ProviderAccess(credential: .password(UUID().uuidString))
+        )
+        XCTAssertEqual(invalidLogin, .failed(.authentication))
+
+        source.authentication = .basic(username: "issuelight-forbidden")
+        let forbiddenAccess = ProviderAccess(credential: .password(forbiddenPassword))
+        let forbiddenConnection = await provider.testConnection(to: source, access: forbiddenAccess)
+        let forbiddenSnapshot = await provider.loadSnapshot(from: source, access: forbiddenAccess)
+
+        XCTAssertEqual(forbiddenConnection, .failed(.authorization))
+        XCTAssertEqual(forbiddenSnapshot, .failed(.authorization))
+    }
+
     func testLiveBasicAuthenticationRechecksARealService() async throws {
         let environment = ProcessInfo.processInfo.environment
         guard let endpointValue = environment["ISSUELIGHT_LIVE_ICINGA_URL"],
@@ -346,6 +383,89 @@ final class Icinga2LiveConnectionTests: XCTestCase {
         let result = await provider.perform(.recheck, on: service, from: source, access: access)
 
         XCTAssertEqual(result, .completed)
+    }
+
+    func testLiveRulesHideAcknowledgedHostsAndTwoKindsOfServiceDowntime() async throws {
+        let env = ProcessInfo.processInfo.environment
+        guard let url = env["ISSUELIGHT_LIVE_ICINGA_URL"].flatMap(URL.init(string:)),
+              url.host == "localhost",
+              let password = env["ISSUELIGHT_ICINGA_BASIC_PASSWORD"] else {
+            throw XCTSkip("Requires the local Icinga 2 lab")
+        }
+        var source = MonitoringSource(
+            name: "Live source filters",
+            providerID: Icinga2Provider.id,
+            endpoint: url,
+            authentication: .basic(username: "issuelight-basic"),
+            serverTrust: .disabled
+        )
+        var pendingChecks = SourceIssueFilter()
+        pendingChecks.showPendingChecks = true
+        source.issueFilter = pendingChecks
+        let provider = Icinga2Provider()
+        let access = ProviderAccess(credential: .password(password))
+        guard case .loaded(let original) = await provider.loadSnapshot(from: source, access: access) else {
+            return XCTFail("Expected a live snapshot")
+        }
+        let host = try XCTUnwrap(original.issues.first { $0.kind == .host && $0.hostName == "down-host" })
+        let service = try XCTUnwrap(original.issues.first { $0.serviceName == "cascaded-service" })
+        let healthyHost = MonitoringIssue(
+            sourceID: source.id, nativeID: "healthy-host", kind: .host, hostName: "healthy-host",
+            serviceName: nil, displayName: "healthy-host", severity: .critical, summary: "",
+            isAcknowledged: false, isInDowntime: false
+        )
+        let session = try ProviderHTTPSession(
+            source: source,
+            authentication: .basic(username: "issuelight-basic", password: password),
+            trustedServerCertificate: nil,
+            configuration: .ephemeral
+        )
+        addTeardownBlock {
+            defer { session.close() }
+            for (action, type, filter) in [
+                ("remove-acknowledgement", "Host", #"host.name=="down-host""#),
+                ("remove-downtime", "Service", #"host.name=="down-host" && service.name=="cascaded-service""#),
+                ("remove-downtime", "Host", #"host.name=="healthy-host""#),
+            ] {
+                var request = URLRequest(url: url.appendingPathComponent("v1/actions/\(action)"))
+                request.httpMethod = "POST"
+                request.setValue("application/json", forHTTPHeaderField: "Accept")
+                request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                request.httpBody = try JSONSerialization.data(withJSONObject: ["type": type, "filter": filter])
+                _ = try await session.data(for: request)
+            }
+        }
+        let ack = await provider.perform(.acknowledge(author: "test", comment: "Source filters"),
+                                         on: host, from: source, access: access)
+        let now = Date()
+        let schedule = MonitoringAction.scheduleDowntime(
+            author: "test", comment: "Source filters",
+            start: now.addingTimeInterval(-1), end: now.addingTimeInterval(120)
+        )
+        let serviceDowntime = await provider.perform(schedule, on: service, from: source, access: access)
+        let hostDowntime = await provider.perform(schedule, on: healthyHost, from: source, access: access)
+        XCTAssertEqual(ack, .completed)
+        XCTAssertEqual(serviceDowntime, .completed)
+        XCTAssertEqual(hostDowntime, .completed)
+
+        for _ in 0..<20 {
+            if case .loaded(let snapshot) = await provider.loadSnapshot(from: source, access: access),
+               let acknowledged = snapshot.issues.first(where: { $0.id == host.id && $0.isAcknowledged }),
+               let inDowntime = snapshot.issues.first(where: { $0.id == service.id && $0.isInDowntime }),
+               let inherited = snapshot.issues.first(where: { $0.serviceName == "pending-service" && $0.activity.hostIsInDowntime == true }) {
+                assertSourceRulesForIssue(acknowledged)
+                assertSourceRulesForIssue(inDowntime)
+                XCTAssertFalse(inherited.isInDowntime)
+                XCTAssertFalse(snapshot.issues.contains { $0.kind == .host && $0.hostName == "healthy-host" })
+                var filter = SourceIssueFilter()
+                filter.hideServicesOfHostsInDowntime = true
+                XCTAssertTrue(filter.excludes(inherited))
+                XCTAssertFalse(filter.excludes(inDowntime))
+                return
+            }
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        XCTFail("Expected acknowledgement, service downtime, and host downtime in the live snapshot")
     }
 
     func testImportedKeychainIdentityConnectsToLiveIcingaAPI() async throws {

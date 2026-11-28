@@ -23,7 +23,7 @@ remains a manual installed-app validation item.
 | Thruk | Done | Done | The REST adapter owns discovery, Basic and API-key authentication, snapshots, commands, and web links. The pinned official OMD Labs image verifies real Thruk and Naemon behavior. Basic sources are read-only; API-key sources expose commands. |
 | Checkmk | Done | Done | The REST adapter owns versioned endpoint discovery, API-key authentication, snapshots, acknowledgement, downtime, and web links. The pinned official Checkmk Community image verifies the real API and monitoring core. |
 | Text search | Partial | Done | Keep search in the panel's first row and match display name, host, output, and source. |
-| State and property filters | Done | Done | Persist the compact source, severity, and coverage filters. Do not reproduce NagBar's large filter matrix. |
+| State and property filters | Done | Done | Per-source host and service exclusions, host downtime, status-specific patterns, and optional pending checks follow [MENU-012 and MENU-013](attention-snapshot.md#menu-bar-journey). |
 | Acknowledge, recheck, and downtime | Done | Implemented per provider capability | Icinga 2, Thruk, and Nagios Core expose all three commands. Checkmk exposes acknowledgement and downtime because its supported REST API has no recheck action. Every confirmed command refreshes its source. |
 | Open object in monitoring web UI | Done | Implemented for all built-in providers | A row click opens the provider-built object URL. Each source may override the provider default. |
 | SSH and RDP target actions | Done | Done | Keep them optional per source and use the operating system's registered URL handlers. |

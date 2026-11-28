@@ -104,7 +104,7 @@ final class CheckmkProviderTests: XCTestCase {
             let body: String
             switch request.url?.path {
             case "/cmk/check_mk/api/v1/version":
-                body = #"{"site":"cmk","rest_api":{"revision":"1.0.0"},"versions":{"checkmk":"2.5.0"},"edition":"raw","demo":false}"#
+                body = #"{"site":"cmk","rest_api":{"revision":"1.0.0"},"versions":{"apache":[2,4,52],"checkmk":"2.5.0","python":"3.13"},"edition":"raw","demo":false}"#
             default:
                 body = #"{"links":[],"id":"all","domainType":"host","title":"All","value":[]}"#
             }
@@ -190,7 +190,7 @@ final class CheckmkProviderTests: XCTestCase {
             if request.url?.path.contains("/host/") == true {
                 body = #"{"links":[],"id":"all","domainType":"host","title":"All hosts","value":[{"domainType":"host","id":"edge-1","title":"edge-1","links":[],"extensions":{"acknowledged":0,"alias":"Edge Router","current_attempt":2,"last_state_change":1799990000,"max_check_attempts":3,"name":"edge-1","plugin_output":"DOWN - no route\nDetails","scheduled_downtime_depth":0,"state":1}}]}"#
             } else {
-                body = #"{"links":[],"id":"all","domainType":"service","title":"All services","value":[{"domainType":"service","id":"edge-1-Disk /","title":"Disk /","links":[],"extensions":{"acknowledged":1,"current_attempt":1,"description":"Disk /","host_name":"edge-1","last_state_change":1799995000,"max_check_attempts":5,"plugin_output":"WARN - 85%","scheduled_downtime_depth":1,"state":1}}]}"#
+                body = #"{"links":[],"id":"all","domainType":"service","title":"All services","value":[{"domainType":"service","id":"edge-1-Disk /","title":"Disk /","links":[],"extensions":{"acknowledged":1,"current_attempt":1,"description":"Disk /","host_name":"edge-1","last_state_change":1799995000,"max_check_attempts":5,"plugin_output":"WARN - 85%","scheduled_downtime_depth":1,"state":1,"is_flapping":1,"notifications_enabled":0,"state_type":0,"host_scheduled_downtime_depth":1}}]}"#
             }
             return Self.response(request: request, statusCode: 200, body: body)
         }
@@ -219,6 +219,10 @@ final class CheckmkProviderTests: XCTestCase {
         XCTAssertEqual(snapshot.issues[1].severity, .warning)
         XCTAssertTrue(snapshot.issues[1].isAcknowledged)
         XCTAssertTrue(snapshot.issues[1].isInDowntime)
+        XCTAssertEqual(snapshot.issues[0].activity, .init())
+        XCTAssertEqual(snapshot.issues[1].activity, .init(
+            isFlapping: true, notificationsEnabled: false, isSoftState: true, hostIsInDowntime: true
+        ))
 
         let bodies = try recorder.requests.map(Self.jsonBody)
         XCTAssertEqual(

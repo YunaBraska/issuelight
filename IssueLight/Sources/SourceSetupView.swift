@@ -30,6 +30,7 @@ struct SourceSetupView: View {
     @State private var pendingNavigation: PendingNavigation?
     @State private var connectionTask: Task<Void, Never>?
     @State private var certificateFetchTask: Task<Void, Never>?
+    @State private var filterSource: MonitoringSource?
 
     init(
         model: IssueLightModel,
@@ -78,6 +79,11 @@ struct SourceSetupView: View {
             connectionTask?.cancel()
             certificateFetchTask?.cancel()
             Task { _ = await model.cleanupUnreferencedManagedServerCertificates() }
+        }
+        .sheet(item: $filterSource) { source in
+            SourceIssueFilterEditor(source: source, issues: model.snapshots[source.id]?.issues) {
+                await model.saveIssueFilter($0, for: source.id)
+            }
         }
         .sheet(isPresented: $isImportingIdentity) {
             if let importURL {
@@ -174,6 +180,12 @@ struct SourceSetupView: View {
                         prompt: Text(verbatim: model.endpointPrompt)
                     )
                         .textContentType(.URL)
+                    if let source = model.selectedSource {
+                        Button(localized("Filter konfigurieren …")) {
+                            filterSource = source
+                        }
+                        .accessibilityIdentifier("source-filter-settings")
+                    }
                 } header: {
                     if model.isCreatingSource {
                         Text(verbatim: localized("Neue Quelle"))
@@ -753,11 +765,267 @@ private struct SourceRow: View {
         case .refreshing:
             return AppLocalization.string("wird aktualisiert", locale: locale)
         case .current:
-            let count = model.snapshots[source.id]?.actionableIssues.count ?? 0
+            let count = model.visibleIssues(for: source).count(where: \.requiresAttention)
             return IssueCountText.sourceStatus(count, locale: locale)
         case .failed(let message):
             return AppLocalization.string("Aktualisierung fehlgeschlagen, \(message)", locale: locale)
         }
+    }
+}
+
+struct SourceIssueFilterEditor: View {
+    private struct Rule: Identifiable {
+        let id = UUID()
+        var pattern: IssueExclusionPattern
+    }
+
+    let source: MonitoringSource
+    let issues: [MonitoringIssue]?
+    let save: (SourceIssueFilter) async -> Bool
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.locale) private var locale
+    @State private var draft: SourceIssueFilter
+    @State private var rules: [Rule]
+    @State private var isSaving = false
+    @State private var saveFailed = false
+
+    init(
+        source: MonitoringSource,
+        issues: [MonitoringIssue]? = nil,
+        save: @escaping (SourceIssueFilter) async -> Bool
+    ) {
+        self.source = source
+        self.issues = issues
+        self.save = save
+        let filter = source.issueFilter ?? SourceIssueFilter()
+        _draft = State(initialValue: filter)
+        _rules = State(initialValue: filter.patterns.map { Rule(pattern: $0) })
+    }
+
+    var body: some View {
+        let filter = editedFilter
+        let validRules = filter.patterns.allSatisfy(\.hasValidSyntax)
+        let normalized = filter.normalized
+        VStack(spacing: 0) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(verbatim: localized("Filter")).font(.headline)
+                    Text(source.name).foregroundStyle(.secondary)
+                }
+                Spacer()
+                Toggle(localized("Ausstehende Prüfungen anzeigen"), isOn: $draft.showPendingChecks)
+                    .toggleStyle(.checkbox)
+                    .fixedSize(horizontal: true, vertical: false)
+                    .disabled(isSaving)
+            }
+            .padding()
+
+            Form {
+                Section {
+                    HStack(alignment: .top, spacing: 20) {
+                        conditions(localized("Hosts"), isHost: true, selection: $draft.hostConditions)
+                        Divider()
+                        conditions(localized("Services"), isHost: false, selection: $draft.serviceConditions)
+                    }
+                    Toggle(localized("Services bei Host-Wartung"), isOn: $draft.hideServicesOfHostsInDowntime)
+                } header: {
+                    Text(verbatim: localized("Probleme ausblenden"))
+                }
+                .toggleStyle(.checkbox)
+
+                Section {
+                    if !rules.isEmpty {
+                        ruleTable
+                    }
+                    Button {
+                        rules.append(Rule(pattern: IssueExclusionPattern()))
+                    } label: {
+                        Label(localized("Regel hinzufügen"), systemImage: "plus")
+                    }
+                    .accessibilityIdentifier("add-source-filter-rule")
+                } header: {
+                    Text(verbatim: localized("Ausschlussregeln"))
+                }
+            }
+            .formStyle(.grouped)
+            .disabled(isSaving)
+
+            Divider()
+            HStack {
+                if !validRules {
+                    Text(verbatim: localized("Ungültiger regulärer Ausdruck"))
+                        .foregroundStyle(.red)
+                } else if saveFailed {
+                    Text(verbatim: localized("Filter konnten nicht gespeichert werden."))
+                        .foregroundStyle(.red)
+                } else if let issues {
+                    let eligible = draft.showPendingChecks ? issues : issues.filter { $0.severity != .pending }
+                    let hidden = eligible.count - (normalized?.retainingVisibleIssues(eligible).count ?? eligible.count)
+                    Text(verbatim: localized("Ausgeblendet: \(hidden)"))
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Button(localized("Abbrechen")) { dismiss() }
+                    .keyboardShortcut(.cancelAction)
+                Button(localized("Speichern")) {
+                    isSaving = true
+                    Task {
+                        if await save(filter) {
+                            dismiss()
+                        } else {
+                            saveFailed = true
+                        }
+                        isSaving = false
+                    }
+                }
+                .keyboardShortcut(.defaultAction)
+                .disabled(!validRules || normalized == source.issueFilter)
+            }
+            .disabled(isSaving)
+            .padding()
+        }
+        .frame(width: 620, height: 590)
+        .background(Color(nsColor: .windowBackgroundColor))
+        .interactiveDismissDisabled(isSaving)
+    }
+
+    private var ruleTable: some View {
+        let statusWidth: CGFloat = 124
+        let removeWidth: CGFloat = 34
+        return VStack(spacing: 6) {
+            HStack(spacing: 8) {
+                Text(verbatim: localized("Host")).frame(maxWidth: .infinity, alignment: .leading)
+                Text(verbatim: localized("Service")).frame(maxWidth: .infinity, alignment: .leading)
+                Text(verbatim: localized("Status")).frame(width: statusWidth, alignment: .leading)
+                Color.clear.frame(width: removeWidth, height: 1)
+            }
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(.secondary)
+            .accessibilityHidden(true)
+
+            ForEach($rules) { $rule in
+                let canMatchServices = rule.pattern.states?.contains(where: \.appliesToServices) ?? true
+                HStack(spacing: 8) {
+                    TextField(localized("Host"), text: $rule.pattern.host, prompt: Text(verbatim: localized("Alle Hosts")))
+                        .labelsHidden()
+                        .textFieldStyle(.roundedBorder)
+                        .frame(maxWidth: .infinity)
+                    TextField(
+                        localized("Service"), text: $rule.pattern.service,
+                        prompt: Text(verbatim: canMatchServices ? localized("Alle Services") : "")
+                    )
+                    .labelsHidden()
+                    .textFieldStyle(.roundedBorder)
+                    .frame(maxWidth: .infinity)
+                    ruleOptions($rule.pattern)
+                        .frame(width: statusWidth, alignment: .leading)
+                    Button {
+                        let ruleID = rule.id
+                        rules.removeAll { $0.id == ruleID }
+                    } label: {
+                        Image(systemName: "minus")
+                            .frame(width: 14, height: 18)
+                    }
+                    .buttonStyle(.bordered)
+                    .accessibilityLabel(localized("Regel entfernen"))
+                    .help(localized("Regel entfernen"))
+                    .frame(width: removeWidth)
+                }
+            }
+        }
+    }
+
+    private func conditions(
+        _ title: String,
+        isHost: Bool,
+        selection: Binding<Set<IssueFilterCondition>>
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 7) {
+            Text(verbatim: title).font(.subheadline.weight(.semibold))
+            ForEach(IssueFilterCondition.allCases, id: \.self) { condition in
+                let label = conditionTitle(condition)
+                Toggle(label, isOn: Binding(
+                    get: { selection.wrappedValue.contains(condition) },
+                    set: { enabled in
+                        if enabled {
+                            selection.wrappedValue.insert(condition)
+                        } else {
+                            selection.wrappedValue.remove(condition)
+                        }
+                    }
+                ))
+                .accessibilityLabel("\(title): \(label)")
+                .accessibilityIdentifier("\(isHost ? "host" : "service")-filter-\(condition.rawValue)")
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func conditionTitle(_ condition: IssueFilterCondition) -> String {
+        switch condition {
+        case .downtime: localized("Wartungszeit")
+        case .acknowledged: localized("Quittiert")
+        case .flapping: localized("Flapping")
+        case .notificationsDisabled: localized("Benachrichtigungen deaktiviert")
+        case .softState: localized("Vorläufiger Zustand")
+        }
+    }
+
+    private func ruleOptions(_ rule: Binding<IssueExclusionPattern>) -> some View {
+        let allStates = Set(IssueFilterState.allCases)
+        let applicableStates = rule.wrappedValue.applicableStates
+        let selectedStates = rule.wrappedValue.states.map { states in
+            applicableStates.filter(states.contains)
+        }
+        let statusTitle = selectedStates.map { states in
+            states.isEmpty
+                ? localized("Keine Zustände")
+                : states.map(\.abbreviation).joined(separator: ", ")
+        } ?? localized("Alle Zustände")
+        let statusDescription = selectedStates.flatMap { states in
+            states.isEmpty ? nil : states.map { $0.localizedName(locale: locale) }.joined(separator: ", ")
+        } ?? statusTitle
+        return Menu {
+            Toggle(localized("Regulärer Ausdruck"), isOn: Binding(
+                get: { rule.wrappedValue.usesRegularExpressions == true },
+                set: { rule.wrappedValue.usesRegularExpressions = $0 ? true : nil }
+            ))
+            Divider()
+            Button(localized("Alle Zustände")) { rule.wrappedValue.states = nil }
+            ForEach(applicableStates, id: \.self) { state in
+                Toggle(state.localizedName(locale: locale), isOn: Binding(
+                    get: { rule.wrappedValue.states?.contains(state) ?? true },
+                    set: { enabled in
+                        var selection = rule.wrappedValue.states ?? allStates
+                        if enabled { selection.insert(state) } else { selection.remove(state) }
+                        rule.wrappedValue.states = selection == allStates ? nil : selection
+                    }
+                ))
+            }
+        } label: {
+            HStack(spacing: 4) {
+                if rule.wrappedValue.usesRegularExpressions == true {
+                    Text(verbatim: ".*").monospaced().foregroundStyle(.secondary)
+                }
+                Text(verbatim: statusTitle)
+                    .lineLimit(1)
+            }
+        }
+        .fixedSize()
+        .accessibilityLabel(localized("Status"))
+        .accessibilityValue(statusDescription)
+        .help(statusDescription)
+        .accessibilityIdentifier("source-filter-rule-options")
+    }
+
+    private var editedFilter: SourceIssueFilter {
+        var filter = draft
+        filter.patterns = rules.map(\.pattern)
+        return filter
+    }
+
+    private func localized(_ resource: LocalizedStringResource) -> String {
+        AppLocalization.string(resource, locale: locale)
     }
 }
 

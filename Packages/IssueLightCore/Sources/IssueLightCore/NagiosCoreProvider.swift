@@ -142,18 +142,20 @@ public struct NagiosCoreProvider: MonitoringProvider {
         do {
             let transport = try makeTransport(source: source, access: access)
             defer { transport.close() }
+            let includePending = source.issueFilter?.showPendingChecks == true
             async let hostData = transport.data(
-                for: transport.request(queryItems: Self.hostProblemQuery)
+                for: transport.request(queryItems: Self.hostQuery(includePending: includePending))
             )
             async let serviceData = transport.data(
-                for: transport.request(queryItems: Self.serviceProblemQuery)
+                for: transport.request(queryItems: Self.serviceQuery(includePending: includePending))
             )
             return .loaded(
                 try await NagiosCoreSnapshotDecoder().decode(
                     sourceID: source.id,
                     observedAt: now(),
                     hostData: hostData,
-                    serviceData: serviceData
+                    serviceData: serviceData,
+                    includePending: includePending
                 )
             )
         } catch let NagiosCoreTransportError.failure(failure) {
@@ -268,17 +270,24 @@ public struct NagiosCoreProvider: MonitoringProvider {
         )
     }
 
-    private static let hostProblemQuery = [
-        URLQueryItem(name: "query", value: "hostlist"),
-        URLQueryItem(name: "details", value: "true"),
-        URLQueryItem(name: "hoststatus", value: "down unreachable"),
-    ]
+    private static func hostQuery(includePending: Bool) -> [URLQueryItem] {
+        // A healthy host can be in scheduled downtime while its services fail.
+        let states = includePending ? "pending up down unreachable" : "up down unreachable"
+        return [
+            URLQueryItem(name: "query", value: "hostlist"),
+            URLQueryItem(name: "details", value: "true"),
+            URLQueryItem(name: "hoststatus", value: states),
+        ]
+    }
 
-    private static let serviceProblemQuery = [
-        URLQueryItem(name: "query", value: "servicelist"),
-        URLQueryItem(name: "details", value: "true"),
-        URLQueryItem(name: "servicestatus", value: "warning unknown critical"),
-    ]
+    private static func serviceQuery(includePending: Bool) -> [URLQueryItem] {
+        let states = includePending ? "pending warning unknown critical" : "warning unknown critical"
+        return [
+            URLQueryItem(name: "query", value: "servicelist"),
+            URLQueryItem(name: "details", value: "true"),
+            URLQueryItem(name: "servicestatus", value: states),
+        ]
+    }
 }
 
 struct NagiosCoreCommand {

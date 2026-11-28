@@ -47,7 +47,7 @@ final class Icinga2ConnectionTesterTests: XCTestCase {
 
         XCTAssertEqual(
             result,
-            .failed(.invalidConfiguration([.unsupportedScheme("http"), .unsupportedPath("/custom")]))
+            .failed(.invalidConfiguration([.unsupportedPath("/custom")]))
         )
     }
 

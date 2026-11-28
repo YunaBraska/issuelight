@@ -326,14 +326,16 @@ final class IssueLightModel: ObservableObject {
     }
 
     var isEndpointUsingTLS: Bool {
-        if let provider = providerRegistry.provider(for: selectedProviderID),
-           let candidate = provider.endpointCandidates(from: endpoint).first {
-            return candidate.scheme?.lowercased() == "https"
-        }
         let value = endpoint.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !value.isEmpty else { return true }
-        let candidate = value.contains("://") ? value : "https://\(value)"
-        return URLComponents(string: candidate)?.scheme?.lowercased() == "https"
+        if value.contains("://") {
+            return URLComponents(string: value)?.scheme?.lowercased() == "https"
+        }
+        if let provider = providerRegistry.provider(for: selectedProviderID),
+           let candidate = provider.endpointCandidates(from: value).first {
+            return candidate.scheme?.lowercased() == "https"
+        }
+        return true
     }
 
     var canReviewBlockedServerCertificate: Bool {
@@ -505,11 +507,11 @@ final class IssueLightModel: ObservableObject {
         let (result, path) = await connectionCoordinator.performUsingBestAPIPath(
             source: source,
             access: access,
-            operation: { routedAccess in
+            operation: { routedSource, routedAccess in
                 await provider.perform(
                     action,
                     on: issue,
-                    from: source,
+                    from: routedSource,
                     access: routedAccess
                 )
             },
@@ -533,14 +535,32 @@ final class IssueLightModel: ObservableObject {
     }
 
     var actionableIssues: [MonitoringIssue] {
-        activeSnapshots.flatMap(\.actionableIssues).sorted(by: issueOrder)
+        displayedIssues().filter(\.requiresAttention)
     }
 
-    var coveredIssues: [MonitoringIssue] {
-        activeSnapshots
-            .flatMap(\.issues)
-            .filter { !$0.requiresAttention }
+    func displayedIssues(includeSourceExclusions: Bool = false) -> [MonitoringIssue] {
+        sources.filter(\.isEnabled)
+            .flatMap { source in
+                if includeSourceExclusions {
+                    return issuesEnabledForDisplay(for: source)
+                }
+                return visibleIssues(for: source)
+            }
             .sorted(by: issueOrder)
+    }
+
+    func visibleIssues(for source: MonitoringSource) -> [MonitoringIssue] {
+        let issues = issuesEnabledForDisplay(for: source)
+        return source.issueFilter?.retainingVisibleIssues(issues) ?? issues
+    }
+
+    private func issuesEnabledForDisplay(for source: MonitoringSource) -> [MonitoringIssue] {
+        let issues = snapshots[source.id]?.issues ?? []
+        return source.issueFilter?.showPendingChecks == true ? issues : issues.filter { $0.severity != .pending }
+    }
+
+    var activeIssueCount: Int {
+        sources.filter(\.isEnabled).reduce(0) { $0 + issuesEnabledForDisplay(for: $1).count }
     }
 
     var hasActiveSnapshot: Bool {
@@ -895,8 +915,8 @@ final class IssueLightModel: ObservableObject {
                 source: source,
                 access: access,
                 rediscoverDirect: true,
-                operation: { routedAccess in
-                    await provider.testConnection(to: source, access: routedAccess)
+                operation: { routedSource, routedAccess in
+                    await provider.testConnection(to: routedSource, access: routedAccess)
                 },
                 requiresAlternativeNetworkPath: { result in
                     guard case .failed(let failure) = result else { return false }
@@ -1121,6 +1141,20 @@ final class IssueLightModel: ObservableObject {
         }
     }
 
+    func saveIssueFilter(_ filter: SourceIssueFilter, for sourceID: UUID) async -> Bool {
+        guard var source = sources.first(where: { $0.id == sourceID }),
+              let sourceStore else { return false }
+        let enablesPending = filter.showPendingChecks && source.issueFilter?.showPendingChecks != true
+        source.issueFilter = filter.normalized
+        do {
+            sources = try await sourceStore.upsert(source)
+            if enablesPending { refresh(sourceID: sourceID) }
+            return true
+        } catch {
+            return false
+        }
+    }
+
     func deleteSource() async {
         guard let source = selectedSource, let sourceStore else { return }
         activity = .working(localized("Quelle wird entfernt …"))
@@ -1285,11 +1319,20 @@ final class IssueLightModel: ObservableObject {
                 source: source,
                 access: access,
                 rediscoverDirect: true,
-                operation: { routedAccess in
-                    await self.presentedServerCertificateFetcher(
-                        candidate,
+                operation: { routedSource, routedAccess in
+                    let result = await self.presentedServerCertificateFetcher(
+                        routedSource.endpoint,
                         routedAccess.socksProxy
                     )
+                    guard case .fetched(let certificate) = result else { return result }
+                    return .fetched(PresentedServerCertificate(
+                        endpoint: candidate,
+                        subject: certificate.subject,
+                        issuer: certificate.issuer,
+                        validFrom: certificate.validFrom,
+                        validUntil: certificate.validUntil,
+                        sha256Fingerprint: certificate.sha256Fingerprint
+                    ))
                 },
                 requiresAlternativeNetworkPath: { result in
                     guard case .failed(let failure) = result else { return false }
@@ -1392,7 +1435,7 @@ final class IssueLightModel: ObservableObject {
         }
 
         let serverTrust: ServerTrustConfiguration
-        if !isEndpointUsingTLS {
+        if url.scheme?.lowercased() != "https" {
             serverTrust = .system
         } else {
             switch serverTrustChoice {
@@ -1534,8 +1577,8 @@ final class IssueLightModel: ObservableObject {
         let (result, path) = await connectionCoordinator.performUsingBestAPIPath(
             source: source,
             access: access,
-            operation: { routedAccess in
-                await provider.loadSnapshot(from: source, access: routedAccess)
+            operation: { routedSource, routedAccess in
+                await provider.loadSnapshot(from: routedSource, access: routedAccess)
             },
             requiresAlternativeNetworkPath: { result in
                 guard case .failed(let failure) = result else { return false }
@@ -1845,6 +1888,7 @@ final class IssueLightModel: ObservableObject {
         switch result {
         case .failed(.unreachable),
              .failed(.tls),
+             .failed(.serverTrust),
              .failed(.incompatibleResponse),
              .failed(.http(statusCode: 404)),
              .failed(.server(statusCode: 404)):
@@ -1866,7 +1910,7 @@ final class IssueLightModel: ObservableObject {
         case .ssh:
             route = "SSH"
         case .unavailable:
-            route = "—"
+            route = "\(localized("Direkt")) → SSH"
         }
 
         let outcome: String
@@ -1874,7 +1918,13 @@ final class IssueLightModel: ObservableObject {
         case .connected:
             outcome = localized("\(providerDisplayName) ist erreichbar. Host- und Servicezugriff funktionieren.")
         case .failed(let failure):
-            outcome = refreshMessage(for: failure)
+            let directFailure = refreshMessage(for: failure)
+            if case .unavailable(let detail) = path {
+                outcome = directFailure + " "
+                    + localized("Der SSH-Tunnel konnte nicht gestartet werden: \(detail)")
+            } else {
+                outcome = directFailure
+            }
         }
         return ConnectionAttempt(
             endpoint: source.endpoint.absoluteString,

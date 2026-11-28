@@ -49,7 +49,6 @@ public struct Icinga2Provider: MonitoringProvider {
         }
 
         let explicitPort = components.port
-        let hintedPort = explicitPort ?? (hasExplicitScheme && hintedScheme == "https" ? 443 : nil)
         let firstPathComponent = components.path
             .split(separator: "/", omittingEmptySubsequences: true)
             .first?
@@ -57,22 +56,37 @@ public struct Icinga2Provider: MonitoringProvider {
         let looksLikeAPIPath = firstPathComponent == nil
             || firstPathComponent == "v1"
             || firstPathComponent == "v2"
-        components.scheme = "https"
+        let hintedPort = explicitPort ?? {
+            guard hasExplicitScheme, !looksLikeAPIPath else { return nil }
+            return hintedScheme == "https" ? 443 : 80
+        }()
         components.path = ""
         components.query = nil
         components.fragment = nil
 
-        var ports: [Int] = []
-        if let hintedPort, looksLikeAPIPath {
-            ports.append(hintedPort)
-        }
-        ports.append(5_665)
-        if let hintedPort, !looksLikeAPIPath {
-            ports.append(hintedPort)
+        let schemes = hintedScheme == "http" && hasExplicitScheme
+            ? ["https", "http"]
+            : ["https"]
+        var routes: [(String, Int)] = []
+        if looksLikeAPIPath {
+            for scheme in schemes {
+                if let hintedPort {
+                    routes.append((scheme, hintedPort))
+                }
+                routes.append((scheme, 5_665))
+            }
+        } else {
+            for scheme in schemes {
+                routes.append((scheme, 5_665))
+                if let hintedPort {
+                    routes.append((scheme, hintedPort))
+                }
+            }
         }
 
         var seen = Set<String>()
-        return ports.compactMap { port in
+        return routes.compactMap { scheme, port in
+            components.scheme = scheme
             components.port = port
             guard let url = components.url,
                   seen.insert(url.absoluteString).inserted else {
@@ -93,8 +107,9 @@ public struct Icinga2Provider: MonitoringProvider {
             issues.append(.unsupportedAuthentication(source.authentication.method))
         }
 
-        if components?.scheme?.lowercased() == "http" {
-            issues.append(.unsupportedScheme("http"))
+        if components?.scheme?.lowercased() == "http",
+           source.authentication.method == .clientCertificate {
+            issues.append(.unsupportedAuthentication(.clientCertificate))
         }
 
         let path = components?.percentEncodedPath ?? ""

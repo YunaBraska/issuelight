@@ -13,7 +13,8 @@ struct NagiosCoreSnapshotDecoder {
         sourceID: UUID,
         observedAt: Date,
         hostData: Data,
-        serviceData: Data
+        serviceData: Data,
+        includePending: Bool = false
     ) throws -> MonitoringSnapshot {
         let decoder = JSONDecoder()
         let hostEnvelope = try decoder.decode(NagiosHostEnvelope.self, from: hostData)
@@ -24,12 +25,18 @@ struct NagiosCoreSnapshotDecoder {
         guard serviceEnvelope.result.typeCode == 0 else {
             throw NagiosCoreSnapshotDecodingError.failedResult(serviceEnvelope.result.typeCode)
         }
-        let hostIssues = try hostEnvelope.data.hostlist.values.compactMap {
-            try hostIssue($0, sourceID: sourceID)
+        let hosts = hostEnvelope.data.hostlist
+        let hostIssues = try hosts.values.compactMap {
+            try hostIssue($0, sourceID: sourceID, includePending: includePending)
         }
         let serviceIssues = try serviceEnvelope.data.servicelist.values
             .flatMap(\.values)
-            .compactMap { try serviceIssue($0, sourceID: sourceID) }
+            .compactMap {
+                let hostDowntime = $0.hostName.flatMap { hosts[$0]?.scheduledDowntimeDepth }
+                return try serviceIssue(
+                    $0, sourceID: sourceID, hostDowntime: hostDowntime, includePending: includePending
+                )
+            }
         return MonitoringSnapshot(
             sourceID: sourceID,
             observedAt: observedAt,
@@ -37,12 +44,14 @@ struct NagiosCoreSnapshotDecoder {
         )
     }
 
-    func hostIssue(_ object: NagiosStatusObject, sourceID: UUID) throws -> MonitoringIssue? {
+    func hostIssue(_ object: NagiosStatusObject, sourceID: UUID, includePending: Bool) throws -> MonitoringIssue? {
         guard let status = object.status else {
             throw NagiosCoreSnapshotDecodingError.unsupportedHostState(-1)
         }
         let severity: MonitoringSeverity
         switch status {
+        case 1 where includePending:
+            severity = .pending
         case 1, 2:
             return nil
         case 4:
@@ -66,12 +75,16 @@ struct NagiosCoreSnapshotDecoder {
         )
     }
 
-    func serviceIssue(_ object: NagiosStatusObject, sourceID: UUID) throws -> MonitoringIssue? {
+    func serviceIssue(
+        _ object: NagiosStatusObject, sourceID: UUID, hostDowntime: Int?, includePending: Bool
+    ) throws -> MonitoringIssue? {
         guard let status = object.status else {
             throw NagiosCoreSnapshotDecodingError.unsupportedServiceState(-1)
         }
         let severity: MonitoringSeverity
         switch status {
+        case 1 where includePending:
+            severity = .pending
         case 1, 2:
             return nil
         case 4:
@@ -96,7 +109,8 @@ struct NagiosCoreSnapshotDecoder {
             hostName: hostName,
             serviceName: serviceName,
             displayName: serviceName,
-            severity: severity
+            severity: severity,
+            hostDowntime: hostDowntime
         )
     }
 
@@ -107,7 +121,8 @@ struct NagiosCoreSnapshotDecoder {
         hostName: String,
         serviceName: String?,
         displayName: String,
-        severity: MonitoringSeverity
+        severity: MonitoringSeverity,
+        hostDowntime: Int? = nil
     ) -> MonitoringIssue {
         MonitoringIssue(
             sourceID: sourceID,
@@ -127,7 +142,13 @@ struct NagiosCoreSnapshotDecoder {
             checkAttempt: object.currentAttempt.flatMap { $0 > 0 ? $0 : nil },
             maxCheckAttempts: object.maxAttempts.flatMap { $0 > 0 ? $0 : nil },
             isAcknowledged: object.problemHasBeenAcknowledged ?? false,
-            isInDowntime: (object.scheduledDowntimeDepth ?? 0) > 0
+            isInDowntime: (object.scheduledDowntimeDepth ?? 0) > 0,
+            activity: .init(
+                isFlapping: object.isFlapping,
+                notificationsEnabled: object.notificationsEnabled,
+                isSoftState: object.stateType.map { $0 == 0 },
+                hostIsInDowntime: hostDowntime.map { $0 > 0 }
+            )
         )
     }
 
@@ -191,25 +212,31 @@ struct NagiosStatusObject: Decodable {
     let currentAttempt: Int?
     let description: String?
     let hostName: String?
+    let isFlapping: Bool?
     let lastStateChange: Int?
     let maxAttempts: Int?
     let name: String?
+    let notificationsEnabled: Bool?
     let pluginOutput: String?
     let problemHasBeenAcknowledged: Bool?
     let scheduledDowntimeDepth: Int?
     let status: Int?
+    let stateType: Int?
 
     enum CodingKeys: String, CodingKey {
         case currentAttempt = "current_attempt"
         case description
         case hostName = "host_name"
+        case isFlapping = "is_flapping"
         case lastStateChange = "last_state_change"
         case maxAttempts = "max_attempts"
         case name
+        case notificationsEnabled = "notifications_enabled"
         case pluginOutput = "plugin_output"
         case problemHasBeenAcknowledged = "problem_has_been_acknowledged"
         case scheduledDowntimeDepth = "scheduled_downtime_depth"
         case status
+        case stateType = "state_type"
     }
 }
 

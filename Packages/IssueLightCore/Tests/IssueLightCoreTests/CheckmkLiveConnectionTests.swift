@@ -49,6 +49,13 @@ final class CheckmkLiveConnectionTests: XCTestCase {
         XCTAssertEqual(issue.summary, "DOWN - IssueLight live lab")
         XCTAssertFalse(issue.isAcknowledged)
         XCTAssertFalse(issue.isInDowntime)
+        assertSourceRulesForIssue(issue)
+        XCTAssertEqual(issue.activity.isFlapping, false)
+        XCTAssertEqual(issue.activity.notificationsEnabled, true)
+        _ = try await assertPendingChecksFromLiveProvider(
+            provider, source: source, access: access,
+            initialSnapshot: snapshot, host: "issuelight-pending", service: nil
+        )
         XCTAssertEqual(provider.supportedActions(for: source), [.acknowledge, .scheduleDowntime])
 
         let acknowledgement = await provider.perform(
@@ -81,7 +88,12 @@ final class CheckmkLiveConnectionTests: XCTestCase {
             ),
                let candidate = updatedSnapshot.issues.first(where: { $0.id == issue.id }),
                candidate.isAcknowledged,
-               candidate.isInDowntime {
+               candidate.isInDowntime,
+               let ping = updatedSnapshot.issues.first(where: { $0.hostName == issue.hostName && $0.serviceName == "PING" }) {
+                var filter = SourceIssueFilter()
+                filter.hideServicesOfHostsInDowntime = true
+                XCTAssertTrue(filter.excludes(ping))
+                XCTAssertFalse(filter.excludes(candidate))
                 updatedIssue = candidate
                 break
             }
@@ -89,6 +101,7 @@ final class CheckmkLiveConnectionTests: XCTestCase {
         }
         XCTAssertEqual(updatedIssue?.isAcknowledged, true)
         XCTAssertEqual(updatedIssue?.isInDowntime, true)
+        assertSourceRulesForIssue(try XCTUnwrap(updatedIssue))
     }
 
     private func liveSource(endpoint: URL) -> MonitoringSource {

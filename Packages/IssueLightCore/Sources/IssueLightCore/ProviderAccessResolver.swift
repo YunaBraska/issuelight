@@ -40,8 +40,8 @@ public struct ProviderAccessResolver: Sendable {
         keychainInteraction: KeychainInteraction = .fail
     ) async -> ProviderAccessResolution {
         let trustedServerCertificate: SecCertificate?
-        switch source.serverTrust {
-        case .customCertificate(let certificateID):
+        switch (source.endpoint.scheme?.lowercased(), source.serverTrust) {
+        case ("https", .customCertificate(let certificateID)):
             do {
                 guard let certificate = try await certificateCatalog.certificate(id: certificateID) else {
                     return .failed(.serverCertificateNotAvailable)
@@ -50,7 +50,7 @@ public struct ProviderAccessResolver: Sendable {
             } catch {
                 return .failed(.serverCertificateAccessFailed)
             }
-        case .system, .pinnedCertificate, .disabled:
+        default:
             trustedServerCertificate = nil
         }
 

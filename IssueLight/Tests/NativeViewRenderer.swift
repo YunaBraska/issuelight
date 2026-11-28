@@ -8,6 +8,14 @@ enum NativeViewRenderer {
         in view: Content,
         size: CGSize
     ) {
+        click([point], in: view, size: size)
+    }
+
+    static func click<Content: View>(
+        _ points: [CGPoint],
+        in view: Content,
+        size: CGSize
+    ) {
         let hostingController = NSHostingController(
             rootView: view.frame(width: size.width, height: size.height)
         )
@@ -27,22 +35,24 @@ enum NativeViewRenderer {
         window.makeKey()
         RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.25))
         hostingView.layoutSubtreeIfNeeded()
-        for eventType in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
-            if let event = NSEvent.mouseEvent(
-                with: eventType,
-                location: point,
-                modifierFlags: [],
-                timestamp: ProcessInfo.processInfo.systemUptime,
-                windowNumber: window.windowNumber,
-                context: nil,
-                eventNumber: 0,
-                clickCount: 1,
-                pressure: eventType == .leftMouseDown ? 1 : 0
-            ) {
-                window.sendEvent(event)
+        for point in points {
+            for eventType in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
+                if let event = NSEvent.mouseEvent(
+                    with: eventType,
+                    location: point,
+                    modifierFlags: [],
+                    timestamp: ProcessInfo.processInfo.systemUptime,
+                    windowNumber: window.windowNumber,
+                    context: nil,
+                    eventNumber: 0,
+                    clickCount: 1,
+                    pressure: eventType == .leftMouseDown ? 1 : 0
+                ) {
+                    window.sendEvent(event)
+                }
             }
+            RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.1))
         }
-        RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.1))
         window.orderOut(nil)
     }
 

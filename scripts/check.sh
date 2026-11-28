@@ -13,7 +13,12 @@ test "$check_temp_root" != / || {
 }
 mkdir -p "$check_temp_root"
 check_work_directory=$(mktemp -d "$check_temp_root/issuelight-check.XXXXXX")
+launch_pid=
 cleanup() {
+    if test -n "$launch_pid"; then
+        kill "$launch_pid" 2>/dev/null || true
+        wait "$launch_pid" 2>/dev/null || true
+    fi
     case "$check_work_directory" in
         "$check_temp_root"/issuelight-check.*) rm -rf "$check_work_directory" ;;
         *) echo "Refusing to clean unexpected check directory." >&2 ;;
@@ -118,6 +123,23 @@ app_path="$extracted_directory/IssueLight.app"
 test -d "$app_path"
 test -d "$app_path/Contents/Frameworks/Sparkle.framework"
 test -f "$app_path/Contents/Resources/Sparkle-LICENSE.txt"
+launch_home="$check_work_directory/LaunchHome"
+mkdir "$launch_home"
+CFFIXED_USER_HOME="$launch_home" HOME="$launch_home" \
+    "$app_path/Contents/MacOS/IssueLight" \
+    >"$check_work_directory/IssueLight-launch.log" 2>&1 &
+launch_pid=$!
+sleep 3
+if ! kill -0 "$launch_pid" 2>/dev/null; then
+    wait "$launch_pid" || true
+    launch_pid=
+    echo "Packaged app exited during its launch smoke test." >&2
+    cat "$check_work_directory/IssueLight-launch.log" >&2
+    exit 1
+fi
+kill "$launch_pid"
+wait "$launch_pid" 2>/dev/null || true
+launch_pid=
 test "$(/usr/libexec/PlistBuddy -c 'Print :SUFeedURL' "$app_path/Contents/Info.plist")" = \
     "https://github.com/YunaBraska/issuelight/releases/latest/download/appcast.xml"
 test "$(/usr/libexec/PlistBuddy -c 'Print :SUPublicEDKey' "$app_path/Contents/Info.plist")" = \
@@ -126,6 +148,9 @@ test "$(/usr/libexec/PlistBuddy -c 'Print :SUEnableAutomaticChecks' "$app_path/C
 test "$(/usr/libexec/PlistBuddy -c 'Print :SUAutomaticallyUpdate' "$app_path/Contents/Info.plist")" = false
 test "$(/usr/libexec/PlistBuddy -c 'Print :SUVerifyUpdateBeforeExtraction' "$app_path/Contents/Info.plist")" = true
 test "$(/usr/libexec/PlistBuddy -c 'Print :SURequireSignedFeed' "$app_path/Contents/Info.plist")" = true
+test "$(/usr/libexec/PlistBuddy \
+    -c 'Print :NSAppTransportSecurity:NSAllowsArbitraryLoads' \
+    "$app_path/Contents/Info.plist")" = true
 
 release_build=$(/usr/libexec/PlistBuddy \
     -c 'Print :CFBundleVersion' \
@@ -179,6 +204,9 @@ if /usr/libexec/PlistBuddy -c 'Print :SUFeedURL' "$store_app/Contents/Info.plist
     echo "App Store package contains direct-release update configuration." >&2
     exit 1
 fi
+test "$(/usr/libexec/PlistBuddy \
+    -c 'Print :NSAppTransportSecurity:NSAllowsArbitraryLoads' \
+    "$store_app/Contents/Info.plist")" = true
 codesign --verify --deep --strict "$store_app"
 store_entitlements=$(codesign -d --entitlements :- "$store_app" 2>/dev/null)
 printf '%s\n' "$store_entitlements" | plutil -extract 'com\.apple\.security\.app-sandbox' raw - | grep -Fx true >/dev/null

@@ -278,6 +278,33 @@ final class ProviderAccessResolverTests: XCTestCase {
         XCTAssertEqual(failure, .serverCertificateNotAvailable)
     }
 
+    func testResolverDoesNotReadTLSCertificateForPlainHTTP() async {
+        let source = MonitoringSource(
+            name: "HTTP source with stale trust setting",
+            providerID: Icinga2Provider.id,
+            endpoint: URL(string: "http://monitoring.example.test:8080")!,
+            authentication: .basic(username: "operator"),
+            serverTrust: .customCertificate(certificateID: "invalid-and-unused-over-http")
+        )
+        let resolver = ProviderAccessResolver(
+            passwordVault: passwordVault(),
+            identityCatalog: identityCatalog(),
+            certificateCatalog: certificateCatalog()
+        )
+
+        let resolution = await resolver.resolve(
+            source: source,
+            credentialOverride: "http-password"
+        )
+
+        guard case .resolved(let access) = resolution,
+              case .password(let password) = access.credential else {
+            return XCTFail("Plain HTTP must not resolve an unused TLS certificate")
+        }
+        XCTAssertEqual(password, "http-password")
+        XCTAssertNil(access.trustedServerCertificate)
+    }
+
     private func passwordVault() -> KeychainPasswordVault {
         KeychainPasswordVault(keychainContext: testKeychain.context)
     }

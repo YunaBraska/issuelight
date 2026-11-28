@@ -131,16 +131,17 @@ public struct ThrukProvider: MonitoringProvider {
         do {
             let transport = try makeTransport(source: source, access: access)
             defer { transport.close() }
+            let includePending = source.issueFilter?.showPendingChecks == true
             async let hostData = transport.data(
                 for: transport.request(
                     pathComponents: ["hosts"],
-                    queryItems: Self.problemQueryItems(columns: Self.hostColumns)
+                    queryItems: Self.problemQueryItems(columns: Self.hostColumns, includePending: includePending)
                 )
             )
             async let serviceData = transport.data(
                 for: transport.request(
                     pathComponents: ["services"],
-                    queryItems: Self.problemQueryItems(columns: Self.serviceColumns)
+                    queryItems: Self.problemQueryItems(columns: Self.serviceColumns, includePending: includePending)
                 )
             )
             return .loaded(
@@ -148,7 +149,8 @@ public struct ThrukProvider: MonitoringProvider {
                     sourceID: source.id,
                     observedAt: now(),
                     hostData: hostData,
-                    serviceData: serviceData
+                    serviceData: serviceData,
+                    includePending: includePending
                 )
             )
         } catch let ThrukTransportError.failure(failure) {
@@ -252,10 +254,12 @@ public struct ThrukProvider: MonitoringProvider {
         )
     }
 
-    static func problemQueryItems(columns: [String]) -> [URLQueryItem] {
+    static func problemQueryItems(columns: [String], includePending: Bool) -> [URLQueryItem] {
         [
             URLQueryItem(name: "columns", value: columns.joined(separator: ",")),
-            URLQueryItem(name: "state[gt]", value: "0"),
+            includePending
+                ? URLQueryItem(name: "q", value: "state > 0 or has_been_checked = 0")
+                : URLQueryItem(name: "state[gt]", value: "0"),
         ]
     }
 
@@ -305,7 +309,9 @@ public struct ThrukProvider: MonitoringProvider {
         return ThrukCommand(pathComponents: path, form: form)
     }
 
-    private static let hostColumns = [
+    private static let activityColumns = ["has_been_checked", "is_flapping", "notifications_enabled", "state_type"]
+
+    private static let hostColumns = activityColumns + [
         "acknowledged",
         "current_attempt",
         "display_name",
@@ -318,12 +324,13 @@ public struct ThrukProvider: MonitoringProvider {
         "state",
     ]
 
-    private static let serviceColumns = [
+    private static let serviceColumns = activityColumns + [
         "acknowledged",
         "current_attempt",
         "description",
         "display_name",
         "host_name",
+        "host_scheduled_downtime_depth",
         "last_state_change",
         "max_check_attempts",
         "peer_key",

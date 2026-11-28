@@ -28,8 +28,10 @@ stop_lab() {
 
 remove_temp_directory() {
   if [ -n "$lab_temp_directory" ] && [ -d "$lab_temp_directory" ]; then
+    lab_temp_root=${TMPDIR:-/tmp}
+    lab_temp_root=${lab_temp_root%/}
     case "$lab_temp_directory" in
-      "${TMPDIR:-/tmp}"/issuelight-nagios.*) rm -rf "$lab_temp_directory" ;;
+      "$lab_temp_root"/issuelight-nagios.*) rm -rf "$lab_temp_directory" ;;
       *) printf 'Refusing to clean unexpected lab directory: %s\n' "$lab_temp_directory" >&2 ;;
     esac
   fi

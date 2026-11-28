@@ -3,7 +3,7 @@ import Foundation
 import XCTest
 @testable import IssueLightCore
 
-final class ProviderHTTPSTransportBoundaryTests: XCTestCase {
+final class ProviderTransportBoundaryTests: XCTestCase {
     private static var fixtureResult: Result<TLSBoundaryFixtures, Error>!
 
     override class func setUp() {
@@ -58,6 +58,19 @@ final class ProviderHTTPSTransportBoundaryTests: XCTestCase {
         XCTAssertEqual(result, .success(200))
     }
 
+    func testDisabledTrustAcceptsCertificateWithoutServerAuthenticationUsage() async throws {
+        let fixtures = try Self.fixtureResult.get()
+        let server = try OpenSSLTestServer(
+            certificate: fixtures.clientOnlyCertificate,
+            privateKey: fixtures.serverPrivateKey
+        )
+        defer { server.stop() }
+
+        let result = await TLSBoundaryProbe.request(port: server.port, trust: .disabled)
+
+        XCTAssertEqual(result, .success(200))
+    }
+
     func testSystemTrustRejectsCertificateFromUnknownPrivateCA() async throws {
         let fixtures = try Self.fixtureResult.get()
         let server = try OpenSSLTestServer(
@@ -69,6 +82,26 @@ final class ProviderHTTPSTransportBoundaryTests: XCTestCase {
         let result = await TLSBoundaryProbe.request(port: server.port, trust: .system)
 
         XCTAssertEqual(result, .failure(.serverTrust))
+    }
+
+    func testExactPinStillRequiresServerAuthenticationUsage() async throws {
+        let fixtures = try Self.fixtureResult.get()
+        let certificate = fixtures.certificateWithoutExtendedKeyUsage
+        let server = try OpenSSLTestServer(
+            certificate: certificate,
+            privateKey: fixtures.serverPrivateKey
+        )
+        defer { server.stop() }
+        let fingerprint = try ServerCertificateFingerprint.sha256(at: certificate)
+
+        let pinned = await TLSBoundaryProbe.request(
+            port: server.port,
+            trust: .pinnedCertificate(sha256: fingerprint)
+        )
+        let unchecked = await TLSBoundaryProbe.request(port: server.port, trust: .disabled)
+
+        XCTAssertEqual(pinned, .failure(.serverTrust))
+        XCTAssertEqual(unchecked, .success(200))
     }
 
     func testHandshakeWithoutServerCertificateIsNotReportedAsTrustRejection() async throws {
@@ -87,6 +120,43 @@ final class ProviderHTTPSTransportBoundaryTests: XCTestCase {
         let result = await TLSBoundaryProbe.request(port: server.port, trust: .disabled)
 
         XCTAssertEqual(result, .failure(.tls))
+    }
+
+    func testIcingaBasicConnectionUsesRealPlainHTTPTransport() async throws {
+        let server = try PlainHTTPTestServer(body: Data(#"{"results":[]}"#.utf8))
+        defer { server.stop() }
+        let source = MonitoringSource(
+            name: "HTTP boundary",
+            providerID: Icinga2Provider.id,
+            endpoint: URL(string: "http://127.0.0.1:\(server.port)")!,
+            authentication: .basic(username: "fixture")
+        )
+
+        let result = await Icinga2Provider().testConnection(
+            to: source,
+            access: ProviderAccess(credential: .password("test-only"))
+        )
+
+        XCTAssertEqual(result, .connected)
+    }
+
+    func testPlainHTTPDoesNotRequireATLSCertificateForACustomTrustSetting() async throws {
+        let server = try PlainHTTPTestServer(body: Data(#"{"results":[]}"#.utf8))
+        defer { server.stop() }
+        let source = MonitoringSource(
+            name: "HTTP ignores TLS trust",
+            providerID: Icinga2Provider.id,
+            endpoint: URL(string: "http://127.0.0.1:\(server.port)")!,
+            authentication: .basic(username: "fixture"),
+            serverTrust: .customCertificate(certificateID: "unused-over-http")
+        )
+
+        let result = await Icinga2Provider().testConnection(
+            to: source,
+            access: ProviderAccess(credential: .password("test-only"))
+        )
+
+        XCTAssertEqual(result, .connected)
     }
 
     func testRequiredClientCertificateIsReportedSeparately() async throws {
@@ -148,6 +218,8 @@ private final class TLSBoundaryFixtures {
     var validCertificate: URL { directory.appendingPathComponent("valid.crt") }
     var expiredCertificate: URL { directory.appendingPathComponent("expired.crt") }
     var futureCertificate: URL { directory.appendingPathComponent("future.crt") }
+    var clientOnlyCertificate: URL { directory.appendingPathComponent("client-only.crt") }
+    var certificateWithoutExtendedKeyUsage: URL { directory.appendingPathComponent("no-extended-key-usage.crt") }
     var serverPrivateKey: URL { directory.appendingPathComponent("server.key") }
 
     init() throws {
@@ -263,9 +335,13 @@ private final class OpenSSLTestServer {
 private final class PlainHTTPTestServer {
     let port: Int
     private let lock = NSLock()
+    private let response: Data
     private var listeningDescriptor: Int32
 
-    init() throws {
+    init(body: Data = Data()) throws {
+        response = Data(
+            "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: \(body.count)\r\nConnection: close\r\n\r\n".utf8
+        ) + body
         let descriptor = socket(AF_INET, SOCK_STREAM, 0)
         guard descriptor >= 0 else {
             throw TLSBoundaryFixtureError.serverDidNotStart
@@ -340,9 +416,6 @@ private final class PlainHTTPTestServer {
                 SO_NOSIGPIPE,
                 &noSignal,
                 socklen_t(MemoryLayout<Int32>.size)
-            )
-            let response = Data(
-                "HTTP/1.1 200 OK\r\nContent-Length: 0\r\nConnection: close\r\n\r\n".utf8
             )
             response.withUnsafeBytes { bytes in
                 _ = send(client, bytes.baseAddress, bytes.count, 0)

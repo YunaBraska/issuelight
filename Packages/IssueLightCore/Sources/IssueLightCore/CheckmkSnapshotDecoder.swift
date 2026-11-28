@@ -12,24 +12,30 @@ struct CheckmkSnapshotDecoder {
         sourceID: UUID,
         observedAt: Date,
         hostData: Data,
-        serviceData: Data
+        serviceData: Data,
+        includePending: Bool = false
     ) throws -> MonitoringSnapshot {
         let decoder = JSONDecoder()
         let hosts = try decoder.decode(CheckmkCollection.self, from: hostData).value
         let services = try decoder.decode(CheckmkCollection.self, from: serviceData).value
-        let hostIssues = try hosts.compactMap { try hostIssue($0, sourceID: sourceID) }
-        let serviceIssues = try services.compactMap { try serviceIssue($0, sourceID: sourceID) }
+        let hostIssues = try hosts.compactMap { try hostIssue($0, sourceID: sourceID, includePending: includePending) }
+        let serviceIssues = try services.compactMap { try serviceIssue($0, sourceID: sourceID, includePending: includePending) }
         let issues = (hostIssues + serviceIssues).sorted(by: issueOrder)
         return MonitoringSnapshot(sourceID: sourceID, observedAt: observedAt, issues: issues)
     }
 
-    func hostIssue(_ object: CheckmkObject, sourceID: UUID) throws -> MonitoringIssue? {
-        guard let state = object.extensions.state else {
+    func hostIssue(_ object: CheckmkObject, sourceID: UUID, includePending: Bool) throws -> MonitoringIssue? {
+        let pending = object.extensions.hasBeenChecked == 0
+        guard !pending || includePending else { return nil }
+        guard let state = pending ? 0 : object.extensions.state else {
             throw CheckmkSnapshotDecodingError.unsupportedHostState(-1)
         }
-        guard state != 0 else { return nil }
         let severity: MonitoringSeverity
         switch state {
+        case 0 where pending:
+            severity = .pending
+        case 0:
+            return nil
         case 1:
             severity = .critical
         case 2, 3:
@@ -51,13 +57,18 @@ struct CheckmkSnapshotDecoder {
         )
     }
 
-    func serviceIssue(_ object: CheckmkObject, sourceID: UUID) throws -> MonitoringIssue? {
-        guard let state = object.extensions.state else {
+    func serviceIssue(_ object: CheckmkObject, sourceID: UUID, includePending: Bool) throws -> MonitoringIssue? {
+        let pending = object.extensions.hasBeenChecked == 0
+        guard !pending || includePending else { return nil }
+        guard let state = pending ? 0 : object.extensions.state else {
             throw CheckmkSnapshotDecodingError.unsupportedServiceState(-1)
         }
-        guard state != 0 else { return nil }
         let severity: MonitoringSeverity
         switch state {
+        case 0 where pending:
+            severity = .pending
+        case 0:
+            return nil
         case 1:
             severity = .warning
         case 2:
@@ -108,7 +119,13 @@ struct CheckmkSnapshotDecoder {
             checkAttempt: details.currentAttempt.flatMap { $0 > 0 ? $0 : nil },
             maxCheckAttempts: details.maxCheckAttempts.flatMap { $0 > 0 ? $0 : nil },
             isAcknowledged: (details.acknowledged ?? 0) > 0,
-            isInDowntime: (details.scheduledDowntimeDepth ?? 0) > 0
+            isInDowntime: (details.scheduledDowntimeDepth ?? 0) > 0,
+            activity: .init(
+                isFlapping: details.isFlapping.flatMap { [0, 1].contains($0) ? $0 == 1 : nil },
+                notificationsEnabled: details.notificationsEnabled.flatMap { [0, 1].contains($0) ? $0 == 1 : nil },
+                isSoftState: (details.stateType).map { $0 == 0 },
+                hostIsInDowntime: (details.hostScheduledDowntimeDepth).map { $0 > 0 }
+            )
         )
     }
 
@@ -145,26 +162,36 @@ struct CheckmkExtensions: Decodable {
     let alias: String?
     let currentAttempt: Int?
     let description: String?
+    let hasBeenChecked: Int?
     let hostName: String?
+    let hostScheduledDowntimeDepth: Int?
+    let isFlapping: Int?
     let lastStateChange: Int?
     let maxCheckAttempts: Int?
     let name: String?
+    let notificationsEnabled: Int?
     let pluginOutput: String?
     let scheduledDowntimeDepth: Int?
     let state: Int?
+    let stateType: Int?
 
     enum CodingKeys: String, CodingKey {
         case acknowledged
         case alias
         case currentAttempt = "current_attempt"
         case description
+        case hasBeenChecked = "has_been_checked"
         case hostName = "host_name"
+        case hostScheduledDowntimeDepth = "host_scheduled_downtime_depth"
+        case isFlapping = "is_flapping"
         case lastStateChange = "last_state_change"
         case maxCheckAttempts = "max_check_attempts"
         case name
+        case notificationsEnabled = "notifications_enabled"
         case pluginOutput = "plugin_output"
         case scheduledDowntimeDepth = "scheduled_downtime_depth"
         case state
+        case stateType = "state_type"
     }
 }
 

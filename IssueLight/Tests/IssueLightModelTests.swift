@@ -64,6 +64,107 @@ final class IssueLightModelTests: XCTestCase {
         XCTAssertEqual(secondMetrics.loads, 1)
     }
 
+    func testSavedSourcePatternsUpdateListAndMenuBarWithoutRefreshing() async throws {
+        let script = SnapshotScript()
+        let harness = try await makeHarness(sourceCount: 2, script: script)
+        let first = harness.sources[0]
+        let second = harness.sources[1]
+        for source in harness.sources {
+            await script.enqueue(
+                .result(.loaded(snapshot(source: source, observedAt: 1, summary: source.name))),
+                for: source.id
+            )
+        }
+        await harness.model.start()
+        let suite = "SourceIssueFilterTests.\(UUID())"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let filters = PanelFilterSettings(defaults: defaults)
+        XCTAssertEqual(MenuBarIssueCounts(model: harness.model, filters: filters).compactText, "D:2")
+
+        var filter = SourceIssueFilter()
+        filter.patterns = [.init(host: " host-* "), .init(service: " ")]
+        let saved = await harness.model.saveIssueFilter(filter, for: first.id)
+
+        XCTAssertTrue(saved)
+        XCTAssertEqual(harness.model.displayedIssues().map(\.sourceID), [second.id])
+        XCTAssertEqual(MenuBarIssueCounts(model: harness.model, filters: filters).compactText, "D:1")
+        XCTAssertEqual(harness.model.activeIssueCount, 2)
+        XCTAssertFalse(harness.model.hasUnsavedChanges)
+        let metrics = await script.metrics(for: first.id)
+        XCTAssertEqual(metrics.loads, 1)
+        var expected = first
+        expected.issueFilter = filter.normalized
+        let stored = try await harness.store.load()
+        XCTAssertEqual(stored, [expected, second])
+
+        filters.includesSourceExclusions = true
+        XCTAssertEqual(harness.model.displayedIssues(includeSourceExclusions: true).count, 2)
+        XCTAssertEqual(MenuBarIssueCounts(model: harness.model, filters: filters).compactText, "D:2")
+        filters.includesSourceExclusions = false
+        await harness.model.load()
+        XCTAssertEqual(harness.model.displayedIssues().map(\.sourceID), [second.id])
+
+        let savedForSecond = await harness.model.saveIssueFilter(filter, for: second.id)
+        XCTAssertTrue(savedForSecond)
+        XCTAssertTrue(harness.model.displayedIssues().isEmpty)
+        XCTAssertEqual(MenuBarIssueCounts(model: harness.model, filters: filters).compactText, "")
+        XCTAssertEqual(harness.model.snapshots.count, 2)
+        let clearedSecond = await harness.model.saveIssueFilter(SourceIssueFilter(), for: second.id)
+        XCTAssertTrue(clearedSecond)
+
+        let cleared = await harness.model.saveIssueFilter(SourceIssueFilter(), for: first.id)
+        XCTAssertTrue(cleared)
+        XCTAssertEqual(harness.model.displayedIssues().count, 2)
+        let reset = try await harness.store.load()
+        XCTAssertEqual(reset, [first, second])
+    }
+
+    func testPendingChecksAreOptInAndTheirStatusRuleUpdatesListAndCounters() async throws {
+        let script = SnapshotScript()
+        let harness = try await makeHarness(sourceCount: 1, script: script)
+        let source = harness.sources[0]
+        let pending = snapshot(source: source, observedAt: 2, summary: "First check pending", severity: .pending)
+        let initial = MonitoringSnapshot(sourceID: source.id, observedAt: Date(), issues: [])
+        await script.enqueue(.result(.loaded(initial)), for: source.id)
+        await script.enqueue(.result(.loaded(pending)), for: source.id)
+        await harness.model.start()
+        let suite = "PendingSourceTests.\(UUID())"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let filters = PanelFilterSettings(defaults: defaults)
+        XCTAssertTrue(harness.model.displayedIssues().isEmpty)
+        XCTAssertEqual(MenuBarIssueCounts(model: harness.model, filters: filters).compactText, "")
+
+        var filter = SourceIssueFilter()
+        filter.showPendingChecks = true
+        let enabled = await harness.model.saveIssueFilter(filter, for: source.id)
+        XCTAssertTrue(enabled)
+        try await waitForLoads(2, sourceID: source.id, script: script)
+        for _ in 0..<100 where harness.model.snapshots[source.id] != pending {
+            try await Task.sleep(for: .milliseconds(5))
+        }
+        XCTAssertEqual(harness.model.displayedIssues(), pending.issues)
+        XCTAssertEqual(MenuBarIssueCounts(model: harness.model, filters: filters).compactText, "P:1")
+        XCTAssertFalse(IssueNotificationPolicy.allAttentionStates.includes(.pending))
+
+        filter.patterns = [.init(host: "^host-[0-9]+$", states: [.pending], usesRegularExpressions: true)]
+        let saved = await harness.model.saveIssueFilter(filter, for: source.id)
+        XCTAssertTrue(saved)
+        XCTAssertTrue(harness.model.displayedIssues().isEmpty)
+        XCTAssertEqual(MenuBarIssueCounts(model: harness.model, filters: filters).compactText, "")
+        filters.includesSourceExclusions = true
+        XCTAssertEqual(MenuBarIssueCounts(model: harness.model, filters: filters).compactText, "P:1")
+
+        filter.showPendingChecks = false
+        let disabled = await harness.model.saveIssueFilter(filter, for: source.id)
+        XCTAssertTrue(disabled)
+        XCTAssertTrue(harness.model.displayedIssues(includeSourceExclusions: true).isEmpty)
+        XCTAssertEqual(MenuBarIssueCounts(model: harness.model, filters: filters).compactText, "")
+        let metrics = await script.metrics(for: source.id)
+        XCTAssertEqual(metrics.loads, 2)
+    }
+
     func testFailedSourceRetainsItsSnapshotWhileAnotherSourceUpdates() async throws {
         let script = SnapshotScript()
         let harness = try await makeHarness(sourceCount: 2, script: script)
@@ -511,6 +612,29 @@ final class IssueLightModelTests: XCTestCase {
         )
     }
 
+    func testConnectionAttemptsExposeSSHFailureAfterDirectTLSFailure() async throws {
+        let script = SnapshotScript()
+        let coordinator = AutomaticConnectionCoordinator(
+            tunnelManager: SSHTunnelManager(executableURL: URL(fileURLWithPath: "/usr/bin/false")),
+            canConnect: { _, _, _ in false }
+        )
+        let harness = try await makeHarness(
+            sourceCount: 1,
+            script: script,
+            connectionCoordinator: coordinator
+        )
+        await harness.model.load()
+        let sourceID = try XCTUnwrap(harness.model.selectedSourceID)
+        await script.enqueueConnectionResult(.failed(.tls), for: sourceID)
+
+        await harness.model.testConnection()
+
+        let apiAttempt = try XCTUnwrap(harness.model.connectionAttempts.first)
+        XCTAssertEqual(apiAttempt.route, "Direkt → SSH")
+        XCTAssertTrue(apiAttempt.outcome.contains("TLS-Handshake fehlgeschlagen"))
+        XCTAssertTrue(apiAttempt.outcome.contains("SSH-Tunnel konnte nicht gestartet werden"))
+    }
+
     func testConnectionTestCanonicalizesDiscoveredEndpointAndDefaultNameOnlyAfterProviderSuccess() async throws {
         let coordinator = AutomaticConnectionCoordinator { _, _, _ in true }
         let harness = try await makeHarness(
@@ -556,6 +680,30 @@ final class IssueLightModelTests: XCTestCase {
             harness.model.connectionAttempts.last?.endpoint,
             "https://monitoring1.example.test/icingaweb2"
         )
+    }
+
+    func testExplicitHTTPAllowsHTTPSUpgradeBeforeHTTPFallback() async throws {
+        let script = SnapshotScript()
+        let coordinator = AutomaticConnectionCoordinator { _, _, _ in true }
+        let harness = try await makeHarness(
+            sourceCount: 1,
+            script: script,
+            connectionCoordinator: coordinator
+        )
+        await harness.model.load()
+        let sourceID = try XCTUnwrap(harness.model.selectedSourceID)
+        harness.model.endpoint = "http://monitoring1.example.test:5665"
+        harness.model.credentialSecret = "test-only-password-1"
+        await script.enqueueConnectionResult(.failed(.serverTrust), for: sourceID)
+        await script.enqueueConnectionResult(.connected, for: sourceID)
+
+        await harness.model.testConnection()
+        let connectionTests = await script.connectionTests(for: sourceID)
+
+        XCTAssertEqual(connectionTests, 2)
+        XCTAssertEqual(harness.model.endpoint, "http://monitoring1.example.test:5665")
+        XCTAssertFalse(harness.model.isEndpointUsingTLS)
+        XCTAssertEqual(harness.model.selectedConnectionStatus.api, .direct)
     }
 
     func testConnectionPreservesExplicitDisabledTrustAfterEndpointAuthorityChange() async throws {
@@ -769,6 +917,13 @@ final class IssueLightModelTests: XCTestCase {
         XCTAssertTrue(model.isEndpointUsingTLS)
         XCTAssertFalse(model.suggestedSourceName.isEmpty)
 
+        model.serverTrustChoice = .disabled
+        model.endpoint = "http://icinga.internal:5665"
+        XCTAssertFalse(model.isEndpointUsingTLS)
+        XCTAssertEqual(model.serverTrustChoice, .system)
+        model.endpoint = "https://icinga.internal:5665"
+        XCTAssertTrue(model.isEndpointUsingTLS)
+
         model.selectedProviderID = CheckmkProvider.id
         XCTAssertEqual(model.authenticationChoices, [.apiKey])
         XCTAssertEqual(model.authenticationChoice, .apiKey)
@@ -802,7 +957,7 @@ final class IssueLightModelTests: XCTestCase {
         XCTAssertTrue(model.selectedAuthenticationSupportsActions)
 
         model.selectedProviderID = Icinga2Provider.id
-        XCTAssertTrue(model.isEndpointUsingTLS)
+        XCTAssertFalse(model.isEndpointUsingTLS)
     }
 
     func testAutomaticSSHHostUsesProviderEndpointDiscovery() async throws {
@@ -1197,6 +1352,12 @@ private struct TestProvider: MonitoringProvider {
             return [
                 URL(string: "https://monitoring1.example.test:5665")!,
                 URL(string: "https://monitoring1.example.test")!,
+            ]
+        }
+        if hint == "http://monitoring1.example.test:5665" {
+            return [
+                URL(string: "https://monitoring1.example.test:5665")!,
+                URL(string: "http://monitoring1.example.test:5665")!,
             ]
         }
         let value = hint.trimmingCharacters(in: .whitespacesAndNewlines)

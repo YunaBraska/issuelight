@@ -18,7 +18,7 @@ enum IssueNotificationPolicy: String, CaseIterable, Codable, Sendable {
         case .warningAndCritical:
             return severity == .warning || severity == .critical
         case .allAttentionStates:
-            return true
+            return severity != .pending
         }
     }
 

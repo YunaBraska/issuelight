@@ -107,7 +107,7 @@ wait_for_web() {
 reschedule_fixture_checks() {
   for request_body in \
     '{"type":"Host","filter":"match(\"*-host\", host.name)","force":true}' \
-    '{"type":"Service","filter":"match(\"*\", service.name)","force":true}'
+    '{"type":"Service","filter":"service.enable_active_checks","force":true}'
   do
     response_code=$(
       curl --silent --show-error --insecure --output /dev/null --write-out '%{http_code}' \
@@ -175,7 +175,7 @@ generate_server_identity() {
 basicConstraints=critical,CA:FALSE
 keyUsage=critical,digitalSignature,keyEncipherment
 extendedKeyUsage=serverAuth
-subjectAltName=DNS:localhost
+subjectAltName=DNS:localhost,DNS:icinga2
 EOF
     mv "$cert_dir/localhost.key.new" "$cert_dir/localhost.key"
     mv "$cert_dir/localhost.csr.new" "$cert_dir/localhost.csr"
@@ -259,10 +259,17 @@ verify_app_model_multi_source() {
     "$test_frameworks/Sparkle.framework"
 
   ISSUELIGHT_LIVE_ICINGA_URL="https://localhost:$ISSUELIGHT_ICINGA_PORT" \
-  ISSUELIGHT_LIVE_ICINGA_SSH_URL="https://icinga2:5665" \
+  ISSUELIGHT_LIVE_ICINGA_SSH_URL="https://localhost:25666" \
+  ISSUELIGHT_LIVE_ICINGA_SOCKS_URL="https://icinga2:5665" \
+  ISSUELIGHT_LIVE_ICINGA_HTTP_SSH_URL="http://localhost:28081" \
+  ISSUELIGHT_LIVE_ICINGA_HTTP_SOCKS_URL="http://web-gateway:8081" \
   ISSUELIGHT_REQUIRE_LIVE_ICINGA=1 \
   ISSUELIGHT_ICINGA_BASIC_PASSWORD="$ISSUELIGHT_ICINGA_BASIC_PASSWORD" \
   ISSUELIGHT_LIVE_ICINGA_CA_PATH="$ISSUELIGHT_ICINGA_ARTIFACTS_DIR/ca.crt" \
+  ISSUELIGHT_LIVE_ICINGA_SERVER_CERT_PATH="$ISSUELIGHT_ICINGA_ARTIFACTS_DIR/server.crt" \
+  ISSUELIGHT_LIVE_ICINGA_PKCS12_PATH="$ISSUELIGHT_ICINGA_ARTIFACTS_DIR/issuelight-live-client.p12" \
+  ISSUELIGHT_LIVE_ICINGA_REJECTED_PKCS12_PATH="$ISSUELIGHT_ICINGA_ARTIFACTS_DIR/issuelight-live-rejected.p12" \
+  ISSUELIGHT_ICINGA_PKCS12_PASSWORD="$ISSUELIGHT_ICINGA_PKCS12_PASSWORD" \
   ISSUELIGHT_REQUIRE_LIVE_SSH=1 \
   ISSUELIGHT_LIVE_SSH_PORT="$ISSUELIGHT_SSH_PORT" \
   ISSUELIGHT_LIVE_SSH_KEY_PATH="$ISSUELIGHT_ICINGA_ARTIFACTS_DIR/ssh-tunnel" \

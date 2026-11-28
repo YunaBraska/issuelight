@@ -23,7 +23,8 @@ provider confirms the command.
 - `SNAP-002` Provider-native payloads MUST be decoded at the adapter boundary.
   Shared UI and persistence MUST NOT depend on Icinga attribute names.
 - `SNAP-003` A snapshot MUST include its observation time and all current
-  non-healthy host and service results returned by the provider.
+  non-healthy host and service results returned by the provider. It MAY include
+  pending first checks when enabled for the source.
 - `SNAP-004` An issue MUST require attention only while it is neither
   acknowledged nor in downtime.
 - `SNAP-005` The menu-bar severity MUST be the highest severity among issues
@@ -76,6 +77,19 @@ provider confirms the command.
 - `MENU-011` A successful quick action MUST stay silent and refresh its source.
   A failed action MUST remain dismissible inside the panel without presenting
   a modal alert or closing the panel.
+- `MENU-012` Each saved source MAY exclude hosts and services independently by
+  active downtime, acknowledgement, flapping, disabled notifications, or soft
+  state. Services MAY also be excluded by active host downtime, including on
+  healthy hosts. Missing provider metadata MUST keep issues visible.
+  Rules MAY combine a host pattern, service pattern, and selected statuses.
+  Patterns match native names with case-sensitive globs or regular expressions.
+  Blank fields match any name. A service pattern applies only to services.
+  A rule needs at least one pattern and one applicable status to exclude issues.
+- `MENU-013` Source exclusions MUST apply to the panel and menu-bar counts
+  from the same snapshot. Pending first checks are opt-in, counted as `P`,
+  and never trigger notifications. A source outage remains visible. The
+  panel MUST disclose excluded issues and allow temporarily including them
+  in the panel and counters.
 
 ### Notifications
 

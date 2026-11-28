@@ -17,11 +17,66 @@ enum AutomaticConnectionPath: Equatable {
     case unavailable(String)
 }
 
+enum ActiveAPIConnectionRoute: Equatable {
+    case socks(port: Int, configuration: SSHTunnelConfiguration)
+    case localForward(
+        port: Int,
+        targetHost: String,
+        targetPort: Int,
+        configuration: SSHTunnelConfiguration
+    )
+
+    func matches(source: MonitoringSource, configuration: SSHTunnelConfiguration) -> Bool {
+        switch self {
+        case .socks(_, let activeConfiguration):
+            return activeConfiguration == configuration
+        case .localForward(_, let targetHost, let targetPort, let activeConfiguration):
+            return activeConfiguration == configuration
+                && source.endpoint.host?.lowercased() == targetHost
+                && source.endpoint.effectiveHTTPPort == targetPort
+        }
+    }
+
+    func routing(
+        source: MonitoringSource,
+        access: ProviderAccess
+    ) -> (MonitoringSource, ProviderAccess) {
+        switch self {
+        case .socks(let port, _):
+            return (source, access.routingThroughSOCKS(port: port))
+        case .localForward(let port, _, _, _):
+            var routedSource = source
+            var components = URLComponents(url: source.endpoint, resolvingAgainstBaseURL: false)
+            components?.port = port
+            if let endpoint = components?.url {
+                routedSource.endpoint = endpoint
+            }
+            return (routedSource, access)
+        }
+    }
+}
+
+extension URL {
+    var effectiveHTTPPort: Int? {
+        if let port { return port }
+        switch scheme?.lowercased() {
+        case "http": return 80
+        case "https": return 443
+        default: return nil
+        }
+    }
+
+    var isExplicitLoopbackEndpoint: Bool {
+        guard let host = host?.lowercased() else { return false }
+        return host == "127.0.0.1" || host == "localhost"
+    }
+}
+
 @MainActor
 final class AutomaticConnectionCoordinator {
     private let tunnelManager: SSHTunnelManager
     private let canConnect: (String, Int, Int?) async -> Bool
-    private var apiProxyPorts: [UUID: Int] = [:]
+    private var apiRoutes: [UUID: ActiveAPIConnectionRoute] = [:]
 
     init(
         tunnelManager: SSHTunnelManager? = nil,
@@ -37,57 +92,86 @@ final class AutomaticConnectionCoordinator {
         self.canConnect = canConnect
     }
 
-    func performUsingBestAPIPath<Result>(
+    func performUsingBestAPIPath<OperationResult>(
         source: MonitoringSource,
         access: ProviderAccess,
         rediscoverDirect: Bool = false,
-        operation: (ProviderAccess) async -> Result,
-        requiresAlternativeNetworkPath: (Result) -> Bool
-    ) async -> (Result, AutomaticConnectionPath) {
-        if !rediscoverDirect, let proxyPort = apiProxyPorts[source.id] {
-            let proxiedResult = await operation(access.routingThroughSOCKS(port: proxyPort))
-            if !requiresAlternativeNetworkPath(proxiedResult) {
-                return (proxiedResult, .ssh)
+        operation: (MonitoringSource, ProviderAccess) async -> OperationResult,
+        requiresAlternativeNetworkPath: (OperationResult) -> Bool
+    ) async -> (OperationResult, AutomaticConnectionPath) {
+        let configuration = tunnelManager.resolvedConfiguration(for: source)
+        if rediscoverDirect {
+            apiRoutes[source.id] = nil
+            tunnelManager.stopAPI(sourceID: source.id)
+        } else if let route = apiRoutes[source.id] {
+            if route.matches(source: source, configuration: configuration) {
+                let (routedSource, routedAccess) = route.routing(source: source, access: access)
+                let routedResult = await operation(routedSource, routedAccess)
+                if !requiresAlternativeNetworkPath(routedResult) {
+                    return (routedResult, .ssh)
+                }
             }
-            apiProxyPorts[source.id] = nil
-            tunnelManager.stopSOCKS(sourceID: source.id)
+            apiRoutes[source.id] = nil
+            tunnelManager.stopAPI(sourceID: source.id)
         }
 
-        let directResult = await operation(access)
+        let directResult = await operation(source, access)
         guard requiresAlternativeNetworkPath(directResult) else {
-            apiProxyPorts[source.id] = nil
-            tunnelManager.stopSOCKS(sourceID: source.id)
+            apiRoutes[source.id] = nil
+            tunnelManager.stopAPI(sourceID: source.id)
             return (directResult, .direct)
         }
 
         guard AppDistribution.supportsSSHTunnels else {
-            apiProxyPorts[source.id] = nil
-            tunnelManager.stopSOCKS(sourceID: source.id)
+            apiRoutes[source.id] = nil
+            tunnelManager.stopAPI(sourceID: source.id)
             return (directResult, .direct)
         }
 
-        if let proxyPort = apiProxyPorts[source.id] {
-            let proxiedResult = await operation(access.routingThroughSOCKS(port: proxyPort))
-            if !requiresAlternativeNetworkPath(proxiedResult) {
-                return (proxiedResult, .ssh)
-            }
-            apiProxyPorts[source.id] = nil
-            tunnelManager.stopSOCKS(sourceID: source.id)
-        }
-
-        let configuration = tunnelManager.resolvedConfiguration(for: source)
         guard !configuration.bastionHost.isEmpty else {
             return (directResult, .unavailable("The API host cannot be used as an SSH destination."))
         }
-        switch await tunnelManager.startSOCKS(sourceID: source.id, configuration: configuration) {
-        case .success(let proxyPort):
-            let proxiedResult = await operation(access.routingThroughSOCKS(port: proxyPort))
-            guard !requiresAlternativeNetworkPath(proxiedResult) else {
-                tunnelManager.stopSOCKS(sourceID: source.id)
-                return (proxiedResult, .unavailable("SSH connected, but the API connection still failed."))
+        let endpointPort = source.endpoint.effectiveHTTPPort
+        let fallbackPort = configuration.port != 22 && configuration.port == endpointPort
+            ? 22
+            : nil
+        let routeResult: Result<ActiveAPIConnectionRoute, SSHTunnelManager.StartError>
+        if source.endpoint.isExplicitLoopbackEndpoint,
+           let targetHost = source.endpoint.host?.lowercased(),
+           let targetPort = endpointPort {
+            routeResult = await tunnelManager.startAPIForward(
+                sourceID: source.id,
+                targetURL: source.endpoint,
+                configuration: configuration,
+                fallbackPort: fallbackPort
+            ).map { port in
+                .localForward(
+                    port: port,
+                    targetHost: targetHost,
+                    targetPort: targetPort,
+                    configuration: configuration
+                )
             }
-            apiProxyPorts[source.id] = proxyPort
-            return (proxiedResult, .ssh)
+        } else {
+            routeResult = await tunnelManager.startSOCKS(
+                sourceID: source.id,
+                configuration: configuration,
+                fallbackPort: fallbackPort
+            ).map { port in
+                .socks(port: port, configuration: configuration)
+            }
+        }
+
+        switch routeResult {
+        case .success(let route):
+            let (routedSource, routedAccess) = route.routing(source: source, access: access)
+            let routedResult = await operation(routedSource, routedAccess)
+            guard !requiresAlternativeNetworkPath(routedResult) else {
+                tunnelManager.stopAPI(sourceID: source.id)
+                return (routedResult, .unavailable("SSH connected, but the API connection still failed."))
+            }
+            apiRoutes[source.id] = route
+            return (routedResult, .ssh)
         case .failure(.message(let message)):
             return (directResult, .unavailable(message))
         }
@@ -97,10 +181,10 @@ final class AutomaticConnectionCoordinator {
         guard let host = url.host else {
             return .unavailable("The web URL has no host.")
         }
-        let port = url.port ?? (url.scheme?.lowercased() == "https" ? 443 : 80)
+        let port = url.effectiveHTTPPort ?? 80
         if await canConnect(host, port, nil) {
-            if apiProxyPorts[source.id] == nil {
-                tunnelManager.stopSOCKS(sourceID: source.id)
+            if apiRoutes[source.id] == nil {
+                tunnelManager.stopAPI(sourceID: source.id)
             }
             return .direct
         }
@@ -113,13 +197,21 @@ final class AutomaticConnectionCoordinator {
         guard !configuration.bastionHost.isEmpty else {
             return .unavailable("The API host cannot be used as an SSH destination.")
         }
-        switch await tunnelManager.startSOCKS(sourceID: source.id, configuration: configuration) {
+        let endpointPort = source.endpoint.effectiveHTTPPort
+        let fallbackPort = configuration.port != 22 && configuration.port == endpointPort
+            ? 22
+            : nil
+        switch await tunnelManager.startSOCKS(
+            sourceID: source.id,
+            configuration: configuration,
+            fallbackPort: fallbackPort
+        ) {
         case .success(let proxyPort):
             if await canConnect(host, port, proxyPort) {
                 return .ssh
             }
-            if apiProxyPorts[source.id] == nil {
-                tunnelManager.stopSOCKS(sourceID: source.id)
+            if apiRoutes[source.id] == nil {
+                tunnelManager.stopAPI(sourceID: source.id)
             }
             return .unavailable("SSH connected, but the web interface is not reachable through it.")
         case .failure(.message(let message)):
@@ -129,12 +221,23 @@ final class AutomaticConnectionCoordinator {
 
     func reconcileSources(_ sources: [MonitoringSource]) {
         tunnelManager.reconcileSources(sources)
-        let sourceIDs = Set(sources.filter(\.isEnabled).map(\.id))
-        apiProxyPorts = apiProxyPorts.filter { sourceIDs.contains($0.key) }
+        let sourceByID = Dictionary(uniqueKeysWithValues: sources.map { ($0.id, $0) })
+        for (sourceID, route) in Array(apiRoutes) {
+            guard let source = sourceByID[sourceID],
+                  source.isEnabled,
+                  route.matches(
+                      source: source,
+                      configuration: tunnelManager.resolvedConfiguration(for: source)
+                  ) else {
+                apiRoutes[sourceID] = nil
+                tunnelManager.stopAPI(sourceID: sourceID)
+                continue
+            }
+        }
     }
 
     func stop(sourceID: UUID) {
-        apiProxyPorts[sourceID] = nil
+        apiRoutes[sourceID] = nil
         tunnelManager.stop(sourceID: sourceID)
     }
 }
@@ -243,7 +346,17 @@ final class SSHTunnelManager {
 
     func startSOCKS(
         sourceID: UUID,
-        configuration: SSHTunnelConfiguration
+        configuration: SSHTunnelConfiguration,
+        fallbackPort _: Int? = nil
+    ) async -> Result<Int, StartError> {
+        .failure(.message("SSH tunnelling is unavailable in the App Store edition."))
+    }
+
+    func startAPIForward(
+        sourceID: UUID,
+        targetURL: URL,
+        configuration: SSHTunnelConfiguration,
+        fallbackPort _: Int? = nil
     ) async -> Result<Int, StartError> {
         .failure(.message("SSH tunnelling is unavailable in the App Store edition."))
     }
@@ -254,7 +367,7 @@ final class SSHTunnelManager {
 
     func stop(sourceID _: UUID) {}
 
-    func stopSOCKS(sourceID _: UUID) {}
+    func stopAPI(sourceID _: UUID) {}
 
     func stopWeb(sourceID _: UUID) {}
 
@@ -395,6 +508,7 @@ final class SSHTunnelManager {
 
     private enum Purpose: Hashable {
         case web
+        case api
         case proxy
     }
 
@@ -428,55 +542,42 @@ final class SSHTunnelManager {
         targetURL: URL,
         configuration: SSHTunnelConfiguration
     ) async -> Result<Int, StartError> {
-        guard let targetHost = targetURL.host else {
-            return .failure(.message("The web target has no host."))
-        }
-        let targetPort = targetURL.port ?? 80
-        let key = TunnelKey(sourceID: sourceID, purpose: .web)
-        if let active = activeTunnels[key],
-           active.process.isRunning,
-           active.targetHost == targetHost,
-           active.targetPort == targetPort,
-           active.configuration == configuration {
-            return await awaitReadiness(key: key, active: active)
-        }
-
-        stop(key: key)
-        guard let localPort = LocalPortAllocator.availablePort(preferred: configuration.preferredLocalPort) else {
-            return .failure(.message("No local port is available."))
-        }
-
-        let process = Process()
-        let standardError = Pipe()
-        process.executableURL = executableURL
-        process.arguments = additionalArguments + Command(
-            localPort: localPort,
-            remoteHost: targetHost,
-            remotePort: targetPort,
-            configuration: configuration
-        ).arguments
-        process.standardInput = FileHandle.nullDevice
-        process.standardOutput = FileHandle.nullDevice
-        process.standardError = standardError
-        do {
-            try process.run()
-        } catch {
-            return .failure(.message(error.localizedDescription))
-        }
-        let active = ActiveTunnel(
-            process: process,
-            localPort: localPort,
-            targetHost: targetHost,
-            targetPort: targetPort,
-            configuration: configuration
+        await startForwarding(
+            sourceID: sourceID,
+            purpose: .web,
+            targetURL: targetURL,
+            configuration: configuration,
+            candidates: [configuration]
         )
-        activeTunnels[key] = active
-        return await awaitReadiness(key: key, active: active, standardError: standardError)
+    }
+
+    func startAPIForward(
+        sourceID: UUID,
+        targetURL: URL,
+        configuration: SSHTunnelConfiguration,
+        fallbackPort: Int? = nil
+    ) async -> Result<Int, StartError> {
+        var candidates = [configuration]
+        if let fallbackPort,
+           fallbackPort != configuration.port,
+           (1...65_535).contains(fallbackPort) {
+            var fallback = configuration
+            fallback.port = fallbackPort
+            candidates.append(fallback)
+        }
+        return await startForwarding(
+            sourceID: sourceID,
+            purpose: .api,
+            targetURL: targetURL,
+            configuration: configuration,
+            candidates: candidates
+        )
     }
 
     func startSOCKS(
         sourceID: UUID,
-        configuration: SSHTunnelConfiguration
+        configuration: SSHTunnelConfiguration,
+        fallbackPort: Int? = nil
     ) async -> Result<Int, StartError> {
         let key = TunnelKey(sourceID: sourceID, purpose: .proxy)
         if let active = activeTunnels[key],
@@ -484,36 +585,59 @@ final class SSHTunnelManager {
            active.configuration == configuration {
             return await awaitReadiness(key: key, active: active)
         }
-
-        stop(key: key)
-        guard let localPort = LocalPortAllocator.availablePort(preferred: configuration.preferredLocalPort) else {
-            return .failure(.message("No local port is available."))
+        var candidates = [configuration]
+        if let fallbackPort,
+           fallbackPort != configuration.port,
+           (1...65_535).contains(fallbackPort) {
+            var fallback = configuration
+            fallback.port = fallbackPort
+            candidates.append(fallback)
         }
 
-        let process = Process()
-        let standardError = Pipe()
-        process.executableURL = executableURL
-        process.arguments = additionalArguments + Command(
-            socksPort: localPort,
-            configuration: configuration
-        ).arguments
-        process.standardInput = FileHandle.nullDevice
-        process.standardOutput = FileHandle.nullDevice
-        process.standardError = standardError
-        do {
-            try process.run()
-        } catch {
-            return .failure(.message(error.localizedDescription))
+        var failures: [String] = []
+        for candidate in candidates {
+            stop(key: key)
+            guard let localPort = LocalPortAllocator.availablePort(
+                preferred: configuration.preferredLocalPort
+            ) else {
+                return .failure(.message("No local port is available."))
+            }
+
+            let process = Process()
+            let standardError = Pipe()
+            process.executableURL = executableURL
+            process.arguments = additionalArguments + Command(
+                socksPort: localPort,
+                configuration: candidate
+            ).arguments
+            process.standardInput = FileHandle.nullDevice
+            process.standardOutput = FileHandle.nullDevice
+            process.standardError = standardError
+            do {
+                try process.run()
+            } catch {
+                failures.append(error.localizedDescription)
+                continue
+            }
+            let active = ActiveTunnel(
+                process: process,
+                localPort: localPort,
+                targetHost: nil,
+                targetPort: nil,
+                configuration: configuration
+            )
+            activeTunnels[key] = active
+            switch await awaitReadiness(key: key, active: active, standardError: standardError) {
+            case .success(let port):
+                return .success(port)
+            case .failure(.message(let message)):
+                failures.append(
+                    candidates.count == 1 ? message : "SSH port \(candidate.port): \(message)"
+                )
+            }
         }
-        let active = ActiveTunnel(
-            process: process,
-            localPort: localPort,
-            targetHost: nil,
-            targetPort: nil,
-            configuration: configuration
-        )
-        activeTunnels[key] = active
-        return await awaitReadiness(key: key, active: active, standardError: standardError)
+
+        return .failure(.message(failures.joined(separator: "\n")))
     }
 
     func reconcileSources(_ sources: [MonitoringSource]) {
@@ -538,6 +662,12 @@ final class SSHTunnelManager {
                 if web.baseURL.host != active.targetHost || targetPort != active.targetPort {
                     stop(key: key)
                 }
+            } else if key.purpose == .api {
+                let targetPort = source.endpoint.effectiveHTTPPort
+                if source.endpoint.host?.lowercased() != active.targetHost
+                    || targetPort != active.targetPort {
+                    stop(key: key)
+                }
             }
         }
     }
@@ -554,7 +684,8 @@ final class SSHTunnelManager {
         }
     }
 
-    func stopSOCKS(sourceID: UUID) {
+    func stopAPI(sourceID: UUID) {
+        stop(key: TunnelKey(sourceID: sourceID, purpose: .api))
         stop(key: TunnelKey(sourceID: sourceID, purpose: .proxy))
     }
 
@@ -572,6 +703,74 @@ final class SSHTunnelManager {
             identityFilePath: overrides?.identityFilePath,
             preferredLocalPort: overrides?.preferredLocalPort
         )
+    }
+
+    private func startForwarding(
+        sourceID: UUID,
+        purpose: Purpose,
+        targetURL: URL,
+        configuration: SSHTunnelConfiguration,
+        candidates: [SSHTunnelConfiguration]
+    ) async -> Result<Int, StartError> {
+        guard let targetHost = targetURL.host?.lowercased(),
+              let targetPort = targetURL.effectiveHTTPPort else {
+            return .failure(.message("The tunnel target has no valid host or port."))
+        }
+        let key = TunnelKey(sourceID: sourceID, purpose: purpose)
+        if let active = activeTunnels[key],
+           active.process.isRunning,
+           active.targetHost == targetHost,
+           active.targetPort == targetPort,
+           active.configuration == configuration {
+            return await awaitReadiness(key: key, active: active)
+        }
+
+        var failures: [String] = []
+        for candidate in candidates {
+            stop(key: key)
+            guard let localPort = LocalPortAllocator.availablePort(
+                preferred: configuration.preferredLocalPort
+            ) else {
+                return .failure(.message("No local port is available."))
+            }
+
+            let process = Process()
+            let standardError = Pipe()
+            process.executableURL = executableURL
+            process.arguments = additionalArguments + Command(
+                localPort: localPort,
+                remoteHost: targetHost,
+                remotePort: targetPort,
+                configuration: candidate
+            ).arguments
+            process.standardInput = FileHandle.nullDevice
+            process.standardOutput = FileHandle.nullDevice
+            process.standardError = standardError
+            do {
+                try process.run()
+            } catch {
+                failures.append(error.localizedDescription)
+                continue
+            }
+            let active = ActiveTunnel(
+                process: process,
+                localPort: localPort,
+                targetHost: targetHost,
+                targetPort: targetPort,
+                configuration: configuration
+            )
+            activeTunnels[key] = active
+            switch await awaitReadiness(key: key, active: active, standardError: standardError) {
+            case .success(let port):
+                return .success(port)
+            case .failure(.message(let message)):
+                failures.append(
+                    candidates.count == 1 ? message : "SSH port \(candidate.port): \(message)"
+                )
+            }
+        }
+
+        return .failure(.message(failures.joined(separator: "\n")))
     }
 
     private func stop(key: TunnelKey) {
