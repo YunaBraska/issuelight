@@ -107,7 +107,7 @@ wait_for_web() {
 reschedule_fixture_checks() {
   for request_body in \
     '{"type":"Host","filter":"match(\"*-host\", host.name)","force":true}' \
-    '{"type":"Service","filter":"match(\"*\", service.name)","force":true}'
+    '{"type":"Service","filter":"service.enable_active_checks","force":true}'
   do
     response_code=$(
       curl --silent --show-error --insecure --output /dev/null --write-out '%{http_code}' \

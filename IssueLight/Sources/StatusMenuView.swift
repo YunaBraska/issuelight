@@ -27,17 +27,19 @@ struct MenuBarIssueCounts: Equatable {
     let warning: Int
     let unknown: Int
     let down: Int
+    let pending: Int
 
     init(issues: [MonitoringIssue], unavailableSourceCount: Int = 0) {
         critical = issues.filter { $0.kind == .service && $0.severity == .critical }.count
         warning = issues.filter { $0.kind == .service && $0.severity == .warning }.count
         unknown = issues.filter { $0.kind == .service && $0.severity == .unknown }.count
             + max(0, unavailableSourceCount)
-        down = issues.filter { $0.kind == .host }.count
+        down = issues.filter { $0.kind == .host && $0.severity != .pending }.count
+        pending = issues.count { $0.severity == .pending }
     }
 
     var attentionCount: Int {
-        critical + warning + unknown + down
+        critical + warning + unknown + down + pending
     }
 
     var compactText: String {
@@ -46,6 +48,7 @@ struct MenuBarIssueCounts: Equatable {
             warning > 0 ? "W:\(warning)" : nil,
             unknown > 0 ? "U:\(unknown)" : nil,
             down > 0 ? "D:\(down)" : nil,
+            pending > 0 ? "P:\(pending)" : nil,
         ]
         .compactMap { $0 }
         .joined(separator: " ")
@@ -382,7 +385,9 @@ struct StatusMenuContent: View {
             PanelFilterPopover(
                 filters: filters,
                 hostOptions: hostOptions,
-                sourceNames: sourceNames
+                sourceNames: sourceNames,
+                hasPendingIssues: actionableIssues.contains { $0.severity == .pending }
+                    || coveredIssues.contains { $0.severity == .pending }
             )
             .environment(\.locale, locale)
             .opaqueInteractiveSurface()
@@ -495,6 +500,7 @@ struct PanelFilterPopover: View {
     @ObservedObject var filters: PanelFilterSettings
     let hostOptions: [PanelHostSelection]
     let sourceNames: [UUID: String]
+    var hasPendingIssues = false
     @Environment(\.locale) private var locale
     @State private var hostSearch = ""
 
@@ -618,6 +624,9 @@ struct PanelFilterPopover: View {
             Text(verbatim: AppLocalization.string("Warnung", locale: locale)).tag(PanelSeverityFilter.warning)
             Text(verbatim: AppLocalization.string("Unbekannt", locale: locale)).tag(PanelSeverityFilter.unknown)
             Text(verbatim: "DOWN").tag(PanelSeverityFilter.down)
+            if hasPendingIssues || filters.severity == .pending {
+                Text(verbatim: IssueFilterState.pending.localizedName(locale: locale)).tag(PanelSeverityFilter.pending)
+            }
         }
         .labelsHidden()
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -783,7 +792,7 @@ private struct StatusPanelIssueEntry: View {
                 quickAction(
                     AppLocalization.string("Quittieren …", locale: locale),
                     systemImage: "checkmark.message",
-                    enabled: actions.contains(.acknowledge) && !issue.isAcknowledged,
+                    enabled: actions.contains(.acknowledge) && !issue.isAcknowledged && issue.severity != .pending,
                     action: requestAcknowledgement
                 )
                 quickAction(
@@ -999,14 +1008,7 @@ private struct StatusPanelIssueRow: View {
     }
 
     private var severityText: String {
-        if issue.kind == .host {
-            return "DOWN"
-        }
-        switch issue.severity {
-        case .critical: return AppLocalization.string("Kritisch", locale: locale)
-        case .unknown: return AppLocalization.string("Unbekannt", locale: locale)
-        case .warning: return AppLocalization.string("Warnung", locale: locale)
-        }
+        IssueFilterState(issue).localizedName(locale: locale)
     }
 
     private var summaryText: String {
@@ -1080,6 +1082,31 @@ private extension MonitoringIssue {
         case .critical: return .red
         case .unknown: return .purple
         case .warning: return .orange
+        case .pending: return .secondary
+        }
+    }
+}
+
+extension IssueFilterState {
+    func localizedName(locale: Locale) -> String {
+        switch self {
+        case .pending: AppLocalization.string("Ausstehend", locale: locale)
+        case .down: "DOWN"
+        case .unreachable: AppLocalization.string("Nicht erreichbar", locale: locale)
+        case .critical: AppLocalization.string("Kritisch", locale: locale)
+        case .warning: AppLocalization.string("Warnung", locale: locale)
+        case .unknown: AppLocalization.string("Unbekannt", locale: locale)
+        }
+    }
+
+    var abbreviation: String {
+        switch self {
+        case .pending: "P"
+        case .down: "D"
+        case .unreachable: "UNR"
+        case .critical: "C"
+        case .warning: "W"
+        case .unknown: "U"
         }
     }
 }

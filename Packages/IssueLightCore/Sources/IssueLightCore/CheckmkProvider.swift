@@ -157,18 +157,19 @@ public struct CheckmkProvider: MonitoringProvider {
         do {
             let transport = try makeTransport(source: source, access: access)
             defer { transport.close() }
+            let includePending = source.issueFilter?.showPendingChecks == true
             async let hostData = transport.data(
                 for: transport.request(
                     pathComponents: ["domain-types", "host", "collections", "all"],
                     method: "POST",
-                    json: Self.problemQuery(columns: Self.hostColumns)
+                    json: Self.problemQuery(columns: Self.hostColumns, includePending: includePending)
                 )
             )
             async let serviceData = transport.data(
                 for: transport.request(
                     pathComponents: ["domain-types", "service", "collections", "all"],
                     method: "POST",
-                    json: Self.problemQuery(columns: Self.serviceColumns)
+                    json: Self.problemQuery(columns: Self.serviceColumns, includePending: includePending)
                 )
             )
             return .loaded(
@@ -176,7 +177,8 @@ public struct CheckmkProvider: MonitoringProvider {
                     sourceID: source.id,
                     observedAt: now(),
                     hostData: hostData,
-                    serviceData: serviceData
+                    serviceData: serviceData,
+                    includePending: includePending
                 )
             )
         } catch let CheckmkTransportError.failure(failure) {
@@ -272,11 +274,12 @@ public struct CheckmkProvider: MonitoringProvider {
         )
     }
 
-    static func problemQuery(columns: [String]) -> [String: Any] {
-        [
-            "columns": columns,
-            "query": ["op": "!=", "left": "state", "right": "0"],
-        ]
+    static func problemQuery(columns: [String], includePending: Bool) -> [String: Any] {
+        let problem = ["op": "!=", "left": "state", "right": "0"]
+        let query: [String: Any] = includePending
+            ? ["op": "or", "expr": [problem, ["op": "=", "left": "has_been_checked", "right": "0"]]]
+            : problem
+        return ["columns": columns, "query": query]
     }
 
     static func command(for action: MonitoringAction, issue: MonitoringIssue) throws -> CheckmkCommand {
@@ -334,7 +337,9 @@ public struct CheckmkProvider: MonitoringProvider {
         return "\(trimmedAuthor): \(trimmedComment)"
     }
 
-    private static let hostColumns = [
+    private static let activityColumns = ["has_been_checked", "is_flapping", "notifications_enabled", "state_type"]
+
+    private static let hostColumns = activityColumns + [
         "acknowledged",
         "alias",
         "current_attempt",
@@ -346,11 +351,12 @@ public struct CheckmkProvider: MonitoringProvider {
         "state",
     ]
 
-    private static let serviceColumns = [
+    private static let serviceColumns = activityColumns + [
         "acknowledged",
         "current_attempt",
         "description",
         "host_name",
+        "host_scheduled_downtime_depth",
         "last_state_change",
         "max_check_attempts",
         "plugin_output",

@@ -41,6 +41,13 @@ final class NagiosCoreLiveConnectionTests: XCTestCase {
         XCTAssertFalse(service.isInDowntime)
         assertSourceRulesForIssue(host)
         assertSourceRulesForIssue(service)
+        XCTAssertEqual(host.activity.notificationsEnabled, false)
+        XCTAssertEqual(service.activity.isSoftState, false)
+        XCTAssertEqual(service.activity.hostIsInDowntime, false)
+        _ = try await assertPendingChecksFromLiveProvider(
+            provider, source: source, access: ProviderAccess(credential: .password(password)),
+            initialSnapshot: snapshot, host: "issuelight-live", service: "IssueLight Pending Service"
+        )
     }
 
     func testRealCSRFProtectedCommandsUseTheProviderBoundary() async throws {

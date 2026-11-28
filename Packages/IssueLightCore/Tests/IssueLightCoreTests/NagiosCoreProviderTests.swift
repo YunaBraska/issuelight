@@ -138,8 +138,8 @@ final class NagiosCoreProviderTests: XCTestCase {
             let query = URLComponents(url: request.url!, resolvingAgainstBaseURL: false)?
                 .queryItems?.first(where: { $0.name == "query" })?.value
             let data = query == "hostlist"
-                ? #"{"hostlist":{"edge":{"name":"edge","plugin_output":"DOWN - no route\nDetails","status":4,"last_state_change":1799990000,"current_attempt":2,"max_attempts":3,"problem_has_been_acknowledged":false,"scheduled_downtime_depth":0},"router":{"name":"router","plugin_output":"UNREACHABLE","status":8,"problem_has_been_acknowledged":true,"scheduled_downtime_depth":0}}}"#
-                : #"{"servicelist":{"edge":{"Disk /":{"host_name":"edge","description":"Disk /","plugin_output":"WARN - 85%","status":4,"last_state_change":1799995000,"current_attempt":1,"max_attempts":5,"problem_has_been_acknowledged":false,"scheduled_downtime_depth":1},"Clock":{"host_name":"edge","description":"Clock","plugin_output":"UNKNOWN","status":8}},"db":{"Database":{"host_name":"db","description":"Database","plugin_output":"CRITICAL","status":16}}}}"#
+                ? #"{"hostlist":{"edge":{"name":"edge","plugin_output":"DOWN - no route\nDetails","status":4,"last_state_change":1799990000,"current_attempt":2,"max_attempts":3,"problem_has_been_acknowledged":false,"scheduled_downtime_depth":0},"router":{"name":"router","plugin_output":"UNREACHABLE","status":8,"problem_has_been_acknowledged":true,"scheduled_downtime_depth":0},"db":{"name":"db","status":2,"scheduled_downtime_depth":1}}}"#
+                : #"{"servicelist":{"edge":{"Disk /":{"host_name":"edge","description":"Disk /","plugin_output":"WARN - 85%","status":4,"last_state_change":1799995000,"current_attempt":1,"max_attempts":5,"problem_has_been_acknowledged":false,"scheduled_downtime_depth":1},"Clock":{"host_name":"edge","description":"Clock","plugin_output":"UNKNOWN","status":8}},"db":{"Database":{"host_name":"db","description":"Database","plugin_output":"CRITICAL","status":16,"is_flapping":true,"notifications_enabled":false,"state_type":0}}}}"#
             return Self.response(
                 request: request,
                 statusCode: 200,
@@ -169,6 +169,15 @@ final class NagiosCoreProviderTests: XCTestCase {
         XCTAssertEqual(snapshot.issues.first(where: { $0.hostName == "router" })?.severity, .unknown)
         XCTAssertEqual(snapshot.issues.first(where: { $0.hostName == "router" })?.isAcknowledged, true)
         XCTAssertEqual(snapshot.issues.first(where: { $0.serviceName == "Database" })?.severity, .critical)
+        let database = try XCTUnwrap(snapshot.issues.first { $0.serviceName == "Database" })
+        XCTAssertEqual(database.activity, .init(
+            isFlapping: true, notificationsEnabled: false, isSoftState: true, hostIsInDowntime: true
+        ))
+        var filter = SourceIssueFilter()
+        filter.hideServicesOfHostsInDowntime = true
+        XCTAssertFalse(database.isInDowntime)
+        XCTAssertTrue(filter.excludes(database))
+        XCTAssertFalse(snapshot.issues.contains { $0.kind == .host && $0.hostName == "db" })
 
         let queries = recorder.requests.compactMap {
             URLComponents(url: $0.url!, resolvingAgainstBaseURL: false)?.queryItems
@@ -179,7 +188,7 @@ final class NagiosCoreProviderTests: XCTestCase {
         let serviceQuery = queries.first {
             $0.contains(where: { $0.name == "query" && $0.value == "servicelist" })
         }
-        XCTAssertEqual(hostQuery?.first(where: { $0.name == "hoststatus" })?.value, "down unreachable")
+        XCTAssertEqual(hostQuery?.first(where: { $0.name == "hoststatus" })?.value, "up down unreachable")
         XCTAssertEqual(serviceQuery?.first(where: { $0.name == "servicestatus" })?.value, "warning unknown critical")
     }
 

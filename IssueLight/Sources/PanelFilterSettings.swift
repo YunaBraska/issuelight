@@ -7,6 +7,7 @@ enum PanelSeverityFilter: String, CaseIterable, Identifiable {
     case warning
     case unknown
     case down
+    case pending
 
     var id: String { rawValue }
 
@@ -21,7 +22,9 @@ enum PanelSeverityFilter: String, CaseIterable, Identifiable {
         case .unknown:
             return issue.kind == .service && issue.severity == .unknown
         case .down:
-            return issue.kind == .host
+            return issue.kind == .host && issue.severity != .pending
+        case .pending:
+            return issue.severity == .pending
         }
     }
 }

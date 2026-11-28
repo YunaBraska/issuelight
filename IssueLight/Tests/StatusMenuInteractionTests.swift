@@ -130,9 +130,9 @@ final class StatusMenuInteractionTests: XCTestCase {
             authentication: .basic(username: "operator")
         )
         var filter = SourceIssueFilter()
-        filter.hideHostsInDowntime = true
-        filter.hideAcknowledgedServices = true
-        filter.patterns = [.init(host: "edge-*", service: "disk-?")]
+        filter.hostConditions.insert(.downtime)
+        filter.serviceConditions.insert(.acknowledged)
+        filter.patterns = [.init(host: "edge-*", service: "disk-?", states: [.warning, .pending, .unknown, .critical])]
         source.issueFilter = filter
         var savedFilter: SourceIssueFilter?
         let view = SourceIssueFilterEditor(source: source, issues: []) { settings in
@@ -141,16 +141,21 @@ final class StatusMenuInteractionTests: XCTestCase {
         }
         .environment(\.locale, Locale(identifier: "de"))
         .environment(\.colorScheme, .light)
-        let size = CGSize(width: 500, height: 520)
+        let size = CGSize(width: 620, height: 555)
         XCTAssertTrue(NativeViewRenderer.exerciseWindow(for: view, size: size))
         let screenshot = try NativeViewRenderer.pngData(for: view, size: size)
         XCTAssertGreaterThan(screenshot.count, 10_000)
         if let path = ProcessInfo.processInfo.environment["ISSUELIGHT_SOURCE_FILTER_SCREENSHOT_PATH"] {
             try screenshot.write(to: URL(fileURLWithPath: path), options: .atomic)
         }
-        NativeViewRenderer.click([CGPoint(x: 38, y: 388), CGPoint(x: 445, y: 28)], in: view, size: size)
-        XCTAssertEqual(savedFilter?.hideHostsInDowntime, false)
-        XCTAssertEqual(savedFilter?.hideAcknowledgedServices, true)
+        NativeViewRenderer.click(
+            [CGPoint(x: 38, y: 428), CGPoint(x: 338, y: 380), CGPoint(x: 38, y: 297), CGPoint(x: 565, y: 28)],
+            in: view,
+            size: size
+        )
+        XCTAssertEqual(savedFilter?.hostConditions, [])
+        XCTAssertEqual(savedFilter?.serviceConditions, [.acknowledged, .flapping])
+        XCTAssertEqual(savedFilter?.hideServicesOfHostsInDowntime, true)
         XCTAssertEqual(savedFilter?.patterns, filter.patterns)
     }
 

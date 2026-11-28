@@ -541,19 +541,26 @@ final class IssueLightModel: ObservableObject {
     func displayedIssues(includeSourceExclusions: Bool = false) -> [MonitoringIssue] {
         sources.filter(\.isEnabled)
             .flatMap { source in
-                includeSourceExclusions ? (snapshots[source.id]?.issues ?? []) : visibleIssues(for: source)
+                if includeSourceExclusions {
+                    return issuesEnabledForDisplay(for: source)
+                }
+                return visibleIssues(for: source)
             }
             .sorted(by: issueOrder)
     }
 
     func visibleIssues(for source: MonitoringSource) -> [MonitoringIssue] {
+        let issues = issuesEnabledForDisplay(for: source)
+        return source.issueFilter?.retainingVisibleIssues(issues) ?? issues
+    }
+
+    private func issuesEnabledForDisplay(for source: MonitoringSource) -> [MonitoringIssue] {
         let issues = snapshots[source.id]?.issues ?? []
-        guard let filter = source.issueFilter else { return issues }
-        return issues.filter { !filter.excludes($0) }
+        return source.issueFilter?.showPendingChecks == true ? issues : issues.filter { $0.severity != .pending }
     }
 
     var activeIssueCount: Int {
-        activeSnapshots.reduce(0) { $0 + $1.issues.count }
+        sources.filter(\.isEnabled).reduce(0) { $0 + issuesEnabledForDisplay(for: $1).count }
     }
 
     var hasActiveSnapshot: Bool {
@@ -1137,9 +1144,11 @@ final class IssueLightModel: ObservableObject {
     func saveIssueFilter(_ filter: SourceIssueFilter, for sourceID: UUID) async -> Bool {
         guard var source = sources.first(where: { $0.id == sourceID }),
               let sourceStore else { return false }
+        let enablesPending = filter.showPendingChecks && source.issueFilter?.showPendingChecks != true
         source.issueFilter = filter.normalized
         do {
             sources = try await sourceStore.upsert(source)
+            if enablesPending { refresh(sourceID: sourceID) }
             return true
         } catch {
             return false

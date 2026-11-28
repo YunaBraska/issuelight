@@ -113,6 +113,13 @@ final class ThrukLiveConnectionTests: XCTestCase {
         XCTAssertFalse(issue.isAcknowledged)
         XCTAssertFalse(issue.isInDowntime)
         assertSourceRulesForIssue(issue)
+        XCTAssertEqual(issue.activity.notificationsEnabled, false)
+        XCTAssertEqual(issue.activity.isSoftState, false)
+        XCTAssertEqual(issue.activity.hostIsInDowntime, false)
+        _ = try await assertPendingChecksFromLiveProvider(
+            provider, source: source, access: access,
+            initialSnapshot: snapshot, host: "issuelight-live", service: "IssueLight Pending Service"
+        )
 
         let basicRecheck = await provider.perform(.recheck, on: issue, from: source, access: access)
         guard case .rejected(let basicRejection) = basicRecheck else {

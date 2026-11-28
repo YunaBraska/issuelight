@@ -14,7 +14,7 @@ final class Icinga2SnapshotLoaderTests: XCTestCase {
                 return Self.response(
                     request: request,
                     statusCode: 200,
-                    body: #"{"results":[{"attrs":{"acknowledgement":0,"display_name":"Router","downtime_depth":0,"last_check_result":{"output":"Host unreachable"},"name":"router-1","state":1},"name":"router-1","type":"Host"}]}"#
+                    body: #"{"results":[{"attrs":{"acknowledgement":0,"display_name":"Router","downtime_depth":0,"flapping":true,"enable_notifications":false,"state_type":0,"last_check_result":{"output":"Host unreachable"},"name":"router-1","state":1},"name":"router-1","type":"Host"}]}"#
                 )
             }
             return Self.response(
@@ -32,6 +32,9 @@ final class Icinga2SnapshotLoaderTests: XCTestCase {
         }
         XCTAssertEqual(snapshot.observedAt, observedAt)
         XCTAssertEqual(snapshot.issues.map(\.displayName), ["Router"])
+        XCTAssertEqual(snapshot.issues.first?.activity, .init(
+            isFlapping: true, notificationsEnabled: false, isSoftState: true
+        ))
         let requests = recorder.requests
         XCTAssertEqual(Set(requests.compactMap { $0.url?.path }), ["/v1/objects/hosts", "/v1/objects/services"])
         XCTAssertTrue(requests.allSatisfy {
@@ -44,6 +47,9 @@ final class Icinga2SnapshotLoaderTests: XCTestCase {
                 .value
         }
         XCTAssertEqual(Set(filters), ["host.state!=0", "service.state!=0"])
+        let serviceRequest = try XCTUnwrap(requests.first { $0.url?.path == "/v1/objects/services" })
+        let serviceQuery = try XCTUnwrap(serviceRequest.url.flatMap { URLComponents(url: $0, resolvingAgainstBaseURL: false)?.queryItems })
+        XCTAssertTrue(serviceQuery.contains(URLQueryItem(name: "joins", value: "host.downtime_depth")))
     }
 
     func testLoadKeepsAuthenticationFailureDistinctFromHealthySnapshot() async {

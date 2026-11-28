@@ -67,6 +67,7 @@ final class Icinga2Transport {
         objectType: String,
         attributes: [String],
         filter: String? = nil,
+        joins: [String] = [],
         limit: Int? = nil
     ) throws -> URLRequest {
         var components = URLComponents(
@@ -75,6 +76,7 @@ final class Icinga2Transport {
         )
         components?.path = "/v1/objects/\(objectType)"
         var queryItems = attributes.map { URLQueryItem(name: "attrs", value: $0) }
+        queryItems += joins.map { URLQueryItem(name: "joins", value: $0) }
         if let filter {
             queryItems.append(URLQueryItem(name: "filter", value: filter))
         }

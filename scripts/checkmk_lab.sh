@@ -84,17 +84,17 @@ wait_for_api() {
   exit 1
 }
 
-disable_host_check() {
+disable_fixture_checks() {
   # shellcheck disable=SC2016 # Expand the timestamp inside the container.
   docker_command exec --user cmk "$container_name" bash -lc \
-    'now=$(date +%s); printf "COMMAND [%s] DISABLE_HOST_CHECK;issuelight-live\n" "$now" | lq' \
+    'now=$(date +%s); printf "COMMAND [%s] DISABLE_HOST_CHECK;issuelight-live\nCOMMAND [%s] DISABLE_SVC_CHECK;issuelight-live;PING\n" "$now" "$now" | lq' \
     >/dev/null
 }
 
 set_problem_state() {
   # shellcheck disable=SC2016 # Expand the timestamp inside the container.
   docker_command exec --user cmk "$container_name" bash -lc \
-    'now=$(date +%s); printf "COMMAND [%s] PROCESS_HOST_CHECK_RESULT;issuelight-live;1;DOWN - IssueLight live lab\n" "$now" | lq' \
+    'now=$(date +%s); printf "COMMAND [%s] PROCESS_HOST_CHECK_RESULT;issuelight-live;1;DOWN - IssueLight live lab\nCOMMAND [%s] PROCESS_SERVICE_CHECK_RESULT;issuelight-live;PING;2;CRITICAL - IssueLight live lab\n" "$now" "$now" | lq' \
     >/dev/null
 }
 
@@ -104,8 +104,14 @@ wait_for_problem() {
     host_data=$(api_post \
       '{"columns":["name","state","plugin_output","acknowledged","scheduled_downtime_depth"],"query":{"op":"=","left":"name","right":"issuelight-live"}}' \
       "$endpoint/domain-types/host/collections/all")
+    service_data=$(api_post \
+      '{"columns":["description","state","has_been_checked"],"query":{"op":"=","left":"host_name","right":"issuelight-live"}}' \
+      "$endpoint/domain-types/service/collections/all")
     if printf '%s' "$host_data" | jq --exit-status \
       '.value | any(.[]; .extensions.name == "issuelight-live" and .extensions.state == 1 and .extensions.plugin_output == "DOWN - IssueLight live lab")' \
+      >/dev/null &&
+      printf '%s' "$service_data" | jq --exit-status \
+      '.value | any(.[]; .extensions.description == "PING" and .extensions.state == 2 and .extensions.has_been_checked == 1)' \
       >/dev/null; then
       return
     fi
@@ -113,7 +119,7 @@ wait_for_problem() {
     attempt=$((attempt + 1))
     sleep 1
   done
-  printf 'The deterministic Checkmk host problem did not reach DOWN.\n' >&2
+  printf 'The Checkmk fixture did not report a DOWN host and a CRITICAL PING service.\n' >&2
   exit 1
 }
 
@@ -136,8 +142,17 @@ start_lab() {
   api_post \
     '{"host_name":"issuelight-live","folder":"/","attributes":{"alias":"IssueLight live lab","ipaddress":"192.0.2.1","tag_agent":"no-agent","tag_snmp_ds":"no-snmp"}}' \
     "$endpoint/domain-types/host_config/collections/all" >/dev/null
+  api_post \
+    '{"host_name":"issuelight-pending","folder":"/","attributes":{"ipaddress":"192.0.2.2","tag_agent":"no-agent","tag_snmp_ds":"no-snmp"}}' \
+    "$endpoint/domain-types/host_config/collections/all" >/dev/null
+  # shellcheck disable=SC2016 # Resolve the site home inside the container.
+  docker_command exec -i --user cmk "$container_name" sh -c 'cat > "$HOME/etc/check_mk/conf.d/issuelight.mk"' <<'RULE'
+extra_host_conf.setdefault("active_checks_enabled", []).append({
+    "value": 0, "condition": {"host_name": ["issuelight-pending"]}, "options": {},
+})
+RULE
   docker_command exec --user cmk "$container_name" bash -lc 'cmk -R' >/dev/null
-  disable_host_check
+  disable_fixture_checks
   sleep 5
   set_problem_state
   wait_for_problem

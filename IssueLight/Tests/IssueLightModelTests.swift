@@ -120,6 +120,51 @@ final class IssueLightModelTests: XCTestCase {
         XCTAssertEqual(reset, [first, second])
     }
 
+    func testPendingChecksAreOptInAndTheirStatusRuleUpdatesListAndCounters() async throws {
+        let script = SnapshotScript()
+        let harness = try await makeHarness(sourceCount: 1, script: script)
+        let source = harness.sources[0]
+        let pending = snapshot(source: source, observedAt: 2, summary: "First check pending", severity: .pending)
+        let initial = MonitoringSnapshot(sourceID: source.id, observedAt: Date(), issues: [])
+        await script.enqueue(.result(.loaded(initial)), for: source.id)
+        await script.enqueue(.result(.loaded(pending)), for: source.id)
+        await harness.model.start()
+        let suite = "PendingSourceTests.\(UUID())"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let filters = PanelFilterSettings(defaults: defaults)
+        XCTAssertTrue(harness.model.displayedIssues().isEmpty)
+        XCTAssertEqual(MenuBarIssueCounts(model: harness.model, filters: filters).compactText, "")
+
+        var filter = SourceIssueFilter()
+        filter.showPendingChecks = true
+        let enabled = await harness.model.saveIssueFilter(filter, for: source.id)
+        XCTAssertTrue(enabled)
+        try await waitForLoads(2, sourceID: source.id, script: script)
+        for _ in 0..<100 where harness.model.snapshots[source.id] != pending {
+            try await Task.sleep(for: .milliseconds(5))
+        }
+        XCTAssertEqual(harness.model.displayedIssues(), pending.issues)
+        XCTAssertEqual(MenuBarIssueCounts(model: harness.model, filters: filters).compactText, "P:1")
+        XCTAssertFalse(IssueNotificationPolicy.allAttentionStates.includes(.pending))
+
+        filter.patterns = [.init(host: "^host-[0-9]+$", states: [.pending], usesRegularExpressions: true)]
+        let saved = await harness.model.saveIssueFilter(filter, for: source.id)
+        XCTAssertTrue(saved)
+        XCTAssertTrue(harness.model.displayedIssues().isEmpty)
+        XCTAssertEqual(MenuBarIssueCounts(model: harness.model, filters: filters).compactText, "")
+        filters.includesSourceExclusions = true
+        XCTAssertEqual(MenuBarIssueCounts(model: harness.model, filters: filters).compactText, "P:1")
+
+        filter.showPendingChecks = false
+        let disabled = await harness.model.saveIssueFilter(filter, for: source.id)
+        XCTAssertTrue(disabled)
+        XCTAssertTrue(harness.model.displayedIssues(includeSourceExclusions: true).isEmpty)
+        XCTAssertEqual(MenuBarIssueCounts(model: harness.model, filters: filters).compactText, "")
+        let metrics = await script.metrics(for: source.id)
+        XCTAssertEqual(metrics.loads, 2)
+    }
+
     func testFailedSourceRetainsItsSnapshotWhileAnotherSourceUpdates() async throws {
         let script = SnapshotScript()
         let harness = try await makeHarness(sourceCount: 2, script: script)

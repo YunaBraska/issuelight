@@ -803,28 +803,26 @@ struct SourceIssueFilterEditor: View {
     }
 
     var body: some View {
+        let filter = editedFilter
+        let validRules = filter.patterns.allSatisfy(\.hasValidSyntax)
+        let normalized = filter.normalized
         VStack(spacing: 0) {
             VStack(alignment: .leading, spacing: 4) {
-                Text(verbatim: localized("Probleme ausblenden")).font(.headline)
+                Text(verbatim: localized("Filter")).font(.headline)
                 Text(source.name).foregroundStyle(.secondary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding()
 
             Form {
-                Section(localized("Hosts")) {
-                    Toggle(localized("Wartungszeit"), isOn: $draft.hideHostsInDowntime)
-                        .accessibilityIdentifier("hide-hosts-in-downtime")
-                    Toggle(localized("Quittiert"), isOn: $draft.hideAcknowledgedHosts)
-                        .accessibilityIdentifier("hide-acknowledged-hosts")
-                }
-                .toggleStyle(.checkbox)
-
-                Section(localized("Services")) {
-                    Toggle(localized("Wartungszeit"), isOn: $draft.hideServicesInDowntime)
-                        .accessibilityIdentifier("hide-services-in-downtime")
-                    Toggle(localized("Quittiert"), isOn: $draft.hideAcknowledgedServices)
-                        .accessibilityIdentifier("hide-acknowledged-services")
+                Section {
+                    HStack(alignment: .top, spacing: 20) {
+                        conditions(localized("Hosts"), isHost: true, selection: $draft.hostConditions)
+                        Divider()
+                        conditions(localized("Services"), isHost: false, selection: $draft.serviceConditions)
+                    }
+                    Toggle(localized("Services von Hosts in Wartung"), isOn: $draft.hideServicesOfHostsInDowntime)
+                    Toggle(localized("Ausstehende Prüfungen anzeigen"), isOn: $draft.showPendingChecks)
                 }
                 .toggleStyle(.checkbox)
 
@@ -832,7 +830,10 @@ struct SourceIssueFilterEditor: View {
                     ForEach($rules) { $rule in
                         HStack {
                             TextField(localized("Host"), text: $rule.pattern.host)
+                                .accessibilityLabel(localized("Host"))
                             TextField(localized("Service"), text: $rule.pattern.service)
+                                .accessibilityLabel(localized("Service"))
+                            ruleOptions($rule.pattern)
                             Button(role: .destructive) {
                                 rules.removeAll { $0.id == rule.id }
                             } label: {
@@ -860,12 +861,15 @@ struct SourceIssueFilterEditor: View {
 
             Divider()
             HStack {
-                if saveFailed {
+                if !validRules {
+                    Text(verbatim: localized("Ungültiger regulärer Ausdruck"))
+                        .foregroundStyle(.red)
+                } else if saveFailed {
                     Text(verbatim: localized("Filter konnten nicht gespeichert werden."))
                         .foregroundStyle(.red)
                 } else if let issues {
-                    let filter = editedFilter.normalized
-                    let hidden = issues.count { filter?.excludes($0) == true }
+                    let eligible = draft.showPendingChecks ? issues : issues.filter { $0.severity != .pending }
+                    let hidden = eligible.count - (normalized?.retainingVisibleIssues(eligible).count ?? eligible.count)
                     Text(verbatim: localized("Ausgeblendet: \(hidden)"))
                         .foregroundStyle(.secondary)
                 }
@@ -873,7 +877,6 @@ struct SourceIssueFilterEditor: View {
                 Button(localized("Abbrechen")) { dismiss() }
                     .keyboardShortcut(.cancelAction)
                 Button(localized("Speichern")) {
-                    let filter = editedFilter
                     isSaving = true
                     Task {
                         if await save(filter) {
@@ -885,14 +888,90 @@ struct SourceIssueFilterEditor: View {
                     }
                 }
                 .keyboardShortcut(.defaultAction)
-                .disabled(editedFilter.normalized == source.issueFilter)
+                .disabled(!validRules || normalized == source.issueFilter)
             }
             .disabled(isSaving)
             .padding()
         }
-        .frame(width: 500, height: 520)
+        .frame(width: 620, height: 555)
         .background(Color(nsColor: .windowBackgroundColor))
         .interactiveDismissDisabled(isSaving)
+    }
+
+    private func conditions(
+        _ title: String,
+        isHost: Bool,
+        selection: Binding<Set<IssueFilterCondition>>
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 7) {
+            Text(verbatim: title).font(.subheadline.weight(.semibold))
+            ForEach(IssueFilterCondition.allCases, id: \.self) { condition in
+                let label = conditionTitle(condition)
+                Toggle(label, isOn: Binding(
+                    get: { selection.wrappedValue.contains(condition) },
+                    set: { enabled in
+                        if enabled {
+                            selection.wrappedValue.insert(condition)
+                        } else {
+                            selection.wrappedValue.remove(condition)
+                        }
+                    }
+                ))
+                .accessibilityLabel("\(title): \(label)")
+                .accessibilityIdentifier("\(isHost ? "host" : "service")-filter-\(condition.rawValue)")
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func conditionTitle(_ condition: IssueFilterCondition) -> String {
+        switch condition {
+        case .downtime: localized("Wartungszeit")
+        case .acknowledged: localized("Quittiert")
+        case .flapping: localized("Flapping")
+        case .notificationsDisabled: localized("Benachrichtigungen deaktiviert")
+        case .softState: localized("Vorläufiger Zustand")
+        }
+    }
+
+    private func ruleOptions(_ rule: Binding<IssueExclusionPattern>) -> some View {
+        let allStates = Set(IssueFilterState.allCases)
+        let currentStates = rule.wrappedValue.states
+        let statusTitle = currentStates.map { states in
+            states.isEmpty
+                ? localized("Keine Zustände")
+                : IssueFilterState.allCases.filter(states.contains).map(\.abbreviation).joined(separator: ", ")
+        } ?? localized("Alle Zustände")
+        return Menu {
+            Toggle(localized("Regulärer Ausdruck"), isOn: Binding(
+                get: { rule.wrappedValue.usesRegularExpressions == true },
+                set: { rule.wrappedValue.usesRegularExpressions = $0 ? true : nil }
+            ))
+            Divider()
+            Button(localized("Alle Zustände")) { rule.wrappedValue.states = nil }
+            ForEach(IssueFilterState.allCases, id: \.self) { state in
+                Toggle(state.localizedName(locale: locale), isOn: Binding(
+                    get: { rule.wrappedValue.states?.contains(state) ?? true },
+                    set: { enabled in
+                        var selection = rule.wrappedValue.states ?? allStates
+                        if enabled { selection.insert(state) } else { selection.remove(state) }
+                        rule.wrappedValue.states = selection == allStates ? nil : selection
+                    }
+                ))
+            }
+        } label: {
+            HStack(spacing: 4) {
+                if rule.wrappedValue.usesRegularExpressions == true {
+                    Text(verbatim: ".*").monospaced().foregroundStyle(.secondary)
+                }
+                Text(verbatim: statusTitle)
+                    .lineLimit(1)
+            }
+        }
+        .fixedSize()
+        .accessibilityLabel(localized("Status"))
+        .accessibilityValue(statusTitle)
+        .accessibilityIdentifier("source-filter-rule-options")
     }
 
     private var editedFilter: SourceIssueFilter {

@@ -6,12 +6,32 @@ public enum MonitoringObjectKind: String, Codable, Sendable {
 }
 
 public enum MonitoringSeverity: Int, Codable, Comparable, Sendable {
+    case pending = 0
     case warning = 1
     case unknown = 2
     case critical = 3
 
     public static func < (lhs: MonitoringSeverity, rhs: MonitoringSeverity) -> Bool {
         lhs.rawValue < rhs.rawValue
+    }
+}
+
+public struct MonitoringIssueActivity: Equatable, Sendable {
+    public let isFlapping: Bool?
+    public let notificationsEnabled: Bool?
+    public let isSoftState: Bool?
+    public let hostIsInDowntime: Bool?
+
+    public init(
+        isFlapping: Bool? = nil,
+        notificationsEnabled: Bool? = nil,
+        isSoftState: Bool? = nil,
+        hostIsInDowntime: Bool? = nil
+    ) {
+        self.isFlapping = isFlapping
+        self.notificationsEnabled = notificationsEnabled
+        self.isSoftState = isSoftState
+        self.hostIsInDowntime = hostIsInDowntime
     }
 }
 
@@ -29,6 +49,7 @@ public struct MonitoringIssue: Equatable, Identifiable, Sendable {
     public let maxCheckAttempts: Int?
     public let isAcknowledged: Bool
     public let isInDowntime: Bool
+    public let activity: MonitoringIssueActivity
 
     public var id: String {
         "\(sourceID.uuidString.lowercased()):\(kind.rawValue):\(nativeID)"
@@ -51,7 +72,8 @@ public struct MonitoringIssue: Equatable, Identifiable, Sendable {
         checkAttempt: Int? = nil,
         maxCheckAttempts: Int? = nil,
         isAcknowledged: Bool,
-        isInDowntime: Bool
+        isInDowntime: Bool,
+        activity: MonitoringIssueActivity = .init()
     ) {
         self.sourceID = sourceID
         self.nativeID = nativeID
@@ -66,6 +88,7 @@ public struct MonitoringIssue: Equatable, Identifiable, Sendable {
         self.maxCheckAttempts = maxCheckAttempts
         self.isAcknowledged = isAcknowledged
         self.isInDowntime = isInDowntime
+        self.activity = activity
     }
 }
 
@@ -100,7 +123,8 @@ struct Icinga2SnapshotDecoder {
         sourceID: UUID,
         observedAt: Date,
         hostData: Data,
-        serviceData: Data
+        serviceData: Data,
+        includePending: Bool = false
     ) throws -> MonitoringSnapshot {
         let decoder = JSONDecoder()
         let hosts = try decoder.decode(IcingaEnvelope.self, from: hostData).results
@@ -110,11 +134,7 @@ struct Icinga2SnapshotDecoder {
             guard result.type == "Host" else {
                 throw Icinga2SnapshotDecodingError.invalidObjectType(result.type)
             }
-            let state = Int(result.attrs.state)
-            guard state != 0 else { return nil }
-            guard state == 1 else {
-                throw Icinga2SnapshotDecodingError.unsupportedState(state)
-            }
+            guard let severity = try result.severity(includePending: includePending) else { return nil }
             return MonitoringIssue(
                 sourceID: sourceID,
                 nativeID: result.name,
@@ -122,13 +142,14 @@ struct Icinga2SnapshotDecoder {
                 hostName: result.attrs.name,
                 serviceName: nil,
                 displayName: result.attrs.displayName,
-                severity: .critical,
+                severity: severity,
                 summary: summary(from: result.attrs.lastCheckResult?.output, fallback: result.attrs.displayName),
                 stateChangedAt: date(from: result.attrs.lastStateChange),
                 checkAttempt: positiveInteger(from: result.attrs.checkAttempt),
                 maxCheckAttempts: positiveInteger(from: result.attrs.maxCheckAttempts),
                 isAcknowledged: result.attrs.acknowledgement > 0,
-                isInDowntime: result.attrs.downtimeDepth > 0
+                isInDowntime: result.attrs.downtimeDepth > 0,
+                activity: result.activity
             )
         }
 
@@ -136,21 +157,9 @@ struct Icinga2SnapshotDecoder {
             guard result.type == "Service" else {
                 throw Icinga2SnapshotDecodingError.invalidObjectType(result.type)
             }
-            let state = Int(result.attrs.state)
-            guard state != 0 else { return nil }
+            guard let severity = try result.severity(includePending: includePending) else { return nil }
             guard let hostName = result.attrs.hostName, !hostName.isEmpty else {
                 throw Icinga2SnapshotDecodingError.missingHostName(result.name)
-            }
-            let severity: MonitoringSeverity
-            switch state {
-            case 1:
-                severity = .warning
-            case 2:
-                severity = .critical
-            case 3:
-                severity = .unknown
-            default:
-                throw Icinga2SnapshotDecodingError.unsupportedState(state)
             }
             return MonitoringIssue(
                 sourceID: sourceID,
@@ -165,7 +174,8 @@ struct Icinga2SnapshotDecoder {
                 checkAttempt: positiveInteger(from: result.attrs.checkAttempt),
                 maxCheckAttempts: positiveInteger(from: result.attrs.maxCheckAttempts),
                 isAcknowledged: result.attrs.acknowledgement > 0,
-                isInDowntime: result.attrs.downtimeDepth > 0
+                isInDowntime: result.attrs.downtimeDepth > 0,
+                activity: result.activity
             )
         }
 
@@ -220,8 +230,44 @@ private struct IcingaEnvelope: Decodable {
 
 private struct IcingaResult: Decodable {
     let attrs: IcingaAttributes
+    let joins: Joins?
     let name: String
     let type: String
+
+    func severity(includePending: Bool) throws -> MonitoringSeverity? {
+        // Unchecked services can report UNKNOWN until their first check completes.
+        if attrs.hasNotRun { return includePending ? .pending : nil }
+        let state = Int(attrs.state)
+        switch (type, state) {
+        case (_, 0): return nil
+        case ("Host", 1): return attrs.lastReachable == false ? .unknown : .critical
+        case ("Service", 1): return .warning
+        case ("Service", 2): return .critical
+        case ("Service", 3): return .unknown
+        default: throw Icinga2SnapshotDecodingError.unsupportedState(state)
+        }
+    }
+
+    var activity: MonitoringIssueActivity {
+        MonitoringIssueActivity(
+            isFlapping: attrs.flapping,
+            notificationsEnabled: attrs.enableNotifications,
+            isSoftState: attrs.stateType.map { $0 == 0 },
+            hostIsInDowntime: joins?.host?.downtimeDepth.map { $0 > 0 }
+        )
+    }
+
+    struct Joins: Decodable {
+        let host: Host?
+
+        struct Host: Decodable {
+            let downtimeDepth: Double?
+
+            enum CodingKeys: String, CodingKey {
+                case downtimeDepth = "downtime_depth"
+            }
+        }
+    }
 }
 
 private struct IcingaAttributes: Decodable {
@@ -229,24 +275,38 @@ private struct IcingaAttributes: Decodable {
     let checkAttempt: Double?
     let displayName: String
     let downtimeDepth: Double
+    let enableNotifications: Bool?
+    let flapping: Bool?
     let hostName: String?
+    let lastCheck: Double?
     let lastCheckResult: IcingaCheckResult?
+    let lastReachable: Bool?
     let lastStateChange: Double?
     let maxCheckAttempts: Double?
     let name: String
     let state: Double
+    let stateType: Double?
+
+    var hasNotRun: Bool {
+        lastCheck.map { $0 <= 0 } == true
+    }
 
     private enum CodingKeys: String, CodingKey {
         case acknowledgement
         case checkAttempt = "check_attempt"
         case displayName = "display_name"
         case downtimeDepth = "downtime_depth"
+        case enableNotifications = "enable_notifications"
+        case flapping
         case hostName = "host_name"
+        case lastCheck = "last_check"
         case lastCheckResult = "last_check_result"
+        case lastReachable = "last_reachable"
         case lastStateChange = "last_state_change"
         case maxCheckAttempts = "max_check_attempts"
         case name
         case state
+        case stateType = "state_type"
     }
 }
 

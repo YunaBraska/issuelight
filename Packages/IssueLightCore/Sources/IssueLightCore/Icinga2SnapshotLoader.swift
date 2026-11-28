@@ -64,19 +64,23 @@ public final class Icinga2SnapshotLoader: @unchecked Sendable {
 
     private func load(_ source: MonitoringSource, transport: Icinga2Transport) async -> SnapshotLoadResult {
         defer { transport.close() }
+        let includePending = source.issueFilter?.showPendingChecks == true
+        let hostFilter = includePending ? "host.state!=0||host.last_check<=0" : "host.state!=0"
+        let serviceFilter = includePending ? "service.state!=0||service.last_check<=0" : "service.state!=0"
         do {
             async let hostData = transport.data(
                 for: try transport.request(
                     objectType: "hosts",
                     attributes: Self.hostAttributes,
-                    filter: "host.state!=0"
+                    filter: hostFilter
                 )
             )
             async let serviceData = transport.data(
                 for: try transport.request(
                     objectType: "services",
                     attributes: Self.serviceAttributes,
-                    filter: "service.state!=0"
+                    filter: serviceFilter,
+                    joins: ["host.downtime_depth"]
                 )
             )
             return .loaded(
@@ -84,7 +88,8 @@ public final class Icinga2SnapshotLoader: @unchecked Sendable {
                     sourceID: source.id,
                     observedAt: now(),
                     hostData: hostData,
-                    serviceData: serviceData
+                    serviceData: serviceData,
+                    includePending: includePending
                 )
             )
         } catch let Icinga2TransportError.failure(failure) {
@@ -96,17 +101,22 @@ public final class Icinga2SnapshotLoader: @unchecked Sendable {
         }
     }
 
-    private static let hostAttributes = [
+    private static let commonAttributes = [
         "acknowledgement",
         "check_attempt",
         "display_name",
         "downtime_depth",
+        "enable_notifications",
+        "flapping",
+        "last_check",
         "last_check_result",
         "last_state_change",
         "max_check_attempts",
         "name",
         "state",
+        "state_type",
     ]
 
-    private static let serviceAttributes = hostAttributes + ["host_name"]
+    private static let hostAttributes = commonAttributes + ["last_reachable"]
+    private static let serviceAttributes = commonAttributes + ["host_name"]
 }
